@@ -1,0 +1,220 @@
+# docker-compose configuration file used to run cross-activation tests.
+
+version: "3"
+
+networks:
+  tric:
+    ipam:
+      driver: default
+      config:
+        - subnet: "172.${TRIC_TEST_SUBNET:-28}.0.0/16"
+
+volumes:
+  function-mocker-cache:
+
+services:
+
+  db:
+    image: mariadb
+    networks:
+      - tric
+    environment:
+      MYSQL_DATABASE: test
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+
+  wordpress:
+    # Fix the version of the WordPress image to avoid issues w/ out-of-date database dumps.
+    image: wordpress:5.4.1-apache
+    networks:
+      tric:
+        # Allow the other containers to read this container with a pretty URL.
+        ipv4_address: 172.${TRIC_TEST_SUBNET:-28}.1.1
+    extra_hosts:
+      # Let's make sure the WordPress service can reach itself with a pretty URL for internal requests.
+      - "wordpress.test:172.${TRIC_TEST_SUBNET:-28}.1.1"
+    depends_on:
+      - db
+      - redis
+    # Run the container as the host user and group.
+    # Apache will run as the same user and permission issues with WordPress generated files should not arise.
+    user: "${DOCKER_RUN_UID:-}:${DOCKER_RUN_GID:-}"
+    sysctls:
+      # Allow any user to bind ports <= 1024.
+      # This is required as we're running the container as the host user and that user might not be in the root
+      # wheel in the container.
+      net.ipv4.ip_unprivileged_port_start: 0
+    ports:
+      # Allow reaching the site at `http://localhost:8888`.
+      # The port, in the container, is not the default `80` to allow non root users to bind (listen) to it.
+      - "${WORDPRESS_HTTP_PORT:-8888}:80"
+    environment:
+      WORDPRESS_DB_USER: root
+      WORDPRESS_DB_PASSWORD: password
+      # This db is created by the db container at startup, no need to create it.
+      WORDPRESS_DB_NAME: test
+      WORDPRESS_DB_HOST: db
+      # Pull plugins from the `/plugins` directory to allow debugging the files we're working on.
+      WORDPRESS_CONFIG_EXTRA: |
+        $$scheme = empty( $$_SERVER['HTTPS'] ) ? 'http' : 'https';
+        $$url    = isset( $$_SERVER['HTTP_HOST'] ) ? $$_SERVER['HTTP_HOST'] : 'wordpress.test';
+        define( 'WP_HOME', $$scheme . '://' . $$url );
+        define( 'WP_SITEURL', $$scheme . '://' . $$url );
+        define( 'WP_REDIS_HOST', 'redis' );
+        define( 'WP_REDIS_PORT', 6379 );
+      # Configure this to debug the tests with XDebug.
+      # Map the `dev/_wordpress` directory to `/var/www/html' directory in your IDE of choice.
+      # Map the `dev/_plugins` directory to `/plugins` directory in your IDE of choice.
+      PHP_IDE_CONFIG: "serverName=${XDK:-tric}"
+      # The `remote_host` is set to `host.docker.internal` that will resolve to the host machine IP address, from
+      # within the container, on macOS and Windows.
+      # On Linux set the host machine IP address before calling the stack:
+      # XDH=$(ip route | grep docker0 | awk '{print $9}') docker-compose ...
+      XDEBUG_CONFIG: "idekey=${XDK:-tric} remote_enable=${XDE:-1} remote_host=${XDH:-host.docker.internal} remote_port=${XDP:-9001}"
+      # Whether to disable the XDebug extension in the Codeception container completely or not.
+      XDEBUG_DISABLE: "${XDEBUG_DISABLE:-0}"
+    volumes:
+      # Paths are relative to the directory that contains this file, NOT the current working directory.
+      # Share the WordPress core installation files in the `dev/_wordpress` directory.
+      - ${TRIC_WP_DIR}:/var/www/html:cached
+      # Share the WordPress core installation files in the `dev/_plugins` directory.
+      - ${TRIC_PLUGINS_DIR}:/var/www/html/wp-content/plugins:cached
+
+  cli:
+    image: wordpress:cli
+    user: "${DOCKER_RUN_UID:-}:${DOCKER_RUN_GID:-}"
+    networks:
+      - tric
+    environment:
+      FIXUID: "${FIXUID:-1}"
+      # Configure this to debug the tests with XDebug.
+      # Map the `dev/_wordpress` directory to `/var/www/html' directory in your IDE of choice.
+      # Map the `dev/_plugins` directory to `/plugins' directory in your IDE of choice.
+      PHP_IDE_CONFIG: "serverName=${XDK:-tric}"
+      # The `remote_host` is set to `host.docker.internal` that will resolve to the host machine IP address, from
+      # within the container, on macOS and Windows.
+      # On Linux set the host machine IP address before calling the stack:
+      # XDH=$(ip route | grep docker0 | awk '{print $9}') docker-compose ...
+      XDEBUG_CONFIG: "idekey=${XDK:-tric} remote_enable=${XDE:-1} remote_host=${XDH:-host.docker.internal} remote_port=${XDP:-9001}"
+    volumes:
+      # Paths are relative to the directory that contains this file, NOT the current working directory.
+      # Share the WordPress core installation files in the `dev/_wordpress` directory.
+      - ${TRIC_WP_DIR}:/var/www/html:cached
+      # Share the WordPress core installation files in the `dev/_plugins` directory.
+      - ${TRIC_PLUGINS_DIR}:/var/www/html/wp-content/plugins:cached
+
+  site_waiter:
+    # Waits for the WordPress site to be available.
+    image: curlimages/curl
+    networks:
+      - tric
+    extra_hosts:
+      - "wordpress.test:172.${TRIC_TEST_SUBNET:-28}.1.1"
+    command: -Lkfv --retry-connrefused --retry 30 --retry-delay 1 -o /dev/null --stderr /dev/null wordpress.test:80
+
+  chrome:
+    image: selenium/standalone-chrome:3.141.59-oxygen
+    networks:
+      - tric
+    extra_hosts:
+      - "wordpress.test:172.${TRIC_TEST_SUBNET:-28}.1.1"
+
+  codeception:
+    image: lucatume/codeception:cc3.1.0
+    networks:
+      - tric
+    extra_hosts:
+      - "wordpress.test:172.${TRIC_TEST_SUBNET:-28}.1.1"
+    user: "${DOCKER_RUN_UID:-}:${DOCKER_RUN_GID:-}"
+    environment:
+      FIXUID: "${FIXUID:-1}"
+      # Set these values to allow the container to look wordpress up.
+      WORDPRESS_DB_USER: root
+      WORDPRESS_DB_PASSWORD: password
+      WORDPRESS_DB_NAME: test
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_URL: http://wordpress.test
+      # Configure this to debug the tests with XDebug.
+      # Map the `dev/_wordpress` directory to `/var/www/html' directory in your IDE of choice.
+      # Map the `dev/_plugins` directory to `/plugins' directory in your IDE of choice.
+      PHP_IDE_CONFIG: "serverName=${XDK:-tric}"
+      # The `remote_host` is set to `host.docker.internal` that will resolve to the host machine IP address, from
+      # within the container, on macOS and Windows.
+      # On Linux set the host machine IP address before calling the stack:
+      # XDH=$(ip route | grep docker0 | awk '{print $9}') docker-compose ...
+      XDEBUG_CONFIG: "idekey=${XDK:-tric} remote_enable=${XDE:-1} remote_host=${XDH:-host.docker.internal} remote_port=${XDP:-9001}"
+      # Move to the target directory before running the command from the plugins directory.
+      CODECEPTION_PROJECT_DIR: /var/www/html/wp-content/plugins/${TRIC_CURRENT_PROJECT:-test}
+      # When running the container in shell mode (using the tric `shell` command), then use this CC configuration.
+      CODECEPTION_SHELL_CONFIG: "-c codeception.tric.yml"
+      # After the WordPress container comes online, wait a further 3s to give it some boot-up time.
+      CODECEPTION_WAIT: 3
+      # Whether to disable the XDebug extension in the Codeception container completely or not.
+      XDEBUG_DISABLE: "${XDEBUG_DISABLE:-0}"
+      # Declare that we are in a tric context so plugins can set custom test configs.
+      TRIBE_TRIC: 1
+      # Let's set the lines and columns number explicitly to have the shell mirror the current one.
+      LINES: "${LINES:-24}"
+      COLUMNS: "${COLUMNS:-80}"
+    depends_on:
+      - wordpress
+      - chrome
+    volumes:
+      # Paths are relative to the directory that contains this file, NOT the current working directory.
+      # Share the WordPress core installation files in the `dev/_wordpress` directory.
+      - ${TRIC_WP_DIR}:/var/www/html:cached
+      # Share the plugins in the `/var/www/hmtl/wp-content/plugins` directory.
+      - ${TRIC_PLUGINS_DIR}:/var/www/html/wp-content/plugins:cached
+      # In some plugins we use function-mocker and set it up to cache in `/tmp/function-mocker`.
+      # To avoid a long re-caching on each run, let's cache in a docker volume, caching on the host
+      # filesystem would be a worse cure than the disease.
+      - function-mocker-cache:/tmp/function-mocker
+
+  composer:
+    image: lucatume/composer:php7.0
+    user: "${DOCKER_RUN_UID:-}:${DOCKER_RUN_GID:-}"
+    environment:
+      FIXUID: "${FIXUID:-1}"
+    volumes:
+      # Set the current plugin as project.
+      - ${TRIC_PLUGINS_DIR}/${TRIC_CURRENT_PROJECT:-test}:/project:cached
+      # Share SSH keys with the container to pull from private repositories.
+      - ${DOCKER_RUN_SSH_AUTH_SOCK}:/ssh-agent:ro
+
+  npm:
+    build:
+      context: containers/npm
+    image: tric_npm
+    user: "${DOCKER_RUN_UID:-}:${DOCKER_RUN_GID:-}"
+    environment:
+      FIXUID: ${FIXUID:-1}
+    volumes:
+      # Set the current plugin as project.
+      - ${TRIC_PLUGINS_DIR}/${TRIC_CURRENT_PROJECT:-test}:/project:cached
+      # Share SSH keys with the container to pull from private repositories.
+      - ${DOCKER_RUN_SSH_AUTH_SOCK}:/ssh-agent:ro
+
+  adminer:
+    image: adminer
+    networks:
+      - tric
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+    ports:
+      - "9080:8080"
+
+  redis:
+    image: redis
+    networks:
+      tric:
+    ports:
+      # Expose Redis port on port 8379 of localhost.
+      - "8379:6379"
+
+  redis-cli:
+    image: redis
+    networks:
+      tric:
+    depends_on:
+      - redis
+    entrypoint: ["redis-cli","-h redis","-p 6379"]
+    command: ["--version"]

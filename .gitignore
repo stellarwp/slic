@@ -1,0 +1,27 @@
+.DS_Store
+wp-lib
+wp
+vendor
+.data
+.idea
+*.log
+local-config.php
+
+wp-content/uploads
+wp-content/plugins
+wp-content/themes
+
+# The directory where we're downloading the plugins in different versions.
+test/_plugin_store
+
+# Local file used to test the script locally.
+.env.licenses
+
+# Ignore the local version of WordPress and the plugins files used in local development and testing.
+_wordpress
+_plugins
+# Any .using file created by the tric cli tool.
+.using
+# Any .env.tric.* file created to override the tric cli tool configuration or to configure the runs.
+.env.tric.local
+.env.tric.run
