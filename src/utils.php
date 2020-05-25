@@ -503,16 +503,3 @@ function ask( $question, $default = null ) {
 
 	return '' === $value ? $default : $value;
 }
-
-/**
- * Returns the absolute path to the root directory.
- *
- * @param string $path An optional, relative path to append to the root directory absolute path.
- *
- * @return string The absolute path to the root directory.
- */
-function root_dir( $path = '' ) {
-	$root = dirname( dirname( __DIR__ ) );
-
-	return empty( $path ) ? $root : $root . '/' . ltrim( $path, '\\/' );
-}

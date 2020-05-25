@@ -133,7 +133,7 @@ function tric_target( $require = true ) {
  * @param string $target Target to switch to.
  */
 function tric_switch_target( $target ) {
-	$root              = dirname( dirname( __DIR__ ) );
+	$root              = root();
 	$run_settings_file = "{$root}/.env.tric.run";
 
 	write_env_file( $run_settings_file, [ 'TRIC_CURRENT_PROJECT' => $target ], true );
@@ -366,7 +366,7 @@ function tric_info() {
 	];
 
 	echo colorize( "<yellow>Configuration read from the following files:</yellow>\n" );
-	$tric_root = dirname( dirname( __DIR__ ) );
+	$tric_root = root();
 	echo implode( "\n", array_filter( [
 			file_exists( $tric_root . '/.env.tric' ) ? "  - " . $tric_root . '/.env.tric' : null,
 			file_exists( $tric_root . '/.env.tric.local' ) ? "  - " . $tric_root . '/.env.tric.local' : null,
