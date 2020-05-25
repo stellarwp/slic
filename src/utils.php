@@ -377,14 +377,14 @@ function run_context() {
 /**
  * Returns the path to the `dev` directory or to a sub-path in it.
  *
- * @param string $path The path to append to the absolute path of the `dev` directory.
+ * @param string $path The path to append to the absolute path of the root directory.
  *
- * @return string The absolute path to the `dev` directory or a to a sub-directory of it.
+ * @return string The absolute path to the root directory or a to a sub-directory of it.
  */
-function dev( $path = '' ) {
-	$dev = dirname( dirname( __DIR__ ) );
+function root( $path = '' ) {
+	$root = dirname( __DIR__ );
 
-	return empty( $path ) ? $dev : $dev . DIRECTORY_SEPARATOR . ltrim( $path, '\\/' );
+	return empty( $path ) ? $root : $root . DIRECTORY_SEPARATOR . ltrim( $path, '\\/' );
 }
 
 /**
@@ -505,14 +505,14 @@ function ask( $question, $default = null ) {
 }
 
 /**
- * Returns the absolute path to the `dev` directory.
+ * Returns the absolute path to the root directory.
  *
- * @param string $path An optional, relative path to append to the dev directory absolute path.
+ * @param string $path An optional, relative path to append to the root directory absolute path.
  *
- * @return string The absolute path to the `dev` directory.
+ * @return string The absolute path to the root directory.
  */
-function dev_dir( $path = '' ) {
-	$dev = dirname( dirname( __DIR__ ) );
+function root_dir( $path = '' ) {
+	$root = dirname( dirname( __DIR__ ) );
 
-	return empty( $path ) ? $dev : $dev . '/' . ltrim( $path, '\\/' );
+	return empty( $path ) ? $root : $root . '/' . ltrim( $path, '\\/' );
 }

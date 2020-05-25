@@ -10,7 +10,7 @@ require_once __DIR__ . '/src/shell.php';
 
 use function Tribe\Test\args;
 use function Tribe\Test\colorize;
-use function Tribe\Test\dev;
+use function Tribe\Test\root;
 use function Tribe\Test\light_cyan;
 use function Tribe\Test\setup_tric_env;
 
@@ -78,7 +78,7 @@ $help_message = colorize( $help_message_template );
 
 $is_help = args( [ 'help' ], $args( '...' ), 0 )( 'help', false ) === 'help';
 
-$run_settings_file = dev( '/.env.tric.run' );
+$run_settings_file = root( '/.env.tric.run' );
 
 $subcommand = $args( 'subcommand', 'help' );
 

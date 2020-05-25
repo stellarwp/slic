@@ -24,7 +24,7 @@ if ( empty( $using ) ) {
 
 echo light_cyan( "Using {$using}\n" );
 
-if ( tric_plugins_dir() !== dev( 'plugins' ) ) {
+if ( tric_plugins_dir() !== root( 'plugins' ) ) {
 	echo light_cyan( "\nFull target path: " ) . $target_path;
 }
 

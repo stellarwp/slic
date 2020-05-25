@@ -3,7 +3,7 @@
 The purpose of this environemt is to provide Products developers with a local testing environment that is identical to the one running in CI.
 The same local testing environment *can be* used as a local development, but that is not its main goal.
 
-The entrypoint to anything you will need to do will be the `tric`, for "tribeception", binary, located in the `dev` directory.
+The entrypoint to anything you will need to do will be the `tric`, for "tribeception", binary, located in the root directory.
 
 ## Requirements
 
@@ -20,17 +20,17 @@ If this is not the case, please take the time to read Docker and docker-compose 
 
 ## Where to get help
 
-First and foremost the most up-to-date documentation should be the output of the `dev/tric help` command and the `help` sub-commands of each `dev/tric` command.  
+First and foremost the most up-to-date documentation should be the output of the `tric help` command and the `help` sub-commands of each `dev/tric` command.  
 Second, look at the code: this tools is written in PHP, the same language as WordPress and, as such, should be easy to inspect and update.
 
 ## Preparing the plugins
 
 The stack does not come with any plugin you need to work on, so you will have to do some work to set them up one by one, as required by your work.  
 
-The stack will look for plugins in the `dev/test/plugins` directory, so change directory to that and clone the plugin(s) you need to work on:
+The stack will look for plugins in the `_plugins` directory, so change directory to that and clone the plugin(s) you need to work on:
 
 ```bash
-cd dev/_plugins
+cd _plugins
 git clone git@github.com:moderntribe/the-events-calendar.git
 cd the-events-calendar
 git checkout release/B20.03
@@ -51,23 +51,23 @@ Give the whole process some time to complete and do the same for each plugin you
 
 ## Running tests
 
-To run tests using this local testing environment use the `tric` binary contained in the `dev` directory.  
+To run tests using this local testing environment use the `tric` binary contained in the root directory.  
 
 Run the `tric` command without any arguments to get an help page and a list of commands.
 
 To run the `wpunit` suite of `the-events-calendar` plugin, as an example, use:
 
 ```bash
-dev/tric use the-events-calendar
-dev/tric run wpunit
+tric use the-events-calendar
+tric run wpunit
 ```
 
 Since the command might potentially run on any of the plugins maintained by the Products team, you'll need to tell the `tric` command what plugin you're currently working on with the `use` sub-command.
 You can change the plugin you want to run tests on by using the `tric use` command again at any moment. If you want, now to run Event Tickets tests, you could just use:
 
 ```bash
-dev/tric use event-tickets
-dev/tric run integration
+tric use event-tickets
+tric run integration
 ```
 
 ### Running a specific test case
@@ -75,8 +75,8 @@ dev/tric run integration
 If you need to run a specific test case in a suite only, you can do this using the same command you would use in Codeception:
 
 ```bash
-dev/tric use event-calendar-pro
-dev/tric run tests/integration/SomeTest.php
+tric use event-calendar-pro
+tric run tests/integration/SomeTest.php
 ```
 
 ### Running a specific test method
@@ -84,8 +84,8 @@ dev/tric run tests/integration/SomeTest.php
 If you need to run a specific test method, part of a test case, you can do this using the same command you would use in Codeception:
 
 ```bash
-dev/tric use event-calendar-pro
-dev/tric run tests/integration/SomeTest.php:test_foo_is_not_bar
+tric use event-calendar-pro
+tric run tests/integration/SomeTest.php:test_foo_is_not_bar
 ```
 
 ## Using the shell
@@ -93,10 +93,10 @@ dev/tric run tests/integration/SomeTest.php:test_foo_is_not_bar
 If you want more hands-on control on the stack, or need to access its inner workings, you can open a shell into the `codeception` container with the `shell` command: 
 
 ```bash
-dev/tric shell
+tric shell
 ```
 
-The shell will open, by default, in the container `/plugins` directory. The directory is mapped to the `dev/_plugins` directory on the host.
+The shell will open, by default, in the container `/plugins` directory. The directory is mapped to the `_plugins` directory on the host.
 Once the shell opens you will be able to use any Codeception command available, e.g.:
 
 ```
@@ -115,7 +115,7 @@ If the stack is currently running you will need to tear down the stack first:
 Then activate the stack debug mode:
 
 ```bash
-dev/tric xdebug on
+tric xdebug on
 ```
 > Note: activating and deactivating the debug mode will tear down, stop and remove, the stack containers and, with them, any modification you've made to the stack. If you have valuable information (you should not) inthe stack, then save it first.
 
@@ -123,8 +123,8 @@ The next time you spin up the stack to run tests or to have the WordPress instal
 
 * Listen for XDebug connections on port 9001
 * Set up path mappings:
-	* `dev/_wordpress` -> `/var/www/html`
-	* `dev/_plugins` -> `/plugins`
+	* `_wordpress` -> `/var/www/html`
+	* `_plugins` -> `/plugins`
 * If your IDE allows it, then set the server name and host to `tric`, this is the IDE configuration key XDebug will use when communicating with your host machine.
 
 Please refer to your IDE of choice to know how to set up these values.
@@ -134,10 +134,10 @@ Please refer to your IDE of choice to know how to set up these values.
 When you are done with debuggin and want to deactivate it, just run this command:
 
 ```bash
-dev/tric xdebug off
+tric xdebug off
 ```
 
-You can get more information about the available XDebug options using the `dev/tric xdebug help` command.
+You can get more information about the available XDebug options using the `tric xdebug help` command.
 
 ## Using the stack as a local development environment
 
@@ -146,16 +146,16 @@ This is not the stack main purpose, but it can be done as long as you're willing
 You can start the stack, and have it configured for you, running the following command:
 
 ```bash
-dev/tric serve 8888
+tric serve 8888
 ```
 
-The above command will start the stack, install a fresh copy of WordPress, set it up to look for plugins in the `dev/_plugins` directory, and be served at `http://localhost:8888`.
-The stack will also create and scaffold the WordPress installation ins the `dev/_wordpress` directory if it does not exist already.  
+The above command will start the stack, install a fresh copy of WordPress, set it up to look for plugins in the `_plugins` directory, and be served at `http://localhost:8888`.
+The stack will also create and scaffold the WordPress installation ins the `_wordpress` directory if it does not exist already.  
 
 You can stop the stack by running the following command:
 
 ```bash 
-dev/tric down
+tric down
 ```
 
 ### Using wp-cli in the stack
@@ -164,8 +164,8 @@ If you are using the stack as a local development environment, then you might ne
 In that case you can use the `tric cli` sub-command to run any command on the stack:
 
 ```bash
-dev/tric cli plugin list --status=active
-dev/tric cli plugin activate the-events-calendar event-tickets
+tric cli plugin list --status=active
+tric cli plugin activate the-events-calendar event-tickets
 ```
 
 If you need to run any command that would modify a plugin filesystem, remember that, in the container, the plugins are located in the `/plugins` directory.  

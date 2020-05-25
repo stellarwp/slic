@@ -63,8 +63,8 @@ services:
         define( 'WP_REDIS_PORT', 6379 );
         define( 'TRIBE_NO_FREEMIUS', true );
       # Configure this to debug the tests with XDebug.
-      # Map the `dev/_wordpress` directory to `/var/www/html' directory in your IDE of choice.
-      # Map the `dev/_plugins` directory to `/plugins` directory in your IDE of choice.
+      # Map the `_wordpress` directory to `/var/www/html' directory in your IDE of choice.
+      # Map the `_plugins` directory to `/plugins` directory in your IDE of choice.
       PHP_IDE_CONFIG: "serverName=${XDK:-tric}"
       # The `remote_host` is set to `host.docker.internal` that will resolve to the host machine IP address, from
       # within the container, on macOS and Windows.
@@ -75,9 +75,9 @@ services:
       XDEBUG_DISABLE: "${XDEBUG_DISABLE:-0}"
     volumes:
       # Paths are relative to the directory that contains this file, NOT the current working directory.
-      # Share the WordPress core installation files in the `dev/_wordpress` directory.
+      # Share the WordPress core installation files in the `_wordpress` directory.
       - ${TRIC_WP_DIR}:/var/www/html:cached
-      # Share the WordPress core installation files in the `dev/_plugins` directory.
+      # Share the WordPress core installation files in the `_plugins` directory.
       - ${TRIC_PLUGINS_DIR}:/var/www/html/wp-content/plugins:cached
 
   cli:
@@ -88,8 +88,8 @@ services:
     environment:
       FIXUID: "${FIXUID:-1}"
       # Configure this to debug the tests with XDebug.
-      # Map the `dev/_wordpress` directory to `/var/www/html' directory in your IDE of choice.
-      # Map the `dev/_plugins` directory to `/plugins' directory in your IDE of choice.
+      # Map the `_wordpress` directory to `/var/www/html' directory in your IDE of choice.
+      # Map the `_plugins` directory to `/plugins' directory in your IDE of choice.
       PHP_IDE_CONFIG: "serverName=${XDK:-tric}"
       # The `remote_host` is set to `host.docker.internal` that will resolve to the host machine IP address, from
       # within the container, on macOS and Windows.
@@ -98,9 +98,9 @@ services:
       XDEBUG_CONFIG: "idekey=${XDK:-tric} remote_enable=${XDE:-1} remote_host=${XDH:-host.docker.internal} remote_port=${XDP:-9001}"
     volumes:
       # Paths are relative to the directory that contains this file, NOT the current working directory.
-      # Share the WordPress core installation files in the `dev/_wordpress` directory.
+      # Share the WordPress core installation files in the `_wordpress` directory.
       - ${TRIC_WP_DIR}:/var/www/html:cached
-      # Share the WordPress core installation files in the `dev/_plugins` directory.
+      # Share the WordPress core installation files in the `_plugins` directory.
       - ${TRIC_PLUGINS_DIR}:/var/www/html/wp-content/plugins:cached
 
   site_waiter:
@@ -135,8 +135,8 @@ services:
       WORDPRESS_DB_HOST: db
       WORDPRESS_URL: http://wordpress.test
       # Configure this to debug the tests with XDebug.
-      # Map the `dev/_wordpress` directory to `/var/www/html' directory in your IDE of choice.
-      # Map the `dev/_plugins` directory to `/plugins' directory in your IDE of choice.
+      # Map the `_wordpress` directory to `/var/www/html' directory in your IDE of choice.
+      # Map the `_plugins` directory to `/plugins' directory in your IDE of choice.
       PHP_IDE_CONFIG: "serverName=${XDK:-tric}"
       # The `remote_host` is set to `host.docker.internal` that will resolve to the host machine IP address, from
       # within the container, on macOS and Windows.
@@ -161,7 +161,7 @@ services:
       - chrome
     volumes:
       # Paths are relative to the directory that contains this file, NOT the current working directory.
-      # Share the WordPress core installation files in the `dev/_wordpress` directory.
+      # Share the WordPress core installation files in the `_wordpress` directory.
       - ${TRIC_WP_DIR}:/var/www/html:cached
       # Share the plugins in the `/var/www/hmtl/wp-content/plugins` directory.
       - ${TRIC_PLUGINS_DIR}:/var/www/html/wp-content/plugins:cached

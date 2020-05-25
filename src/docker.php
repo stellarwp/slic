@@ -123,12 +123,12 @@ function wordpress_url() {
  * @return string The path to the docker-compose stack file to run, depending on the run context.
  */
 function stack( $postfix = '' ) {
-	$dev_dir     = dirname( __DIR__ );
-	$test_dir    = $dev_dir . '/test';
+	$root_dir     = dirname( __DIR__ );
+	$test_dir    = $root_dir . '/test';
 	$run_context = run_context();
 	switch ( $run_context ) {
 		case 'tric';
-			$stack = $dev_dir . '/tric-stack' . $postfix . '.yml';
+			$stack = $root_dir . '/tric-stack' . $postfix . '.yml';
 			break;
 		default:
 		case 'default':

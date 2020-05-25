@@ -6,9 +6,9 @@
 namespace Tribe\Test;
 
 /**
- * Checks a specified target exists in the `dev/_plugins` directory.
+ * Checks a specified target exists in the `_plugins` directory.
  *
- * @param string $target The target to check in the `dev/_plugins` directory.
+ * @param string $target The target to check in the `_plugins` directory.
  */
 function ensure_dev_plugin( $target ) {
 	$targets     = array_keys( dev_plugins() );
@@ -57,9 +57,9 @@ function setup_tric_env( $root_dir ) {
 
 	$wp_dir = getenv( 'TRIC_WP_DIR' );
 	if ( empty( $wp_dir ) ) {
-		$wp_dir = dev( '_wordpress' );
+		$wp_dir = root( '_wordpress' );
 	} elseif ( ! is_dir( $wp_dir ) ) {
-		$wp_dir_path = dev( ltrim( $wp_dir, './' ) );
+		$wp_dir_path = root( ltrim( $wp_dir, './' ) );
 
 		if (
 			is_dir( dirname( $wp_dir_path ) )
@@ -83,9 +83,9 @@ function setup_tric_env( $root_dir ) {
 
 	$plugins_dir = getenv( 'TRIC_PLUGINS_DIR' );
 	if ( empty( $plugins_dir ) ) {
-		$plugins_dir = dev( '_plugins' );
+		$plugins_dir = root( '_plugins' );
 	} elseif ( ! is_dir( $plugins_dir ) ) {
-		$plugin_dir_path = dev( ltrim( $plugins_dir, './' ) );
+		$plugin_dir_path = root( ltrim( $plugins_dir, './' ) );
 
 		if (
 			is_dir( basename( $plugin_dir_path ) )
@@ -203,7 +203,7 @@ function restart_service( $service, $pretty_name = null, $hard = false ) {
  */
 function tric_plugins_dir( $path = '' ) {
 	$plugins_dir = getenv( 'TRIC_PLUGINS_DIR' );
-	$dev_dir     = dev();
+	$dev_dir     = root();
 
 	if ( empty( $plugins_dir ) ) {
 		// Use the default `dev/_plugins` directory in tric repository.
@@ -396,14 +396,14 @@ function tric_info() {
  * @return string The absolute path to the WordPress Core directory currently used by tric.
  */
 function tric_wp_dir( $path = '' ) {
-	$default = dev( '/_wordpress' );
+	$default = root( '/_wordpress' );
 
 	$wp_dir = getenv( 'TRIC_WP_DIR' );
 
 	if ( ! empty( $wp_dir ) ) {
 		if ( ! is_dir( $wp_dir ) ) {
 			// Relative path, resolve from `dev`.
-			$wp_dir = dev( ltrim( preg_replace( '^\\./', '', $wp_dir ), '\\/' ) );
+			$wp_dir = root( ltrim( preg_replace( '^\\./', '', $wp_dir ), '\\/' ) );
 		}
 	} else {
 		$wp_dir = $default;
@@ -427,7 +427,7 @@ function build_prompt_status() {
  * @param callable $args The closure that will produce the current interactive request arguments.
  */
 function tric_handle_build_prompt( callable $args ) {
-	$run_settings_file = dev( '/.env.tric.run' );
+	$run_settings_file = root( '/.env.tric.run' );
 	$toggle            = $args( 'toggle', 'on' );
 
 	if ( 'status' === $toggle ) {
@@ -461,7 +461,7 @@ function interactive_status() {
  * @param callable $args The closure that will produce the current interactive request arguments.
  */
 function tric_handle_interactive( callable $args ) {
-	$run_settings_file = dev( '/.env.tric.run' );
+	$run_settings_file = root( '/.env.tric.run' );
 	$toggle            = $args( 'toggle', 'on' );
 
 	if ( 'status' === $toggle ) {

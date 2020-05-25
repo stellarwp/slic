@@ -10,9 +10,9 @@ use FilesystemIterator;
 use SplFileInfo;
 
 /**
- * Returns a list of the available plugins in the `dev/_plugins` directory.
+ * Returns a list of the available plugins in the `_plugins` directory.
  *
- * @return array<string,SplFileInfo> A map of each directory in the `dev/_plugins` directory to the corresponding file
+ * @return array<string,SplFileInfo> A map of each directory in the `_plugins` directory to the corresponding file
  *                                   information.
  */
 function dev_plugins() {
