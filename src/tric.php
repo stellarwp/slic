@@ -203,21 +203,21 @@ function restart_service( $service, $pretty_name = null, $hard = false ) {
  */
 function tric_plugins_dir( $path = '' ) {
 	$plugins_dir = getenv( 'TRIC_PLUGINS_DIR' );
-	$dev_dir     = root();
+	$root_dir     = root();
 
 	if ( empty( $plugins_dir ) ) {
-		// Use the default `dev/_plugins` directory in tric repository.
-		$dir = $dev_dir . '/_plugins';
+		// Use the default `_plugins` directory in tric repository.
+		$dir = $root_dir . '/_plugins';
 	} elseif ( is_dir( $plugins_dir ) ) {
 		// Use the specified directory.
 		$dir = $plugins_dir;
 	} else {
 		if ( 0 === strpos( $plugins_dir, '.' ) ) {
-			// Resolve the './...' paths a relative to the `dev` directory in tric repository.
-			$dir = preg_replace( '/^\\./', $dev_dir, $plugins_dir );
+			// Resolve the './...' paths a relative to the root directory in tric repository.
+			$dir = preg_replace( '/^\\./', $root_dir, $plugins_dir );
 		} else {
-			// Use a directory relative to the `dev` directory in tric reopository.
-			$dir = $dev_dir . '/' . ltrim( $plugins_dir, '\\/' );
+			// Use a directory relative to the root directory in tric reopository.
+			$dir = $root_dir . '/' . ltrim( $plugins_dir, '\\/' );
 		}
 	}
 
@@ -402,7 +402,7 @@ function tric_wp_dir( $path = '' ) {
 
 	if ( ! empty( $wp_dir ) ) {
 		if ( ! is_dir( $wp_dir ) ) {
-			// Relative path, resolve from `dev`.
+			// Relative path, resolve from root.
 			$wp_dir = root( ltrim( preg_replace( '^\\./', '', $wp_dir ), '\\/' ) );
 		}
 	} else {
@@ -514,7 +514,7 @@ function xdebug_status() {
 		. tric_wp_dir()
 		. '</light_cyan> => <light_cyan>/var/www/html</light_cyan>' );
 
-	$default_mask = ( tric_wp_dir() === dev( '/_wordpress' ) ) + 2 * ( tric_plugins_dir() === dev( '/_plugins' ) );
+	$default_mask = ( tric_wp_dir() === root( '/_wordpress' ) ) + 2 * ( tric_plugins_dir() === root( '/_plugins' ) );
 
 	switch ( $default_mask ) {
 		case 1:
@@ -539,7 +539,7 @@ function xdebug_status() {
  * @param callable $args The closure that will produce the current XDebug request arguments.
  */
 function tric_handle_xdebug( callable $args ) {
-	$run_settings_file = dev( '/.env.tric.run' );
+	$run_settings_file = root( '/.env.tric.run' );
 	$toggle            = $args( 'toggle', 'on' );
 
 	if ( 'status' === $toggle ) {

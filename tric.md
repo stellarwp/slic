@@ -20,7 +20,7 @@ If this is not the case, please take the time to read Docker and docker-compose 
 
 ## Where to get help
 
-First and foremost the most up-to-date documentation should be the output of the `tric help` command and the `help` sub-commands of each `dev/tric` command.  
+First and foremost the most up-to-date documentation should be the output of the `tric help` command and the `help` sub-commands of each `tric` command.  
 Second, look at the code: this tools is written in PHP, the same language as WordPress and, as such, should be easy to inspect and update.
 
 ## Preparing the plugins
@@ -177,11 +177,11 @@ tric cli db export /plugins/the-events/calendar/tests/_data/dump.sql
 
 ## How the stack works, an overview 
 
-The stack services are defined by the `dev/tric-stack.yml` file.  
+The stack services are defined by the `tric-stack.yml` file.  
 This is a YAML format docker-compose configuration file the `tric` binary will use to run the `docker-compose` command.  
 The main services defined there are:
 
-* `wordpress` - this uses the `wordpress:latest` image, the official Docker image for WordPress. When running the container will fill the `dev/test/wordpress` directory with the contents of the WordPress installation that is currently serving the container. Furthermore the WordPress container is configured to look for plugins in the `/plugins` directory, that directory is a shared volume that you can find in the `dev/test/plugins` directory.
+* `wordpress` - this uses the `wordpress:latest` image, the official Docker image for WordPress. When running the container will fill the `_wordpress` directory with the contents of the WordPress installation that is currently serving the container. Furthermore the WordPress container is configured to look for plugins in the `/plugins` directory, that directory is a shared volume that you can find in the `dev/test/plugins` directory.
 * `db` - this is an image that is providing the database for the installation. For performance and isolation reasons the database is **not** persisted across test runs and any data stored in the database will be lost when the container is stopped and removed.
 * `cli` - this uses the `wordpress:cli` image to provide wp-cli commands for the stack.
 * `codeception` - this service contains the Codeception runner and support code, the image is a custom one adapted to WordPress usage.

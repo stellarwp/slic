@@ -375,7 +375,7 @@ function run_context() {
 }
 
 /**
- * Returns the path to the `dev` directory or to a sub-path in it.
+ * Returns the path to the root directory or to a sub-path in it.
  *
  * @param string $path The path to append to the absolute path of the root directory.
  *
