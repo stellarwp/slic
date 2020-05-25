@@ -61,6 +61,7 @@ services:
         define( 'WP_SITEURL', $$scheme . '://' . $$url );
         define( 'WP_REDIS_HOST', 'redis' );
         define( 'WP_REDIS_PORT', 6379 );
+        define( 'TRIBE_NO_FREEMIUS', true );
       # Configure this to debug the tests with XDebug.
       # Map the `dev/_wordpress` directory to `/var/www/html' directory in your IDE of choice.
       # Map the `dev/_plugins` directory to `/plugins` directory in your IDE of choice.
