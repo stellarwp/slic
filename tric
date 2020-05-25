@@ -5,6 +5,7 @@ require_once __DIR__ . '/src/utils.php';
 require_once __DIR__ . '/src/scaffold.php';
 require_once __DIR__ . '/src/tric.php';
 require_once __DIR__ . '/src/docker.php';
+require_once __DIR__ . '/src/plugins.php';
 require_once __DIR__ . '/src/shell.php';
 
 use function Tribe\Test\args;
