@@ -81,6 +81,8 @@ function setup_tric_env( $root_dir ) {
 		exit( 1 );
 	}
 
+	maybe_generate_htaccess();
+
 	$plugins_dir = getenv( 'TRIC_PLUGINS_DIR' );
 	if ( empty( $plugins_dir ) ) {
 		$plugins_dir = root( '_plugins' );

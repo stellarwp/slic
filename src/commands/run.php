@@ -31,6 +31,8 @@ echo light_cyan( "Using {$using}\n" );
 
 setup_id();
 
+maybe_generate_htaccess();
+
 // Run the command in the Codeception container.
 $root = tric_plugins_dir( tric_target( true ) );
 
