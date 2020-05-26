@@ -7,6 +7,7 @@ require_once __DIR__ . '/src/tric.php';
 require_once __DIR__ . '/src/docker.php';
 require_once __DIR__ . '/src/plugins.php';
 require_once __DIR__ . '/src/shell.php';
+require_once __DIR__ . '/src/wordpress.php';
 
 use function Tribe\Test\args;
 use function Tribe\Test\colorize;
