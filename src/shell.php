@@ -63,19 +63,17 @@ function get_terminal_lines_cols() {
 			$columns = $m['val'];
 		}
 	} else {
-		exec( 'resize', $output, $status );
+		foreach ( [ 'cols' => 'columns', 'lines' => 'lines' ] as $tput_key => $var_name ) {
+			exec( "tput {$tput_key}", $output, $status );
+			$output = array_filter( $output );
 
-		if ( 0 !== $status ) {
-			// We cannot fetch information, bail.
-			return [ $lines, $columns ];
-		}
-
-		foreach ( $output as $line ) {
-			if ( ! preg_match( '/(?<key>(COLUMNS|LINES))=(?<val>[0-9]+)/', $line, $m ) ) {
-				continue;
+			if ( 0 !== $status || empty( $output ) ) {
+				// We cannot fetch information, bail.
+				return [ $lines, $columns ];
 			}
-			$key    = strtolower( $m['key'] );
-			${$key} = (int) $m['val'];
+
+			$$var_name = abs( (int) $output[0] );
+			$output    = [];
 		}
 	}
 
