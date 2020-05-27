@@ -1,4 +1,4 @@
-FROM tarampampam/node:8.9-alpine
+FROM tarampampam/node:12.17-alpine
 
 RUN apk update && apk add curl && rm -rf /var/cache/apk/*
 
