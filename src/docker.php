@@ -84,9 +84,10 @@ function wordpress_container_root_dir( $path = '/' ) {
  *                 required.
  */
 function cli() {
-	$service = is_ci() ? 'cli' : 'cli_debug';
+	$service     = is_ci() ? 'cli' : 'cli_debug';
+	$stack_array = tric_stack_array();
 
-	return docker_compose( [ '-f', '"' . stack() . '"', 'run', $service, '--allow-root' ] );
+	return docker_compose( array_merge( $stack_array, [ 'run', $service, '--allow-root' ] ) );
 }
 
 /**
@@ -101,7 +102,7 @@ function wordpress_url() {
 		return 'http://tribe.test';
 	}
 
-	$config = check_status_or_exit( docker_compose( [ '-f', '"' . stack() . '"' ] )( [ 'config' ] ) )( 'string_output' );
+	$config = check_status_or_exit( docker_compose( tric_stack_array() )( [ 'config' ] ) )( 'string_output' );
 
 	preg_match( '/wordpress_debug:.*?ports:.*?(?<port>\\d+):80\\/tcp/us', $config, $m );
 
@@ -138,6 +139,25 @@ function stack( $postfix = '' ) {
 	}
 
 	return $stack;
+}
+
+/**
+ * Builds a collection of docker-compose yaml files for spinning up a stack.
+ *
+ * Typically, this would be tric-stack.yml for plugin-only setups, but if running in site mode, it adds tric-stack.site.yml.
+ *
+ * @return string[]
+ */
+function tric_stack_array() {
+	$base_stack  = stack();
+	$stack_array = [ '-f', '"' . $base_stack . '"' ];
+
+	if ( tric_here_is_site() ) {
+		$stack_array[] = '-f';
+		$stack_array[] = '"' . stack( '.site' ) . '"';
+	}
+
+	return $stack_array;
 }
 
 /**

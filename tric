@@ -6,6 +6,7 @@ require_once __DIR__ . '/src/scaffold.php';
 require_once __DIR__ . '/src/tric.php';
 require_once __DIR__ . '/src/docker.php';
 require_once __DIR__ . '/src/plugins.php';
+require_once __DIR__ . '/src/themes.php';
 require_once __DIR__ . '/src/shell.php';
 require_once __DIR__ . '/src/wordpress.php';
 
@@ -31,7 +32,9 @@ $cli_header = implode( ' - ', [
 
 echo $cli_header . PHP_EOL . PHP_EOL;
 
-setup_tric_env( __DIR__ );
+define( 'TRIC_ROOT_DIR', __DIR__ );
+
+setup_tric_env( TRIC_ROOT_DIR );
 
 $help_message_template = <<< HELP
 Available commands:

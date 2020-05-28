@@ -79,6 +79,7 @@ services:
       - ${TRIC_WP_DIR}:/var/www/html:cached
       # Share the WordPress core installation files in the `_plugins` directory.
       - ${TRIC_PLUGINS_DIR}:/var/www/html/wp-content/plugins:cached
+      - ${TRIC_THEMES_DIR}:/var/www/html/wp-content/themes:cached
 
   cli:
     image: wordpress:cli
@@ -102,6 +103,7 @@ services:
       - ${TRIC_WP_DIR}:/var/www/html:cached
       # Share the WordPress core installation files in the `_plugins` directory.
       - ${TRIC_PLUGINS_DIR}:/var/www/html/wp-content/plugins:cached
+      - ${TRIC_THEMES_DIR}:/var/www/html/wp-content/themes:cached
 
   site_waiter:
     # Waits for the WordPress site to be available.
@@ -165,6 +167,7 @@ services:
       - ${TRIC_WP_DIR}:/var/www/html:cached
       # Share the plugins in the `/var/www/hmtl/wp-content/plugins` directory.
       - ${TRIC_PLUGINS_DIR}:/var/www/html/wp-content/plugins:cached
+      - ${TRIC_THEMES_DIR}:/var/www/html/wp-content/themes:cached
       # In some plugins we use function-mocker and set it up to cache in `/tmp/function-mocker`.
       # To avoid a long re-caching on each run, let's cache in a docker volume, caching on the host
       # filesystem would be a worse cure than the disease.
