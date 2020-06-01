@@ -146,7 +146,7 @@ function stack( $postfix = '' ) {
  *
  * Typically, this would be tric-stack.yml for plugin-only setups, but if running in site mode, it adds tric-stack.site.yml.
  *
- * @return string[]
+ * @return string[] Array of docker-compose arguments indicating the files that should be used to initialize the stack.
  */
 function tric_stack_array() {
 	$base_stack  = stack();
