@@ -6,15 +6,47 @@
 namespace Tribe\Test;
 
 /**
- * Checks a specified target exists in the `_plugins` directory.
+ * Returns whether or not the tric here command was done at the site level or not.
  *
- * @param string $target The target to check in the `_plugins` directory.
+ * @return bool
  */
-function ensure_dev_plugin( $target ) {
-	$targets     = array_keys( dev_plugins() );
-	$targets_str = implode( PHP_EOL, array_map( static function ( $target ) {
-		return "  - {$target}";
-	}, $targets ) );
+function tric_here_is_site() {
+	return TRIC_ROOT_DIR . '/_wordpress' !== getenv( 'TRIC_WP_DIR' )
+		&& './_wordpress' !== getenv( 'TRIC_WP_DIR' );
+}
+
+/**
+ * Checks a specified target is supported as a target.
+ *
+ * Valid targets are:
+ *   - Anything in the plugins directory.
+ *   - If tric here was done on the site level, "site" is also a valid target.
+ *
+ * @param string $target The target to check in the valid list of targets.
+ */
+function ensure_valid_target( $target ) {
+	$targets_str = '';
+	$plugins = array_keys( dev_plugins() );
+	$themes  = array_keys( dev_themes() );
+	$targets = $plugins;
+
+	if ( tric_here_is_site() ) {
+		$targets = array_merge( [ 'site' ], $plugins, $themes );
+		$targets_str .= PHP_EOL . '  Site:' . PHP_EOL;
+		$targets_str .= '    - site';
+	}
+
+	$targets_str .= PHP_EOL . "  Plugins:" . PHP_EOL;
+	$targets_str .= implode( PHP_EOL, array_map( static function ( $target ) {
+		return "    - {$target}";
+	}, $plugins ) );
+
+	if ( tric_here_is_site() && $themes ) {
+		$targets_str .= PHP_EOL . "  Themes:" . PHP_EOL;
+		$targets_str .= implode( PHP_EOL, array_map( static function ( $target ) {
+			return "    - {$target}";
+		}, $themes ) );
+	}
 
 	if ( false === $target ) {
 		echo magenta( "This command needs a target argument; available targets are:\n${targets_str}\n" );
@@ -25,6 +57,35 @@ function ensure_dev_plugin( $target ) {
 		echo magenta( "'{$target}' is not a valid target; available targets are:\n${targets_str}\n" );
 		exit( 1 );
 	}
+}
+
+/**
+ * Get the container relative path to the provided target.
+ *
+ * @param $target Target with which to build the relative path from.
+ *
+ * @return string
+ */
+function get_target_relative_path( $target ) {
+	if ( 'site' === $target ) {
+		return '';
+	}
+
+	$plugin_dir = getenv( 'TRIC_PLUGINS_DIR' );
+	$theme_dir  = getenv( 'TRIC_THEMES_DIR' );
+
+	if ( file_exists( "{$plugin_dir}/{$target}" ) ) {
+		$parent_path = $plugin_dir;
+	} elseif ( file_exists( "{$theme_dir}/{$target}" ) ) {
+		$parent_path = $theme_dir;
+	} else {
+		echo magenta( "Unable to locate a path to the desired target ({$target}). Searched in: \n- {$plugin_dir}\n- {$theme_dir}" );
+		exit( 1 );
+	}
+
+	$parent_path = str_replace( getenv( 'TRIC_HERE_DIR' ) . '/', '', $parent_path );
+
+	return "{$parent_path}/{$target}";
 }
 
 /**
@@ -135,10 +196,20 @@ function tric_target( $require = true ) {
  * @param string $target Target to switch to.
  */
 function tric_switch_target( $target ) {
-	$root              = root();
-	$run_settings_file = "{$root}/.env.tric.run";
+	$root                 = root();
+	$run_settings_file    = "{$root}/.env.tric.run";
+	$target_relative_path = '';
 
-	write_env_file( $run_settings_file, [ 'TRIC_CURRENT_PROJECT' => $target ], true );
+	if ( tric_here_is_site() ) {
+		$target_relative_path = get_target_relative_path( $target );
+	}
+
+	$env_values = [
+		'TRIC_CURRENT_PROJECT'               => $target,
+		'TRIC_CURRENT_PROJECT_RELATIVE_PATH' => $target_relative_path,
+	];
+
+	write_env_file( $run_settings_file, $env_values, true );
 
 	setup_tric_env( $root );
 }
@@ -177,8 +248,8 @@ function restart_php_services( $hard = false ) {
  */
 function restart_service( $service, $pretty_name = null, $hard = false ) {
 	$pretty_name   = $pretty_name ?: $service;
-	$tric          = docker_compose( [ '-f', '"' . stack() . '"' ] );
-	$tric_realtime = docker_compose_realtime( [ '-f', '"' . stack() . '"' ] );
+	$tric          = docker_compose( tric_stack_array() );
+	$tric_realtime = docker_compose_realtime( tric_stack_array() );
 
 	$service_running = $tric( [ 'ps', '-q', $service ] )( 'string_output' );
 	if ( ! empty( $service_running ) ) {
@@ -204,22 +275,52 @@ function restart_service( $service, $pretty_name = null, $hard = false ) {
  *
  */
 function tric_plugins_dir( $path = '' ) {
-	$plugins_dir = getenv( 'TRIC_PLUGINS_DIR' );
-	$root_dir     = root();
+	return tric_content_type_dir( 'plugins', $path );
+}
 
-	if ( empty( $plugins_dir ) ) {
-		// Use the default `_plugins` directory in tric repository.
-		$dir = $root_dir . '/_plugins';
-	} elseif ( is_dir( $plugins_dir ) ) {
+/**
+ * Returns the absolute path to the current plugins directory tric is using.
+ *
+ * @param string $path An optional path to append to the current tric plugin directory.
+ *
+ * @return string The absolute path to the current plugins directory tric is using.
+ *
+ */
+function tric_themes_dir( $path = '' ) {
+	return tric_content_type_dir( 'themes', $path );
+}
+
+/**
+ * Returns the absolute path to the current content directory tric is using.
+ *
+ * @param string $path An optional path to append to the current tric content directory.
+ *
+ * @return string The absolute path to the current content directory tric is using.
+ *
+ */
+function tric_content_type_dir( $content_type = 'plugins', $path = '' ) {
+	$content_type_dir = getenv( 'TRIC_' . strtoupper( $content_type ) . '_DIR' );
+	$root_dir         = root();
+
+	if ( 'plugins' === $content_type ) {
+		$default_path = '/_plugins';
+	} elseif ( 'themes' === $content_type ) {
+		$default_path = '/_wordpress/wp-content/themes';
+	}
+
+	if ( empty( $content_type_dir ) ) {
+		// Use the default directory in tric repository.
+		$dir = $root_dir . $default_path;
+	} elseif ( is_dir( $content_type_dir ) ) {
 		// Use the specified directory.
-		$dir = $plugins_dir;
+		$dir = $content_type_dir;
 	} else {
-		if ( 0 === strpos( $plugins_dir, '.' ) ) {
+		if ( 0 === strpos( $content_type_dir, '.' ) ) {
 			// Resolve the './...' paths a relative to the root directory in tric repository.
-			$dir = preg_replace( '/^\\./', $root_dir, $plugins_dir );
+			$dir = preg_replace( '/^\\./', $root_dir, $content_type_dir );
 		} else {
 			// Use a directory relative to the root directory in tric reopository.
-			$dir = $root_dir . '/' . ltrim( $plugins_dir, '\\/' );
+			$dir = $root_dir . '/' . ltrim( $content_type_dir, '\\/' );
 		}
 	}
 
@@ -321,7 +422,7 @@ function github_company_handle() {
  * @return \Closure The process closure to start a real-time process using tric stack.
  */
 function tric_realtime() {
-	return docker_compose_realtime( [ '-f', '"' . stack() . '"' ] );
+	return docker_compose_realtime( tric_stack_array() );
 }
 
 /**
@@ -330,7 +431,7 @@ function tric_realtime() {
  * @return \Closure The process closure to start a real-time process using tric stack.
  */
 function tric_process() {
-	return docker_compose( [ '-f', '"' . stack() . '"' ] );
+	return docker_compose( tric_stack_array() );
 }
 
 /**
@@ -357,8 +458,12 @@ function tric_info() {
 		'TRIC_TEST_SUBNET',
 		'CLI_VERBOSITY',
 		'TRIC_CURRENT_PROJECT',
+		'TRIC_CURRENT_PROJECT_RELATIVE_PATH',
 		'TRIC_GITHUB_COMPANY_HANDLE',
+		'TRIC_HERE_DIR',
 		'TRIC_PLUGINS_DIR',
+		'TRIC_THEMES_DIR',
+		'TRIC_WP_DIR',
 		'XDK',
 		'XDE',
 		'XDH',

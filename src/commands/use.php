@@ -13,7 +13,7 @@ if ( $is_help ) {
 
 $sub_args = args( [ 'target' ], $args( '...' ), 0 );
 $target   = $sub_args( 'target', false );
-ensure_dev_plugin( $target );
-write_env_file( $run_settings_file, [ 'TRIC_CURRENT_PROJECT' => $target ], true );
+ensure_valid_target( $target );
+tric_switch_target( $target );
 
 echo light_cyan( "Using {$target}\n" );

@@ -12,13 +12,42 @@ The tric (Modern **Tri**be **C**ontainers) CLI command provides a containerized 
 The `tric` command has many subcommands. You can discover what those are by typing `tric` or `tric help`. If you want
 more details on any of the subcommands, simply type: `tric [subcommand] help`.
 
-### Plugin Directory
+### Telling `tric` Where to Look
 
-The `tric` command needs a plugin directory in which to read/write. By default, `tric` creates a `_plugins` directory
-within this cloned repo. In most cases, developers like to run automated tests against the plugin paths where they are
-actively working on code–which likely lives elsewhere.
+The `tric` command needs a place to look for plugins, themes, and WordPress. By default, `tric` creates a `_plugins` and
+`_wordpress` directory within the local checkout of `tric`. In most cases, developers like to run automated tests
+against the paths where they are actively working on code–which likely lives elsewhere.
 
-Good news! You can re-point the plugin directory that is used to a different path with the `tric here` sub-command.
+Good news! You can use the `tric here` sub-command to re-point `tric`'s paths so it looks in the places you wish. There
+are two locations you can tell `tric` to look.
+
+#### WordPress Directory
+
+The first option is to navigate to the root of your site (likely where `wp-config.php` lives) and run the `tric here`
+command.
+
+```bash
+# Change to your root directory of your site (where your wp-config.php file lives)
+cd /path/to/your/site
+
+tric here
+```
+
+By running `tric here` at the site level, this allows you to set plugins, themes, or the site itself as the location
+from which to run tests. This also has the benefit of running tests within the WP version that your site uses.
+
+##### Some Notes
+
+Note: This is a somewhat opinionated option as there are some assumptions that are made:
+
+1. That the WordPress directory _is_ the path you are indicating or in a sub-directory called `wp/`.
+2. That the `wp-content/` (or `content/`) directory is a sub-directory of the location in which you are typing `tric here`.
+
+#### Plugins Directory
+
+If you want to defer all of the WP site configuration to a dynamically pulled codebase and _just_ worry about testing
+plugins, you can run the `tric here` command right from the plugins directory. Doing so will restrict `tric` to running
+tests on plugins _only_ and ignore themes and site-level tests.
 
 ```bash
 # Change to your plugin containing dir (likely some path to wp-content/plugins)
