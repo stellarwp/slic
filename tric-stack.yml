@@ -197,6 +197,18 @@ services:
       # Share SSH keys with the container to pull from private repositories.
       - ${DOCKER_RUN_SSH_AUTH_SOCK}:/ssh-agent:ro
 
+  php:
+    image: php:7.4-cli
+    user: "${DOCKER_RUN_UID:-}:${DOCKER_RUN_GID:-}"
+    environment:
+      FIXUID: ${FIXUID:-1}
+    working_dir: /project
+    volumes:
+      # Set the current plugin as project.
+      - ${TRIC_PLUGINS_DIR}/${TRIC_CURRENT_PROJECT:-test}:/project:cached
+      # Share SSH keys with the container to pull from private repositories.
+      - ${DOCKER_RUN_SSH_AUTH_SOCK}:/ssh-agent:ro
+
   adminer:
     image: adminer
     networks:
