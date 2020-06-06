@@ -43,6 +43,7 @@ Available commands:
 <light_cyan>use</light_cyan>           Sets the plugin to use in the tests.
 <light_cyan>using</light_cyan>         Returns the current <light_cyan>use</light_cyan> target.
 <light_cyan>run</light_cyan>           Runs a Codeception test in the stack, the equivalent of <light_cyan>'codecept run ...'</light_cyan>.
+<light_cyan>phpcs</light_cyan>         Runs PHP_CodeSniffer within the current <light_cyan>use</light_cyan> target.
 
 <yellow>Setup:</yellow>
 <light_cyan>here</light_cyan>           Sets the current plugins directory to be the one used by tric.
@@ -109,6 +110,7 @@ switch ( $subcommand ) {
 	case 'interactive':
 	case 'logs':
 	case 'npm':
+	case 'phpcs':
 	case 'reset':
 	case 'restart':
 	case 'run':
