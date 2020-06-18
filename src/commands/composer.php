@@ -16,27 +16,29 @@ echo light_cyan( "Using {$using}\n" );
 
 setup_id();
 $composer_command = $args( '...' );
-$status = tric_realtime()( array_merge( [ 'run', '--rm', 'composer' ], $composer_command ) );
+$targets          = [ 'target' ];
 
-// If there is a status other than 0, we have an error. Bail.
-if ( $status ) {
+if (
+	file_exists( tric_plugins_dir( "{$using}/common" ) )
+	&& ask( "\nWould you also like to run that composer command against common?", 'yes' )
+) {
+	$targets[] = 'common';
+}
+
+$command_process = static function( $target ) use ( $using, $composer_command ) {
+	// Execute composer as the parent.
+	if ( 'common' === $target ) {
+		tric_switch_target( "{$using}/common" );
+	}
+
+	$status = tric_realtime()( array_merge( [ 'run', '--rm', 'composer' ], $composer_command ), $target );
+
+	if ( 'common' === $target ) {
+		tric_switch_target( $using );
+	}
 	exit( $status );
-}
+};
 
-if ( ! file_exists( tric_plugins_dir( "{$using}/common" ) ) ) {
-	return;
-}
-
-if ( ask( "\nWould you like to run that composer command against common?", 'yes' ) ) {
-	tric_switch_target( "{$using}/common" );
-
-	echo light_cyan( "Temporarily using " . tric_target() . "\n" );
-
-	$status = tric_realtime()( array_merge( [ 'run', '--rm', 'composer' ], $composer_command ) );
-
-	tric_switch_target( $using );
-
-	echo light_cyan( "Using " . tric_target() ." once again\n" );
-}
+$status = parallel_process( $targets, $command_process );
 
 exit( $status );

@@ -35,17 +35,24 @@ function process( $command ) {
  * Runs a process in realtime, displaying its output.
  *
  * @param string $command The command to run.
+ * @param string|null $prefix The prefix to place before all output.
  *
  * @return int The process exit status, `0` means ok.
  */
-function process_realtime( $command ) {
+function process_realtime( $command, $prefix = null ) {
 	debug( "Executing command: {$command}" );
 
 	echo PHP_EOL;
 
 	setup_terminal();
 
-	passthru( escapeshellcmd( $command ), $status );
+	$full_command = escapeshellcmd( $command );
+
+	if ( $prefix ) {
+		$full_command .= ' | ' . 'sed "s/^/[' . $prefix . '] /"';
+	}
+
+	passthru( $full_command, $status );
 
 	return (int) $status;
 }
@@ -128,4 +135,54 @@ function check_status_or( callable $process, callable $else = null ) {
 	}
 
 	return $process;
+}
+
+/**
+ * Executes a process with forked children in parallel.
+ *
+ * @param array $items Values with which to loop over to indicate process distinction.
+ * @param \Closure $command_process The closure to execute as a distinct process.
+ *
+ * @return int The combined process status value of all child processes.
+ */
+function parallel_process( $items, $command_process ) {
+	$process_children = [];
+
+	foreach ( $items as $item ) {
+		$pid = pcntl_fork();
+		if ( $pid === -1 ) {
+			echo magneta( "Unable to fork processes.\n" );
+			exit( 1 );
+		} elseif( 0 === $pid ) {
+			$command_process( $item );
+		} else {
+			$process_children[] = $pid;
+		}
+	}
+
+	return get_status_of_forked_children( $process_children );
+}
+
+/**
+ * Loops over children and returns their success/failure.
+ *
+ * @param array $children Array of PIDs for forked processes.
+ *
+ * @return int The process status value.
+ */
+function get_status_of_forked_children( array $children = [] ) {
+	$status = 0;
+
+	// Wait of children to finish.
+	foreach ( $children as $pid ) {
+		$child_status = 0;
+
+		pcntl_waitpid( $pid, $child_status );
+
+		if ( $child_status > $status ) {
+			$status = $child_status;
+		}
+	}
+
+	return $status;
 }

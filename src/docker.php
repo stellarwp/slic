@@ -182,7 +182,7 @@ function docker_compose_realtime( array $options = [] ) {
 		$host_ip = host_ip( 'Linux' );
 	}
 
-	return static function ( array $command = [] ) use ( $options, $host_ip, $is_ci ) {
+	return static function ( array $command = [], $prefix = null ) use ( $options, $host_ip, $is_ci ) {
 		$command = 'docker-compose ' . implode( ' ', $options ) . ' ' . implode( ' ', $command );
 
 		if ( ! empty( $host_ip ) ) {
@@ -195,6 +195,6 @@ function docker_compose_realtime( array $options = [] ) {
 			$command = 'XDE=0 ' . $command;
 		}
 
-		return process_realtime( $command );
+		return process_realtime( $command, $prefix );
 	};
 }
