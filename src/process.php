@@ -48,13 +48,50 @@ function process_realtime( $command, $prefix = null ) {
 
 	$full_command = escapeshellcmd( $command );
 
-	if ( $prefix ) {
-		$full_command .= ' | ' . 'sed "s/^/[' . $prefix . '] /"';
+	$pipes_spec = [
+		[ 'pipe', 'r' ], // STDIN.
+		[ 'pipe', 'w' ], // STDOUT.
+		[ 'pipe', 'w' ], // STDERR.
+	];
+	// Inherit `cwd` and environment from the context.
+	$proc_handle = proc_open( $full_command, $pipes_spec, $pipes );
+
+	if ( ! is_resource( $proc_handle ) ) {
+		magenta( "Could not create realtime process for command '{$full_command}'");
+		exit( 1 );
 	}
 
-	passthru( $full_command, $status );
+	$status = proc_get_status( $proc_handle );
 
-	return (int) $status;
+	while ( true === $status['running'] ) {
+		if(false === $status){
+			magenta("Could not get process status for command '{$full_command}'");
+			exit(1);
+		}
+
+		foreach ( [ 1, 2 ] as $pipe ) {
+			while ( $raw_line = fgets( $pipes[ $pipe ] ) ) {
+				$line = $prefix ? "[{$prefix}] {$raw_line}" : $raw_line;
+				echo $line;
+				flush();
+			}
+		}
+
+		$status = proc_get_status( $proc_handle );
+	}
+
+	$closed = array_sum( [
+		fclose( $pipes[0] ),
+		fclose( $pipes[1] ),
+		fclose( $pipes[2] ),
+	] );
+
+	if ( $closed !== 3 ) {
+		magenta( "Failed to close the process pipes for command '{$full_command}'" );
+		exit( 1 );
+	}
+
+	return (int) $status['exitcode'];
 }
 
 /**
@@ -151,9 +188,11 @@ function parallel_process( $items, $command_process ) {
 	foreach ( $items as $item ) {
 		$pid = pcntl_fork();
 		if ( $pid === -1 ) {
-			echo magneta( "Unable to fork processes.\n" );
+			echo magenta( "Unable to fork processes.\n" );
 			exit( 1 );
-		} elseif( 0 === $pid ) {
+		}
+
+		if ( 0 === $pid ) {
 			$command_process( $item );
 		} else {
 			$process_children[] = $pid;
