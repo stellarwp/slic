@@ -26,12 +26,15 @@ if (
 }
 
 $command_process = static function( $target ) use ( $using, $composer_command ) {
+	$prefix = light_cyan( $target );
+
 	// Execute composer as the parent.
 	if ( 'common' === $target ) {
 		tric_switch_target( "{$using}/common" );
+		$prefix = yellow( $target );
 	}
 
-	$status = tric_realtime()( array_merge( [ 'run', '--rm', 'composer' ], $composer_command ), $target );
+	$status = tric_realtime()( array_merge( [ 'run', '--rm', 'composer' ], $composer_command ), $prefix );
 
 	if ( 'common' === $target ) {
 		tric_switch_target( $using );
