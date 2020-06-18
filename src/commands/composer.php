@@ -39,9 +39,14 @@ $command_process = static function( $target ) use ( $using, $composer_command ) 
 	if ( 'common' === $target ) {
 		tric_switch_target( $using );
 	}
+
 	exit( $status );
 };
 
-$status = parallel_process( $targets, $command_process );
+if ( count( $targets ) > 1 ) {
+	$status = parallel_process( $targets, $command_process );
+	exit( $status );
+}
 
-exit( $status );
+exit ( $command_process ( reset( $targets ) ) );
+
