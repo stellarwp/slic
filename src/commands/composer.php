@@ -45,8 +45,9 @@ $command_process = static function( $target ) use ( $using, $composer_command ) 
 
 if ( count( $targets ) > 1 ) {
 	$status = parallel_process( $targets, $command_process );
+	tric_switch_target( $using );
 	exit( $status );
 }
 
-exit ( $command_process ( reset( $targets ) ) );
+exit( $command_process( reset( $targets ) ) );
 

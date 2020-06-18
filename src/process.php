@@ -46,7 +46,7 @@ function process_realtime( $command, $prefix = null ) {
 
 	setup_terminal();
 
-	$full_command = escapeshellcmd( $command );
+	$clean_command = escapeshellcmd( $command );
 
 	$pipes_spec = [
 		[ 'pipe', 'r' ], // STDIN.
@@ -54,40 +54,53 @@ function process_realtime( $command, $prefix = null ) {
 		[ 'pipe', 'w' ], // STDERR.
 	];
 	// Inherit `cwd` and environment from the context.
-	$proc_handle = proc_open( $full_command, $pipes_spec, $pipes );
+	$proc_handle = proc_open( $clean_command, $pipes_spec, $pipes );
 
 	if ( ! is_resource( $proc_handle ) ) {
-		magenta( "Could not create realtime process for command '{$full_command}'");
+		magenta( "Could not create realtime process for command '{$clean_command}'");
 		exit( 1 );
 	}
 
 	$status = proc_get_status( $proc_handle );
 
 	while ( true === $status['running'] ) {
-		if(false === $status){
-			magenta("Could not get process status for command '{$full_command}'");
-			exit(1);
+		if ( false === $status ) {
+			magenta("Could not get process status for command '{$clean_command}'");
+			exit( 1 );
 		}
 
 		foreach ( [ 1, 2 ] as $pipe ) {
-			while ( $raw_line = fgets( $pipes[ $pipe ] ) ) {
-				$line = $prefix ? "[{$prefix}] {$raw_line}" : $raw_line;
-				echo $line;
-				flush();
+			$read        = [ $pipes[ $pipe ] ];
+			$write       = null;
+			$except      = null;
+			$num_streams = stream_select( $read, $write, $except, 0, 60000 );
+
+			if ( $num_streams > 0 ) {
+				do {
+					$raw_line = stream_get_line( $pipes[ $pipe ], 8092, "\n" );
+
+					if ( $prefix ) {
+						$line = preg_replace( '/^/m', "[{$prefix}] ", $raw_line );
+					} else {
+						$line = $raw_line;
+					}
+
+					echo $line . PHP_EOL;
+				} while ( strlen( $raw_line ) > 0 );
 			}
 		}
 
 		$status = proc_get_status( $proc_handle );
 	}
 
-	$closed = array_sum( [
-		fclose( $pipes[0] ),
-		fclose( $pipes[1] ),
-		fclose( $pipes[2] ),
-	] );
+	fclose( $pipes[0] );
+	fclose( $pipes[1] );
+	fclose( $pipes[2] );
+
+	$closed = proc_close( $proc_handle );
 
 	if ( $closed !== 3 ) {
-		magenta( "Failed to close the process pipes for command '{$full_command}'" );
+		magenta( "Failed to close the process pipes for command '{$clean_command}'" );
 		exit( 1 );
 	}
 
