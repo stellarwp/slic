@@ -235,7 +235,7 @@ function parallel_process( $items, $command_process ) {
 	 */
 	foreach ( $items as $item ) {
 		$status = $command_process( $item );
-		if($status !== 0){
+		if ( $status !== 0 ) {
 			// At the first failure, bail.
 			return $status;
 		}
