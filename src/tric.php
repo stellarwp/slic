@@ -726,19 +726,7 @@ function maybe_build_install_command_pool( $base_command, $target, array $sub_di
 		return [];
 	}
 
-	$current_target = tric_target();
-
-	if ( $current_target !== $target ) {
-		tric_switch_target( $target );
-	}
-
-	$pool = build_command_pool( $base_command, [ 'install' ], $sub_directories );
-
-	if ( $current_target !== $target ) {
-		tric_switch_target( $current_target );
-	}
-
-	return $pool;
+	return build_command_pool( $base_command, [ 'install' ], $sub_directories );
 }
 
 /**
