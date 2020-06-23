@@ -46,7 +46,7 @@ function process_realtime( $command, $prefix = null ) {
 
 	setup_terminal();
 
-	$full_command = escapeshellcmd( $command );
+	$clean_command = escapeshellcmd( $command );
 
 	$pipes_spec = [
 		[ 'pipe', 'r' ], // STDIN.
@@ -54,26 +54,39 @@ function process_realtime( $command, $prefix = null ) {
 		[ 'pipe', 'w' ], // STDERR.
 	];
 	// Inherit `cwd` and environment from the context.
-	$proc_handle = proc_open( $full_command, $pipes_spec, $pipes );
+	$proc_handle = proc_open( $clean_command, $pipes_spec, $pipes );
 
 	if ( ! is_resource( $proc_handle ) ) {
-		magenta( "Could not create realtime process for command '{$full_command}'");
+		magenta( "Could not create realtime process for command '{$clean_command}'");
 		exit( 1 );
 	}
 
 	$status = proc_get_status( $proc_handle );
 
 	while ( true === $status['running'] ) {
-		if(false === $status){
-			magenta("Could not get process status for command '{$full_command}'");
-			exit(1);
+		if ( false === $status ) {
+			magenta("Could not get process status for command '{$clean_command}'");
+			exit( 1 );
 		}
 
 		foreach ( [ 1, 2 ] as $pipe ) {
-			while ( $raw_line = fgets( $pipes[ $pipe ] ) ) {
-				$line = $prefix ? "[{$prefix}] {$raw_line}" : $raw_line;
-				echo $line;
-				flush();
+			$read        = [ $pipes[ $pipe ] ];
+			$write       = null;
+			$except      = null;
+			$num_streams = stream_select( $read, $write, $except, 0, 60000 );
+
+			if ( $num_streams > 0 ) {
+				do {
+					$raw_line = stream_get_line( $pipes[ $pipe ], 8092, "\n" );
+
+					if ( $prefix ) {
+						$line = preg_replace( '/^/m', "[{$prefix}] ", $raw_line );
+					} else {
+						$line = $raw_line;
+					}
+
+					echo $line . PHP_EOL;
+				} while ( strlen( $raw_line ) > 0 );
 			}
 		}
 
@@ -81,13 +94,21 @@ function process_realtime( $command, $prefix = null ) {
 	}
 
 	$closed = array_sum( [
-		fclose( $pipes[0] ),
-		fclose( $pipes[1] ),
-		fclose( $pipes[2] ),
-	] );
+			fclose( $pipes[0] ),
+			fclose( $pipes[1] ),
+			fclose( $pipes[2] ),
+		]
+	);
+
+	/*
+	 * We do this just for safety and to kill ancillary processes the process might have spawned.
+	 * An error here might be a consequence of the process having exited already, so it's fine.
+	 * The `$status` information is the correct source of truth about the process health.
+	 */
+	proc_close( $proc_handle );
 
 	if ( $closed !== 3 ) {
-		magenta( "Failed to close the process pipes for command '{$full_command}'" );
+		magenta( "Failed to close the process pipes for command '{$clean_command}'" );
 		exit( 1 );
 	}
 
@@ -177,6 +198,10 @@ function check_status_or( callable $process, callable $else = null ) {
 /**
  * Executes a process with forked children in parallel.
  *
+ * Note: the function will internally check to see if the host OS does support the Process Control extension.
+ * If not the processes will be executed serially and the first failure will stop the serial execution of the
+ * processes.
+ *
  * @param array $items Values with which to loop over to indicate process distinction.
  * @param \Closure $command_process The closure to execute as a distinct process.
  *
@@ -185,21 +210,39 @@ function check_status_or( callable $process, callable $else = null ) {
 function parallel_process( $items, $command_process ) {
 	$process_children = [];
 
-	foreach ( $items as $item ) {
-		$pid = pcntl_fork();
-		if ( $pid === -1 ) {
-			echo magenta( "Unable to fork processes.\n" );
-			exit( 1 );
+	if ( function_exists( 'pcntl_fork' ) ) {
+		// If we're on a OS that does support process control, then fork.
+		foreach ( $items as $item ) {
+			$pid = pcntl_fork();
+			if ( $pid === - 1 ) {
+				echo magenta( "Unable to fork processes.\n" );
+				exit( 1 );
+			}
+
+			if ( 0 === $pid ) {
+				$command_process( $item );
+			} else {
+				$process_children[] = $pid;
+			}
 		}
 
-		if ( 0 === $pid ) {
-			$command_process( $item );
-		} else {
-			$process_children[] = $pid;
+		return get_status_of_forked_children( $process_children );
+	}
+
+	/*
+	 * If Process Control functions are not available or are disabled, then we execute the commands serially.
+	 * Nothing "parallel" here.
+	 */
+	foreach ( $items as $item ) {
+		$status = $command_process( $item );
+		if ( $status !== 0 ) {
+			// At the first failure, bail.
+			return $status;
 		}
 	}
 
-	return get_status_of_forked_children( $process_children );
+	// All fine if we're here.
+	return 0;
 }
 
 /**
@@ -210,6 +253,15 @@ function parallel_process( $items, $command_process ) {
  * @return int The process status value.
  */
 function get_status_of_forked_children( array $children = [] ) {
+	if ( ! function_exists( 'pcntl_waitpid' ) ) {
+		/*
+		 * If we're calling this function on a host that does not support Process Control functions
+		 * then the developer made a feature detection error and that should be promptly reported.
+		 */
+		throw new \RuntimeException( __FUNCTION__ . ' should not be called when Process Control ' .
+		                             'functions are not available.' );
+	}
+
 	$status = 0;
 
 	// Wait of children to finish.
@@ -221,6 +273,26 @@ function get_status_of_forked_children( array $children = [] ) {
 		if ( $child_status > $status ) {
 			$status = $child_status;
 		}
+	}
+
+	return $status;
+}
+
+/**
+ * A function that will `exit` or `return` the status depending on the current OS supprt of the Process Control
+ * extension.
+ *
+ * The function will `exit` on OSes that do support the Process Control extension.
+ * The function should be used anywhere an `exit` would be used with intention to end the execution of a child
+ * process in the context of a `pcntl_fork` call.
+ *
+ * @param int|string $status The exit code or message.
+ *
+ * @return int|string The exit code or message when the host OS does not support the Process Control extension.
+ */
+function pcntl_exit( $status ) {
+	if ( function_exists( 'pcntl_fork' ) ) {
+		exit( $status );
 	}
 
 	return $status;
