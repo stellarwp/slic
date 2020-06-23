@@ -210,7 +210,7 @@ function check_status_or( callable $process, callable $else = null ) {
 function parallel_process( $items, $command_process ) {
 	$process_children = [];
 
-	if (function_exists('pcntl_fork')) {
+	if ( function_exists( 'pcntl_fork' ) ) {
 		// If we're on a OS that does support process control, then fork.
 		foreach ( $items as $item ) {
 			$pid = pcntl_fork();
