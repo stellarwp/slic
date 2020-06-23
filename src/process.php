@@ -207,12 +207,12 @@ function check_status_or( callable $process, callable $else = null ) {
  *
  * @return int The combined process status value of all child processes.
  */
-function parallel_process( $items, $command_process ) {
+function parallel_process( $pool ) {
 	$process_children = [];
 
 	if ( function_exists( 'pcntl_fork' ) ) {
 		// If we're on a OS that does support process control, then fork.
-		foreach ( $items as $item ) {
+		foreach ( $pool as $item ) {
 			$pid = pcntl_fork();
 			if ( $pid === - 1 ) {
 				echo magenta( "Unable to fork processes.\n" );
@@ -220,7 +220,7 @@ function parallel_process( $items, $command_process ) {
 			}
 
 			if ( 0 === $pid ) {
-				$command_process( $item );
+				$item['process']( $item['target'] );
 			} else {
 				$process_children[] = $pid;
 			}
@@ -233,8 +233,8 @@ function parallel_process( $items, $command_process ) {
 	 * If Process Control functions are not available or are disabled, then we execute the commands serially.
 	 * Nothing "parallel" here.
 	 */
-	foreach ( $items as $item ) {
-		$status = $command_process( $item );
+	foreach ( $pool as $item ) {
+		$status = $item['process']( $item['target'] );
 		if ( $status !== 0 ) {
 			// At the first failure, bail.
 			return $status;

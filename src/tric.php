@@ -716,14 +716,14 @@ function update_stack_images() {
  *
  * @return null|int Result of command execution.
  */
-function tric_maybe_run_build_install( $base_command, $target, array $sub_directories = [] ) {
+function maybe_build_install_command_pool( $base_command, $target, array $sub_directories = [] ) {
 	$run = ask(
 		"\nWould you like to run the {$base_command} build processes for this plugin?",
 		'yes'
 	);
 
 	if ( empty( $run ) ) {
-		return;
+		return [];
 	}
 
 	$current_target = tric_target();
@@ -732,7 +732,7 @@ function tric_maybe_run_build_install( $base_command, $target, array $sub_direct
 		tric_switch_target( $target );
 	}
 
-	$function = "\Tribe\Test\\tric_run_{$base_command}_command";
+	$function = "\Tribe\Test\\build_{$base_command}_command_pool";
 	$status = $function( [ 'install' ], $sub_directories );
 
 	if ( $current_target !== $target ) {
@@ -750,8 +750,8 @@ function tric_maybe_run_build_install( $base_command, $target, array $sub_direct
  *
  * @return null|int Result of command execution.
  */
-function tric_maybe_run_composer_install( $target, array $sub_directories = [] ) {
-	return tric_maybe_run_build_install( 'composer', $target, $sub_directories );
+function maybe_build_composer_install_command_pool( $target, array $sub_directories = [] ) {
+	return maybe_build_install_command_pool( 'composer', $target, $sub_directories );
 }
 
 /**
@@ -762,8 +762,8 @@ function tric_maybe_run_composer_install( $target, array $sub_directories = [] )
  *
  * @return null|int Result of command execution.
  */
-function tric_maybe_run_npm_install( $target, array $sub_directories = [] ) {
-	return tric_maybe_run_build_install( 'npm', $target, $sub_directories );
+function maybe_build_npm_install_command_pool( $target, array $sub_directories = [] ) {
+	return maybe_build_install_command_pool( 'npm', $target, $sub_directories );
 }
 
 /**
@@ -778,12 +778,11 @@ function tric_maybe_run_npm_install( $target, array $sub_directories = [] ) {
  *
  * @return int Result of command execution.
  */
-function tric_run_service_command( string $base_command, array $command, array $sub_directories = [] ) {
-	$using = tric_target();
-
-	setup_id();
+function build_command_pool( string $base_command, array $command, array $sub_directories = [] ) {
+	$using   = tric_target();
 	$targets = [ 'target' ];
 
+	// Prompt for execution within subdirectories.
 	foreach ( $sub_directories as $dir ) {
 		if (
 			file_exists( tric_plugins_dir( "{$using}/{$dir}" ) )
@@ -793,13 +792,14 @@ function tric_run_service_command( string $base_command, array $command, array $
 		}
 	}
 
+	// Build the command process.
 	$command_process = static function( $target ) use ( $using, $base_command, $command, $sub_directories ) {
-		$prefix = light_cyan( $target );
+		$prefix = "{$base_command}:" . light_cyan( $target );
 
 		// Execute command as the parent.
 		if ( 'target' !== $target ) {
 			tric_switch_target( "{$using}/{$target}" );
-			$prefix = yellow( $target );
+			$prefix = "{$base_command}:" . yellow( $target );
 		}
 
 		$status = tric_realtime()( array_merge( [ 'run', '--rm', $base_command ], $command ), $prefix );
@@ -811,13 +811,47 @@ function tric_run_service_command( string $base_command, array $command, array $
 		return pcntl_exit( $status );
 	};
 
-	if ( count( $targets ) > 1 ) {
-		$status = parallel_process( $targets, $command_process );
+	$pool = [];
+
+	// Build the pool with a target/container/command-specific key.
+	foreach ( $targets as $target ) {
+		$clean_command = implode( ' ', $command );
+
+		$pool[ "{$target}:{$base_command}:{$clean_command}" ] = [
+			'target'    => $target,
+			'container' => $base_command,
+			'command'   => $command,
+			'process'   => $command_process,
+		];
+	}
+
+	return $pool;
+}
+
+/**
+ * Executes a pool of commands in parallel.
+ *
+ * @param array $pool Pool of processes to execute in parallel.
+ *     $pool[] = [
+ *       'target'    => (string) Tric target.
+ *       'container' => (string) Container on which to execute the command.
+ *       'command'   => (array) The command to run, e.g. `['install', '--save-dev']` in array format.
+ *       'process'   => (closure) The function to execute for each Tric target.
+ *     ]
+ * @return int Result of combined command execution.
+ */
+function execute_command_pool( $pool ) {
+	$using = tric_target();
+
+	if ( count( $pool ) > 1 ) {
+		$status = parallel_process( $pool );
 		tric_switch_target( $using );
 		return $status;
 	}
 
-	return $command_process( reset( $targets ) );
+	$pool_item = reset( $pool );
+
+	return $pool_item['process']( $pool_item['target'] );
 }
 
 /**
@@ -831,8 +865,8 @@ function tric_run_service_command( string $base_command, array $command, array $
  *
  * @return int Result of command execution.
  */
-function tric_run_npm_command( array $command, array $sub_directories = [] ) {
-	return tric_run_service_command( 'npm', $command, $sub_directories );
+function build_npm_command_pool( array $command, array $sub_directories = [] ) {
+	return build_command_pool( 'npm', $command, $sub_directories );
 }
 
 /**
@@ -846,8 +880,8 @@ function tric_run_npm_command( array $command, array $sub_directories = [] ) {
  *
  * @return int Result of command execution.
  */
-function tric_run_composer_command( array $command, array $sub_directories = [] ) {
-	return tric_run_service_command( 'composer', $command, $sub_directories );
+function build_composer_command_pool( array $command, array $sub_directories = [] ) {
+	return build_command_pool( 'composer', $command, $sub_directories );
 }
 
 /**

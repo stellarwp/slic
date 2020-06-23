@@ -14,9 +14,9 @@ if ( $is_help ) {
 $using = tric_target();
 echo light_cyan( "Using {$using}\n" );
 
-$composer_command = $args( '...' );
-
-$status = tric_run_composer_command( $composer_command, [ 'common' ] );
+$command = $args( '...' );
+$pool    = build_composer_command_pool( $command, [ 'common' ] );
+$status  = execute_command_pool( $pool );
 
 exit( $status );
 
