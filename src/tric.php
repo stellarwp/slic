@@ -776,7 +776,7 @@ function tric_maybe_run_npm_install( $target, array $sub_directories = [] ) {
  * @param array<string> $command The command to run, e.g. `['install','--save-dev']` in array format.
  * @param array<string> $sub_directories Sub directories to prompt for additional execution.
  *
- * @return null|int Result of command execution.
+ * @return int Result of command execution.
  */
 function tric_run_service_command( string $base_command, array $command, array $sub_directories = [] ) {
 	$using = tric_target();
@@ -829,7 +829,7 @@ function tric_run_service_command( string $base_command, array $command, array $
  * @param array<string> $command The `npm` command to run, e.g. `['install','--save-dev']` in array format.
  * @param array<string> $sub_directories Sub directories to prompt for additional execution.
  *
- * @return null|int Result of command execution.
+ * @return int Result of command execution.
  */
 function tric_run_npm_command( array $command, array $sub_directories = [] ) {
 	return tric_run_service_command( 'npm', $command, $sub_directories );
@@ -844,7 +844,7 @@ function tric_run_npm_command( array $command, array $sub_directories = [] ) {
  * @param array<string> $command The `composer` command to run, e.g. `['install','--no-dev']` in array format.
  * @param array<string> $sub_directories Sub directories to prompt for additional execution.
  *
- * @return null|int Result of command execution.
+ * @return int Result of command execution.
  */
 function tric_run_composer_command( array $command, array $sub_directories = [] ) {
 	return tric_run_service_command( 'composer', $command, $sub_directories );
