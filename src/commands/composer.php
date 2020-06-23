@@ -15,7 +15,7 @@ $using = tric_target();
 echo light_cyan( "Using {$using}\n" );
 
 $command = $args( '...' );
-$pool    = build_composer_command_pool( $command, [ 'common' ] );
+$pool    = build_command_pool( 'composer', $command, [ 'common' ] );
 $status  = execute_command_pool( $pool );
 
 exit( $status );

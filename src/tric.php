@@ -732,38 +732,13 @@ function maybe_build_install_command_pool( $base_command, $target, array $sub_di
 		tric_switch_target( $target );
 	}
 
-	$function = "\Tribe\Test\\build_{$base_command}_command_pool";
-	$status = $function( [ 'install' ], $sub_directories );
+	$pool = build_command_pool( $base_command, [ 'install' ], $sub_directories );
 
 	if ( $current_target !== $target ) {
 		tric_switch_target( $current_target );
 	}
 
-	return $status;
-}
-
-/**
- * Maybe runs composer install on a given target
- *
- * @param string $target Target to potentially run composer install against.
- * @param array<string> $sub_directories Sub directories to prompt for additional execution.
- *
- * @return null|int Result of command execution.
- */
-function maybe_build_composer_install_command_pool( $target, array $sub_directories = [] ) {
-	return maybe_build_install_command_pool( 'composer', $target, $sub_directories );
-}
-
-/**
- * Maybe runs npm install on a given target
- *
- * @param string $target Target to potentially run npm install against.
- * @param array<string> $sub_directories Sub directories to prompt for additional execution.
- *
- * @return null|int Result of command execution.
- */
-function maybe_build_npm_install_command_pool( $target, array $sub_directories = [] ) {
-	return maybe_build_install_command_pool( 'npm', $target, $sub_directories );
+	return $pool;
 }
 
 /**
@@ -852,36 +827,6 @@ function execute_command_pool( $pool ) {
 	$pool_item = reset( $pool );
 
 	return $pool_item['process']( $pool_item['target'] );
-}
-
-/**
- * Run a command using the `npm` service.
- *
- * If `common` is available in the target and the command dos not fail, then the user will be prompted to run the same
- * command on `common`.
- *
- * @param array<string> $command The `npm` command to run, e.g. `['install','--save-dev']` in array format.
- * @param array<string> $sub_directories Sub directories to prompt for additional execution.
- *
- * @return int Result of command execution.
- */
-function build_npm_command_pool( array $command, array $sub_directories = [] ) {
-	return build_command_pool( 'npm', $command, $sub_directories );
-}
-
-/**
- * Run a command using the `composer` service.
- *
- * If `common` is available in the target and the command dos not fail, then the user will be prompted to run the same
- * command on `common`.
- *
- * @param array<string> $command The `composer` command to run, e.g. `['install','--no-dev']` in array format.
- * @param array<string> $sub_directories Sub directories to prompt for additional execution.
- *
- * @return int Result of command execution.
- */
-function build_composer_command_pool( array $command, array $sub_directories = [] ) {
-	return build_command_pool( 'composer', $command, $sub_directories );
 }
 
 /**

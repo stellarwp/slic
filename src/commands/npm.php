@@ -15,7 +15,7 @@ $using = tric_target();
 echo light_cyan( "Using {$using}\n" );
 
 $command = $args( '...' );
-$pool    = build_npm_command_pool( $command, [ 'common' ] );
+$pool    = build_command_pool( 'npm', $command, [ 'common' ] );
 $status  = execute_command_pool( $pool );
 
 exit( $status );

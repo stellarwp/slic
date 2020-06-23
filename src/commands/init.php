@@ -38,8 +38,8 @@ if ( null !== $branch ) {
 setup_plugin_tests( $plugin );
 
 if ( getenv( 'TRIC_BUILD_PROMPT' ) ) {
-	$command_pool = maybe_build_composer_install_command_pool( $plugin, [ 'common' ] );
-	$command_pool = array_merge( $command_pool, maybe_build_npm_install_command_pool( $plugin, [ 'common' ] ) );
+	$command_pool = maybe_build_install_command_pool( 'composer', $plugin, [ 'common' ] );
+	$command_pool = array_merge( $command_pool, maybe_build_install_command_pool( 'npm', $plugin, [ 'common' ] ) );
 	execute_command_pool( $command_pool );
 }
 
