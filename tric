@@ -72,7 +72,7 @@ Available commands:
 <light_cyan>info</light_cyan>           Displays information about the tric tool.
 
 <yellow>Containers:</yellow>
-<light_cyan>build</light_cyan>          Builds the stack containers that require it, or builds a specific service image.
+<light_cyan>build-stack</light_cyan>    Builds the stack containers that require it, or builds a specific service image.
 <light_cyan>down</light_cyan>           Tears down the stack, stopping containers and removing volumes.
 <light_cyan>up</light_cyan>             Starts a container part of the stack.
 <light_cyan>restart</light_cyan>        Restarts a container part of the stack.
@@ -96,8 +96,8 @@ switch ( $subcommand ) {
 		echo $help_message;
 		break;
 	case 'airplane-mode':
-	case 'build':
 	case 'build-prompt':
+	case 'build-stack':
 	case 'cache':
 	case 'cc':
 	case 'cli':
