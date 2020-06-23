@@ -804,6 +804,10 @@ function build_command_pool( string $base_command, array $command, array $sub_di
  * @return int Result of combined command execution.
  */
 function execute_command_pool( $pool ) {
+	if ( ! $pool ) {
+		return 0;
+	}
+
 	$using = tric_target();
 
 	if ( count( $pool ) > 1 ) {
