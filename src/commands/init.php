@@ -38,8 +38,8 @@ if ( null !== $branch ) {
 setup_plugin_tests( $plugin );
 
 if ( getenv( 'TRIC_BUILD_PROMPT' ) ) {
-	tric_maybe_run_composer_install( $plugin );
-	tric_maybe_run_npm_install( $plugin );
+	tric_maybe_run_composer_install( $plugin, [ 'common' ] );
+	tric_maybe_run_npm_install( $plugin, [ 'common' ] );
 }
 
 echo light_cyan( "Finished initializing {$plugin}\n" );

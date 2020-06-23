@@ -14,40 +14,9 @@ if ( $is_help ) {
 $using = tric_target();
 echo light_cyan( "Using {$using}\n" );
 
-setup_id();
 $composer_command = $args( '...' );
-$targets          = [ 'target' ];
 
-if (
-	file_exists( tric_plugins_dir( "{$using}/common" ) )
-	&& ask( "\nWould you also like to run that composer command against common?", 'yes' )
-) {
-	$targets[] = 'common';
-}
+$status = tric_run_composer_command( $composer_command, [ 'common' ] );
 
-$command_process = static function( $target ) use ( $using, $composer_command ) {
-	$prefix = light_cyan( $target );
-
-	// Execute composer as the parent.
-	if ( 'common' === $target ) {
-		tric_switch_target( "{$using}/common" );
-		$prefix = yellow( $target );
-	}
-
-	$status = tric_realtime()( array_merge( [ 'run', '--rm', 'composer' ], $composer_command ), $prefix );
-
-	if ( 'common' === $target ) {
-		tric_switch_target( $using );
-	}
-
-	return pcntl_exit( $status );
-};
-
-if ( count( $targets ) > 1 ) {
-	$status = parallel_process( $targets, $command_process );
-	tric_switch_target( $using );
-	exit( $status );
-}
-
-exit( $command_process( reset( $targets ) ) );
+exit( $status );
 

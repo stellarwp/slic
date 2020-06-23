@@ -710,11 +710,15 @@ function update_stack_images() {
 /**
  * Maybe runs composer install on a given target
  *
+ * @param array $base_command Base command to run.
  * @param string $target Target to potentially run composer install against.
+ * @param array $sub_directories Sub directories to prompt for additional execution.
+ *
+ * @return null|int Result of command execution.
  */
-function tric_maybe_run_build_install( $command, $target ) {
+function tric_maybe_run_build_install( $base_command, $target, array $sub_directories = [] ) {
 	$run = ask(
-		"\nWould you like to run the {$command} build processes for this plugin?",
+		"\nWould you like to run the {$base_command} build processes for this plugin?",
 		'yes'
 	);
 
@@ -728,30 +732,92 @@ function tric_maybe_run_build_install( $command, $target ) {
 		tric_switch_target( $target );
 	}
 
-	$function = "\Tribe\Test\\tric_run_{$command}_command";
-	$function( [ 'install' ] );
+	$function = "\Tribe\Test\\tric_run_{$base_command}_command";
+	$status = $function( [ 'install' ], $sub_directories );
 
 	if ( $current_target !== $target ) {
 		tric_switch_target( $current_target );
 	}
+
+	return $status;
 }
 
 /**
  * Maybe runs composer install on a given target
  *
  * @param string $target Target to potentially run composer install against.
+ * @param array<string> $sub_directories Sub directories to prompt for additional execution.
+ *
+ * @return null|int Result of command execution.
  */
-function tric_maybe_run_composer_install( $target ) {
-	return tric_maybe_run_build_install( 'composer', $target );
+function tric_maybe_run_composer_install( $target, array $sub_directories = [] ) {
+	return tric_maybe_run_build_install( 'composer', $target, $sub_directories );
 }
 
 /**
  * Maybe runs npm install on a given target
  *
  * @param string $target Target to potentially run npm install against.
+ * @param array<string> $sub_directories Sub directories to prompt for additional execution.
+ *
+ * @return null|int Result of command execution.
  */
-function tric_maybe_run_npm_install( $target ) {
-	return tric_maybe_run_build_install( 'npm', $target );
+function tric_maybe_run_npm_install( $target, array $sub_directories = [] ) {
+	return tric_maybe_run_build_install( 'npm', $target, $sub_directories );
+}
+
+/**
+ * Run a command using the appropriate service.
+ *
+ * If any subdirectories are provided and are available in the target, then the user will be prompted to run the same
+ * command on those subdirectories.
+ *
+ * @param string $base_command The base service command to run, e.g. `npm`, `composer`, etc.
+ * @param array<string> $command The command to run, e.g. `['install','--save-dev']` in array format.
+ * @param array<string> $sub_directories Sub directories to prompt for additional execution.
+ *
+ * @return null|int Result of command execution.
+ */
+function tric_run_service_command( string $base_command, array $command, array $sub_directories = [] ) {
+	$using = tric_target();
+
+	setup_id();
+	$targets = [ 'target' ];
+
+	foreach ( $sub_directories as $dir ) {
+		if (
+			file_exists( tric_plugins_dir( "{$using}/{$dir}" ) )
+			&& ask( "\nWould you also like to run that {$base_command} command against {$dir}?", 'yes' )
+		) {
+			$targets[] = $dir;
+		}
+	}
+
+	$command_process = static function( $target ) use ( $using, $base_command, $command, $sub_directories ) {
+		$prefix = light_cyan( $target );
+
+		// Execute command as the parent.
+		if ( 'target' !== $target ) {
+			tric_switch_target( "{$using}/{$target}" );
+			$prefix = yellow( $target );
+		}
+
+		$status = tric_realtime()( array_merge( [ 'run', '--rm', $base_command ], $command ), $prefix );
+
+		if ( 'target' === $target ) {
+			tric_switch_target( $using );
+		}
+
+		return pcntl_exit( $status );
+	};
+
+	if ( count( $targets ) > 1 ) {
+		$status = parallel_process( $targets, $command_process );
+		tric_switch_target( $using );
+		return $status;
+	}
+
+	return $command_process( reset( $targets ) );
 }
 
 /**
@@ -761,34 +827,12 @@ function tric_maybe_run_npm_install( $target ) {
  * command on `common`.
  *
  * @param array<string> $command The `npm` command to run, e.g. `['install','--save-dev']` in array format.
+ * @param array<string> $sub_directories Sub directories to prompt for additional execution.
+ *
+ * @return null|int Result of command execution.
  */
-function tric_run_npm_command( array $command ) {
-	$using = tric_target();
-	echo light_cyan( "Using {$using}\n" );
-
-	setup_id();
-	$status = tric_realtime()( array_merge( [ 'run', '--rm', 'npm' ], $command ) );
-
-	if ( 0 !== $status ) {
-		// If the composer command failed there's no point in trying the same on `common`
-		return;
-	}
-
-	if ( ! file_exists( tric_plugins_dir( "{$using}/common" ) ) ) {
-		return;
-	}
-
-	if ( ask( "\nWould you like to run that npm command against common?", 'yes' ) ) {
-		tric_switch_target( "{$using}/common" );
-
-		echo light_cyan( "Temporarily using " . tric_target() . "\n" );
-
-		tric_realtime()( array_merge( [ 'run', '--rm', 'npm' ], $command ) );
-
-		tric_switch_target( $using );
-
-		echo light_cyan( "Using " . tric_target() . " once again\n" );
-	}
+function tric_run_npm_command( array $command, array $sub_directories = [] ) {
+	return tric_run_service_command( 'npm', $command, $sub_directories );
 }
 
 /**
@@ -798,34 +842,12 @@ function tric_run_npm_command( array $command ) {
  * command on `common`.
  *
  * @param array<string> $command The `composer` command to run, e.g. `['install','--no-dev']` in array format.
+ * @param array<string> $sub_directories Sub directories to prompt for additional execution.
+ *
+ * @return null|int Result of command execution.
  */
-function tric_run_composer_command( array $command ) {
-	$using = tric_target();
-	echo light_cyan( "Using {$using}\n" );
-
-	setup_id();
-	$status = tric_realtime()( array_merge( [ 'run', '--rm', 'composer' ], $command ) );
-
-	if ( 0 !== $status ) {
-		// If the composer command failed there's no point in trying the same on `common`
-		return;
-	}
-
-	if ( ! file_exists( tric_plugins_dir( "{$using}/common" ) ) ) {
-		return;
-	}
-
-	if ( ask( "\nWould you like to run that composer command against common?", 'yes' ) ) {
-		tric_switch_target( "{$using}/common" );
-
-		echo light_cyan( "Temporarily using " . tric_target() . "\n" );
-
-		tric_realtime()( array_merge( [ 'run', '--rm', 'composer' ], $command ) );
-
-		tric_switch_target( $using );
-
-		echo light_cyan( "Using " . tric_target() . " once again\n" );
-	}
+function tric_run_composer_command( array $command, array $sub_directories = [] ) {
+	return tric_run_service_command( 'composer', $command, $sub_directories );
 }
 
 /**
