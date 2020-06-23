@@ -804,7 +804,7 @@ function tric_run_service_command( string $base_command, array $command, array $
 
 		$status = tric_realtime()( array_merge( [ 'run', '--rm', $base_command ], $command ), $prefix );
 
-		if ( 'target' === $target ) {
+		if ( 'target' !== $target ) {
 			tric_switch_target( $using );
 		}
 
