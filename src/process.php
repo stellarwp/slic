@@ -34,6 +34,8 @@ function process( $command ) {
 /**
  * Runs a process in realtime, displaying its output.
  *
+ * Realtime processes are done without forking, have no need of prefixes, and support interactivity.
+ *
  * @param string $command The command to run.
  * @param string|null $prefix The prefix to place before all output.
  *
@@ -54,7 +56,9 @@ function process_realtime( $command ) {
 }
 
 /**
- * Runs a process in realtime, displaying its output.
+ * Runs a process passively, displaying its output.
+ *
+ * Passive processes are ones that only need to dump their output.
  *
  * @param string $command The command to run.
  * @param string|null $prefix The prefix to place before all output.
