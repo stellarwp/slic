@@ -23,7 +23,7 @@ $args = args( [
 ] );
 
 $cli_name = basename( $argv[0] );
-const CLI_VERSION = '0.0.1';
+const CLI_VERSION = '0.3.0';
 
 $cli_header = implode( ' - ', [
 	light_cyan( $cli_name ) . ' version ' . light_cyan( CLI_VERSION ),
