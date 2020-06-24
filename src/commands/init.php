@@ -38,8 +38,19 @@ if ( null !== $branch ) {
 setup_plugin_tests( $plugin );
 
 if ( getenv( 'TRIC_BUILD_PROMPT' ) ) {
-	tric_maybe_run_composer_install( $plugin );
-	tric_maybe_run_npm_install( $plugin );
+	$current_target = tric_target();
+
+	if ( $current_target !== $plugin ) {
+		tric_switch_target( $plugin );
+	}
+
+	$command_pool = maybe_build_install_command_pool( 'composer', $plugin, [ 'common' ] );
+	$command_pool = array_merge( $command_pool, maybe_build_install_command_pool( 'npm', $plugin, [ 'common' ] ) );
+	execute_command_pool( $command_pool );
+
+	if ( $current_target !== $plugin ) {
+		tric_switch_target( $current_target );
+	}
 }
 
 echo light_cyan( "Finished initializing {$plugin}\n" );

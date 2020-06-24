@@ -710,122 +710,115 @@ function update_stack_images() {
 /**
  * Maybe runs composer install on a given target
  *
+ * @param array $base_command Base command to run.
  * @param string $target Target to potentially run composer install against.
+ * @param array $sub_directories Sub directories to prompt for additional execution.
+ *
+ * @return null|int Result of command execution.
  */
-function tric_maybe_run_build_install( $command, $target ) {
+function maybe_build_install_command_pool( $base_command, $target, array $sub_directories = [] ) {
 	$run = ask(
-		"\nWould you like to run the {$command} build processes for this plugin?",
+		"\nWould you like to run the {$base_command} build processes for this plugin?",
 		'yes'
 	);
 
 	if ( empty( $run ) ) {
-		return;
+		return [];
 	}
 
-	$current_target = tric_target();
-
-	if ( $current_target !== $target ) {
-		tric_switch_target( $target );
-	}
-
-	$function = "\Tribe\Test\\tric_run_{$command}_command";
-	$function( [ 'install' ] );
-
-	if ( $current_target !== $target ) {
-		tric_switch_target( $current_target );
-	}
+	return build_command_pool( $base_command, [ 'install' ], $sub_directories );
 }
 
 /**
- * Maybe runs composer install on a given target
+ * Run a command using the appropriate service.
  *
- * @param string $target Target to potentially run composer install against.
+ * If any subdirectories are provided and are available in the target, then the user will be prompted to run the same
+ * command on those subdirectories.
+ *
+ * @param string $base_command The base service command to run, e.g. `npm`, `composer`, etc.
+ * @param array<string> $command The command to run, e.g. `['install','--save-dev']` in array format.
+ * @param array<string> $sub_directories Sub directories to prompt for additional execution.
+ *
+ * @return int Result of command execution.
  */
-function tric_maybe_run_composer_install( $target ) {
-	return tric_maybe_run_build_install( 'composer', $target );
+function build_command_pool( string $base_command, array $command, array $sub_directories = [] ) {
+	$using   = tric_target();
+	$targets = [ 'target' ];
+
+	// Prompt for execution within subdirectories.
+	foreach ( $sub_directories as $dir ) {
+		if (
+			file_exists( tric_plugins_dir( "{$using}/{$dir}" ) )
+			&& ask( "\nWould you also like to run that {$base_command} command against {$dir}?", 'yes' )
+		) {
+			$targets[] = $dir;
+		}
+	}
+
+	// Build the command process.
+	$command_process = static function( $target ) use ( $using, $base_command, $command, $sub_directories ) {
+		$prefix = "{$base_command}:" . light_cyan( $target );
+
+		// Execute command as the parent.
+		if ( 'target' !== $target ) {
+			tric_switch_target( "{$using}/{$target}" );
+			$prefix = "{$base_command}:" . yellow( $target );
+		}
+
+		$status = tric_realtime()( array_merge( [ 'run', '--rm', $base_command ], $command ), $prefix );
+
+		if ( 'target' !== $target ) {
+			tric_switch_target( $using );
+		}
+
+		return pcntl_exit( $status );
+	};
+
+	$pool = [];
+
+	// Build the pool with a target/container/command-specific key.
+	foreach ( $targets as $target ) {
+		$clean_command = implode( ' ', $command );
+
+		$pool[ "{$target}:{$base_command}:{$clean_command}" ] = [
+			'target'    => $target,
+			'container' => $base_command,
+			'command'   => $command,
+			'process'   => $command_process,
+		];
+	}
+
+	return $pool;
 }
 
 /**
- * Maybe runs npm install on a given target
+ * Executes a pool of commands in parallel.
  *
- * @param string $target Target to potentially run npm install against.
+ * @param array $pool Pool of processes to execute in parallel.
+ *     $pool[] = [
+ *       'target'    => (string) Tric target.
+ *       'container' => (string) Container on which to execute the command.
+ *       'command'   => (array) The command to run, e.g. `['install', '--save-dev']` in array format.
+ *       'process'   => (closure) The function to execute for each Tric target.
+ *     ]
+ * @return int Result of combined command execution.
  */
-function tric_maybe_run_npm_install( $target ) {
-	return tric_maybe_run_build_install( 'npm', $target );
-}
+function execute_command_pool( $pool ) {
+	if ( ! $pool ) {
+		return 0;
+	}
 
-/**
- * Run a command using the `npm` service.
- *
- * If `common` is available in the target and the command dos not fail, then the user will be prompted to run the same
- * command on `common`.
- *
- * @param array<string> $command The `npm` command to run, e.g. `['install','--save-dev']` in array format.
- */
-function tric_run_npm_command( array $command ) {
 	$using = tric_target();
-	echo light_cyan( "Using {$using}\n" );
 
-	setup_id();
-	$status = tric_realtime()( array_merge( [ 'run', '--rm', 'npm' ], $command ) );
-
-	if ( 0 !== $status ) {
-		// If the composer command failed there's no point in trying the same on `common`
-		return;
-	}
-
-	if ( ! file_exists( tric_plugins_dir( "{$using}/common" ) ) ) {
-		return;
-	}
-
-	if ( ask( "\nWould you like to run that npm command against common?", 'yes' ) ) {
-		tric_switch_target( "{$using}/common" );
-
-		echo light_cyan( "Temporarily using " . tric_target() . "\n" );
-
-		tric_realtime()( array_merge( [ 'run', '--rm', 'npm' ], $command ) );
-
+	if ( count( $pool ) > 1 ) {
+		$status = parallel_process( $pool );
 		tric_switch_target( $using );
-
-		echo light_cyan( "Using " . tric_target() . " once again\n" );
-	}
-}
-
-/**
- * Run a command using the `composer` service.
- *
- * If `common` is available in the target and the command dos not fail, then the user will be prompted to run the same
- * command on `common`.
- *
- * @param array<string> $command The `composer` command to run, e.g. `['install','--no-dev']` in array format.
- */
-function tric_run_composer_command( array $command ) {
-	$using = tric_target();
-	echo light_cyan( "Using {$using}\n" );
-
-	setup_id();
-	$status = tric_realtime()( array_merge( [ 'run', '--rm', 'composer' ], $command ) );
-
-	if ( 0 !== $status ) {
-		// If the composer command failed there's no point in trying the same on `common`
-		return;
+		return $status;
 	}
 
-	if ( ! file_exists( tric_plugins_dir( "{$using}/common" ) ) ) {
-		return;
-	}
+	$pool_item = reset( $pool );
 
-	if ( ask( "\nWould you like to run that composer command against common?", 'yes' ) ) {
-		tric_switch_target( "{$using}/common" );
-
-		echo light_cyan( "Temporarily using " . tric_target() . "\n" );
-
-		tric_realtime()( array_merge( [ 'run', '--rm', 'composer' ], $command ) );
-
-		tric_switch_target( $using );
-
-		echo light_cyan( "Using " . tric_target() . " once again\n" );
-	}
+	return $pool_item['process']( $pool_item['target'] );
 }
 
 /**
