@@ -417,6 +417,17 @@ function github_company_handle() {
 }
 
 /**
+ * Runs a process in passive mode in tric stack and returns the exit status.
+ *
+ * This approach is used when running commands that can be done in parallel or forked processes.
+ *
+ * @return \Closure The process closure to start a real-time process using tric stack.
+ */
+function tric_passive() {
+	return docker_compose_passive( tric_stack_array() );
+}
+
+/**
  * Runs a process in tric stack and returns the exit status.
  *
  * @return \Closure The process closure to start a real-time process using tric stack.
@@ -765,7 +776,7 @@ function build_command_pool( string $base_command, array $command, array $sub_di
 			$prefix = "{$base_command}:" . yellow( $target );
 		}
 
-		$status = tric_realtime()( array_merge( [ 'run', '--rm', $base_command ], $command ), $prefix );
+		$status = tric_passive()( array_merge( [ 'run', '--rm', $base_command ], $command ), $prefix );
 
 		if ( 'target' !== $target ) {
 			tric_switch_target( $using );
