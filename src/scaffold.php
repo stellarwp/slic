@@ -113,7 +113,6 @@ function write_tric_env_file( $plugin_path ) {
 	$plugin_env .= "\n# We're using Docker to run the tests.\nUSING_CONTAINERS=1\n";
 
 	$file = $plugin_path . '/.env.testing.tric';
-
 	$put =  file_put_contents( $file, $plugin_env );
 
 	if ( false === $put ) {
