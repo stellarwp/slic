@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Prompt to `tric update` when container build version are out of sync from the tric version.
 - Output npm error log when one is generated.
 
+### Changed
+
 ## [0.2.0] - 2020-06-24
 ### Added
 
