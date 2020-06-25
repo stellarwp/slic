@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Separated out poolable (passive) command functions from realtime command functions to prevent issues with interactivity.
+
 ## [0.2.0] - 2020-06-24
 ### Added
 

@@ -34,12 +34,38 @@ function process( $command ) {
 /**
  * Runs a process in realtime, displaying its output.
  *
+ * Realtime processes are done without forking, have no need of prefixes, and support interactivity.
+ *
  * @param string $command The command to run.
  * @param string|null $prefix The prefix to place before all output.
  *
  * @return int The process exit status, `0` means ok.
  */
-function process_realtime( $command, $prefix = null ) {
+function process_realtime( $command ) {
+	debug( "Executing command: {$command}" );
+
+	echo PHP_EOL;
+
+	setup_terminal();
+
+	$clean_command = escapeshellcmd( $command );
+
+	passthru( $clean_command, $status );
+
+	return (int) $status;
+}
+
+/**
+ * Runs a process passively, displaying its output.
+ *
+ * Passive processes are ones that only need to dump their output.
+ *
+ * @param string $command The command to run.
+ * @param string|null $prefix The prefix to place before all output.
+ *
+ * @return int The process exit status, `0` means ok.
+ */
+function process_passive( $command, $prefix = null ) {
 	debug( "Executing command: {$command}" );
 
 	echo PHP_EOL;
