@@ -457,8 +457,16 @@ function teardown_stack() {
  */
 function rebuild_stack() {
 	echo "Building the stack images...\n\n";
-	tric_realtime()( [ 'build-stack' ] );
+	tric_realtime()( [ 'build' ] );
+	write_build_version();
 	echo light_cyan( "\nStack images built.\n\n" );
+}
+
+/**
+ * Write the current CLI_VERSION to the build-version file
+ */
+function write_build_version() {
+	file_put_contents( TRIC_ROOT_DIR . '/.build-version', CLI_VERSION );
 }
 
 /**
@@ -928,4 +936,38 @@ function switch_plugin_branch( $branch, $plugin = null ) {
 		echo magenta( "Could not restore working directory {$cwd}\n" );
 		exit( 1 );
 	}
+}
+
+/**
+ * If tric stack is out of date, prompt for an execution of tric update.
+ */
+function maybe_prompt_for_update() {
+	$build_version = '0.0.1';
+	$cli_version   = CLI_VERSION;
+
+	if ( file_exists( TRIC_ROOT_DIR . '/.build-version' ) ) {
+		$build_version = file_get_contents( TRIC_ROOT_DIR . '/.build-version' );
+	}
+
+	// If there isn't a .env.tric.run, this is likely a fresh install. Bail.
+	if ( ! file_exists( TRIC_ROOT_DIR . '/.env.tric.run' ) ) {
+		return;
+	}
+
+	// If the version of the CLI is the same as the most recently built version, bail.
+	if ( version_compare( $build_version, $cli_version, '=' ) ) {
+		return;
+	}
+
+	echo magenta( "\n****************************************************************\n\n" );
+	echo yellow( "                  ____________    ____  __\n" );
+	echo yellow( "                  |   ____\   \  /   / |  |\n" );
+	echo yellow( "                  |  |__   \   \/   /  |  |\n" );
+	echo yellow( "                  |   __|   \_    _/   |  |\n" );
+	echo yellow( "                  |  |        |  |     |  |\n" );
+	echo yellow( "                  |__|        |__|     |__|\n\n" );
+	echo magenta( "Your tric containers are not up to date with the latest version.\n" );
+	echo magenta( "                  To update, please run:\n\n" );
+	echo yellow( "                         tric update\n\n" );
+	echo magenta( "****************************************************************\n" );
 }

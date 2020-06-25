@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.3.0] - TBD
 ### Added
 
+- Prompt to `tric update` when container build version are out of sync from the tric version.
+- Output npm error log when one is generated.
+
 ### Changed
 
 - Separated out poolable (passive) command functions from realtime command functions to prevent issues with interactivity.
@@ -15,10 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added phpcs and phpcbf commands.
+- Added parallel processing of commands.
 
 ### Changed
 
-- Added parallel processing of commands.
 - Changed `tric build` to `tric build-stack`.
 
 ## [0.1.1] - 2020-05-26
