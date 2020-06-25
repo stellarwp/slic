@@ -250,7 +250,7 @@ function parallel_process( $pool ) {
 			if ( 0 === $pid ) {
 				// It's a worker: randomize the subnet number to avoid conflicts between workers.
 				$subnet = mt_rand( 1, 255 );
-				putenv("TRIC_TEST_SUBNET=${subnet}");
+				putenv( "TRIC_TEST_SUBNET=${subnet}" );
 				$item['process']( $item['target'] );
 			} else {
 				$process_children[] = $pid;
