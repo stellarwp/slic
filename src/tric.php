@@ -178,16 +178,20 @@ function setup_tric_env( $root_dir ) {
  *                       return value will always be a non empty string.
  */
 function tric_target( $require = true ) {
-	$using = getenv( 'TRIC_CURRENT_PROJECT' );
+	$using        = getenv( 'TRIC_CURRENT_PROJECT' );
+	$using_subdir = getenv( 'TRIC_CURRENT_PROJECT_SUBDIR' );
+	$using_full   = $using . ( $using_subdir ? '/' . $using_subdir : '' );
+
 	if ( $require ) {
-		return $using;
+		return $using_full;
 	}
-	if ( empty( $using ) ) {
+
+	if ( empty( $using_full ) ) {
 		echo magenta( "Use target not set; use the 'use' sub-command to set it.\n" );
 		exit( 1 );
 	}
 
-	return trim( $using );
+	return trim( $using_full );
 }
 
 /**
@@ -199,14 +203,20 @@ function tric_switch_target( $target ) {
 	$root                 = root();
 	$run_settings_file    = "{$root}/.env.tric.run";
 	$target_relative_path = '';
+	$subdir               = '';
 
 	if ( tric_here_is_site() ) {
 		$target_relative_path = get_target_relative_path( $target );
 	}
 
+	if ( false !== strpos( $target, '/' ) ) {
+		list( $target, $subdir ) = explode( '/', $target );
+	}
+
 	$env_values = [
 		'TRIC_CURRENT_PROJECT'               => $target,
 		'TRIC_CURRENT_PROJECT_RELATIVE_PATH' => $target_relative_path,
+		'TRIC_CURRENT_PROJECT_SUBDIR'        => $subdir,
 	];
 
 	write_env_file( $run_settings_file, $env_values, true );
@@ -417,6 +427,17 @@ function github_company_handle() {
 }
 
 /**
+ * Runs a process in passive mode in tric stack and returns the exit status.
+ *
+ * This approach is used when running commands that can be done in parallel or forked processes.
+ *
+ * @return \Closure The process closure to start a real-time process using tric stack.
+ */
+function tric_passive() {
+	return docker_compose_passive( tric_stack_array() );
+}
+
+/**
  * Runs a process in tric stack and returns the exit status.
  *
  * @return \Closure The process closure to start a real-time process using tric stack.
@@ -446,8 +467,16 @@ function teardown_stack() {
  */
 function rebuild_stack() {
 	echo "Building the stack images...\n\n";
-	tric_realtime()( [ 'build-stack' ] );
+	tric_realtime()( [ 'build' ] );
+	write_build_version();
 	echo light_cyan( "\nStack images built.\n\n" );
+}
+
+/**
+ * Write the current CLI_VERSION to the build-version file
+ */
+function write_build_version() {
+	file_put_contents( TRIC_ROOT_DIR . '/.build-version', CLI_VERSION );
 }
 
 /**
@@ -765,7 +794,7 @@ function build_command_pool( string $base_command, array $command, array $sub_di
 			$prefix = "{$base_command}:" . yellow( $target );
 		}
 
-		$status = tric_realtime()( array_merge( [ 'run', '--rm', $base_command ], $command ), $prefix );
+		$status = tric_passive()( array_merge( [ 'run', '--rm', $base_command ], $command ), $prefix );
 
 		if ( 'target' !== $target ) {
 			tric_switch_target( $using );
@@ -917,4 +946,38 @@ function switch_plugin_branch( $branch, $plugin = null ) {
 		echo magenta( "Could not restore working directory {$cwd}\n" );
 		exit( 1 );
 	}
+}
+
+/**
+ * If tric stack is out of date, prompt for an execution of tric update.
+ */
+function maybe_prompt_for_update() {
+	$build_version = '0.0.1';
+	$cli_version   = CLI_VERSION;
+
+	if ( file_exists( TRIC_ROOT_DIR . '/.build-version' ) ) {
+		$build_version = file_get_contents( TRIC_ROOT_DIR . '/.build-version' );
+	}
+
+	// If there isn't a .env.tric.run, this is likely a fresh install. Bail.
+	if ( ! file_exists( TRIC_ROOT_DIR . '/.env.tric.run' ) ) {
+		return;
+	}
+
+	// If the version of the CLI is the same as the most recently built version, bail.
+	if ( version_compare( $build_version, $cli_version, '=' ) ) {
+		return;
+	}
+
+	echo magenta( "\n****************************************************************\n\n" );
+	echo yellow( "                  ____________    ____  __\n" );
+	echo yellow( "                  |   ____\   \  /   / |  |\n" );
+	echo yellow( "                  |  |__   \   \/   /  |  |\n" );
+	echo yellow( "                  |   __|   \_    _/   |  |\n" );
+	echo yellow( "                  |  |        |  |     |  |\n" );
+	echo yellow( "                  |__|        |__|     |__|\n\n" );
+	echo magenta( "Your tric containers are not up to date with the latest version.\n" );
+	echo magenta( "                  To update, please run:\n\n" );
+	echo yellow( "                         tric update\n\n" );
+	echo magenta( "****************************************************************\n" );
 }

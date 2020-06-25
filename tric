@@ -14,6 +14,7 @@ use function Tribe\Test\args;
 use function Tribe\Test\colorize;
 use function Tribe\Test\root;
 use function Tribe\Test\light_cyan;
+use function Tribe\Test\maybe_prompt_for_update;
 use function Tribe\Test\setup_tric_env;
 
 // Set up the argument parsing function.
@@ -23,7 +24,7 @@ $args = args( [
 ] );
 
 $cli_name = basename( $argv[0] );
-const CLI_VERSION = '0.2.0';
+const CLI_VERSION = '0.3.0';
 
 $cli_header = implode( ' - ', [
 	light_cyan( $cli_name ) . ' version ' . light_cyan( CLI_VERSION ),
@@ -90,10 +91,15 @@ $subcommand = $args( 'subcommand', 'help' );
 
 $cli_name = basename( $argv[0] );
 
+if ( ! in_array( $subcommand, [ 'help', 'update'] ) ) {
+	maybe_prompt_for_update();
+}
+
 switch ( $subcommand ) {
 	default:
 	case 'help':
 		echo $help_message;
+		maybe_prompt_for_update();
 		break;
 	case 'airplane-mode':
 	case 'build-prompt':

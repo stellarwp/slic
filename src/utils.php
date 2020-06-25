@@ -407,6 +407,11 @@ function write_env_file( $file, array $lines = [], $update = false ) {
 		return "{$key}={$value}";
 	}, array_keys( $new_lines ), $new_lines ) );
 
+	// If this is the first time creating the .env.tric.run file, assume this is the first run and place the CLI version in `.build-version`.
+	if ( false !== strpos( $file, '.env.tric.run' ) && ! file_exists( $file ) ) {
+		write_build_version();
+	}
+
 	$put = file_put_contents( $file, $data );
 
 	if ( false === $put ) {

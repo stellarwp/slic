@@ -164,10 +164,11 @@ function tric_stack_array() {
  * Executes a docker-compose command in real time, printing the output as produced by the command.
  *
  * @param array<string> $options A list of options to initialize the wrapper.
+ * @param bool $is_realtime Whether the command should be run in real time (true) or passively (false).
  *
  * @return \Closure A closure that will run the process in real time and return the process exit status.
  */
-function docker_compose_realtime( array $options = [] ) {
+function docker_compose_process( array $options = [], $is_realtime = true ) {
 	setup_id();
 
 	$is_ci = is_ci();
@@ -182,7 +183,7 @@ function docker_compose_realtime( array $options = [] ) {
 		$host_ip = host_ip( 'Linux' );
 	}
 
-	return static function ( array $command = [], $prefix = null ) use ( $options, $host_ip, $is_ci ) {
+	return static function ( array $command = [], $prefix = null ) use ( $options, $host_ip, $is_ci, $is_realtime ) {
 		$command = 'docker-compose ' . implode( ' ', $options ) . ' ' . implode( ' ', $command );
 
 		if ( ! empty( $host_ip ) ) {
@@ -195,6 +196,30 @@ function docker_compose_realtime( array $options = [] ) {
 			$command = 'XDE=0 ' . $command;
 		}
 
-		return process_realtime( $command, $prefix );
+		return $is_realtime ? process_realtime( $command ) : process_passive( $command, $prefix );
 	};
+}
+
+/**
+ * Executes a docker-compose command in passive mode, printing the output as produced by the command.
+ *
+ * This approach is used for commands that can be run in a parallel or forked process without interactivity.
+ *
+ * @param array<string> $options A list of options to initialize the wrapper.
+ *
+ * @return \Closure A closure that will run the process in real time and return the process exit status.
+ */
+function docker_compose_passive( array $options = [] ) {
+	return docker_compose_process( $options, false );
+}
+
+/**
+ * Executes a docker-compose command in real time, printing the output as produced by the command.
+ *
+ * @param array<string> $options A list of options to initialize the wrapper.
+ *
+ * @return \Closure A closure that will run the process in real time and return the process exit status.
+ */
+function docker_compose_realtime( array $options = [] ) {
+	return docker_compose_process( $options, true );
 }
