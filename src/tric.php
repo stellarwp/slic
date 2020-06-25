@@ -446,7 +446,7 @@ function teardown_stack() {
  */
 function rebuild_stack() {
 	echo "Building the stack images...\n\n";
-	tric_realtime()( [ 'build-stack' ] );
+	tric_realtime()( [ 'build' ] );
 	write_build_version();
 	echo light_cyan( "\nStack images built.\n\n" );
 }
