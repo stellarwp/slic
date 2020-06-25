@@ -146,7 +146,7 @@ services:
       # XDH=$(ip route | grep docker0 | awk '{print $9}') docker-compose ...
       XDEBUG_CONFIG: "idekey=${XDK:-tric} remote_enable=${XDE:-1} remote_host=${XDH:-host.docker.internal} remote_port=${XDP:-9001}"
       # Move to the target directory before running the command from the plugins directory.
-      CODECEPTION_PROJECT_DIR: /var/www/html/wp-content/plugins/${TRIC_CURRENT_PROJECT:-test}/${TRIC_CURRENT_PROJECT_SUBDIR}
+      CODECEPTION_PROJECT_DIR: /var/www/html/wp-content/plugins/${TRIC_CURRENT_PROJECT:-test}
       # When running the container in shell mode (using the tric `shell` command), then use this CC configuration.
       CODECEPTION_SHELL_CONFIG: "-c codeception.tric.yml"
       # After the WordPress container comes online, wait a further 3s to give it some boot-up time.
@@ -180,7 +180,7 @@ services:
       FIXUID: "${FIXUID:-1}"
     volumes:
       # Set the current plugin as project.
-      - ${TRIC_PLUGINS_DIR}/${TRIC_CURRENT_PROJECT:-test}/${TRIC_CURRENT_PROJECT_SUBDIR}:/project:cached
+      - ${TRIC_PLUGINS_DIR}/${TRIC_CURRENT_PROJECT:-test}:/project:cached
       # Share SSH keys with the container to pull from private repositories.
       - ${DOCKER_RUN_SSH_AUTH_SOCK}:/ssh-agent:ro
 
@@ -191,7 +191,6 @@ services:
     user: "${DOCKER_RUN_UID:-}:${DOCKER_RUN_GID:-}"
     environment:
       FIXUID: ${FIXUID:-1}
-      TRIC_CURRENT_PROJECT_SUBDIR: ${TRIC_CURRENT_PROJECT_SUBDIR}
     volumes:
       # Set the current plugin as project.
       - ${TRIC_PLUGINS_DIR}/${TRIC_CURRENT_PROJECT:-test}:/project:cached
@@ -206,7 +205,7 @@ services:
     working_dir: /project
     volumes:
       # Set the current plugin as project.
-      - ${TRIC_PLUGINS_DIR}/${TRIC_CURRENT_PROJECT:-test}/${TRIC_CURRENT_PROJECT_SUBDIR}:/project:cached
+      - ${TRIC_PLUGINS_DIR}/${TRIC_CURRENT_PROJECT:-test}:/project:cached
       # Share SSH keys with the container to pull from private repositories.
       - ${DOCKER_RUN_SSH_AUTH_SOCK}:/ssh-agent:ro
 

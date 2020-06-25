@@ -178,20 +178,16 @@ function setup_tric_env( $root_dir ) {
  *                       return value will always be a non empty string.
  */
 function tric_target( $require = true ) {
-	$using        = getenv( 'TRIC_CURRENT_PROJECT' );
-	$using_subdir = getenv( 'TRIC_CURRENT_PROJECT_SUBDIR' );
-	$using_full   = $using . ( $using_subdir ? '/' . $using_subdir : '' );
-
+	$using = getenv( 'TRIC_CURRENT_PROJECT' );
 	if ( $require ) {
-		return $using_full;
+		return $using;
 	}
-
-	if ( empty( $using_full ) ) {
+	if ( empty( $using ) ) {
 		echo magenta( "Use target not set; use the 'use' sub-command to set it.\n" );
 		exit( 1 );
 	}
 
-	return trim( $using_full );
+	return trim( $using );
 }
 
 /**
@@ -203,20 +199,14 @@ function tric_switch_target( $target ) {
 	$root                 = root();
 	$run_settings_file    = "{$root}/.env.tric.run";
 	$target_relative_path = '';
-	$subdir               = '';
 
 	if ( tric_here_is_site() ) {
 		$target_relative_path = get_target_relative_path( $target );
 	}
 
-	if ( false !== strpos( $target, '/' ) ) {
-		list( $target, $subdir ) = explode( '/', $target );
-	}
-
 	$env_values = [
 		'TRIC_CURRENT_PROJECT'               => $target,
 		'TRIC_CURRENT_PROJECT_RELATIVE_PATH' => $target_relative_path,
-		'TRIC_CURRENT_PROJECT_SUBDIR'        => $subdir,
 	];
 
 	write_env_file( $run_settings_file, $env_values, true );

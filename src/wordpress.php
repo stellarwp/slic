@@ -81,7 +81,7 @@ function wp_content_dir_list( $content_type = 'plugins' ) {
 		}
 	);
 
-	$allowed_subdirs = get_allowed_use_subdirectories();
+	$allowed_subdirs = [ 'common' ];
 	foreach ( iterator_to_array( $dir ) as $key => $value ) {
 		$basename                 = basename( $key );
 		$dirs[ $basename ] = $value;
@@ -94,13 +94,4 @@ function wp_content_dir_list( $content_type = 'plugins' ) {
 	}
 
 	return $dirs;
-}
-
-/**
- * Returns the list of allowed subdirectories for tric use.
- *
- * @return array<string> Allowed subdirectories for use.
- */
-function get_allowed_use_subdirectories() {
-	return [ 'common' ];
 }
