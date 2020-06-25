@@ -28,3 +28,5 @@ _plugins
 
 # Any .build-version file created by the tric cli tool.
 .build-version
+# Any .remote-version file created by the tric cli tool.
+.remote-version

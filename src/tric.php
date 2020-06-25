@@ -949,9 +949,48 @@ function switch_plugin_branch( $branch, $plugin = null ) {
 }
 
 /**
+ * If tric itself is out of date, prompt to update repo.
+ */
+function maybe_prompt_for_repo_update() {
+	$remote_version = null;
+	$check_date     = null;
+	$cli_version    = CLI_VERSION;
+	$today          = date( 'Y-m-d' );
+
+	if ( file_exists( TRIC_ROOT_DIR . '/.remote-version' ) ) {
+		list( $check_date, $remote_version ) = explode( ':', file_get_contents( TRIC_ROOT_DIR . '/.remote-version' ) );
+	}
+
+	if ( empty( $remote_version ) || empty( $check_date ) || $today > $check_date ) {
+		$tags = explode( "\n", shell_exec( 'cd ' . TRIC_ROOT_DIR . ' && git ls-remote --tags origin' ) );
+		foreach ( $tags as &$tag ) {
+			$tag_parts = explode( '/', $tag );
+			$tag       = array_pop( $tag_parts );
+		}
+
+		natsort( $tags );
+
+		$remote_version = array_pop( $tags );
+
+		file_put_contents( TRIC_ROOT_DIR . '/.remote-version', "{$today}:{$remote_version}" );
+	}
+
+	// If the version of the CLI is the same as the most recently built version, bail.
+	if ( version_compare( $remote_version, $cli_version, '<=' ) ) {
+		return;
+	}
+
+	echo magenta( "\n****************************************************************\n\n" );
+	echo colorize( "<magenta>Version</magenta> <yellow>{$remote_version}</yellow> <magenta>of tric is available! You are currently</magenta>\n" );
+	echo magenta( "running version {$cli_version}. To update, execute the following:\n\n" );
+	echo yellow( "                         tric upgrade\n\n" );
+	echo magenta( "****************************************************************\n" );
+}
+
+/**
  * If tric stack is out of date, prompt for an execution of tric update.
  */
-function maybe_prompt_for_update() {
+function maybe_prompt_for_stack_update() {
 	$build_version = '0.0.1';
 	$cli_version   = CLI_VERSION;
 

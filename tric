@@ -14,7 +14,8 @@ use function Tribe\Test\args;
 use function Tribe\Test\colorize;
 use function Tribe\Test\root;
 use function Tribe\Test\light_cyan;
-use function Tribe\Test\maybe_prompt_for_update;
+use function Tribe\Test\maybe_prompt_for_repo_update;
+use function Tribe\Test\maybe_prompt_for_stack_update;
 use function Tribe\Test\setup_tric_env;
 
 // Set up the argument parsing function.
@@ -24,7 +25,7 @@ $args = args( [
 ] );
 
 $cli_name = basename( $argv[0] );
-const CLI_VERSION = '0.3.0';
+const CLI_VERSION = '0.4.0';
 
 $cli_header = implode( ' - ', [
 	light_cyan( $cli_name ) . ' version ' . light_cyan( CLI_VERSION ),
@@ -62,6 +63,7 @@ Available commands:
 <light_cyan>cli</light_cyan>            Runs a wp-cli command in the stack.
 <light_cyan>reset</light_cyan>          Resets {$cli_name} to the initial state as configured by the env files.
 <light_cyan>update</light_cyan>         Updates the tool and the images used in its services.
+<light_cyan>upgrade</light_cyan>        Upgrades the {$cli_name} repo.
 
 <yellow>Info:</yellow>
 <light_cyan>build-prompt</light_cyan>   Activates or deactivates whether or not composer/npm build prompts should be provided.
@@ -91,15 +93,20 @@ $subcommand = $args( 'subcommand', 'help' );
 
 $cli_name = basename( $argv[0] );
 
+if ( 'help' !== $subcommand ) {
+	maybe_prompt_for_repo_update();
+}
+
 if ( ! in_array( $subcommand, [ 'help', 'update'] ) ) {
-	maybe_prompt_for_update();
+	maybe_prompt_for_stack_update();
 }
 
 switch ( $subcommand ) {
 	default:
 	case 'help':
 		echo $help_message;
-		maybe_prompt_for_update();
+		maybe_prompt_for_repo_update();
+		maybe_prompt_for_stack_update();
 		break;
 	case 'airplane-mode':
 	case 'build-prompt':
@@ -126,6 +133,7 @@ switch ( $subcommand ) {
 	case 'shell':
 	case 'up':
 	case 'update':
+	case 'upgrade':
 	case 'use':
 	case 'using':
 	case 'xdebug':
