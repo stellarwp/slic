@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.1] - 2020-06-25
 
-### Fixed
+### Changed
 
 - Add support for `DB_` prefixed database credentials and name in the original `.env.*` files.
 
