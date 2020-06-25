@@ -101,6 +101,16 @@ function write_tric_env_file( $plugin_path ) {
 		'value' => $mysql_root_password,
 	];
 
+	$replace['wp_table_prefix'] = [
+		'env' => [
+			'TEST_TABLE_PREFIX',
+			'WP_TABLE_PREFIX',
+			'WORDPRESS_TABLE_PREFIX',
+			'TEST_SITE_TABLE_PREFIX',
+		],
+		'value' => 'wp_',
+	];
+
 	$replace['chromedriver_host'] = [
 		'env' => [
 			'CHROMEDRIVER_HOST',
