@@ -962,7 +962,13 @@ function maybe_prompt_for_repo_update() {
 	}
 
 	if ( empty( $remote_version ) || empty( $check_date ) || $today > $check_date ) {
-		$tags = explode( "\n", shell_exec( 'cd ' . TRIC_ROOT_DIR . ' && git ls-remote --tags origin' ) );
+		$current_dir = getcwd();
+		chdir( TRIC_ROOT_DIR );
+
+		$tags = explode( "\n", shell_exec( 'git ls-remote --tags origin' ) );
+
+		chdir( $current_dir );
+
 		foreach ( $tags as &$tag ) {
 			$tag_parts = explode( '/', $tag );
 			$tag       = array_pop( $tag_parts );
