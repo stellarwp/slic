@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Adjust pathing of subdirectories within the tric stack so that npm can find a `.git` directory when performing `npm install`.
+- Suppress the `fixuid` command output in the npm `docker-entrypoint.sh`.
 - Separated out poolable (passive) command functions from realtime command functions to prevent issues with interactivity.
 
 ## [0.2.0] - 2020-06-24
