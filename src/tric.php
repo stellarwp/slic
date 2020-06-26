@@ -785,7 +785,7 @@ function build_command_pool( string $base_command, array $command, array $sub_di
 	}
 
 	// Build the command process.
-	$command_process = static function( $target ) use ( $using, $base_command, $command, $sub_directories ) {
+	$command_process = static function( $target, $subnet ) use ( $using, $base_command, $command, $sub_directories ) {
 		$prefix = "{$base_command}:" . light_cyan( $target );
 
 		// Execute command as the parent.
@@ -794,13 +794,18 @@ function build_command_pool( string $base_command, array $command, array $sub_di
 			$prefix = "{$base_command}:" . yellow( $target );
 		}
 
-		$status = tric_passive()( array_merge( [ 'run', '--rm', $base_command ], $command ), $prefix );
+		putenv( "TRIC_TEST_SUBNET={$subnet}" );
+
+		$network_name = "tric{$subnet}";
+		$status       = tric_passive()( array_merge( [ '-p', $network_name, 'run', '--rm', $base_command ], $command ), $prefix );
+
+		passthru( "docker network rm {$network_name}_tric {$network_name}_default > /dev/null 2>&1" );
 
 		if ( 'target' !== $target ) {
 			tric_switch_target( $using );
 		}
 
-		return pcntl_exit( $status );
+		exit( pcntl_exit( $status ) );
 	};
 
 	$pool = [];
