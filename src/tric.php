@@ -799,7 +799,7 @@ function build_command_pool( string $base_command, array $command, array $sub_di
 		$network_name = "tric{$subnet}";
 		$status       = tric_passive()( array_merge( [ '-p', $network_name, 'run', '--rm', $base_command ], $command ), $prefix );
 
-		passthru( "docker network rm {$network_name}_tric {$network_name}_default > /dev/null 2>&1" );
+		shell_exec( "docker network rm {$network_name}_tric {$network_name}_default" );
 
 		if ( 'target' !== $target ) {
 			tric_switch_target( $using );
