@@ -237,9 +237,11 @@ function parallel_process( $pool ) {
 	$process_children = [];
 	$subnet_pool      = array_rand( range( 1, 255 ), count( $pool ) );
 	$pool_with_subnet = array_combine( $subnet_pool, $pool );
-	$subnets          = [];
 
-	if ( function_exists( 'pcntl_fork' ) ) {
+	/*
+	 * Disable parallel processing temporarily to avoid some overlapping pool issues.
+	 */
+	if ( false && function_exists( 'pcntl_fork' ) ) {
 		// If we're on a OS that does support process control, then fork.
 		foreach ( $pool_with_subnet as $subnet => $item ) {
 			$pid = pcntl_fork();
@@ -249,14 +251,6 @@ function parallel_process( $pool ) {
 			}
 
 			if ( 0 === $pid ) {
-				// It's a worker: randomize the subnet number to avoid conflicts between workers.
-				// Store in an array to avoid any accidental overlaps.
-				do {
-					$subnet = mt_rand( 1, 255 );
-				} while( ! empty( $subnets[ $subnet ] ) );
-
-				$subnets[ $subnet ] = true;
-
 				putenv( "TRIC_TEST_SUBNET={$subnet}" );
 				$item['process']( $item['target'] );
 			} else {
@@ -329,9 +323,11 @@ function get_status_of_forked_children( array $children = [] ) {
  * @return int|string The exit code or message when the host OS does not support the Process Control extension.
  */
 function pcntl_exit( $status ) {
+	/*
+	 * Temporarily commenting this out to avoid parallelization issues.
 	if ( function_exists( 'pcntl_fork' ) ) {
 		exit( $status );
-	}
+	}*/
 
 	return $status;
 }
