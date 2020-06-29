@@ -241,7 +241,7 @@ function parallel_process( $pool ) {
 	/*
 	 * Disable parallel processing temporarily to avoid some overlapping pool issues.
 	 */
-	if ( false && function_exists( 'pcntl_fork' ) ) {
+	if ( function_exists( 'pcntl_fork' ) ) {
 		// If we're on a OS that does support process control, then fork.
 		foreach ( $pool_with_subnet as $subnet => $item ) {
 			$pid = pcntl_fork();
@@ -251,8 +251,7 @@ function parallel_process( $pool ) {
 			}
 
 			if ( 0 === $pid ) {
-				putenv( "TRIC_TEST_SUBNET={$subnet}" );
-				$item['process']( $item['target'] );
+				$item['process']( $item['target'], $subnet );
 			} else {
 				$process_children[] = $pid;
 			}
