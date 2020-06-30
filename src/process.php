@@ -34,12 +34,38 @@ function process( $command ) {
 /**
  * Runs a process in realtime, displaying its output.
  *
+ * Realtime processes are done without forking, have no need of prefixes, and support interactivity.
+ *
  * @param string $command The command to run.
  * @param string|null $prefix The prefix to place before all output.
  *
  * @return int The process exit status, `0` means ok.
  */
-function process_realtime( $command, $prefix = null ) {
+function process_realtime( $command ) {
+	debug( "Executing command: {$command}" );
+
+	echo PHP_EOL;
+
+	setup_terminal();
+
+	$clean_command = escapeshellcmd( $command );
+
+	passthru( $clean_command, $status );
+
+	return (int) $status;
+}
+
+/**
+ * Runs a process passively, displaying its output.
+ *
+ * Passive processes are ones that only need to dump their output.
+ *
+ * @param string $command The command to run.
+ * @param string|null $prefix The prefix to place before all output.
+ *
+ * @return int The process exit status, `0` means ok.
+ */
+function process_passive( $command, $prefix = null ) {
 	debug( "Executing command: {$command}" );
 
 	echo PHP_EOL;
@@ -209,10 +235,15 @@ function check_status_or( callable $process, callable $else = null ) {
  */
 function parallel_process( $pool ) {
 	$process_children = [];
+	$subnet_pool      = array_rand( range( 1, 255 ), count( $pool ) );
+	$pool_with_subnet = array_combine( $subnet_pool, $pool );
 
+	/*
+	 * Disable parallel processing temporarily to avoid some overlapping pool issues.
+	 */
 	if ( function_exists( 'pcntl_fork' ) ) {
 		// If we're on a OS that does support process control, then fork.
-		foreach ( $pool as $item ) {
+		foreach ( $pool_with_subnet as $subnet => $item ) {
 			$pid = pcntl_fork();
 			if ( $pid === - 1 ) {
 				echo magenta( "Unable to fork processes.\n" );
@@ -220,7 +251,7 @@ function parallel_process( $pool ) {
 			}
 
 			if ( 0 === $pid ) {
-				$item['process']( $item['target'] );
+				$item['process']( $item['target'], $subnet );
 			} else {
 				$process_children[] = $pid;
 			}
@@ -291,9 +322,11 @@ function get_status_of_forked_children( array $children = [] ) {
  * @return int|string The exit code or message when the host OS does not support the Process Control extension.
  */
 function pcntl_exit( $status ) {
+	/*
+	 * Temporarily commenting this out to avoid parallelization issues.
 	if ( function_exists( 'pcntl_fork' ) ) {
 		exit( $status );
-	}
+	}*/
 
 	return $status;
 }

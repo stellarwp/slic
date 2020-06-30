@@ -60,6 +60,7 @@ function write_tric_env_file( $plugin_path ) {
 
 	$replace['wp_db_port'] = [
 		'env' => [
+			'DB_PORT',
 			'WP_DB_PORT',
 			'TEST_DB_PORT',
 			'TEST_SITE_DB_PORT',
@@ -69,6 +70,7 @@ function write_tric_env_file( $plugin_path ) {
 
 	$replace['wp_db_host'] = [
 		'env' => [
+			'DB_HOST',
 			'WP_DB_HOST',
 			'WP_TEST_DB_HOST',
 			'TEST_DB_HOST',
@@ -79,6 +81,7 @@ function write_tric_env_file( $plugin_path ) {
 
 	$replace['wp_db_name'] = [
 		'env' => [
+			'DB_NAME',
 			'WP_DB_NAME',
 			'WP_TEST_DB_NAME',
 			'TEST_DB_NAME',
@@ -89,12 +92,23 @@ function write_tric_env_file( $plugin_path ) {
 
 	$replace['wp_db_password'] = [
 		'env' => [
+			'DB_PASSWORD',
 			'WP_DB_PASSWORD',
 			'WP_TEST_DB_PASSWORD',
 			'TEST_DB_PASSWORD',
 			'TEST_SITE_DB_PASSWORD',
 		],
 		'value' => $mysql_root_password,
+	];
+
+	$replace['wp_table_prefix'] = [
+		'env' => [
+			'TEST_TABLE_PREFIX',
+			'WP_TABLE_PREFIX',
+			'WORDPRESS_TABLE_PREFIX',
+			'TEST_SITE_TABLE_PREFIX',
+		],
+		'value' => 'wp_',
 	];
 
 	$replace['chromedriver_host'] = [

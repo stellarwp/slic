@@ -178,16 +178,20 @@ function setup_tric_env( $root_dir ) {
  *                       return value will always be a non empty string.
  */
 function tric_target( $require = true ) {
-	$using = getenv( 'TRIC_CURRENT_PROJECT' );
+	$using        = getenv( 'TRIC_CURRENT_PROJECT' );
+	$using_subdir = getenv( 'TRIC_CURRENT_PROJECT_SUBDIR' );
+	$using_full   = $using . ( $using_subdir ? '/' . $using_subdir : '' );
+
 	if ( $require ) {
-		return $using;
+		return $using_full;
 	}
-	if ( empty( $using ) ) {
+
+	if ( empty( $using_full ) ) {
 		echo magenta( "Use target not set; use the 'use' sub-command to set it.\n" );
 		exit( 1 );
 	}
 
-	return trim( $using );
+	return trim( $using_full );
 }
 
 /**
@@ -199,14 +203,20 @@ function tric_switch_target( $target ) {
 	$root                 = root();
 	$run_settings_file    = "{$root}/.env.tric.run";
 	$target_relative_path = '';
+	$subdir               = '';
 
 	if ( tric_here_is_site() ) {
 		$target_relative_path = get_target_relative_path( $target );
 	}
 
+	if ( false !== strpos( $target, '/' ) ) {
+		list( $target, $subdir ) = explode( '/', $target );
+	}
+
 	$env_values = [
 		'TRIC_CURRENT_PROJECT'               => $target,
 		'TRIC_CURRENT_PROJECT_RELATIVE_PATH' => $target_relative_path,
+		'TRIC_CURRENT_PROJECT_SUBDIR'        => $subdir,
 	];
 
 	write_env_file( $run_settings_file, $env_values, true );
@@ -429,6 +439,17 @@ function git_handle() {
 	$handle = getenv( 'TRIC_GIT_HANDLE' );
 
 	return ! empty( $handle ) ? trim( $handle ) : 'moderntribe';
+}
+
+/**
+ * Runs a process in passive mode in tric stack and returns the exit status.
+ *
+ * This approach is used when running commands that can be done in parallel or forked processes.
+ *
+ * @return \Closure The process closure to start a real-time process using tric stack.
+ */
+function tric_passive() {
+	return docker_compose_passive( tric_stack_array() );
 }
 
 /**
@@ -780,7 +801,7 @@ function build_command_pool( string $base_command, array $command, array $sub_di
 	}
 
 	// Build the command process.
-	$command_process = static function( $target ) use ( $using, $base_command, $command, $sub_directories ) {
+	$command_process = static function( $target, $subnet ) use ( $using, $base_command, $command, $sub_directories ) {
 		$prefix = "{$base_command}:" . light_cyan( $target );
 
 		// Execute command as the parent.
@@ -789,13 +810,18 @@ function build_command_pool( string $base_command, array $command, array $sub_di
 			$prefix = "{$base_command}:" . yellow( $target );
 		}
 
-		$status = tric_realtime()( array_merge( [ 'run', '--rm', $base_command ], $command ), $prefix );
+		putenv( "TRIC_TEST_SUBNET={$subnet}" );
+
+		$network_name = "tric{$subnet}";
+		$status       = tric_passive()( array_merge( [ '-p', $network_name, 'run', '--rm', $base_command ], $command ), $prefix );
+
+		shell_exec( "docker network rm {$network_name}_tric {$network_name}_default" );
 
 		if ( 'target' !== $target ) {
 			tric_switch_target( $using );
 		}
 
-		return pcntl_exit( $status );
+		exit( pcntl_exit( $status ) );
 	};
 
 	$pool = [];
@@ -944,9 +970,54 @@ function switch_plugin_branch( $branch, $plugin = null ) {
 }
 
 /**
+ * If tric itself is out of date, prompt to update repo.
+ */
+function maybe_prompt_for_repo_update() {
+	$remote_version = null;
+	$check_date     = null;
+	$cli_version    = CLI_VERSION;
+	$today          = date( 'Y-m-d' );
+
+	if ( file_exists( TRIC_ROOT_DIR . '/.remote-version' ) ) {
+		list( $check_date, $remote_version ) = explode( ':', file_get_contents( TRIC_ROOT_DIR . '/.remote-version' ) );
+	}
+
+	if ( empty( $remote_version ) || empty( $check_date ) || $today > $check_date ) {
+		$current_dir = getcwd();
+		chdir( TRIC_ROOT_DIR );
+
+		$tags = explode( "\n", shell_exec( 'git ls-remote --tags origin' ) );
+
+		chdir( $current_dir );
+
+		foreach ( $tags as &$tag ) {
+			$tag_parts = explode( '/', $tag );
+			$tag       = array_pop( $tag_parts );
+		}
+
+		natsort( $tags );
+
+		$remote_version = array_pop( $tags );
+
+		file_put_contents( TRIC_ROOT_DIR . '/.remote-version', "{$today}:{$remote_version}" );
+	}
+
+	// If the version of the CLI is the same as the most recently built version, bail.
+	if ( version_compare( $remote_version, $cli_version, '<=' ) ) {
+		return;
+	}
+
+	echo magenta( "\n****************************************************************\n\n" );
+	echo colorize( "<magenta>Version</magenta> <yellow>{$remote_version}</yellow> <magenta>of tric is available! You are currently</magenta>\n" );
+	echo magenta( "running version {$cli_version}. To update, execute the following:\n\n" );
+	echo yellow( "                         tric upgrade\n\n" );
+	echo magenta( "****************************************************************\n" );
+}
+
+/**
  * If tric stack is out of date, prompt for an execution of tric update.
  */
-function maybe_prompt_for_update() {
+function maybe_prompt_for_stack_update() {
 	$build_version = '0.0.1';
 	$cli_version   = CLI_VERSION;
 

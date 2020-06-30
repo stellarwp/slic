@@ -3,9 +3,11 @@
 # This file is just a proxy to call the `npm` binary that will, but, take care of fixing file mode issues before.
 
 # If the `FIXUID` env var is set to `1`, default value, then fix UIDs.
-test "${FIXUID:-1}" != "0" && eval "$( fixuid )"
+test "${FIXUID:-1}" != "0" && eval "$( fixuid > /dev/null 2>&1 )"
 
-npm --prefix /project "$@"
+cd /project/${TRIC_CURRENT_PROJECT_SUBDIR}
+
+npm "$@"
 
 # Output error logs if present.
 if compgen -G "/home/node/.npm/_logs/*.log" > /dev/null; then
