@@ -2,11 +2,11 @@
 
 ## Prerequisites
 
-1. Docker
+1. Docker (installed and running)
 
 ## Setup
 
-1. Clone this repository to your machine
+1. Clone this repository to your machine. Should be a common location, not within a single WP site's directory (e.g. `~/git/tric`)
 1. Ensure the `tric` command is runnable by adding it to your path or symlinking `tric` into a directory that is in your path.
 
 ### Add to your path
