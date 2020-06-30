@@ -353,11 +353,12 @@ function clone_plugin( $plugin, $branch = null ) {
 
 	echo "Cloning {$plugin}...\n";
 
-	$repository = github_company_handle() . '/' . escapeshellcmd( $plugin );
+	$repository = git_handle() . '/' . escapeshellcmd( $plugin );
 
 	$clone_command = sprintf(
-		'git clone %s --recursive git@github.com:%s.git %s',
+		'git clone %s --recursive git@%s:%s.git %s',
 		null !== $branch ? '-b "' . $branch . '"' : '',
+		git_domain(),
 		$repository,
 		escapeshellcmd( $plugin_path )
 	);
@@ -404,14 +405,28 @@ function setup_plugin_tests( $plugin ) {
 }
 
 /**
- * Returns the handle (username) of the company to clone plugins from.
+ * Returns the git domain from which to clone git plugins.
  *
- * Configured using the `TRIC_GITHUB_COMPANY_HANDLE` env variable.
+ * Configured using the `TRIC_GIT_DOMAIN` env variable.
+ * Examples: gitlab.com, bitbucket.org, git.example.com
  *
- * @return string The handle of the company to clone plugins from.
+ * @return string The git domain from which to clone plugins.
  */
-function github_company_handle() {
-	$handle = getenv( 'TRIC_GITHUB_COMPANY_HANDLE' );
+function git_domain() {
+	$domain = getenv( 'TRIC_GIT_DOMAIN' );
+
+	return ! empty( $domain ) ? trim( $domain ) : 'github.com';
+}
+
+/**
+ * Returns the handle (username) of the company from which to clone git plugins.
+ *
+ * Configured using the `TRIC_GIT_HANDLE` env variable.
+ *
+ * @return string The git handle from which to clone plugins.
+ */
+function git_handle() {
+	$handle = getenv( 'TRIC_GIT_HANDLE' );
 
 	return ! empty( $handle ) ? trim( $handle ) : 'moderntribe';
 }
@@ -467,7 +482,8 @@ function tric_info() {
 		'CLI_VERBOSITY',
 		'TRIC_CURRENT_PROJECT',
 		'TRIC_CURRENT_PROJECT_RELATIVE_PATH',
-		'TRIC_GITHUB_COMPANY_HANDLE',
+		'TRIC_GIT_DOMAIN',
+		'TRIC_GIT_HANDLE',
 		'TRIC_HERE_DIR',
 		'TRIC_PLUGINS_DIR',
 		'TRIC_THEMES_DIR',
