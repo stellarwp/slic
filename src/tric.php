@@ -801,7 +801,7 @@ function build_command_pool( string $base_command, array $command, array $sub_di
 	}
 
 	// Build the command process.
-	$command_process = static function( $target, $subnet ) use ( $using, $base_command, $command, $sub_directories ) {
+	$command_process = static function( $target, $subnet = '') use ( $using, $base_command, $command, $sub_directories ) {
 		$prefix = "{$base_command}:" . light_cyan( $target );
 
 		// Execute command as the parent.
@@ -830,7 +830,7 @@ function build_command_pool( string $base_command, array $command, array $sub_di
 	foreach ( $targets as $target ) {
 		$clean_command = implode( ' ', $command );
 
-		$pool[ "{$target}:{$base_command}:{$clean_command}" ] = [
+		$pool["{$target}:{$base_command}:{$clean_command}"] = [
 			'target'    => $target,
 			'container' => $base_command,
 			'command'   => $command,
