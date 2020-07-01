@@ -86,6 +86,26 @@ switch ( $available_configs_mask ) {
 // Add tric configuration file, if existing.
 $run_configuration = array_merge( [ 'run', '--rm', 'codeception', 'run' ], $config_files );
 
+$wp_container_id = trim(tric_process()(['ps','-q','wordpress'])('string_output'));
+if (!$wp_container_id && 'Linux' === os()) {
+	// Start the WordPress container.
+	$status = tric_realtime()( [ 'up', '-d', 'wordpress' ] );
+	if ( 0 !== $status ) {
+		echo "\n" . magenta( 'Could not start the WordPress container.' );
+		exit( 1 );
+	}
+	$start = time();
+	while( !file_exists( getenv('TRIC_WP_DIR') . '/wp-content') && time() - $start < 30){
+		// Wait for the `wp-content` directory to come through.
+	}
+	// Recursively set the `wp-content` directory to be world-rwx.
+	$status = trim(tric_process()(['exec','-u "0:0"','wordpress','chmod','-R','a+rwx','/var/www/html/wp-content']));
+	if ( 0 !== $status ) {
+		echo "\n" . magenta( 'Could not make the WordPress wp-content directory world-accessible.' );
+		exit( 1 );
+	}
+}
+
 // Finally run the command.
 $status     = tric_realtime()( array_merge( $run_configuration, $args( '...' ) ) );
 $has_failed = file_exists( $root . '/tests/_output/failed' );
