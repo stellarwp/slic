@@ -86,7 +86,7 @@ switch ( $available_configs_mask ) {
 // Add tric configuration file, if existing.
 $run_configuration = array_merge( [ 'run', '--rm', 'codeception', 'run' ], $config_files );
 
-fix_container_dir_file_modes( 'wordpress', '/var/www/html/wp-contnet', 'a+rwx' );
+fix_container_dir_file_modes( 'wordpress', '/var/www/html/wp-content', 'a+rwx' );
 
 // Finally run the command.
 $status     = tric_realtime()( array_merge( $run_configuration, $args( '...' ) ) );
