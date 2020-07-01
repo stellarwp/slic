@@ -86,26 +86,7 @@ switch ( $available_configs_mask ) {
 // Add tric configuration file, if existing.
 $run_configuration = array_merge( [ 'run', '--rm', 'codeception', 'run' ], $config_files );
 
-$wp_container_id = trim(tric_process()(['ps','-q','wordpress'])('string_output'));
-if (!$wp_container_id && 'Linux' === os()) {
-	// Start the WordPress container, twice to get around some docker-compose issues.
-	tric_realtime()( [ 'up', '-d', 'wordpress' ] );
-	$status = tric_realtime()( [ 'up', '-d', 'wordpress' ] );
-	if ( 0 !== $status ) {
-		echo "\n" . magenta( 'Could not start the WordPress container.' );
-		exit( 1 );
-	}
-
-	// Wait for the WordPress container to come up.
-	tric_process()(['run','--rm','site_waiter']);
-
-	// Recursively set the `wp-content` directory to be world-rwx.
-	$status = trim(tric_process()(['exec','-u "0:0"','wordpress','chmod','-R','a+rwx','/var/www/html/wp-content']));
-	if ( 0 !== $status ) {
-		echo "\n" . magenta( 'Could not make the WordPress wp-content directory world-accessible.' );
-		exit( 1 );
-	}
-}
+fix_container_dir_file_modes( 'wordpress', '/var/www/html/wp-contnet', 'a+rwx' );
 
 // Finally run the command.
 $status     = tric_realtime()( array_merge( $run_configuration, $args( '...' ) ) );
