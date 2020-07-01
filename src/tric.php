@@ -1088,7 +1088,7 @@ function fix_container_dir_file_modes( $service, $dir, $modes = 'a+rwx' ) {
 			tric_process()( [ 'run', '--rm', 'site_waiter' ] );
 		}
 
-		// Recursively set the `wp-content` directory to be readable/writeable/executable by world.
+		// Recursively set file modes on the target directory.
 		$status = (int) tric_process()(
 			[ 'exec', '-u "0:0"', $service, 'chmod', '-R', $modes, $dir ]
 		)( 'status' );
