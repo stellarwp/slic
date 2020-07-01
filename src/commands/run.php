@@ -88,16 +88,17 @@ $run_configuration = array_merge( [ 'run', '--rm', 'codeception', 'run' ], $conf
 
 $wp_container_id = trim(tric_process()(['ps','-q','wordpress'])('string_output'));
 if (!$wp_container_id && 'Linux' === os()) {
-	// Start the WordPress container.
+	// Start the WordPress container, twice to get around some docker-compose issues.
+	tric_realtime()( [ 'up', '-d', 'wordpress' ] );
 	$status = tric_realtime()( [ 'up', '-d', 'wordpress' ] );
 	if ( 0 !== $status ) {
 		echo "\n" . magenta( 'Could not start the WordPress container.' );
 		exit( 1 );
 	}
-	$start = time();
-	while( !file_exists( getenv('TRIC_WP_DIR') . '/wp-content') && time() - $start < 30){
-		// Wait for the `wp-content` directory to come through.
-	}
+
+	// Wait for the WordPress container to come up.
+	tric_process()(['run','--rm','site_waiter']);
+
 	// Recursively set the `wp-content` directory to be world-rwx.
 	$status = trim(tric_process()(['exec','-u "0:0"','wordpress','chmod','-R','a+rwx','/var/www/html/wp-content']));
 	if ( 0 !== $status ) {
