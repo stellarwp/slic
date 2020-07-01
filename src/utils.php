@@ -307,13 +307,22 @@ function the_fatality() {
  */
 function host_ip( $os = 'Linux' ) {
 	if ( $os === 'Linux' ) {
-		$command = "ip route | grep docker0 | cut -f9 -d' '";
-		exec( $command, $output, $status );
-		if ( 0 !== (int) $status ) {
-			echo magenta( "Cannot get the host machine IP address using '${command}'\n" );
+		// Depending on the distribution being used either one, or both, these commands might yield a result.
+		$commands = [
+			"ip route | grep docker0 | cut -f9 -d' '",
+			"/sbin/ip route|awk '/default/ { print  \$3}'",
+		];
+		$host_ip  = false;
+
+		foreach ( $commands as $command ) {
+			exec( $command, $output, $status );
+			$host_ip = $status === 0 && isset( $output[0] ) ? trim( $output[0] ) : false;
+		}
+
+		if ( false === $host_ip ) {
+			echo magenta( "Cannot get the host machine IP address.\n" );
 			exit( 1 );
 		}
-		$host_ip = trim( $output[0] );
 	} else {
 		$host_ip = 'host.docker.internal';
 	}
