@@ -77,8 +77,6 @@ services:
       # Paths are relative to the directory that contains this file, NOT the current working directory.
       # Share the WordPress core installation files in the `_wordpress` directory.
       - ${TRIC_WP_DIR}:/var/www/html:cached
-      # Force the creation of the wp-content directory to make sure it belongs to the current user.
-      - ./containers/wordpress/_wp-content::/var/www/html/wp-content:cached
       # Share the WordPress core installation files in the `_plugins` directory.
       - ${TRIC_PLUGINS_DIR}:/var/www/html/wp-content/plugins:cached
       - ${TRIC_THEMES_DIR}:/var/www/html/wp-content/themes:cached
