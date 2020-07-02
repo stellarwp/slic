@@ -25,7 +25,7 @@ $args = args( [
 ] );
 
 $cli_name = basename( $argv[0] );
-const CLI_VERSION = '0.4.7';
+const CLI_VERSION = '0.4.8';
 
 $cli_header = implode( ' - ', [
 	light_cyan( $cli_name ) . ' version ' . light_cyan( CLI_VERSION ),
@@ -67,6 +67,7 @@ Available commands:
 
 <yellow>Info:</yellow>
 <light_cyan>build-prompt</light_cyan>   Activates or deactivates whether or not composer/npm build prompts should be provided.
+<light_cyan>build-subdir</light_cyan>   Activates or deactivates whether or not composer/npm build should apply to sub-directories.
 <light_cyan>config</light_cyan>         Prints the stack configuration as interpolated from the environment.
 <light_cyan>debug</light_cyan>          Activates or deactivates {$cli_name} debug output or returns the current debug status.
 <light_cyan>help</light_cyan>           Displays this help message.
@@ -111,6 +112,7 @@ switch ( $subcommand ) {
 	case 'airplane-mode':
 	case 'build-prompt':
 	case 'build-stack':
+	case 'build-subdir':
 	case 'cache':
 	case 'cc':
 	case 'cli':
