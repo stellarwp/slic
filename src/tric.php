@@ -568,7 +568,7 @@ function tric_wp_dir( $path = '' ) {
  * Prints the current build-prompt status to screen.
  */
 function build_prompt_status() {
-	$enabled = getenv( 'TRIC_INTERACTIVE' );
+	$enabled = getenv( 'TRIC_BUILD_PROMPT' );
 
 	echo 'Interactive status is: ' . ( $enabled ? light_cyan( 'on' ) : magenta( 'off' ) ) . PHP_EOL;
 }
@@ -790,13 +790,15 @@ function build_command_pool( string $base_command, array $command, array $sub_di
 	$using   = tric_target();
 	$targets = [ 'target' ];
 
-	// Prompt for execution within subdirectories.
-	foreach ( $sub_directories as $dir ) {
-		if (
-			file_exists( tric_plugins_dir( "{$using}/{$dir}" ) )
-			&& ask( "\nWould you also like to run that {$base_command} command against {$dir}?", 'yes' )
-		) {
-			$targets[] = $dir;
+	// Prompt for execution within subdirectories if enabled.
+	if ( getenv( 'TRIC_BUILD_SUBDIR' ) ) {
+		foreach ( $sub_directories as $dir ) {
+			if (
+				file_exists( tric_plugins_dir( "{$using}/{$dir}" ) )
+				&& ask( "\nWould you also like to run that {$base_command} command against {$dir}?", 'yes' )
+			) {
+				$targets[] = $dir;
+			}
 		}
 	}
 
@@ -1097,4 +1099,38 @@ function fix_container_dir_file_modes( $service, $dir, $modes = 'a+rwx' ) {
 			exit( 1 );
 		}
 	}
+}
+
+/**
+ * Handles the build-subdir command request.
+ *
+ * @param callable $args The closure that will produce the current subdirectories build arguments.
+ */
+function tric_handle_build_subdir( callable $args ) {
+	$run_settings_file = root( '/.env.tric.run' );
+	$toggle            = $args( 'toggle', 'on' );
+
+	if ( 'status' === $toggle ) {
+		build_subdir_status();
+
+		return;
+	}
+
+	$value = 'on' === $toggle ? 1 : 0;
+	echo 'Build Sub-directories status: ' . ( $value ? light_cyan( 'on' ) : magenta( 'off' ) );
+
+	if ( $value === (int) getenv( 'TRIC_BUILD_SUBDIR' ) ) {
+		return;
+	}
+
+	write_env_file( $run_settings_file, [ 'TRIC_BUILD_SUBDIR' => $value ], true );
+}
+
+/**
+ * Prints the current build-subdir status to screen.
+ */
+function build_subdir_status() {
+	$enabled = getenv( 'TRIC_BUILD_SUBDIR' );
+
+	echo 'Sub-directories build status is: ' . ( $enabled ? light_cyan( 'on' ) : magenta( 'off' ) ) . PHP_EOL;
 }
