@@ -1079,7 +1079,7 @@ function fix_container_dir_file_modes( $service, $dir, $modes = 'a+rwx' ) {
 		$status = tric_realtime()( [ 'up', '-d', $service ] );
 
 		if ( 0 !== $status ) {
-			echo "\n" . magenta( 'Could not start the WordPress container.' );
+			echo "\n" . magenta( "Could not start the {$service} container." );
 			exit( 1 );
 		}
 
@@ -1090,7 +1090,7 @@ function fix_container_dir_file_modes( $service, $dir, $modes = 'a+rwx' ) {
 
 		// Recursively set file modes on the target directory.
 		$status = (int) tric_process()(
-			[ 'exec', '-u "0:0"', $service, 'chmod', '-R', $modes, $dir ]
+			[ 'exec', '-T', '-u "0:0"', $service, 'chmod', '-R', $modes, $dir ]
 		)( 'status' );
 		if ( 0 !== $status ) {
 			echo "\n" . magenta( "Could not fix {$service} file modes: {$dir} {$modes}." );
