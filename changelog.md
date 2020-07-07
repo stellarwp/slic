@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fix an issue where the `tric init` command would not correctly pick up the existing environment files if not running from the plugin directory.
 
+### Added
+
+- Added the `TRIC_INTERACTIVE`, `TRIC_BUILD_PROMPT` and `TRIC_BUILD_SUBDIR` env var to the `tric info` report.
+
 ## [0.4.8] - 2020-07-02
 ### Added
 
