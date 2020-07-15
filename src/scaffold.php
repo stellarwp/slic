@@ -14,7 +14,6 @@ namespace Tribe\Test;
  */
 function write_tric_env_file( $plugin_path ) {
 	$mysql_root_password = getenv( 'MYSQL_ROOT_PASSWORD' );
-	$wp_http_port        = getenv( 'WORDPRESS_HTTP_PORT');
 
 	$plugin_env          = null;
 	$candidate_env_files = [
@@ -23,10 +22,11 @@ function write_tric_env_file( $plugin_path ) {
 		'.env.dist'
 	];
 	foreach ( $candidate_env_files as $candidate ) {
-		if ( ! file_exists( $candidate ) ) {
+		$candidate_full_path = rtrim( $plugin_path, '\\/' ) . '/' . ltrim( $candidate, '\\/' );
+		if ( ! file_exists( $candidate_full_path ) ) {
 			continue;
 		}
-		$plugin_env = file_get_contents( $plugin_path . '/' . $candidate );
+		$plugin_env = file_get_contents( $candidate_full_path );
 		break;
 	}
 
