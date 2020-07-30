@@ -8,7 +8,7 @@
 namespace Tribe\Test;
 
 if ( $is_help ) {
-	echo "Runs a command on set of targets.\n";
+	echo "Runs a command on a set of targets.\n";
 	echo PHP_EOL;
 	echo colorize( "usage: <light_cyan>tric target</light_cyan>\n" );
 
