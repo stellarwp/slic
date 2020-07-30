@@ -10,9 +10,7 @@ namespace Tribe\Test;
 if ( $is_help ) {
 	echo "Runs a command on set of targets.\n";
 	echo PHP_EOL;
-	echo colorize( "This command requires a use target set using the <lightcyan>use</light_cyan> command.\n" );
-	echo colorize( "usage: <light_cyan>{$cli_name} composer [...<commands>]</light_cyan>\n" );
-	echo colorize( "example: <light_cyan>{$cli_name} composer install</light_cyan>" );
+	echo colorize( "usage: <light_cyan>tric target</light_cyan>\n" );
 
 	return;
 }
