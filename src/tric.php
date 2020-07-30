@@ -54,7 +54,7 @@ function ensure_valid_target( $target, $exit = true ) {
 
 	if ( false === $target ) {
 		echo magenta( "This command needs a target argument; available targets are:\n${targets_str}\n" );
-		if ($exit) {
+		if ( $exit ) {
 			exit( 1 );
 		}
 
