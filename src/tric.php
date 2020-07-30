@@ -23,8 +23,12 @@ function tric_here_is_site() {
  *   - If tric here was done on the site level, "site" is also a valid target.
  *
  * @param string $target The target to check in the valid list of targets.
+ * @param bool   $exit   Whether to exit if the target is invalid, or to return `false`.
+ *
+ * @return string|false $target The validated target or `false` to indicate the target is not valid if the `$exit`
+ *                              parameter is set to `false`.
  */
-function ensure_valid_target( $target ) {
+function ensure_valid_target( $target, $exit = true ) {
 	$targets_str = '';
 	$plugins = array_keys( dev_plugins() );
 	$themes  = array_keys( dev_themes() );
@@ -50,13 +54,23 @@ function ensure_valid_target( $target ) {
 
 	if ( false === $target ) {
 		echo magenta( "This command needs a target argument; available targets are:\n${targets_str}\n" );
-		exit( 1 );
+		if ( $exit ) {
+			exit( 1 );
+		}
+
+		return false;
 	}
 
 	if ( ! in_array( $target, $targets, true ) ) {
 		echo magenta( "'{$target}' is not a valid target; available targets are:\n${targets_str}\n" );
-		exit( 1 );
+		if ( $exit ) {
+			exit( 1 );
+		}
+
+		return false;
 	}
+
+	return $target;
 }
 
 /**
@@ -783,22 +797,26 @@ function maybe_build_install_command_pool( $base_command, $target, array $sub_di
  * If any subdirectories are provided and are available in the target, then the user will be prompted to run the same
  * command on those subdirectories.
  *
- * @param string $base_command The base service command to run, e.g. `npm`, `composer`, etc.
- * @param array<string> $command The command to run, e.g. `['install','--save-dev']` in array format.
+ * @param string        $base_command    The base service command to run, e.g. `npm`, `composer`, etc.
+ * @param array<string> $command         The command to run, e.g. `['install','--save-dev']` in array format.
  * @param array<string> $sub_directories Sub directories to prompt for additional execution.
+ * @param string        $using           An optional target to use in place of the specified one.
  *
- * @return int Result of command execution.
+ * @return array The built command pool.
  */
-function build_command_pool( string $base_command, array $command, array $sub_directories = [] ) {
-	$using   = tric_target();
+function build_command_pool( $base_command, array $command, array $sub_directories = [], $using = null ) {
+	$using_alias = $using;
+	$using       = $using ?: tric_target();
 	$targets = [ 'target' ];
 
 	// Prompt for execution within subdirectories if enabled.
 	if ( getenv( 'TRIC_BUILD_SUBDIR' ) ) {
 		foreach ( $sub_directories as $dir ) {
+			$dir_name = $using_alias ? "{$using_alias}/{$dir}" : $dir;
+			$question = "\nWould you also like to run that {$base_command} command against {$dir_name}?";
 			if (
 				file_exists( tric_plugins_dir( "{$using}/{$dir}" ) )
-				&& ask( "\nWould you also like to run that {$base_command} command against {$dir}?", 'yes' )
+				&& ask( $question, 'yes' )
 			) {
 				$targets[] = $dir;
 			}
@@ -806,13 +824,15 @@ function build_command_pool( string $base_command, array $command, array $sub_di
 	}
 
 	// Build the command process.
-	$command_process = static function( $target, $subnet = '') use ( $using, $base_command, $command, $sub_directories ) {
-		$prefix = "{$base_command}:" . light_cyan( $target );
+	$command_process = static function( $target, $subnet = '' ) use ( $using, $using_alias, $base_command, $command, $sub_directories ) {
+		$target_name = $using_alias ?: $target;
+		$prefix      = "{$base_command}:" . light_cyan( $target_name );
 
 		// Execute command as the parent.
 		if ( 'target' !== $target ) {
 			tric_switch_target( "{$using}/{$target}" );
-			$prefix = "{$base_command}:" . yellow( $target );
+			$sub_target_name = $using_alias ? "{$using_alias}/{$target}" : $target;
+			$prefix          = "{$base_command}:" . yellow( $sub_target_name );
 		}
 
 		putenv( "TRIC_TEST_SUBNET={$subnet}" );
@@ -1136,4 +1156,52 @@ function build_subdir_status() {
 	$enabled = getenv( 'TRIC_BUILD_SUBDIR' );
 
 	echo 'Sub-directories build status is: ' . ( $enabled ? light_cyan( 'on' ) : magenta( 'off' ) ) . PHP_EOL;
+}
+
+/**
+ * Build a command pool, suitable to be run using the `execute_command_pool` function, for multiple targets.
+ *
+ * If any subdirectories are provided and are available in the target, then the user will be prompted to run the same
+ * command on those subdirectories.
+ *
+ * @param array<string> $targets         An array of targets for the command pool; note the targets are NOT validated by
+ *                                       this function and the validation should be done by the calling code.
+ * @param string        $base_command    The base service command to run, e.g. `npm`, `composer`, etc.
+ * @param array<string> $command         The command to run, e.g. `['install','--save-dev']` in array format.
+ * @param array<string> $sub_directories Sub directories to prompt for additional execution.
+ *
+ * @return array The built command pool for all the targets.
+ */
+function build_targets_command_pool( array $targets, $base_command, array $command, array $sub_directories = [] ) {
+	$raw_command_pool = array_combine(
+		$targets,
+		array_map( static function ( $target ) use ( $base_command, $command, $sub_directories ) {
+			return build_command_pool( $base_command, $command, $sub_directories, $target );
+		}, $targets )
+	);
+
+	// Set the keys correctly to have the command prefixes correctly built.
+	$command_pool = [];
+	foreach ( $raw_command_pool as $target => $target_pool ) {
+		foreach ( $target_pool as $target_key => $process ) {
+			$key                  = preg_replace(
+				[
+					// Main target.
+					'/^target:/',
+					// Sub-directories.
+					'/^([\w\d]+):/'
+				],
+				[
+					// Replace with `<target>:`.
+					$target . ':',
+					// Replace with `<target>/<subdir>:`.
+					$target . '/$1:'
+				],
+				$target_key
+			);
+			$command_pool[ $key ] = $process;
+		}
+	}
+
+	return $command_pool;
 }

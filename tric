@@ -25,7 +25,7 @@ $args = args( [
 ] );
 
 $cli_name = basename( $argv[0] );
-const CLI_VERSION = '0.4.9';
+const CLI_VERSION = '0.5.0';
 
 $cli_header = implode( ' - ', [
 	light_cyan( $cli_name ) . ' version ' . light_cyan( CLI_VERSION ),
@@ -53,6 +53,7 @@ Available commands:
 <light_cyan>init</light_cyan>           Initializes a plugin for use in tric.
 <light_cyan>composer</light_cyan>       Runs a Composer command in the stack.
 <light_cyan>npm</light_cyan>            Runs an npm command in the stack.
+<light_cyan>target</light_cyan>         Runs a command on a set of targets.
 <light_cyan>xdebug</light_cyan>         Activates and deactivates XDebug in the stack, returns the current XDebug status or sets its values.
 <light_cyan>airplane-mode</light_cyan>  Activates or deactivates the airplane-mode plugin.
 <light_cyan>cache</light_cyan>          Activates and deactivates object cache support, returns the current object cache status.
@@ -133,6 +134,7 @@ switch ( $subcommand ) {
 	case 'run':
 	case 'serve':
 	case 'shell':
+	case 'target':
 	case 'up':
 	case 'update':
 	case 'upgrade':
