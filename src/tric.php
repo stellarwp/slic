@@ -806,7 +806,7 @@ function maybe_build_install_command_pool( $base_command, $target, array $sub_di
  */
 function build_command_pool( $base_command, array $command, array $sub_directories = [], $using = null ) {
 	$using_alias = $using;
-	$using   = $using ?: tric_target();
+	$using       = $using ?: tric_target();
 	$targets = [ 'target' ];
 
 	// Prompt for execution within subdirectories if enabled.
