@@ -63,8 +63,8 @@ function ensure_valid_target( $target, $exit = true ) {
 
 	if ( ! in_array( $target, $targets, true ) ) {
 		echo magenta( "'{$target}' is not a valid target; available targets are:\n${targets_str}\n" );
-		if($exit){
-			exit(1);
+		if ( $exit ) {
+			exit( 1 );
 		}
 
 		return false;
