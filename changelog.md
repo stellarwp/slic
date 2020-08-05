@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1] - 2020-08-04
+### Changed
+
+- Fix an issue where the `function-mocker-cache` volume would be mounted with `root` ownership on Linux systems causing Function Mocker to fail while trying to set up cache in plugins that use it.
+
+
 ## [0.5.0] - 2020-07-30
 ### Added
 

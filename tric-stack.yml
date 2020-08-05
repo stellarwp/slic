@@ -160,6 +160,8 @@ services:
       # Let's set the lines and columns number explicitly to have the shell mirror the current one.
       LINES: "${LINES:-24}"
       COLUMNS: "${COLUMNS:-80}"
+      # Explicitly set the env var that will define the Function Mocker cache path: it will be picked up by the config file.
+      FUNCTION_MOCKER_CACHE_PATH: "/cache"
     depends_on:
       - wordpress
       - chrome
@@ -173,7 +175,8 @@ services:
       # In some plugins we use function-mocker and set it up to cache in `/tmp/function-mocker`.
       # To avoid a long re-caching on each run, let's cache in a docker volume, caching on the host
       # filesystem would be a worse cure than the disease.
-      - function-mocker-cache:/tmp/function-mocker
+      # The volume is bound to the `a+rwx` directory the `codeception` image provides to avoid file mode issues.
+      - function-mocker-cache:/cache
 
   composer:
     image: lucatume/composer:php7.0
