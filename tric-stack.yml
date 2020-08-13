@@ -24,7 +24,7 @@ services:
 
   wordpress:
     # Fix the version of the WordPress image to avoid issues w/ out-of-date database dumps.
-    image: wordpress:5.4.1-apache
+    image: wordpress:5.5-apache
     networks:
       tric:
         # Allow the other containers to read this container with a pretty URL.
