@@ -497,6 +497,9 @@ function ask( $question, $default = null ) {
 		$prompt .= " ({$default})";
 	}
 
+	// Add an empty space after the prompt to separate visual confusion.
+	$prompt .= ' ';
+
 	$is_boolean = false;
 	if ( is_bool( $default ) || preg_match( '/(^yes|no)$/i', $default ) ) {
 		// It's a yes or no question, cast to boolean at the end.
@@ -509,6 +512,13 @@ function ask( $question, $default = null ) {
 		// Using echo rather than the parameter for the readline() for prompting due to a terminal window incompatibility.
 		echo $prompt;
 		$value = readline();
+	}
+
+	/*
+	 * If the answer is an empty line, then the user just pressed Enter: use the default value.
+	 */
+	if ( $default !== '' ) {
+		$value = '' === trim( $value ) ? $default : $value;
 	}
 
 	if ( $is_boolean ) {

@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Update the WordPress version used in the stack to `5.5`.
+- Fix handling of default answers in prompts.
 
 ## [0.5.2] - 2020-08-10
 ### Changed
