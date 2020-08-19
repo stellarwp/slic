@@ -25,7 +25,7 @@ $args = args( [
 ] );
 
 $cli_name = basename( $argv[0] );
-const CLI_VERSION = '0.5.4';
+const CLI_VERSION = '0.5.5';
 
 $cli_header = implode( ' - ', [
 	light_cyan( $cli_name ) . ' version ' . light_cyan( CLI_VERSION ),
@@ -61,7 +61,7 @@ Available commands:
 <yellow>Advanced Usage:</yellow>
 <light_cyan>cc</light_cyan>             Runs a Codeception command in the stack, the equivalent of <light_cyan>'codecept ...'</light_cyan>.
 <light_cyan>shell</light_cyan>          Opens a shell in a stack service, defaults to the 'codeception' one.
-<light_cyan>cli</light_cyan>            Runs a wp-cli command in the stack.
+<light_cyan>cli</light_cyan>            Runs a wp-cli command in the stack or opens a session into the wp-cli container.
 <light_cyan>reset</light_cyan>          Resets {$cli_name} to the initial state as configured by the env files.
 <light_cyan>update</light_cyan>         Updates the tool and the images used in its services.
 <light_cyan>upgrade</light_cyan>        Upgrades the {$cli_name} repo.
