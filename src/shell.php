@@ -30,8 +30,8 @@ function wp_cli( array $command = [ 'version' ], $quiet = false ) {
  * @return array<int> The number of, respectively, lines and columns.
  */
 function get_terminal_lines_cols() {
-	$lines   = null;
-	$columns = null;
+	$lines   = 20;
+	$columns = 80;
 
 	if ( 'Windows' === os() ) {
 		exec( 'mode', $output, $status );
@@ -62,7 +62,7 @@ function get_terminal_lines_cols() {
 			$lines   = $lines ? $lines : $m['val'];
 			$columns = $m['val'];
 		}
-	} else {
+	} elseif ( getenv( 'TERM' ) ) {
 		foreach ( [ 'cols' => 'columns', 'lines' => 'lines' ] as $tput_key => $var_name ) {
 			exec( "tput {$tput_key}", $output, $status );
 			$output = array_filter( $output );
