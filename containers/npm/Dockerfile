@@ -14,6 +14,9 @@ RUN USER=node && \
     chmod a+x /usr/local/bin/docker-entrypoint.sh && \
     mkdir -p /home/node/
 
+RUN mkdir /.npm && \
+    chmod -R a+rwx /.npm
+
 WORKDIR /project
 
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
