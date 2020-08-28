@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Fixed an issue where the terminal columns and lines detection would cause issue in CI context.
+- Fixed an issue where the `npm` image would not build correctly in CI context.
 
 ## [0.5.5] - 2020-08-19
 ### Changed
