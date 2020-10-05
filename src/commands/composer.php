@@ -11,7 +11,7 @@ if ( $is_help ) {
 	return;
 }
 
-$using = tric_target();
+$using = tric_target_or_fail();
 echo light_cyan( "Using {$using}\n" );
 
 $command = $args( '...' );

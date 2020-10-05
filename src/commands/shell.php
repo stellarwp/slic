@@ -5,7 +5,7 @@ namespace Tribe\Test;
 if ( $is_help ) {
 	echo "Opens a shell in a stack service, defaults to the 'codeception' one.\n";
 	echo PHP_EOL;
-	echo colorize( "This command requires a  set using the <light_cyan>use</light_cyan> command.\n" );
+	echo colorize( "This command requires a use target set using the <light_cyan>use</light_cyan> command.\n" );
 	echo colorize( "usage: <light_cyan>{$cli_name} shell [<service>]</light_cyan>\n" );
 	echo colorize( "example: <light_cyan>{$cli_name} shell chrome</light_cyan>\n" );
 	return;
@@ -14,7 +14,7 @@ if ( $is_help ) {
 $service_args = args( [ 'service', '...' ], $args( '...' ), 0 );
 $service      = $service_args( 'service', 'codeception' );
 
-$using = tric_target();
+$using = tric_target_or_fail();
 echo light_cyan( "Using {$using}\n" );
 
 setup_id();

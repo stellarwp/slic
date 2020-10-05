@@ -1205,3 +1205,25 @@ function build_targets_command_pool( array $targets, $base_command, array $comma
 
 	return $command_pool;
 }
+
+/**
+ * Returns the current target or exits if no target is set.
+ *
+ * @param string|null $reason The colorized reason why the target should be set.
+ *
+ * @return string The current target, if set, else the function will exit.
+ */
+function tric_target_or_fail( $reason = null ) {
+	$target = tric_target();
+
+	if ( empty( $target ) ) {
+		$reason = $reason
+			?: magenta( 'This command requires a target set using the ' )
+			   . light_cyan( 'use' )
+			   . magenta( ' command.' );
+		echo colorize( $reason . PHP_EOL );
+		exit( 1 );
+	}
+
+	return $target;
+}
