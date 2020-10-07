@@ -35,12 +35,15 @@ $_install = reset( $command ) === '_install';
 
 if ( ! $open_bash_shell ) {
 	if ( $_install ) {
-		if ( ! ask( "The _install sub-command is meant for CI use, " .
-		            "if you want to install WordPress use the '{$cli_name} site-cli core install' command. " .
-		            "\nDo you really want to run it?" ) ) {
+		$confirm = ask( "The _install sub-command is meant for CI use, " .
+		                "if you want to install WordPress use the '{$cli_name} site-cli core install' command. " .
+		                "\nDo you really want to run it?", 'yes' );
+
+		if ( ! $confirm ) {
 			exit( 0 );
 		}
-		// Drop the `_install` subcommand.
+
+		// Drop the `_install` subcommand, build the rest of the command.
 		array_shift( $command );
 		// Set up for the quick installation.
 		array_push( $command, 'core', 'install', '--path=/var/www/html', '--url=http://wordpress.test',
