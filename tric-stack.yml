@@ -135,7 +135,7 @@ services:
       - -c
       - |
         echo "Waiting for WordPress site ...";
-        curl -Lkfv --retry-connrefused --retry 30 --retry-delay 1 -o /dev/null --stderr /dev/null wordpress.test:80
+        curl -Lkf --retry-connrefused --retry 30 --retry-delay 1 -o /dev/null wordpress.test:80
         echo "Executing command: ${TRIC_SITE_CLI_COMMAND:-core version}"
         docker-entrypoint.sh ${TRIC_SITE_CLI_COMMAND:-core version}
     volumes:
