@@ -135,7 +135,8 @@ services:
       - -c
       - |
         printf "Waiting for WordPress site ";
-        sleep 20
+        until $$(curl -o /dev/null -f -s -I wordpress.test:80); do printf '.' && sleep 1; done
+        echo -e -n " \e[32mdone\e[0m\n"
         echo "Executing command: ${TRIC_SITE_CLI_COMMAND:-core version}"
         docker-entrypoint.sh ${TRIC_SITE_CLI_COMMAND:-core version}
     volumes:
