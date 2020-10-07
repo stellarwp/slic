@@ -14,7 +14,7 @@ use SplFileInfo;
  */
 function maybe_generate_htaccess() {
 	$htaccess_path = root( '_wordpress/.htaccess' );
-	$htaccess      = file_get_contents( $htaccess_path );
+	$htaccess = is_file( $htaccess_path ) && file_get_contents( $htaccess_path );
 
 	if ( $htaccess ) {
 		return;
