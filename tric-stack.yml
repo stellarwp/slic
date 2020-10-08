@@ -105,6 +105,48 @@ services:
       - ${TRIC_PLUGINS_DIR}:/var/www/html/wp-content/plugins:cached
       - ${TRIC_THEMES_DIR}:/var/www/html/wp-content/themes:cached
 
+  site-cli:
+    image: wordpress:cli
+    user: "${DOCKER_RUN_UID:-}:${DOCKER_RUN_GID:-}"
+    networks:
+      - tric
+    extra_hosts:
+      - "wordpress.test:172.${TRIC_TEST_SUBNET:-28}.1.1"
+    environment:
+      FIXUID: "${FIXUID:-1}"
+      # Configure this to debug the tests with XDebug.
+      # Map the `_wordpress` directory to `/var/www/html' directory in your IDE of choice.
+      # Map the `_plugins` directory to `/plugins' directory in your IDE of choice.
+      PHP_IDE_CONFIG: "serverName=${XDK:-tric}"
+      # The `remote_host` is set to `host.docker.internal` that will resolve to the host machine IP address, from
+      # within the container, on macOS and Windows.
+      # On Linux set the host machine IP address before calling the stack:
+      # XDH=$(ip route | grep docker0 | awk '{print $9}') docker-compose ...
+      XDEBUG_CONFIG: "idekey=${XDK:-tric} remote_enable=${XDE:-1} remote_host=${XDH:-host.docker.internal} remote_port=${XDP:-9001}"
+    depends_on:
+      - wordpress
+    # Override the default entrypoint to wait for the WordPress container, and required services to be up and running.
+    # Then run the default entrypoint with a command read from the environment variables.
+    # When overriding the `entrypoint` the `CMD` defined in the image, and an overriding `command`, will be ignored
+    # and this requires the entrypoint to contain the command we want to run (`TRIC_SITE_CLI_COMMAND`) already.
+    # see https://docs.docker.com/compose/compose-file/#entrypoint
+    entrypoint:
+      - /bin/bash
+      - -c
+      - |
+        printf "Waiting for WordPress site ";
+        until $$(curl -o /dev/null -f -s -I wordpress.test:80); do printf '.' && sleep 1; done
+        echo -e -n " \e[32mdone\e[0m\n"
+        echo "Executing command: ${TRIC_SITE_CLI_COMMAND:-core version}"
+        docker-entrypoint.sh ${TRIC_SITE_CLI_COMMAND:-core version}
+    volumes:
+      # Paths are relative to the directory that contains this file, NOT the current working directory.
+      # Share the WordPress core installation files in the `_wordpress` directory.
+      - ${TRIC_WP_DIR}:/var/www/html:cached
+      # Share the WordPress core installation files in the `_plugins` directory.
+      - ${TRIC_PLUGINS_DIR}:/var/www/html/wp-content/plugins:cached
+      - ${TRIC_THEMES_DIR}:/var/www/html/wp-content/themes:cached
+
   site_waiter:
     # Waits for the WordPress site to be available.
     image: curlimages/curl
