@@ -56,6 +56,7 @@ if ( preg_match( '/^n/i', ask(
 	return;
 }
 
+$status = 0;
 foreach ( $command_lines as $command_line ) {
 	$command      = preg_split( '/\\s/', $command_line );
 	$base_command = array_shift( $command );
