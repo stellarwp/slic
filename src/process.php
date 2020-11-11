@@ -235,7 +235,8 @@ function check_status_or( callable $process, callable $else = null ) {
  */
 function parallel_process( $pool ) {
 	$process_children = [];
-	$subnet_pool      = array_rand( range( 1, 255 ), count( $pool ) );
+	// Start on the upper end of hte subnets to try and avoid overlapping pool issues.
+	$subnet_pool      = array_rand( array_flip( range( 220, 255 ) ), count( $pool ) );
 	$pool_with_subnet = array_combine( $subnet_pool, $pool );
 
 	/*

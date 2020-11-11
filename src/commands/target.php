@@ -56,15 +56,26 @@ if ( preg_match( '/^n/i', ask(
 	return;
 }
 
+// Store the previous target, if any.
+$previous_target = tric_target();
+// The command will fail if a target is not set at this time, so we set one.
+tric_switch_target( reset( $targets ) );
+
 $status = 0;
 foreach ( $command_lines as $command_line ) {
 	$command      = preg_split( '/\\s/', $command_line );
 	$base_command = array_shift( $command );
 	$status       = execute_command_pool( build_targets_command_pool( $targets, $base_command, $command, [ 'common' ] ) );
 	if ( 0 !== (int) $status ) {
+		// Restore the previous target, if any.
+		tric_switch_target( $previous_target );
 		// If any previous command fails, then exit.
 		exit( $status );
 	}
 }
+
+// Restore the previous target, if any.
+tric_switch_target( $previous_target );
+
 exit( $status );
 

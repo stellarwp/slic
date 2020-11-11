@@ -25,7 +25,7 @@ $args = args( [
 ] );
 
 $cli_name = basename( $argv[0] );
-const CLI_VERSION = '0.5.11';
+const CLI_VERSION = '0.5.12';
 
 $cli_header = implode( ' - ', [
 	light_cyan( $cli_name ) . ' version ' . light_cyan( CLI_VERSION ),

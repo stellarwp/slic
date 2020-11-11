@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.12] - 2020-11-11
+### Changed
+
+- Fixed two issues in the `target` command where the command would fail if no previous target had been set.
+- Set the start of the random network subnet pool for parallel processes used by the `target` command to a higher number to reduce the chance of running into overlapping pool issues.
+
 ## [0.5.11] - 2020-11-03
 ### Changed
 
