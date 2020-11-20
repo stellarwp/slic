@@ -119,9 +119,10 @@ function scaffold_installation() {
 	$stack_array   = tric_stack_array();
 	$stack_array[] = '-f';
 	$stack_array[] = '"' . stack( '.build' ) . '"';
-	check_status_or_exit( docker_compose( array_merge( $stack_array, [ 'up', '-d', 'wordpress' ] ) ) );
+	docker_compose_realtime( $stack_array )( [ 'config' ] );
+	check_status_or_exit( docker_compose( $stack_array )( [ 'up', '-d', 'wordpress' ] ) );
 	$has_time = 30;
-	print 'Waiting for WordPress file structure ... ';
+	echo 'Waiting for WordPress file structure ...';
 	while ( ! is_file( $wp_config_file ) && $has_time -- ) {
 		if ( ! $has_time -- ) {
 			echo "\n" . magenta( 'Failed to scaffold WordPress directory structure!' );
@@ -130,6 +131,6 @@ function scaffold_installation() {
 		print '.';
 		sleep( 1 );
 	}
-	print( light_cyan( ' done' ) );
-	check_status_or_exit( docker_compose( array_merge( $stack_array, [ 'up', '-d', 'wordpress' ] ) ) );
+	echo( light_cyan( ' done' ) ) . "\n";
+	check_status_or_exit( docker_compose( $stack_array )( [ 'down' ] ) );
 }
