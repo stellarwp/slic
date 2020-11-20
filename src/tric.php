@@ -18,12 +18,67 @@ function tric_here_is_site() {
 /**
  * Get the current directory name without any slashes or path.
  *
+ * @since 0.5.13
+ *
  * @return string
  */
 function get_cwd_dir_name() {
 	$dirs = explode( DIRECTORY_SEPARATOR, getcwd() );
 
 	return (string) array_pop( $dirs );
+}
+
+/**
+ * Gets all valid targets.
+ *
+ * Valid targets are:
+ *   - Anything in the plugins directory.
+ *   - If tric here was done on the site level, "site" is also a valid target.
+ *
+ * @since 0.5.13
+ *
+ * @param bool $as_array Whether to output as an array. If falsy, will output as a formatted string, including
+ *                       headings, line breaks, and indentation.
+ *
+ * @return array|string
+ */
+function get_valid_targets( $as_array = true ) {
+	$targets_str = '';
+	$plugins     = array_keys( dev_plugins() );
+	$themes      = array_keys( dev_themes() );
+	$targets     = $plugins;
+
+	if ( tric_here_is_site() ) {
+		$targets     = array_merge( [ 'site' ], $plugins, $themes );
+		$targets_str .= PHP_EOL . '  Site:' . PHP_EOL;
+		$targets_str .= '    - site';
+	}
+
+	$targets_str .= PHP_EOL . "  Plugins:" . PHP_EOL;
+	$targets_str .= implode(
+		PHP_EOL, array_map(
+			static function ( $target ) {
+				return "    - {$target}";
+			}, $plugins
+		)
+	);
+
+	if ( tric_here_is_site() && $themes ) {
+		$targets_str .= PHP_EOL . "  Themes:" . PHP_EOL;
+		$targets_str .= implode(
+			PHP_EOL, array_map(
+				static function ( $target ) {
+					return "    - {$target}";
+				}, $themes
+			)
+		);
+	}
+
+	if ( empty( $as_array ) ) {
+		return $targets_str;
+	}
+
+	return $targets;
 }
 
 /**
@@ -40,28 +95,9 @@ function get_cwd_dir_name() {
  *                              parameter is set to `false`.
  */
 function ensure_valid_target( $target, $exit = true ) {
-	$targets_str = '';
-	$plugins = array_keys( dev_plugins() );
-	$themes  = array_keys( dev_themes() );
-	$targets = $plugins;
+	$targets = get_valid_targets();
 
-	if ( tric_here_is_site() ) {
-		$targets = array_merge( [ 'site' ], $plugins, $themes );
-		$targets_str .= PHP_EOL . '  Site:' . PHP_EOL;
-		$targets_str .= '    - site';
-	}
-
-	$targets_str .= PHP_EOL . "  Plugins:" . PHP_EOL;
-	$targets_str .= implode( PHP_EOL, array_map( static function ( $target ) {
-		return "    - {$target}";
-	}, $plugins ) );
-
-	if ( tric_here_is_site() && $themes ) {
-		$targets_str .= PHP_EOL . "  Themes:" . PHP_EOL;
-		$targets_str .= implode( PHP_EOL, array_map( static function ( $target ) {
-			return "    - {$target}";
-		}, $themes ) );
-	}
+	$targets_str = get_valid_targets( false );
 
 	if ( false === $target ) {
 		$target = get_cwd_dir_name();
