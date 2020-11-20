@@ -99,7 +99,7 @@ function ensure_valid_target( $target, $exit = true ) {
 
 	$targets_str = get_valid_targets( false );
 
-	if ( false === $target ) {
+	if ( empty( $target ) ) {
 		$target = get_cwd_dir_name();
 
 		if ( ! in_array( $target, $targets, true ) ) {
