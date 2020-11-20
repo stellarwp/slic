@@ -15,4 +15,4 @@ RUN mkdir -p /var/www/html/wp-content && chmod -R a+rwxs /var/www/html/wp-conten
      mkdir -p /var/www/html/wp-content/plugins && chmod -R a+rwxs /var/www/html/wp-content/plugins && \
      mkdir -p /var/www/html/wp-content/themes && chmod -R a+rwxs /var/www/html/wp-content/themes
 # Add the "docker" user, an alias of the host machine user, to the "root" group to avoid filemode issues.
-RUN usermod -a -G root docker
+RUN usermod -a -G root docker && usermod -a -G root www-data
