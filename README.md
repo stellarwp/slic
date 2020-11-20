@@ -132,4 +132,5 @@ Honestly, all of them are worth knowing. But here are a few important ones worth
 * `tric info` – displays current `tric` environment settings.
 * `tric npm` – run npm commands against the current plugin target.
 * `tric shell` – drop into bash in the containerized environment.
+* `tric target` – run the same command against multiple targets. ![Example](docs/images/tric-target-example.png "tric target example")
 * `tric xdebug [status|on|off]` – shows/sets xdebug status and info.
