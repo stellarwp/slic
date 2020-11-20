@@ -18,8 +18,6 @@ function tric_here_is_site() {
 /**
  * Get the current directory name without any slashes or path.
  *
- * @since 0.5.13
- *
  * @return string
  */
 function get_cwd_dir_name() {
@@ -34,8 +32,6 @@ function get_cwd_dir_name() {
  * Valid targets are:
  *   - Anything in the plugins directory.
  *   - If tric here was done on the site level, "site" is also a valid target.
- *
- * @since 0.5.13
  *
  * @param bool $as_array Whether to output as an array. If falsy, will output as a formatted string, including
  *                       headings, line breaks, and indentation.
@@ -976,8 +972,6 @@ function cli_command( array $command = [], $service = 'cli' ) {
  * If the branch is locally available, then the function will switch to the local version of th branch; this might not
  * be up-to-date with the remote: this is done by design as the sync of local and remote branches should be a developer
  * concern.
- *
- * @since TBD
  *
  * @param string      $branch The name of the branch to switch to, e.g. `release/B20.03`.
  * @param string|null $plugin The slug of the plugin to switch branch for; if not specified, then the current tric
