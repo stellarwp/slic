@@ -104,3 +104,32 @@ function wp_content_dir_list( $content_type = 'plugins' ) {
 function get_allowed_use_subdirectories() {
 	return [ 'common' ];
 }
+
+/**
+ * Scaffolds the WordPress installation used by tric, if required.
+ */
+function scaffold_installation() {
+	$wp_config_file = tric_wp_dir( '/wp-config.php' );
+
+	if ( is_file( $wp_config_file ) ) {
+		return;
+	}
+
+	// Spin up the WordPress container NOT binding plugins and themes.
+	$stack_array   = tric_stack_array();
+	$stack_array[] = '-f';
+	$stack_array[] = '"' . stack( '.build' ) . '"';
+	check_status_or_exit( docker_compose( array_merge( $stack_array, [ 'up', '-d', 'wordpress' ] ) ) );
+	$has_time = 30;
+	print 'Waiting for WordPress file structure ... ';
+	while ( ! is_file( $wp_config_file ) && $has_time -- ) {
+		if ( ! $has_time -- ) {
+			echo "\n" . magenta( 'Failed to scaffold WordPress directory structure!' );
+			exit( 1 );
+		}
+		print '.';
+		sleep( 1 );
+	}
+	print( light_cyan( ' done' ) );
+	check_status_or_exit( docker_compose( array_merge( $stack_array, [ 'up', '-d', 'wordpress' ] ) ) );
+}
