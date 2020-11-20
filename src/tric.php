@@ -127,7 +127,7 @@ function ensure_valid_target( $target, $exit = true ) {
 /**
  * Get the container relative path to the provided target.
  *
- * @param $target Target with which to build the relative path from.
+ * @param string $target Target with which to build the relative path from.
  *
  * @return string
  */
@@ -154,7 +154,7 @@ function get_target_relative_path( $target ) {
 }
 
 /**
- * Sets up the environment form the cli tool.
+ * Sets up the environment from the cli tool.
  *
  * @param string $root_dir The cli tool root directory.
  */
