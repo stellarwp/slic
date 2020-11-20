@@ -16,6 +16,17 @@ function tric_here_is_site() {
 }
 
 /**
+ * Get the current directory name without any slashes or path.
+ *
+ * @return string
+ */
+function get_cwd_dir_name() {
+	$dirs = explode( DIRECTORY_SEPARATOR, getcwd() );
+
+	return (string) array_pop( $dirs );
+}
+
+/**
  * Checks a specified target is supported as a target.
  *
  * Valid targets are:
@@ -53,12 +64,16 @@ function ensure_valid_target( $target, $exit = true ) {
 	}
 
 	if ( false === $target ) {
-		echo magenta( "This command needs a target argument; available targets are:\n${targets_str}\n" );
-		if ( $exit ) {
-			exit( 1 );
-		}
+		$target = get_cwd_dir_name();
 
-		return false;
+		if ( ! in_array( $target, $targets, true ) ) {
+			echo magenta( "Detecting the current directory of '{$target}' as the target was not valid; available targets are:\n${targets_str}\n" );
+			if ( $exit ) {
+				exit( 1 );
+			}
+
+			return false;
+		}
 	}
 
 	if ( ! in_array( $target, $targets, true ) ) {
