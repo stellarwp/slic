@@ -9,10 +9,3 @@ ARG DOCKER_RUN_GID=0
 RUN if [ "${DOCKER_RUN_GID}" > 0 ]; then addgroup --gid ${DOCKER_RUN_GID} docker; fi; \
     if [ "${DOCKER_RUN_UID}" > 0 ]; then adduser --uid ${DOCKER_RUN_UID} --gid ${DOCKER_RUN_GID} --home /home/docker \
                              --shell /bin/sh --disabled-password --gecos "" docker; fi
-
-# Pre-create the wp-content structure and make it world-writeable.
-RUN mkdir -p /var/www/html/wp-content && chmod -R a+rwxs /var/www/html/wp-content && \
-     mkdir -p /var/www/html/wp-content/plugins && chmod -R a+rwxs /var/www/html/wp-content/plugins && \
-     mkdir -p /var/www/html/wp-content/themes && chmod -R a+rwxs /var/www/html/wp-content/themes
-# Add the "docker" user, an alias of the host machine user, to the "root" group to avoid filemode issues.
-RUN usermod -a -G root docker && usermod -a -G root www-data
