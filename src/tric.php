@@ -604,6 +604,10 @@ function tric_info() {
 
 		echo colorize( "  - <light_cyan>{$key}</light_cyan>: {$value}\n" );
 	}
+
+	echo "\n";
+	echo colorize( "<yellow>Valid Targets:</yellow>" );
+	echo get_valid_targets( false );
 }
 
 /**
