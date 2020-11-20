@@ -116,9 +116,7 @@ function scaffold_installation() {
 	}
 
 	// Spin up the WordPress container NOT binding plugins and themes.
-	$stack_array   = tric_stack_array();
-	$stack_array[] = '-f';
-	$stack_array[] = '"' . stack( '.build' ) . '"';
+	$stack_array = [ '-f', '"' . stack( '.build' ) . '"' ];
 	docker_compose_realtime( $stack_array )( [ 'config' ] );
 	check_status_or_exit( docker_compose( $stack_array )( [ 'up', '-d', 'wordpress' ] ) );
 	$has_time = 30;
@@ -131,6 +129,6 @@ function scaffold_installation() {
 		print '.';
 		sleep( 1 );
 	}
-	echo( light_cyan( ' done' ) ) . "\n";
+	echo ( light_cyan( ' done' ) ) . "\n";
 	check_status_or_exit( docker_compose( $stack_array )( [ 'down' ] ) );
 }
