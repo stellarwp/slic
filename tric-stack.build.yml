@@ -1,0 +1,11 @@
+# docker-compose configuration file used to setup the WordPress file structure on first run.
+
+version: "3"
+
+services:
+
+  wordpress:
+    volumes:
+      # Paths are relative to the directory that contains this file, NOT the current working directory.
+      # Share the WordPress core installation files in the `_wordpress` directory.
+      - ${TRIC_WP_DIR}:/var/www/html:cached
