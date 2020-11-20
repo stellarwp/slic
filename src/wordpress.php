@@ -117,7 +117,6 @@ function scaffold_installation() {
 
 	// Spin up the WordPress container NOT binding plugins and themes.
 	$stack_array = [ '-f', '"' . stack( '.build' ) . '"' ];
-	docker_compose_realtime( $stack_array )( [ 'config' ] );
 	check_status_or_exit( docker_compose( $stack_array )( [ 'up', '-d', 'wordpress' ] ) );
 	$has_time = 30;
 	echo 'Scaffolding WordPress file structure ...';
