@@ -16,6 +16,80 @@ function tric_here_is_site() {
 }
 
 /**
+ * Get the current directory name without any slashes or path.
+ *
+ * @return string Name of the current working directory. Empty string if not a readable directory or other error.
+ */
+function get_cwd_dir_name() {
+	$cwd = getcwd();
+
+	if (
+		is_string( $cwd )
+		&& is_dir( $cwd )
+	) {
+		return basename( $cwd );
+	}
+
+	return '';
+}
+
+/**
+ * Gets all valid targets.
+ *
+ * Valid targets are:
+ *   - Anything in the plugins directory.
+ *   - If tric here was done on the site level, "site" is also a valid target.
+ *
+ * @param bool $as_array Whether to output as an array. If falsy, will output as a formatted string, including
+ *                       headings, line breaks, and indentation.
+ *
+ * @return array|string
+ */
+function get_valid_targets( $as_array = true ) {
+	$targets_str = '';
+
+	$plugins = array_keys( dev_plugins() );
+	sort( $plugins, SORT_NATURAL );
+
+	$themes = array_keys( dev_themes() );
+	sort( $themes, SORT_NATURAL );
+
+	$targets = $plugins;
+
+	if ( tric_here_is_site() ) {
+		$targets     = array_merge( [ 'site' ], $plugins, $themes );
+		$targets_str .= PHP_EOL . '  Site:' . PHP_EOL;
+		$targets_str .= '    - site';
+	}
+
+	$targets_str .= PHP_EOL . "  Plugins:" . PHP_EOL;
+	$targets_str .= implode(
+		PHP_EOL, array_map(
+			static function ( $target ) {
+				return "    - {$target}";
+			}, $plugins
+		)
+	);
+
+	if ( tric_here_is_site() && $themes ) {
+		$targets_str .= PHP_EOL . "  Themes:" . PHP_EOL;
+		$targets_str .= implode(
+			PHP_EOL, array_map(
+				static function ( $target ) {
+					return "    - {$target}";
+				}, $themes
+			)
+		);
+	}
+
+	if ( empty( $as_array ) ) {
+		return $targets_str;
+	}
+
+	return $targets;
+}
+
+/**
  * Checks a specified target is supported as a target.
  *
  * Valid targets are:
@@ -29,36 +103,21 @@ function tric_here_is_site() {
  *                              parameter is set to `false`.
  */
 function ensure_valid_target( $target, $exit = true ) {
-	$targets_str = '';
-	$plugins = array_keys( dev_plugins() );
-	$themes  = array_keys( dev_themes() );
-	$targets = $plugins;
+	$targets = get_valid_targets();
 
-	if ( tric_here_is_site() ) {
-		$targets = array_merge( [ 'site' ], $plugins, $themes );
-		$targets_str .= PHP_EOL . '  Site:' . PHP_EOL;
-		$targets_str .= '    - site';
-	}
+	$targets_str = get_valid_targets( false );
 
-	$targets_str .= PHP_EOL . "  Plugins:" . PHP_EOL;
-	$targets_str .= implode( PHP_EOL, array_map( static function ( $target ) {
-		return "    - {$target}";
-	}, $plugins ) );
+	if ( empty( $target ) ) {
+		$target = get_cwd_dir_name();
 
-	if ( tric_here_is_site() && $themes ) {
-		$targets_str .= PHP_EOL . "  Themes:" . PHP_EOL;
-		$targets_str .= implode( PHP_EOL, array_map( static function ( $target ) {
-			return "    - {$target}";
-		}, $themes ) );
-	}
+		if ( ! in_array( $target, $targets, true ) ) {
+			echo magenta( "Detecting the current directory of '{$target}' as the target was not valid.\nAvailable targets are:\n${targets_str}\n" );
+			if ( $exit ) {
+				exit( 1 );
+			}
 
-	if ( false === $target ) {
-		echo magenta( "This command needs a target argument; available targets are:\n${targets_str}\n" );
-		if ( $exit ) {
-			exit( 1 );
+			return false;
 		}
-
-		return false;
 	}
 
 	if ( ! in_array( $target, $targets, true ) ) {
@@ -76,7 +135,7 @@ function ensure_valid_target( $target, $exit = true ) {
 /**
  * Get the container relative path to the provided target.
  *
- * @param $target Target with which to build the relative path from.
+ * @param string $target Target with which to build the relative path from.
  *
  * @return string
  */
@@ -103,7 +162,7 @@ function get_target_relative_path( $target ) {
 }
 
 /**
- * Sets up the environment form the cli tool.
+ * Sets up the environment from the cli tool.
  *
  * @param string $root_dir The cli tool root directory.
  */
@@ -553,6 +612,10 @@ function tric_info() {
 
 		echo colorize( "  - <light_cyan>{$key}</light_cyan>: {$value}\n" );
 	}
+
+	echo "\n";
+	echo colorize( "<yellow>Valid Targets:</yellow>" );
+	echo get_valid_targets( false );
 }
 
 /**
@@ -916,8 +979,6 @@ function cli_command( array $command = [], $service = 'cli' ) {
  * If the branch is locally available, then the function will switch to the local version of th branch; this might not
  * be up-to-date with the remote: this is done by design as the sync of local and remote branches should be a developer
  * concern.
- *
- * @since TBD
  *
  * @param string      $branch The name of the branch to switch to, e.g. `release/B20.03`.
  * @param string|null $plugin The slug of the plugin to switch branch for; if not specified, then the current tric

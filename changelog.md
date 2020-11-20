@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.13] - 2020-11-20
+### Changed
+
+- Executing `tric use` without a target now attempts to set the current working directory as the target.
+- `tric info` now outputs all valid targets, which is what `tric use` without a valid target used to do.
+
 ## [0.5.12] - 2020-11-11
 ### Changed
 
