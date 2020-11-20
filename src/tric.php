@@ -104,7 +104,7 @@ function ensure_valid_target( $target, $exit = true ) {
 		$target = get_cwd_dir_name();
 
 		if ( ! in_array( $target, $targets, true ) ) {
-			echo magenta( "Detecting the current directory of '{$target}' as the target was not valid; available targets are:\n${targets_str}\n" );
+			echo magenta( "Detecting the current directory of '{$target}' as the target was not valid.\nAvailable targets are:\n${targets_str}\n" );
 			if ( $exit ) {
 				exit( 1 );
 			}
