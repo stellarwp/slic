@@ -46,10 +46,10 @@ function get_valid_targets( $as_array = true ) {
 	$targets_str = '';
 
 	$plugins = array_keys( dev_plugins() );
-	sort( $plugins, SORT_STRING );
+	sort( $plugins, SORT_NATURAL );
 
 	$themes = array_keys( dev_themes() );
-	sort( $themes, SORT_STRING );
+	sort( $themes, SORT_NATURAL );
 
 	$targets = $plugins;
 
