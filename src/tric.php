@@ -18,12 +18,19 @@ function tric_here_is_site() {
 /**
  * Get the current directory name without any slashes or path.
  *
- * @return string
+ * @return string Name of the current working directory. Empty string if not a readable directory or other error.
  */
 function get_cwd_dir_name() {
-	$dirs = explode( DIRECTORY_SEPARATOR, getcwd() );
+	$cwd = getcwd();
 
-	return (string) array_pop( $dirs );
+	if (
+		is_string( $cwd )
+		&& is_dir( $cwd )
+	) {
+		return basename( $cwd );
+	}
+
+	return '';
 }
 
 /**
