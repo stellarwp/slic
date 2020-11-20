@@ -43,7 +43,6 @@ services:
       - "wordpress.test:172.${TRIC_TEST_SUBNET:-28}.1.1"
     depends_on:
       - db
-      - redis
     # Run the container as the host user and group.
     # Apache will run as the same user and permission issues with WordPress generated files should not arise.
     user: "${DOCKER_RUN_UID:-}:${DOCKER_RUN_GID:-}"
@@ -69,8 +68,6 @@ services:
         $$url    = isset( $$_SERVER['HTTP_HOST'] ) ? $$_SERVER['HTTP_HOST'] : 'wordpress.test';
         define( 'WP_HOME', $$scheme . '://' . $$url );
         define( 'WP_SITEURL', $$scheme . '://' . $$url );
-        define( 'WP_REDIS_HOST', 'redis' );
-        define( 'WP_REDIS_PORT', 6379 );
         define( 'TRIBE_NO_FREEMIUS', true );
         define( 'WP_DEBUG_DISPLAY', true );
         define( 'WP_DEBUG_LOG', true );
