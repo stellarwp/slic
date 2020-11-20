@@ -44,9 +44,14 @@ function get_cwd_dir_name() {
  */
 function get_valid_targets( $as_array = true ) {
 	$targets_str = '';
-	$plugins     = array_keys( dev_plugins() );
-	$themes      = array_keys( dev_themes() );
-	$targets     = $plugins;
+
+	$plugins = array_keys( dev_plugins() );
+	sort( $plugins, SORT_STRING );
+
+	$themes = array_keys( dev_themes() );
+	sort( $themes, SORT_STRING );
+
+	$targets = $plugins;
 
 	if ( tric_here_is_site() ) {
 		$targets     = array_merge( [ 'site' ], $plugins, $themes );
