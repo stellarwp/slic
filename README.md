@@ -92,11 +92,11 @@ tric run wpunit
 #### `tric use [plugin]`
 
 The `tric use [plugin]` sub-command sets which plugin codeception will point to for test running. If you are unsure what
-plugins are available for use, you can execute `tribe use`. If you don't remember which plugin you are currently using,
-you can run `tribe using`. There are a few flavors of `tribe use`:
+plugins are available for use, you can execute `tric use`. If you don't remember which plugin you are currently using,
+you can run `tric using`. There are a few flavors of `tric use`:
 
-* `tribe use [plugin]` – Sets a plugin as the current `tric` target (codeception, composer, npm, etc commands will run against that plugin).
-* `tribe use [plugin]/common` – Sets a plugin as the current `tric` target to the common/ directory of the plugin.
+* `tric use [plugin]` – Sets a plugin as the current `tric` target (codeception, composer, npm, etc commands will run against that plugin).
+* `tric use [plugin]/common` – Sets a plugin as the current `tric` target to the common/ directory of the plugin.
 * `tric use` – Lists out the plugins in `tric`'s plugin path.
 * `tric using` – Tells you which plugin you are currently "using" (i.e. the last plugin on which you ran `tric use [plugin]`).
 
