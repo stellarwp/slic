@@ -120,7 +120,7 @@ function scaffold_installation() {
 	docker_compose_realtime( $stack_array )( [ 'config' ] );
 	check_status_or_exit( docker_compose( $stack_array )( [ 'up', '-d', 'wordpress' ] ) );
 	$has_time = 30;
-	echo 'Waiting for WordPress file structure ...';
+	echo 'Scaffolding WordPress file structure ...';
 	while ( ! is_file( $wp_config_file ) && $has_time -- ) {
 		if ( ! $has_time -- ) {
 			echo "\n" . magenta( 'Failed to scaffold WordPress directory structure!' );
