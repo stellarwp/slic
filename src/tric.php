@@ -846,21 +846,77 @@ function update_stack_images() {
 }
 
 /**
- * Maybe runs composer install on a given target
+ * Check if a recognized command's required file exists in the specified directory.
  *
- * @param array $base_command Base command to run.
- * @param string $target Target to potentially run composer install against.
- * @param array $sub_directories Sub directories to prompt for additional execution.
+ * @param string $base_command Command name, such as 'composer' or 'npm'.
+ * @param string $path         The directory path in which to look for relevantly-required files (e.g. 'package.json').
  *
- * @return null|int Result of command execution.
+ * @return bool True if the path is a directory and the command doesn't have a known file requirement or the expected
+ *              file does exist. False if the path is not a directory or a recognized command didn't find the
+ *              relevantly-required file.
+ */
+function dir_has_req_build_file( $base_command, $path ) {
+	// Bail if doesn't exist or is not a directory.
+	if (
+		! file_exists( $path )
+		|| ! is_dir( $path )
+	) {
+		return false;
+	}
+
+	if ( 'composer' === $base_command ) {
+		$req_file = 'composer.json';
+	} elseif ( 'npm' === $base_command ) {
+		$req_file = 'package.json';
+	}
+
+	// We don't know if we should handle so assume we should.
+	if ( empty( $req_file ) ) {
+		return true;
+	}
+
+	return file_exists( $path . DIRECTORY_SEPARATOR . $req_file );
+}
+
+/**
+ * Maybe run the install process (e.g. Composer, NPM) on a given target.
+ *
+ * @param string $base_command    Base command to run.
+ * @param string $target          Target to potentially run composer install against.
+ * @param array  $sub_directories Sub directories to prompt for additional execution.
+ *
+ * @return array Result of command execution.
  */
 function maybe_build_install_command_pool( $base_command, $target, array $sub_directories = [] ) {
-	$run = ask(
-		"\nWould you like to run the {$base_command} build processes for this plugin?",
-		'yes'
-	);
+	$subdirs_to_check = [];
 
-	if ( empty( $run ) ) {
+	foreach ( $sub_directories as $sub_directory ) {
+		$subdirs_to_check[] = $target . DIRECTORY_SEPARATOR . $sub_directory;
+	}
+
+	$sub_has_build = false;
+
+	foreach ( $subdirs_to_check as $sub_check ) {
+		$path = tric_plugins_dir( $sub_check );
+
+		if ( dir_has_req_build_file( $base_command, $path ) ) {
+			$sub_has_build = true;
+			break;
+		}
+	}
+
+	// Only prompt if the target itself has has been identified as available to build. If any subs need to build, will auto-try.
+	if ( dir_has_req_build_file( $base_command, tric_plugins_dir( $target ) ) ) {
+		$run = ask(
+			"\n" . yellow( $target . ':' ) . " Would you like to run the {$base_command} install processes for this plugin?",
+			'yes'
+		);
+	}
+
+	if (
+		empty( $run )
+		&& empty( $sub_has_build )
+	) {
 		return [];
 	}
 
@@ -883,15 +939,21 @@ function maybe_build_install_command_pool( $base_command, $target, array $sub_di
 function build_command_pool( $base_command, array $command, array $sub_directories = [], $using = null ) {
 	$using_alias = $using;
 	$using       = $using ?: tric_target();
-	$targets = [ 'target' ];
+	$targets     = [];
 
-	// Prompt for execution within subdirectories if enabled.
+	// If applicable, include target plugin before subdirectory plugins.
+	if ( dir_has_req_build_file( $base_command, tric_plugins_dir( tric_target() ) ) ) {
+		$targets[] = 'target';
+	}
+
+	// Prompt for execution within subdirectories, if enabled.
 	if ( getenv( 'TRIC_BUILD_SUBDIR' ) ) {
 		foreach ( $sub_directories as $dir ) {
-			$dir_name = $using_alias ? "{$using_alias}/{$dir}" : $dir;
-			$question = "\nWould you also like to run that {$base_command} command against {$dir_name}?";
+			$sub_target = $using_alias ? "{$using_alias}/{$dir}" : "{$using}/{$dir}";
+
+			$question = "\n" . yellow( $sub_target . ':' ) . " Would you like to run the {$base_command} command against {$sub_target}?";
 			if (
-				file_exists( tric_plugins_dir( "{$using}/{$dir}" ) )
+				dir_has_req_build_file( $base_command, tric_plugins_dir( $sub_target ) )
 				&& ask( $question, 'yes' )
 			) {
 				$targets[] = $dir;
