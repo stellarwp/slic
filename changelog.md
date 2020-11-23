@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.14] - 2020-11-23
+### Changed
+
+- Fixed volumes setup to make sure the volume, and the host file structure, created by WordPress container is owned by the current user and not `root`.
+- Fixed and issue that would change, on Linux, the file modes of all the used plugins, to `a+rwx` when using the `run` command; fixes #36
+
 ## [0.5.13] - 2020-11-23
 ### Changed
 

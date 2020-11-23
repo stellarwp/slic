@@ -1214,57 +1214,6 @@ function maybe_prompt_for_stack_update() {
 }
 
 /**
- * Fixes, by means of a recursive `chmod` call, the file modes of a directory in a container.
- *
- * The method will take special care when dealing with the WordPress container.
- *
- * @param string $service The name of the service defined in the `docker-compose` configuration file.
- * @param string $dir     The path, in the running container filesystem, of the directory to fix file modes for.
- * @param string $modes   The modes to recursively apply to the directory, in the format used by the `chmod` command.
- */
-function fix_container_dir_file_modes( $service, $dir, $modes = 'a+rwx' ) {
-	$os = os();
-
-	if ( 'Windows' === $os || 'macOS' === $os ) {
-		// No need to fix file modes on these OSes.
-		return;
-	}
-
-	// Is the container already running?
-	$container_id = trim( tric_process()( [ 'ps', '-q', $service ] )( 'string_output' ) );
-
-	if ( ! $container_id ) {
-		/*
-		 * If the service is not already running, assume it's not fixed.
-		 * The operations are idem-potent.
-		 */
-
-		// Start the service, twice, to work around some docker-compose file modes issues on Linux.
-		tric_realtime()( [ 'up', '-d', $service ] );
-		$status = tric_realtime()( [ 'up', '-d', $service ] );
-
-		if ( 0 !== $status ) {
-			echo "\n" . magenta( "Could not start the {$service} container." );
-			exit( 1 );
-		}
-
-		if ( 'wordpress' === $service ) {
-			// Wait for the WordPress service to come up.
-			tric_process()( [ 'run', '--rm', 'site_waiter' ] );
-		}
-
-		// Recursively set file modes on the target directory.
-		$status = (int) tric_process()(
-			[ 'exec', '-T', '-u "0:0"', $service, 'chmod', '-R', $modes, $dir ]
-		)( 'status' );
-		if ( 0 !== $status ) {
-			echo "\n" . magenta( "Could not fix {$service} file modes: {$dir} {$modes}." );
-			exit( 1 );
-		}
-	}
-}
-
-/**
  * Handles the build-subdir command request.
  *
  * @param callable $args The closure that will produce the current subdirectories build arguments.
