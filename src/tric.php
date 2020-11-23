@@ -555,6 +555,12 @@ function teardown_stack() {
  */
 function rebuild_stack() {
 	echo "Building the stack images...\n\n";
+
+	if ( is_ci() ) {
+		// In CI context do NOT build the image with XDebug and waste time on unused features.
+		putenv( 'TRIC_WORDPRESS_DOCKERFILE=Dockerfile.base' );
+	}
+
 	tric_realtime()( [ 'build' ] );
 	write_build_version();
 	echo light_cyan( "\nStack images built.\n\n" );
