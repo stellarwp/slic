@@ -16,6 +16,80 @@ function tric_here_is_site() {
 }
 
 /**
+ * Get the current directory name without any slashes or path.
+ *
+ * @return string Name of the current working directory. Empty string if not a readable directory or other error.
+ */
+function get_cwd_dir_name() {
+	$cwd = getcwd();
+
+	if (
+		is_string( $cwd )
+		&& is_dir( $cwd )
+	) {
+		return basename( $cwd );
+	}
+
+	return '';
+}
+
+/**
+ * Gets all valid targets.
+ *
+ * Valid targets are:
+ *   - Anything in the plugins directory.
+ *   - If tric here was done on the site level, "site" is also a valid target.
+ *
+ * @param bool $as_array Whether to output as an array. If falsy, will output as a formatted string, including
+ *                       headings, line breaks, and indentation.
+ *
+ * @return array|string
+ */
+function get_valid_targets( $as_array = true ) {
+	$targets_str = '';
+
+	$plugins = array_keys( dev_plugins() );
+	sort( $plugins, SORT_NATURAL );
+
+	$themes = array_keys( dev_themes() );
+	sort( $themes, SORT_NATURAL );
+
+	$targets = $plugins;
+
+	if ( tric_here_is_site() ) {
+		$targets     = array_merge( [ 'site' ], $plugins, $themes );
+		$targets_str .= PHP_EOL . '  Site:' . PHP_EOL;
+		$targets_str .= '    - site';
+	}
+
+	$targets_str .= PHP_EOL . "  Plugins:" . PHP_EOL;
+	$targets_str .= implode(
+		PHP_EOL, array_map(
+			static function ( $target ) {
+				return "    - {$target}";
+			}, $plugins
+		)
+	);
+
+	if ( tric_here_is_site() && $themes ) {
+		$targets_str .= PHP_EOL . "  Themes:" . PHP_EOL;
+		$targets_str .= implode(
+			PHP_EOL, array_map(
+				static function ( $target ) {
+					return "    - {$target}";
+				}, $themes
+			)
+		);
+	}
+
+	if ( empty( $as_array ) ) {
+		return $targets_str;
+	}
+
+	return $targets;
+}
+
+/**
  * Checks a specified target is supported as a target.
  *
  * Valid targets are:
@@ -29,36 +103,21 @@ function tric_here_is_site() {
  *                              parameter is set to `false`.
  */
 function ensure_valid_target( $target, $exit = true ) {
-	$targets_str = '';
-	$plugins = array_keys( dev_plugins() );
-	$themes  = array_keys( dev_themes() );
-	$targets = $plugins;
+	$targets = get_valid_targets();
 
-	if ( tric_here_is_site() ) {
-		$targets = array_merge( [ 'site' ], $plugins, $themes );
-		$targets_str .= PHP_EOL . '  Site:' . PHP_EOL;
-		$targets_str .= '    - site';
-	}
+	$targets_str = get_valid_targets( false );
 
-	$targets_str .= PHP_EOL . "  Plugins:" . PHP_EOL;
-	$targets_str .= implode( PHP_EOL, array_map( static function ( $target ) {
-		return "    - {$target}";
-	}, $plugins ) );
+	if ( empty( $target ) ) {
+		$target = get_cwd_dir_name();
 
-	if ( tric_here_is_site() && $themes ) {
-		$targets_str .= PHP_EOL . "  Themes:" . PHP_EOL;
-		$targets_str .= implode( PHP_EOL, array_map( static function ( $target ) {
-			return "    - {$target}";
-		}, $themes ) );
-	}
+		if ( ! in_array( $target, $targets, true ) ) {
+			echo magenta( "Detecting the current directory of '{$target}' as the target was not valid.\nAvailable targets are:\n${targets_str}\n" );
+			if ( $exit ) {
+				exit( 1 );
+			}
 
-	if ( false === $target ) {
-		echo magenta( "This command needs a target argument; available targets are:\n${targets_str}\n" );
-		if ( $exit ) {
-			exit( 1 );
+			return false;
 		}
-
-		return false;
 	}
 
 	if ( ! in_array( $target, $targets, true ) ) {
@@ -76,7 +135,7 @@ function ensure_valid_target( $target, $exit = true ) {
 /**
  * Get the container relative path to the provided target.
  *
- * @param $target Target with which to build the relative path from.
+ * @param string $target Target with which to build the relative path from.
  *
  * @return string
  */
@@ -103,7 +162,7 @@ function get_target_relative_path( $target ) {
 }
 
 /**
- * Sets up the environment form the cli tool.
+ * Sets up the environment from the cli tool.
  *
  * @param string $root_dir The cli tool root directory.
  */
@@ -515,8 +574,15 @@ function tric_info() {
 	$config_vars = [
 		'TRIC_TEST_SUBNET',
 		'CLI_VERBOSITY',
+		'CI',
+		'TRAVIS_CI',
+		'CONTINUOUS_INTEGRATION',
+		'GITHUB_ACTION',
 		'TRIC_CURRENT_PROJECT',
 		'TRIC_CURRENT_PROJECT_RELATIVE_PATH',
+		'TRIC_CURRENT_PROJECT_SUBDIR',
+		'TRIC_PLUGINS',
+		'TRIC_THEMES',
 		'TRIC_GIT_DOMAIN',
 		'TRIC_GIT_HANDLE',
 		'TRIC_HERE_DIR',
@@ -526,12 +592,18 @@ function tric_info() {
 		'TRIC_INTERACTIVE',
 		'TRIC_BUILD_PROMPT',
 		'TRIC_BUILD_SUBDIR',
+		'TERM',
 		'XDK',
 		'XDE',
 		'XDH',
 		'XDP',
+		'UID',
+		'DOCKER_RUN_UID',
+		'GID',
+		'DOCKER_RUN_GID',
 		'MYSQL_ROOT_PASSWORD',
 		'WORDPRESS_HTTP_PORT',
+		'SSH_AUTH_SOCK',
 	];
 
 	echo colorize( "<yellow>Configuration read from the following files:</yellow>\n" );
@@ -553,6 +625,10 @@ function tric_info() {
 
 		echo colorize( "  - <light_cyan>{$key}</light_cyan>: {$value}\n" );
 	}
+
+	echo "\n";
+	echo colorize( "<yellow>Valid Targets:</yellow>" );
+	echo get_valid_targets( false );
 }
 
 /**
@@ -770,21 +846,74 @@ function update_stack_images() {
 }
 
 /**
- * Maybe runs composer install on a given target
+ * Check if a recognized command's required file exists in the specified directory.
  *
- * @param array $base_command Base command to run.
- * @param string $target Target to potentially run composer install against.
- * @param array $sub_directories Sub directories to prompt for additional execution.
+ * @param string $base_command Command name, such as 'composer' or 'npm'.
+ * @param string $path         The directory path in which to look for relevantly-required files (e.g. 'package.json').
  *
- * @return null|int Result of command execution.
+ * @return bool True if the path is a directory and the command doesn't have a known file requirement or the expected
+ *              file does exist. False if the path is not a directory or a recognized command didn't find the
+ *              relevantly-required file.
+ */
+function dir_has_req_build_file( $base_command, $path ) {
+	// Bail if doesn't exist or is not a directory.
+	if ( ! is_dir( $path ) ) {
+		return false;
+	}
+
+	if ( 'composer' === $base_command ) {
+		$req_file = 'composer.json';
+	} elseif ( 'npm' === $base_command ) {
+		$req_file = 'package.json';
+	}
+
+	// We don't know if we should handle so assume we should.
+	if ( empty( $req_file ) ) {
+		return true;
+	}
+
+	return is_file( rtrim( $path, '\\/' ) . '/' . $req_file );
+}
+
+/**
+ * Maybe run the install process (e.g. Composer, NPM) on a given target.
+ *
+ * @param string $base_command    Base command to run.
+ * @param string $target          Target to potentially run composer install against.
+ * @param array  $sub_directories Sub directories to prompt for additional execution.
+ *
+ * @return array Result of command execution.
  */
 function maybe_build_install_command_pool( $base_command, $target, array $sub_directories = [] ) {
-	$run = ask(
-		"\nWould you like to run the {$base_command} build processes for this plugin?",
-		'yes'
-	);
+	$subdirs_to_check = [];
 
-	if ( empty( $run ) ) {
+	foreach ( $sub_directories as $sub_directory ) {
+		$subdirs_to_check[] = $target . DIRECTORY_SEPARATOR . $sub_directory;
+	}
+
+	$sub_has_build = false;
+
+	foreach ( $subdirs_to_check as $sub_check ) {
+		$path = tric_plugins_dir( $sub_check );
+
+		if ( dir_has_req_build_file( $base_command, $path ) ) {
+			$sub_has_build = true;
+			break;
+		}
+	}
+
+	// Only prompt if the target itself has has been identified as available to build. If any subs need to build, will auto-try.
+	if ( dir_has_req_build_file( $base_command, tric_plugins_dir( $target ) ) ) {
+		$run = ask(
+			"\n" . yellow( $target . ':' ) . " Would you like to run the {$base_command} install processes for this plugin?",
+			'yes'
+		);
+	}
+
+	if (
+		empty( $run )
+		&& empty( $sub_has_build )
+	) {
 		return [];
 	}
 
@@ -807,15 +936,21 @@ function maybe_build_install_command_pool( $base_command, $target, array $sub_di
 function build_command_pool( $base_command, array $command, array $sub_directories = [], $using = null ) {
 	$using_alias = $using;
 	$using       = $using ?: tric_target();
-	$targets = [ 'target' ];
+	$targets     = [];
 
-	// Prompt for execution within subdirectories if enabled.
+	// If applicable, include target plugin before subdirectory plugins.
+	if ( dir_has_req_build_file( $base_command, tric_plugins_dir( tric_target() ) ) ) {
+		$targets[] = 'target';
+	}
+
+	// Prompt for execution within subdirectories, if enabled.
 	if ( getenv( 'TRIC_BUILD_SUBDIR' ) ) {
 		foreach ( $sub_directories as $dir ) {
-			$dir_name = $using_alias ? "{$using_alias}/{$dir}" : $dir;
-			$question = "\nWould you also like to run that {$base_command} command against {$dir_name}?";
+			$sub_target = $using_alias ? "{$using_alias}/{$dir}" : "{$using}/{$dir}";
+
+			$question = "\n" . yellow( $sub_target . ':' ) . " Would you like to run the {$base_command} command against {$sub_target}?";
 			if (
-				file_exists( tric_plugins_dir( "{$using}/{$dir}" ) )
+				dir_has_req_build_file( $base_command, tric_plugins_dir( $sub_target ) )
 				&& ask( $question, 'yes' )
 			) {
 				$targets[] = $dir;
@@ -897,10 +1032,10 @@ function execute_command_pool( $pool ) {
 }
 
 /**
- * Returns an array of arguments to correctly run a wp-cli commann in the tric stack.
+ * Returns an array of arguments to correctly run a wp-cli command in the tric stack.
  *
  * @param array<string> $command The wp-cli command to run, anything after the `wp`; e.g. `[ 'plugin', 'list' ]`.
- * @param string $service The wp-cli service to target; defaults to the `cli` one.
+ * @param string        $service The wp-cli service to target; defaults to the `cli` one.
  *
  * @return array<string> The complete command arguments, ready to be used in the `tric` or `tric_realtime` functions.
  */
@@ -916,8 +1051,6 @@ function cli_command( array $command = [], $service = 'cli' ) {
  * If the branch is locally available, then the function will switch to the local version of th branch; this might not
  * be up-to-date with the remote: this is done by design as the sync of local and remote branches should be a developer
  * concern.
- *
- * @since TBD
  *
  * @param string      $branch The name of the branch to switch to, e.g. `release/B20.03`.
  * @param string|null $plugin The slug of the plugin to switch branch for; if not specified, then the current tric

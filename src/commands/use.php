@@ -8,12 +8,17 @@ if ( $is_help ) {
 	echo colorize( "signature: <light_cyan>{$cli_name} use <target>[/<subdir>]</light_cyan>\n" );
 	echo colorize( "example: <light_cyan>{$cli_name} use the-events-calendar</light_cyan>\n" );
 	echo colorize( "example: <light_cyan>{$cli_name} use event-tickets/common</light_cyan>" );
+
 	return;
 }
 
 $sub_args = args( [ 'target' ], $args( '...' ), 0 );
 $target   = $sub_args( 'target', false );
-ensure_valid_target( $target );
-tric_switch_target( $target );
+
+$target = (string) ensure_valid_target( $target );
+
+if ( ! empty( $target ) ) {
+	tric_switch_target( $target );
+}
 
 echo light_cyan( "Using {$target}\n" );
