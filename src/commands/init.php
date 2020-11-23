@@ -37,6 +37,7 @@ if ( null !== $branch ) {
 
 setup_plugin_tests( $plugin );
 
+// No building happens without first prompting; therefore, CLI needs to explicitly run its commands separately.
 if ( getenv( 'TRIC_BUILD_PROMPT' ) ) {
 	$current_target = tric_target();
 
