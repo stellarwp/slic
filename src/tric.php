@@ -857,10 +857,7 @@ function update_stack_images() {
  */
 function dir_has_req_build_file( $base_command, $path ) {
 	// Bail if doesn't exist or is not a directory.
-	if (
-		! file_exists( $path )
-		|| ! is_dir( $path )
-	) {
+	if ( ! is_dir( $path ) ) {
 		return false;
 	}
 
@@ -875,7 +872,7 @@ function dir_has_req_build_file( $base_command, $path ) {
 		return true;
 	}
 
-	return file_exists( $path . DIRECTORY_SEPARATOR . $req_file );
+	return is_file( rtrim( $path, '\\/' ) . '/' . $req_file );
 }
 
 /**
