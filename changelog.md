@@ -4,7 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.5.14] - 2020-11-23
+## [0.5.15] - 2020-11-24
+### Changed
+
+- Removed the 3s wait at start of the `codeception` service.
+- Fixed (in the context of the [lucatume/dockerfiles](https://github.com/lucatume/dockerfiles) repository) an issue that would cause Codeception tests to exit `0` on failure and not `1` as expected.
+
+## [0.5.14] - 2020-11-24
 ### Changed
 
 - Fixed volumes setup to make sure the volume, and the host file structure, created by WordPress container is owned by the current user and not `root`.
