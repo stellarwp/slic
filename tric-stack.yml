@@ -203,8 +203,6 @@ services:
       CODECEPTION_PROJECT_DIR: /var/www/html/wp-content/plugins/${TRIC_CURRENT_PROJECT:-test}/${TRIC_CURRENT_PROJECT_SUBDIR:-}
       # When running the container in shell mode (using the tric `shell` command), then use this CC configuration.
       CODECEPTION_SHELL_CONFIG: "-c codeception.tric.yml"
-      # After the WordPress container comes online, wait a further 3s to give it some boot-up time.
-      CODECEPTION_WAIT: 3
       # Whether to disable the XDebug extension in the Codeception container completely or not.
       XDEBUG_DISABLE: "${XDEBUG_DISABLE:-0}"
       # Declare that we are in a tric context so plugins can set custom test configs.
