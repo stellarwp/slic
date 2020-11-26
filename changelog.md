@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.16] - 2020-11-26
+### Changed
+
+- Add support for the `TRIC_HOST` environment variable. This will override the default host machine IP address lookup `tric` would perform on Linux or the hard-wired `host.docker.internal` hostname `tric` would use on Windows and Mac host to set the default `xdebug.remote_host` value.
+
 ## [0.5.15] - 2020-11-24
 ### Changed
 

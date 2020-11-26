@@ -299,6 +299,7 @@ function the_fatality() {
  * Returns the host machine IP address as reachable from the containers.
  *
  * The way the host machine IP address is fetched will vary depending on the Operating System the function runs on.
+ * If the `TRIC_HOST` environment variable is set, then that will be used without any further check.
  *
  * @param string $os The operating system to get the host machine IP address for.
  *
@@ -306,6 +307,10 @@ function the_fatality() {
  *                an empty string to indicate the host machine IP address could not be obtained.
  */
 function host_ip( $os = 'Linux' ) {
+	if ( $env_set_host = getenv( 'TRIC_HOST' ) ) {
+		return $env_set_host;
+	}
+
 	if ( $os === 'Linux' ) {
 		// Depending on the distribution being used either one, or both, these commands might yield a result.
 		$commands = [
