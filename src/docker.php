@@ -54,7 +54,8 @@ function docker_compose( array $options = [] ) {
 
 		if ( ! empty( $host_ip ) ) {
 			// Set the host IP address on Linux machines.
-			$command = 'XDH=' . host_ip() . ' ' . $command;
+			$xdebug_remote_host = (string) getenv( 'XDH' ) ?: host_ip();
+			$command            = 'XDH=' . $xdebug_remote_host . ' ' . $command;
 		}
 
 		if ( ! empty( $is_ci ) ) {
@@ -188,7 +189,8 @@ function docker_compose_process( array $options = [], $is_realtime = true ) {
 
 		if ( ! empty( $host_ip ) ) {
 			// Set the host IP address on Linux machines.
-			$command = 'XDH=' . host_ip() . ' ' . $command;
+			$xdebug_remote_host = (string) getenv( 'XDH' ) ?: host_ip();
+			$command            = 'XDH=' . $xdebug_remote_host . ' ' . $command;
 		}
 
 		if ( ! empty( $is_ci ) ) {
