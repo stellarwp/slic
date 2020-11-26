@@ -411,7 +411,7 @@ function root( $path = '' ) {
 function write_env_file( $file, array $lines = [], $update = false ) {
 	$existing_lines = [];
 
-	if ( $update && file_exists( $file ) ) {
+	if ( $update && is_file( $file ) ) {
 		$existing_lines = read_env_file( $file );
 	}
 
@@ -422,7 +422,7 @@ function write_env_file( $file, array $lines = [], $update = false ) {
 	}, array_keys( $new_lines ), $new_lines ) );
 
 	// If this is the first time creating the .env.tric.run file, assume this is the first run and place the CLI version in `.build-version`.
-	if ( false !== strpos( $file, '.env.tric.run' ) && ! file_exists( $file ) ) {
+	if ( false !== strpos( $file, '.env.tric.run' ) && ! is_file( $file ) ) {
 		write_build_version();
 	}
 
