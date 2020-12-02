@@ -587,6 +587,7 @@ function tric_info() {
 		'TRIC_CURRENT_PROJECT',
 		'TRIC_CURRENT_PROJECT_RELATIVE_PATH',
 		'TRIC_CURRENT_PROJECT_SUBDIR',
+		'TRIC_HOST',
 		'TRIC_PLUGINS',
 		'TRIC_THEMES',
 		'TRIC_GIT_DOMAIN',
@@ -807,7 +808,7 @@ function tric_handle_xdebug( callable $args ) {
 	if ( array_key_exists( $toggle, $map ) ) {
 		$var = $args( 'value' );
 		echo colorize( "Setting <light_cyan>{$map[$toggle]}={$var}</light_cyan>" ) . PHP_EOL . PHP_EOL;
-		write_env_file( $run_settings_file, [ $map[ $toggle ] => $var ] );
+		write_env_file( $run_settings_file, [ $map[ $toggle ] => $var ], true );
 		echo PHP_EOL . PHP_EOL . colorize( "Tear down the stack with <light_cyan>down</light_cyan> and restar it to apply the new settings!\n" );
 
 		return;
@@ -981,7 +982,18 @@ function build_command_pool( $base_command, array $command, array $sub_directori
 		$network_name = "tric{$subnet}";
 		$status       = tric_passive()( array_merge( [ '-p', $network_name, 'run', '--rm', $base_command ], $command ), $prefix );
 
-		shell_exec( "docker network rm {$network_name}_tric {$network_name}_default" );
+		if ( ! empty( $subnet ) ) {
+			do {
+				/*
+				 * Some containers might take time to terminate after yielding control back to the Docker daemon (zombies).
+				 * If we try to remote the network when zombie containers are attached to it, we'll get the following error:
+				 * "error while removing network: network <network_name> id <id> has active endpoints".
+				 * When this happens, the return status of the command will be a `1`.
+				 * We iterate until the status is a `0`.
+				 */
+				$network_rm_status = (int) process( "docker network rm {$network_name}_tric {$network_name}_default" )( 'status' );
+			} while ( $network_rm_status !== 0 );
+		}
 
 		if ( 'target' !== $target ) {
 			tric_switch_target( $using );
@@ -1316,3 +1328,40 @@ function tric_target_or_fail( $reason = null ) {
 
 	return $target;
 }
+
+/**
+ * Returns the absolute path to the current target.
+ *
+ * @param null|string $append_path A relative path to append to the target absolute path.
+ *
+ * @return string The absolute path to the current target.
+ */
+function absolute_plugin_target_path( $append_path = null ) {
+	$full_target_path = rtrim( getenv( 'TRIC_HERE_DIR' ), '\\/' ) . '/' . trim( tric_target(), '\\/' );
+	if ( empty( $append_path ) ) {
+		return $full_target_path;
+	}
+
+	return $full_target_path . '/' . ltrim( $append_path, '\\/' );
+}
+
+/**
+ * Compiles a list of the current target Codeception suites. The available suites are inferred, as Codeception does,
+ * from the available suite configuration files.
+ *
+ * @return array<string> A list of the available target suites.
+ */
+function collect_target_suites() {
+	// If the command is just `run`, without arguments, then collect the available suites and run them separately.
+	$dir_iterator = new \DirectoryIterator( absolute_plugin_target_path( 'tests' ) );
+	$suitesFilter = new \CallbackFilterIterator( $dir_iterator, static function ( \SplFileInfo $file ) {
+		return $file->isFile() && preg_match( '/^.*\\.suite(\\.dist)?\\.yml$/', $file->getBasename() );
+	} );
+	$suites       = [];
+	foreach ( $suitesFilter as $f ) {
+		$suites[] = preg_replace( '/^([\\w-]+)\\.suite(\\.dist)?\\.yml$/u', '$1', $f->getBasename() );
+	}
+
+	return $suites;
+}
+
