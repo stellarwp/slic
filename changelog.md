@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.17] - 2020-12-04
+### Changed
+
+- Fix the XDebug version and `wordpress` service `Dockerfile` to keep using version `2` and not update to version `3` on a rebuild (e.g. one triggered by `tric update` or `tric build-stack` commands).
+- Add the `tric ssh` command to allow opening a shell in a **running** stack service; differently from the `shell` command, the `ssh` command will **not** start the service if it's not already running.
+
 ## [0.5.16] - 2020-11-26
 ### Changed
 
