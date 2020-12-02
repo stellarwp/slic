@@ -10,16 +10,18 @@
  * command.
  * See the `init` command for more details.
  *
- * @var bool     $is_help Whether we're handling an `help` request on this command or not.
- * @var \Closure $args    The argument map closure, as produced by the `args` function.
+ * @var string   $cli_name The current name of the CLI tool, usually `tric`.
+ * @var bool     $is_help  Whether we're handling an `help` request on this command or not.
+ * @var \Closure $args     The argument map closure, as produced by the `args` function.
  */
 
 namespace Tribe\Test;
 
 if ( $is_help ) {
-	echo colorize( "Runs a Codeception test in the stack, the equivalent of <light_cyan>'codecept run ...'</light_cyan>.\n" );
+	echo colorize( "Runs a Codeception test in the stack, the equivalent of <light_cyan>'codecept run ...'</light_cyan>, or all the tests.\n" );
 	echo PHP_EOL;
 	echo colorize( "This command requires a use target set using the <light_cyan>use</light_cyan> command.\n" );
+	echo colorize( "usage: <light_cyan>{$cli_name} run</light_cyan>\n" );
 	echo colorize( "usage: <light_cyan>{$cli_name} run [...<commands>]</light_cyan>\n" );
 	echo colorize( "example: <light_cyan>{$cli_name} run wpunit</light_cyan>" );
 
@@ -86,7 +88,25 @@ switch ( $available_configs_mask ) {
 // Add tric configuration file, if existing.
 $run_configuration = array_merge( [ 'run', '--rm', 'codeception', 'run' ], $config_files );
 
+$run_args    = $args( '...' );
+$run_suites = [];
+
+if ( empty( $run_args ) ) {
+	$run_suites = collect_target_suites();
+}
+
 // Finally run the command.
-$status     = tric_realtime()( array_merge( $run_configuration, $args( '...' ) ) );
+if ( empty( $run_suites ) ) {
+	// Run the command as per user input.
+	$status = tric_realtime()( array_merge( $run_configuration, $run_args ) );
+} else {
+	// Run all the suites sequentially, stop at first error.
+	foreach ( $run_suites as $suite ) {
+		$status = tric_realtime()( array_merge( $run_configuration, [ $suite ] ) );
+		if ( $status !== 0 ) {
+			exit( $status );
+		}
+	}
+}
 
 exit( $status );
