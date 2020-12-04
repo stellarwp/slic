@@ -17,7 +17,7 @@ COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr
 RUN install-php-extensions xdebug-2.9.8 || docker-php-ext-enable xdebug.so
 # Configure XDebug to autostart on all requests, use the version 2 configuration format.
 RUN echo 'xdebug.remote_enable=1\n\
-xdebug.remote_autostart=\n' \
+xdebug.remote_autostart=1\n' \
  >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
 # Make the XDebug configuration file world-read/writeable as the user updating it might not be a sudo-er.
 RUN chmod a+rw /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
