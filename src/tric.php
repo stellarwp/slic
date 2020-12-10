@@ -916,7 +916,7 @@ function maybe_build_install_command_pool( $base_command, $target, array $sub_di
 		return $buffer;
 	}, [] );
 
-	return count($subdirs_to_build) ? build_command_pool( $base_command, [ 'install' ], $sub_directories ) : [];
+	return count( $subdirs_to_build ) ? build_command_pool( $base_command, [ 'install' ], $sub_directories ) : [];
 }
 
 /**
@@ -1358,4 +1358,3 @@ function collect_target_suites() {
 
 	return $suites;
 }
-
