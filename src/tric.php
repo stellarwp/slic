@@ -892,23 +892,6 @@ function dir_has_req_build_file( $base_command, $path ) {
  * @return array Result of command execution.
  */
 function maybe_build_install_command_pool( $base_command, $target, array $sub_directories = [] ) {
-	$subdirs_to_check = [];
-
-	foreach ( $sub_directories as $sub_directory ) {
-		$subdirs_to_check[] = $target . DIRECTORY_SEPARATOR . $sub_directory;
-	}
-
-	$sub_has_build = false;
-
-	foreach ( $subdirs_to_check as $sub_check ) {
-		$path = tric_plugins_dir( $sub_check );
-
-		if ( dir_has_req_build_file( $base_command, $path ) ) {
-			$sub_has_build = true;
-			break;
-		}
-	}
-
 	// Only prompt if the target itself has has been identified as available to build. If any subs need to build, will auto-try.
 	if ( dir_has_req_build_file( $base_command, tric_plugins_dir( $target ) ) ) {
 		$run = ask(
@@ -917,14 +900,23 @@ function maybe_build_install_command_pool( $base_command, $target, array $sub_di
 		);
 	}
 
-	if (
-		empty( $run )
-		&& empty( $sub_has_build )
-	) {
+	if ( empty( $run ) ) {
+		// Do not run the command on sub-directories if not running on the target.
 		return [];
 	}
 
-	return build_command_pool( $base_command, [ 'install' ], $sub_directories );
+	$subdirs_to_build = array_reduce( $sub_directories, static function ( array $buffer, $sub_directory ) use (
+		$base_command
+	) {
+		$subdir_path = target_absolute_path( $sub_directory );
+		if ( dir_has_req_build_file( $base_command, $subdir_path ) ) {
+			$buffer[] = $sub_directory;
+		}
+
+		return $buffer;
+	}, [] );
+
+	return count( $subdirs_to_build ) ? build_command_pool( $base_command, [ 'install' ], $sub_directories ) : [];
 }
 
 /**
@@ -1336,8 +1328,10 @@ function tric_target_or_fail( $reason = null ) {
  *
  * @return string The absolute path to the current target.
  */
-function absolute_plugin_target_path( $append_path = null ) {
-	$full_target_path = rtrim( getenv( 'TRIC_HERE_DIR' ), '\\/' ) . '/' . trim( tric_target(), '\\/' );
+function target_absolute_path( $append_path = null ) {
+	$here_abs_path    = rtrim( getenv( 'TRIC_HERE_DIR' ), '\\/' );
+	$target_rel_path  = '/' . trim( tric_target(), '\\/' );
+	$full_target_path = $here_abs_path . $target_rel_path;
 	if ( empty( $append_path ) ) {
 		return $full_target_path;
 	}
@@ -1353,7 +1347,7 @@ function absolute_plugin_target_path( $append_path = null ) {
  */
 function collect_target_suites() {
 	// If the command is just `run`, without arguments, then collect the available suites and run them separately.
-	$dir_iterator = new \DirectoryIterator( absolute_plugin_target_path( 'tests' ) );
+	$dir_iterator = new \DirectoryIterator( target_absolute_path( 'tests' ) );
 	$suitesFilter = new \CallbackFilterIterator( $dir_iterator, static function ( \SplFileInfo $file ) {
 		return $file->isFile() && preg_match( '/^.*\\.suite(\\.dist)?\\.yml$/', $file->getBasename() );
 	} );
@@ -1364,4 +1358,3 @@ function collect_target_suites() {
 
 	return $suites;
 }
-

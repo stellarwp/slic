@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.18] - 2020-12-07
+### Changed
+- Fix an issue where the `USING_CONTAINERS` environment variable would be duplicated in environment files set up by 
+  `tric` init command.  
+- Fix an issue where a negative answer to build targets with sub-directories, e.g. TEC and ET, would result in the 
+  target being built anyway.
+
 ## [0.5.17] - 2020-12-04
 ### Changed
 

@@ -124,7 +124,12 @@ function write_tric_env_file( $plugin_path ) {
 		}
 	}
 
-	$plugin_env .= "\n# We're using Docker to run the tests.\nUSING_CONTAINERS=1\n";
+	if ( false === strpos( $plugin_env, 'USING_CONTAINERS=' ) ) {
+		$plugin_env .= "\n# We're using Docker to run the tests.\nUSING_CONTAINERS=1\n";
+	} else {
+		// In `tric`, we're most definitely using containers.
+		$plugin_env = str_replace( 'USING_CONTAINERS=0', 'USING_CONTAINERS=1', $plugin_env );
+	}
 
 	$file = $plugin_path . '/.env.testing.tric';
 	$put =  file_put_contents( $file, $plugin_env );
