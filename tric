@@ -12,6 +12,7 @@ require_once __DIR__ . '/src/wordpress.php';
 
 use function Tribe\Test\args;
 use function Tribe\Test\colorize;
+use function Tribe\Test\install_wordpress;
 use function Tribe\Test\light_cyan;
 use function Tribe\Test\maybe_prompt_for_repo_update;
 use function Tribe\Test\maybe_prompt_for_stack_update;
@@ -26,7 +27,7 @@ $args = args( [
 ] );
 
 $cli_name = basename( $argv[0] );
-const CLI_VERSION = '0.5.18';
+const CLI_VERSION = '0.5.19';
 
 $cli_header = implode( ' - ', [
 	light_cyan( $cli_name ) . ' version ' . light_cyan( CLI_VERSION ),
@@ -56,6 +57,7 @@ Available commands:
 <light_cyan>npm</light_cyan>            Runs an npm command in the stack using the node 8.9 container.
 <light_cyan>npm_lts</light_cyan>        Runs an npm command in the stack using the node LTS container. 
 <light_cyan>target</light_cyan>         Runs a set of commands on a set of targets.
+<light_cyan>group</light_cyan>          Create or remove group of targets for the current plugins directory.
 <light_cyan>xdebug</light_cyan>         Activates and deactivates XDebug in the stack, returns the current XDebug status or sets its values.
 <light_cyan>airplane-mode</light_cyan>  Activates or deactivates the airplane-mode plugin.
 <light_cyan>cache</light_cyan>          Activates and deactivates object cache support, returns the current object cache status.
@@ -114,10 +116,7 @@ switch ( $subcommand ) {
 		maybe_prompt_for_repo_update();
 		maybe_prompt_for_stack_update();
 		break;
-	case 'airplane-mode':
-	case 'cache':
 	case 'cc':
-	case 'cli':
 	case 'npm':
 	case 'npm_lts':
 	case 'restart':
@@ -128,6 +127,12 @@ switch ( $subcommand ) {
 	case 'ssh':
 	case 'up':
 		scaffold_installation();
+		// Do not break, let the command be loaded then.
+	case 'airplane-mode':
+	case 'cache':
+	case 'cli':
+		scaffold_installation();
+		install_wordpress();
 		// Do not break, let the command be loaded then.
 	case 'build-prompt':
 	case 'build-stack':

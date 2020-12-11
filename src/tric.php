@@ -1050,7 +1050,11 @@ function execute_command_pool( $pool ) {
  * @return array<string> The complete command arguments, ready to be used in the `tric` or `tric_realtime` functions.
  */
 function cli_command( array $command = [], $service = 'cli' ) {
-	return array_merge( [ 'run', '--rm', $service, 'wp', '--allow-root' ], $command );
+	$wp_command = array_merge( [ 'wp', '--allow-root' ], $command );
+	// Put the full `wp` command in an env var to allow services that might use it, e.g. `site-cli`, to pick it up.
+	putenv( 'TRIC_' . upper_snake_case( $service ) . '_COMMAND=' . implode( ' ', $wp_command ) );
+
+	return array_merge( [ 'run', '--rm', $service ], $wp_command );
 }
 
 /**

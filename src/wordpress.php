@@ -131,3 +131,24 @@ function scaffold_installation() {
 	echo ( light_cyan( ' done' ) ) . "\n";
 	check_status_or_exit( docker_compose( $stack_array )( [ 'down' ] ) );
 }
+
+/**
+ * Installs wordpress, if required.
+ */
+function install_wordpress() {
+	$sense_installation = tric_process()( cli_command( [ 'core', 'is-installed', ], 'site-cli' ) );
+	$install_wordpress  = static function () {
+		check_status_or_exit( tric_process()( cli_command( [
+			'core',
+			'install',
+			'--path=/var/www/html',
+			'--url=http://wordpress.test',
+			'--title=Tric',
+			'--admin_user=admin',
+			'--admin_password=admin',
+			'--admin_email=admin@wordpress.test',
+			'--skip-email',
+		], 'site-cli' ) ) );
+	};
+	check_status_or( $sense_installation, $install_wordpress );
+}
