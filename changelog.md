@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.19] - 2020-12-11
+### Changed
+- Fix an issue where commands that required a ready and available WordPress installation in the `tric` WordPress 
+  directory would not take care to scaffold and install it; e.g. `cli` or `site-cli`.
+
 ## [0.5.18] - 2020-12-07
 ### Changed
 - Fix an issue where the `USING_CONTAINERS` environment variable would be duplicated in environment files set up by 

@@ -532,3 +532,29 @@ function ask( $question, $default = null ) {
 
 	return '' === $value ? $default : $value;
 }
+
+/**
+ * Changes a string to its UPPER_SNAKE_CASE version.
+ *
+ * @since TBD
+ *
+ * @param string $string The string to transform.
+ *
+ * @return string The transformed string.
+ */
+function upper_snake_case( $string ) {
+	return strtoupper( snake_case( $string ) );
+}
+
+/**
+ * Changes a string to its snake_case version.
+ *
+ * @since TBD
+ *
+ * @param string $string The string to transform.
+ *
+ * @return string The transformed string.
+ */
+function snake_case( $string ) {
+	return preg_replace( '/[^\\w_]/', '_', $string ) ?: $string;
+}
