@@ -31,7 +31,7 @@ The stack will look for plugins in the `_plugins` directory, so change directory
 
 ```bash
 cd _plugins
-git clone git@github.com:moderntribe/the-events-calendar.git
+git clone git@github.com:the-events-calendar/the-events-calendar.git
 cd the-events-calendar
 git checkout release/B20.03
 git submodule update --recursive --init

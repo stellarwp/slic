@@ -511,7 +511,7 @@ function git_domain() {
 function git_handle() {
 	$handle = getenv( 'TRIC_GIT_HANDLE' );
 
-	return ! empty( $handle ) ? trim( $handle ) : 'moderntribe';
+	return ! empty( $handle ) ? trim( $handle ) : 'the-events-calendar';
 }
 
 /**
