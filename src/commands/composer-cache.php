@@ -1,6 +1,6 @@
 <?php
 /**
- * Handles the `reset` command to reset tric to its initial state.
+ * Handles the `composer-cache` command.
  *
  * @var bool     $is_help  Whether we're handling an `help` request on this command or not.
  * @var string   $cli_name The current name of tric CLI binary.
