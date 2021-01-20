@@ -558,3 +558,43 @@ function upper_snake_case( $string ) {
 function snake_case( $string ) {
 	return preg_replace( '/[^\\w_]/', '_', $string ) ?: $string;
 }
+
+/**
+ * Removes a directory and all its contents recursively.
+ *
+ * @param string $dir The path to the directory to remove.
+ *
+ * @return bool Whether the removal was correctly completed or not.
+ */
+function rrmdir( $dir ) {
+	if ( empty( $dir ) || ! file_exists( $dir ) ) {
+		return true;
+	}
+
+	if ( is_file( $dir ) || is_link( $dir ) ) {
+		return unlink( $dir );
+	}
+
+	$files = new \RecursiveIteratorIterator (
+		new \RecursiveDirectoryIterator(
+			$dir,
+			\RecursiveDirectoryIterator::SKIP_DOTS ),
+		\RecursiveIteratorIterator::CHILD_FIRST
+	);
+
+	/** @var \SplFileInfo $fileinfo
+	 */
+	foreach ( $files as $fileinfo ) {
+		if ( $fileinfo->isDir() ) {
+			if ( rrmdir( $fileinfo->getRealPath() ) === false ) {
+				return false;
+			}
+		} else {
+			if ( unlink( $fileinfo->getRealPath() ) === false ) {
+				return false;
+			}
+		}
+	}
+
+	return rmdir( $dir );
+}
