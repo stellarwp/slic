@@ -57,6 +57,7 @@ services:
       # The port, in the container, is not the default `80` to allow non root users to bind (listen) to it.
       - "${WORDPRESS_HTTP_PORT:-8888}:80"
     environment:
+      COMPOSER_CACHE_DIR: ${COMPOSER_CACHE_DIR:-}
       WORDPRESS_DB_USER: root
       WORDPRESS_DB_PASSWORD: password
       # This db is created by the db container at startup, no need to create it.
@@ -92,6 +93,7 @@ services:
       # Share the WordPress core installation files in the `_plugins` directory.
       - ${TRIC_PLUGINS_DIR}:/var/www/html/wp-content/plugins:cached
       - ${TRIC_THEMES_DIR}:/var/www/html/wp-content/themes:cached
+      - ${COMPOSER_CACHE_HOST_DIR}:/host-composer-cache:cached
 
   cli:
     image: wordpress:cli
@@ -184,6 +186,7 @@ services:
     user: "${DOCKER_RUN_UID:-}:${DOCKER_RUN_GID:-}"
     environment:
       FIXUID: "${FIXUID:-1}"
+      COMPOSER_CACHE_DIR: ${COMPOSER_CACHE_DIR:-}
       # Set these values to allow the container to look wordpress up.
       WORDPRESS_DB_USER: root
       WORDPRESS_DB_PASSWORD: password
@@ -229,17 +232,20 @@ services:
       # filesystem would be a worse cure than the disease.
       # The volume is bound to the `a+rwx` directory the `codeception` image provides to avoid file mode issues.
       - function-mocker-cache:/cache
+      - ${COMPOSER_CACHE_HOST_DIR}:/host-composer-cache:cached
 
   composer:
     image: lucatume/composer:php7.0
     user: "${DOCKER_RUN_UID:-}:${DOCKER_RUN_GID:-}"
     environment:
+      COMPOSER_CACHE_DIR: ${COMPOSER_CACHE_DIR:-}
       FIXUID: "${FIXUID:-1}"
     volumes:
       # Set the current plugin as project.
       - ${TRIC_PLUGINS_DIR}/${TRIC_CURRENT_PROJECT:-test}/${TRIC_CURRENT_PROJECT_SUBDIR:-}:/project:cached
       # Share SSH keys with the container to pull from private repositories.
       - ${DOCKER_RUN_SSH_AUTH_SOCK}:/ssh-agent:ro
+      - ${COMPOSER_CACHE_HOST_DIR}:/host-composer-cache:cached
 
   npm:
     build:
