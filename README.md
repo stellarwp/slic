@@ -6,6 +6,7 @@ The tric (Modern **Tri**be **C**ontainers) CLI command provides a containerized 
 
 1. Clone this repo
 2. Follow the [Setup Instructions](docs/setup.md)
+3. (Optional) Make [composer installs faster](docs/speedier-composer.md)
 
 ## Usage
 
@@ -128,6 +129,7 @@ Honestly, all of them are worth knowing. But here are a few important ones worth
 
 * `tric cli` – run WP CLI commands within the container stack.
 * `tric composer` – run composer commands against the current plugin target.
+* `tric composer-cache` – make composer faster by using your machine's compose cache directory.
 * `tric debug` – activates/deactivates debug output.
 * `tric info` – displays current `tric` environment settings.
 * `tric npm` – run npm commands against the current plugin target.

@@ -27,7 +27,7 @@ $args = args( [
 ] );
 
 $cli_name = basename( $argv[0] );
-const CLI_VERSION = '0.5.22';
+const CLI_VERSION = '0.5.23';
 
 $cli_header = implode( ' - ', [
 	light_cyan( $cli_name ) . ' version ' . light_cyan( CLI_VERSION ),
@@ -54,6 +54,7 @@ Available commands:
 <light_cyan>here</light_cyan>           Sets the current plugins directory to be the one used by tric.
 <light_cyan>init</light_cyan>           Initializes a plugin for use in tric.
 <light_cyan>composer</light_cyan>       Runs a Composer command in the stack.
+<light_cyan>composer-cache</light_cyan> Sets or shows the composer cache directory.
 <light_cyan>npm</light_cyan>            Runs an npm command in the stack using the node 8.9 container.
 <light_cyan>npm_lts</light_cyan>        Runs an npm command in the stack using the node LTS container. 
 <light_cyan>target</light_cyan>         Runs a set of commands on a set of targets.
@@ -138,6 +139,7 @@ switch ( $subcommand ) {
 	case 'build-stack':
 	case 'build-subdir':
 	case 'composer':
+	case 'composer-cache':
 	case 'config':
 	case 'debug':
 	case 'down':

@@ -34,8 +34,8 @@ function args( array $map = [], array $source = null, $offset = 1 ) {
 		}
 
 		if ( '...' === $key ) {
-			$full_map [ $key ] = array_slice( $source, $position + $offset );
-			$parsed_variadic   = true;
+			$full_map[ $key ] = array_slice( $source, $position + $offset );
+			$parsed_variadic  = true;
 			continue;
 		}
 
