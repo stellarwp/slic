@@ -582,6 +582,8 @@ function tric_info() {
 		'CLI_VERBOSITY',
 		'CI',
 		'TRAVIS_CI',
+		'COMPOSER_CACHE_DIR',
+		'COMPOSER_CACHE_HOST_DIR',
 		'CONTINUOUS_INTEGRATION',
 		'GITHUB_ACTION',
 		'TRIC_CURRENT_PROJECT',
@@ -662,6 +664,69 @@ function tric_wp_dir( $path = '' ) {
 	}
 
 	return empty( $path ) ? $wp_dir : $wp_dir . '/' . ltrim( $path, '\\/' );
+}
+
+/**
+ * Prints the current composer-cache status to screen.
+ */
+function composer_cache_status() {
+	$host_dir = getenv( 'COMPOSER_CACHE_HOST_DIR' );
+
+	echo 'Composer cache directory: ' . ( $host_dir ? light_cyan( $host_dir ) : magenta( 'not set' ) ) . PHP_EOL;
+}
+
+/**
+ * Handles the composer-cache command request.
+ *
+ * @param callable $args The closure that will produce the current interactive request arguments.
+ */
+function tric_handle_composer_cache( callable $args ) {
+	$run_settings_file = root( '/.env.tric.run' );
+	$toggle            = $args( 'toggle', 'status' );
+
+	if ( 'status' === $toggle ) {
+		composer_cache_status();
+
+		return;
+	}
+
+	$value = $args( 'value', null );
+	$docker_composer_cache_dir = '/host-composer-cache';
+
+	if ( 'unset' === $toggle ) {
+		$value = '/tmp';
+		$docker_composer_cache_dir = null;
+
+		write_env_file( $run_settings_file, [ 'COMPOSER_CACHE_HOST_DIR' => $value ], true );
+		write_env_file( $run_settings_file, [ 'COMPOSER_CACHE_DIR' => $docker_composer_cache_dir ], true );
+	}
+
+	echo 'Composer cache directory: ' . ( $value ? light_cyan( $value ) : magenta( 'not set' ) );
+
+	if ( $value === getenv( 'COMPOSER_CACHE_HOST_DIR' ) ) {
+		return;
+	}
+
+	write_env_file( $run_settings_file, [ 'COMPOSER_CACHE_HOST_DIR' => $value ], true );
+	write_env_file( $run_settings_file, [ 'COMPOSER_CACHE_DIR' => $docker_composer_cache_dir ], true );
+
+	echo "\n\n";
+
+	$restart_services = ask(
+		'Would you like to restart the WordPress (NOT the database) and Codeception services now?',
+		'yes'
+	);
+	if ( $restart_services ) {
+		putenv( "COMPOSER_CACHE_HOST_DIR={$value}" );
+		putenv( "COMPOSER_CACHE_DIR={$value}" );
+
+		// Call for a hard restart to make sure the web-server will restart its php-fpm connection.
+		restart_php_services( true );
+	} else {
+		echo colorize(
+			"\n\nTear down the stack with <light_cyan>down</light_cyan> and restart it to apply the new settings!\n"
+		);
+	}
 }
 
 /**
