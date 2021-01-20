@@ -7,7 +7,8 @@ if ( $is_help ) {
 	echo PHP_EOL;
 	echo colorize( "signature: <light_cyan>{$cli_name} composer-cache [(set <dir>|unset)]</light_cyan>\n" );
 	echo colorize( "example: <light_cyan>{$cli_name} composer-cache</light_cyan>\n" );
-	echo colorize( "example: <light_cyan>{$cli_name} composer-cache /home/person/.cache/composer</light_cyan>\n" );
+	echo colorize( "example: <light_cyan>{$cli_name} composer-cache unset</light_cyan>\n" );
+	echo colorize( "example: <light_cyan>{$cli_name} composer-cache set /home/person/.cache/composer</light_cyan>\n" );
 	return;
 }
 
