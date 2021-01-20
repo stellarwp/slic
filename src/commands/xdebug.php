@@ -1,4 +1,11 @@
 <?php
+/**
+ * Handles the `xdebug` command.
+ *
+ * @var bool     $is_help  Whether we're handling an `help` request on this command or not.
+ * @var string   $cli_name The current name of tric CLI binary.
+ * @var \Closure $args     The argument map closure, as produced by the `args` function.
+ */
 
 namespace Tribe\Test;
 
