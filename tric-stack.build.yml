@@ -30,7 +30,7 @@ services:
       dockerfile: ${TRIC_WORDPRESS_DOCKERFILE:-Dockerfile.debug}
       args:
         # Fix the version of the WordPress image to avoid issues w/ out-of-date database dumps.
-        WORDPRESS_IMAGE_VERSION: 5.5-apache
+        WORDPRESS_IMAGE_VERSION: 5.6-apache
         # Allow the image to be built creating the user and group ID for the host machine user.
         DOCKER_RUN_UID: ${DOCKER_RUN_UID:-0}
         DOCKER_RUN_GID: ${DOCKER_RUN_GID:-0}
