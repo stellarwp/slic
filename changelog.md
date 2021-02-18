@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.24] - 2021-02-18
+### Changed
+- Update the WordPress image version, in the `tric-stack.build.yml` file, from `5.5` to `5.6` to fix CI build issues.
+
 ## [0.5.23] - 2021-01-20
 ### Changed
 - Add an argument, to the `reset` command, to remove the default WordPress (`/_wordpress`) installation directory 
