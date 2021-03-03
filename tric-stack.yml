@@ -238,6 +238,7 @@ services:
     image: lucatume/composer:php7.0
     user: "${DOCKER_RUN_UID:-}:${DOCKER_RUN_GID:-}"
     environment:
+      COMPOSER_HTACCESS_PROTECT: 0
       COMPOSER_CACHE_DIR: ${COMPOSER_CACHE_DIR:-}
       FIXUID: "${FIXUID:-1}"
     volumes:

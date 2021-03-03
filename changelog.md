@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.25] - 2021-03-02
+### Changed
+- Set `COMPOSER_HTACCESS_PROTECT=0` explicitly in the `docker-compose` configuration file to avoid an `.htaccess` 
+  file being created in the root directory of the current target.
+
 ## [0.5.24] - 2021-02-18
 ### Changed
 - Update the WordPress image version, in the `tric-stack.build.yml` file, from `5.5` to `5.6` to fix CI build issues.
