@@ -18,7 +18,9 @@ $command = $args( '...' );
  * wp-cli already comes with a `shell` command that will open a PHP shell, same as `php -a`, in it.
  * As much as it would be ideal to use the `shell` sub-command to open a shell... we cannot use the `shell` word.
  */
-$open_bash_shell = reset( $command ) === 'bash';
+$cli_command = reset( $command );
+// If the command is `bash` or is empty, then open a shell in the `cli` service.
+$open_bash_shell = empty( $cli_command ) || $cli_command === 'bash';
 if ( ! $open_bash_shell ) {
 	$status = tric_realtime()( cli_command( $command ) );
 } else {
