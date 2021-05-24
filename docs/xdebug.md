@@ -18,7 +18,7 @@ Note that this command cannot be ran within `tric shell` because you've SSH'd in
 
 Set your localhost plugin folder to map to `/var/www/html/wp-content/plugins`.
 
-Video walk-throughs for [PhpStorm](https://drive.google.com/file/d/1sD8djXgmYWCUDCm_1XZNRx_GBbotmmiB/view?usp=sharing) and [VSCode](https://drive.google.com/open?id=19QeuODnskaFYDCCsB5mvfquecXBAytyM&authuser=luca%40tri.be&usp=drive_fs) (links require Modern Tribe login).
+Video walk-throughs for [PhpStorm](https://drive.google.com/file/d/1sD8djXgmYWCUDCm_1XZNRx_GBbotmmiB/view?usp=sharing) and [VSCode](https://drive.google.com/file/d/1519M2SRVgWVgTm0Px6UKfBjoQgxCR7Cp/view?usp=sharing) (links require Modern Tribe login).
 
 Screenshot from PhpStorm's video:
 
