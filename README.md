@@ -1,6 +1,6 @@
 # tric
 
-The tric (Modern **Tri**be **C**ontainers) CLI command provides a containerized and consistent environment for running automated tests.
+The tric (**T**EC **R**eliable **I**solation **C**ontainers) CLI command provides a containerized and consistent environment for running automated tests.
 
 ## Installation
 
