@@ -27,11 +27,11 @@ $args = args( [
 ] );
 
 $cli_name = basename( $argv[0] );
-const CLI_VERSION = '0.5.26';
+const CLI_VERSION = '0.5.27';
 
 $cli_header = implode( ' - ', [
 	light_cyan( $cli_name ) . ' version ' . light_cyan( CLI_VERSION ),
-	light_cyan( 'Modern Tribe local testing and development tool' )
+	light_cyan( 'TEC local testing and development tool' )
 ] );
 
 echo $cli_header . PHP_EOL . PHP_EOL;
