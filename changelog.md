@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.27] - 2021-06-03
+### Changed
+- Fixed an issue where the path to the WP directory would not build correctly on Windows systems.
+
 ## [0.5.26] - 2021-03-05
 ### Changed
 - Allow opening a shell in the `cli` service to run wp-cli commands just using `tric cli`.
