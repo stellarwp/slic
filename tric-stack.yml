@@ -317,3 +317,10 @@ services:
       - redis
     entrypoint: ["redis-cli","-h redis","-p 6379"]
     command: ["--version"]
+
+  host-ip:
+    image: busybox
+    networks:
+      tric:
+    entrypoint: sh
+    command: -c '/bin/ip route | awk "/default/ { print $$3 }" | cut -d" " -f3'

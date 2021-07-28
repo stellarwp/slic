@@ -27,14 +27,23 @@ $args = args( [
 ] );
 
 $cli_name = basename( $argv[0] );
-const CLI_VERSION = '0.5.27';
+const CLI_VERSION = '0.5.28';
 
-$cli_header = implode( ' - ', [
-	light_cyan( $cli_name ) . ' version ' . light_cyan( CLI_VERSION ),
-	light_cyan( 'TEC local testing and development tool' )
-] );
-
-echo $cli_header . PHP_EOL . PHP_EOL;
+// If the run-time option `-q`, for "quiet", is specified, then do not print the header.
+if ( in_array( '-q', $argv, true ) ) {
+    // Remove the `-q` flag from the global array of arguments to leave the rest of the commands unchanged.
+	unset( $argv[ array_search( '-q', $argv ) ] );
+	$argv = array_values( $argv );
+	$argc = count( $argv );
+	// Define a const commands will be able to check for quietness.
+	define( 'TRIC_QUIET', true );
+} else {
+	$cli_header = implode( ' - ', [
+		light_cyan( $cli_name ) . ' version ' . light_cyan( CLI_VERSION ),
+		light_cyan( 'TEC local testing and development tool' )
+	] );
+	echo $cli_header . PHP_EOL . PHP_EOL;
+}
 
 define( 'TRIC_ROOT_DIR', __DIR__ );
 
@@ -85,6 +94,7 @@ Available commands:
 
 <yellow>Containers:</yellow>
 <light_cyan>build-stack</light_cyan>    Builds the stack containers that require it, or builds a specific service image.
+<light_cyan>host-ip</light_cyan>        Returns the IP Address of the host machine from the container perspective.
 <light_cyan>down</light_cyan>           Tears down the stack, stopping containers and removing volumes.
 <light_cyan>up</light_cyan>             Starts a container part of the stack.
 <light_cyan>restart</light_cyan>        Restarts a container part of the stack.
@@ -144,6 +154,7 @@ switch ( $subcommand ) {
 	case 'debug':
 	case 'down':
 	case 'here':
+    case 'host-ip':
 	case 'info':
 	case 'init':
 	case 'interactive':
