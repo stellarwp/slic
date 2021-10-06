@@ -152,7 +152,7 @@ switch ( $subcommand ) {
 	case 'debug':
 	case 'down':
 	case 'here':
-    case 'host-ip':
+	case 'host-ip':
 	case 'info':
 	case 'init':
 	case 'interactive':
