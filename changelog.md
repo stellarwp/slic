@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.28] - 2021-10-06
+### Changed
+- Updated the `node` version to `10.16.0`, this affects the `npm` command and any other command usin the `npm` container.
+- Added the `host-ip` command to get the host machine IP address containers will be able to use to connect to the host (e.g. when setting up XDebug on Linux).
+
 ## [0.5.27] - 2021-06-03
 ### Changed
 - Fixed an issue where the path to the WP directory would not build correctly on Windows systems.
