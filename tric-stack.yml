@@ -252,7 +252,7 @@ services:
     build:
       context: containers/npm
       args:
-        NODE_VERSION: 8.9
+        NODE_VERSION: 10.16
     image: tric_npm
     user: "${DOCKER_RUN_UID:-}:${DOCKER_RUN_GID:-}"
     environment:
@@ -317,3 +317,10 @@ services:
       - redis
     entrypoint: ["redis-cli","-h redis","-p 6379"]
     command: ["--version"]
+
+  host-ip:
+    image: busybox
+    networks:
+      tric:
+    entrypoint: sh
+    command: -c '/bin/ip route | awk "/default/ { print $$3 }" | cut -d" " -f3'
