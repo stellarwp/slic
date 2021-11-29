@@ -318,6 +318,15 @@ services:
     entrypoint: ["redis-cli","-h redis","-p 6379"]
     command: ["--version"]
 
+  mailcatcher:
+    image: dockage/mailcatcher
+    networks:
+      tric:
+    ports:
+      # Expose MailCatcher ports on localhost.
+      - "1025:1025"
+      - "1080:1080"
+
   host-ip:
     image: busybox
     networks:
