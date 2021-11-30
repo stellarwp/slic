@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.29] - 2021-11-29
+#### Changed
+- Add support for a Mailcatcher container (thanks @sc0ttkclark).
+
 ## [0.5.28] - 2021-10-06
 ### Changed
 - Updated the `node` version to `10.16.0`, this affects the `npm` command and any other command usin the `npm` container.
