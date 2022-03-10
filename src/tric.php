@@ -176,6 +176,8 @@ function setup_tric_env( $root_dir ) {
 		putenv( 'FIXUID=0' );
 	}
 
+	setup_architecture_env();
+
 	// Load the distribution version configuration file, the version-controlled one.
 	load_env_file( $root_dir . '/.env.tric' );
 
@@ -1426,4 +1428,61 @@ function collect_target_suites() {
 	}
 
 	return $suites;
+}
+
+/**
+ * Returns whether the current system is ARM-based or not.
+ *
+ * The function will, on first run, create a flag file in
+ * the `tric` root directory under the reasonable assumption
+ * the architecture will not change on the same machine.
+ *
+ * @return bool Whether the current system is ARM-based or not.
+ */
+function is_arm64() {
+	$arm64_architecture_file = __DIR__ . '/../.architecture_arm64';
+	$x86_architecture_file   = __DIR__ . '/../.architecture_x86';
+	if ( file_exists( $arm64_architecture_file ) ) {
+		return true;
+	} elseif ( file_exists( $x86_architecture_file ) ) {
+		return false;
+	}
+
+	exec( PHP_BINARY . ' -i', $output, $result_code );
+
+	if ( $result_code !== 0 ) {
+		return false;
+	}
+
+	$is_arm64 = false !== strpos( implode( ' ', (array) $output ), 'arm64' );
+
+	if ( $is_arm64 ) {
+		touch( $arm64_architecture_file );
+
+		return true;
+	}
+
+	touch( $x86_architecture_file );
+
+	return false;
+}
+
+/**
+ * Depending on the machine architecture, use an x86 or arm64
+ * standalone Chrome container.
+ *
+ * @return void The function does not return any value and will
+ *              have the side effect of setting up environment
+ *              vars related to the current architecture.
+ *
+ * @see is_arm64() Used to detect the architecture.
+ */
+function setup_architecture_env() {
+	if ( is_arm64() ) {
+		putenv( 'TRIC_ARCHITECTURE=arm64' );
+		putenv( 'TRIC_CHROME_CONTAINER=seleniarm/standalone-chromium:4.1.2-20220227' );
+	} else {
+		putenv( 'TRIC_ARCHITECTURE=x86' );
+		putenv( 'TRIC_CHROME_CONTAINER=selenium/standalone-chrome:3.141.59-oxygen' );
+	}
 }

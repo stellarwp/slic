@@ -30,3 +30,6 @@ _plugins
 .build-version
 # Any .remote-version file created by the tric cli tool.
 .remote-version
+# Any architecture detection flag file.
+.architecture_arm64
+.architecture_x86
