@@ -83,7 +83,7 @@ services:
       # within the container, on macOS and Windows.
       # On Linux set the host machine IP address before calling the stack:
       # XDH=$(ip route | grep docker0 | awk '{print $9}') docker-compose ...
-      XDEBUG_CONFIG: "idekey=${XDK:-tric} remote_enable=${XDE:-1} remote_host=${XDH:-host.docker.internal} remote_port=${XDP:-9001}"
+      XDEBUG_CONFIG: "idekey=${XDK:-tric} remote_enable=${XDE:-1} remote_host=${XDH:-host.docker.internal} remote_port=${XDP:-9001} client_host=${XDH:-host.docker.internal} client_port=${XDP:-9001}"
       # Whether to disable the XDebug extension in the Codeception container completely or not.
       XDEBUG_DISABLE: "${XDEBUG_DISABLE:-0}"
     volumes:
@@ -110,7 +110,7 @@ services:
       # within the container, on macOS and Windows.
       # On Linux set the host machine IP address before calling the stack:
       # XDH=$(ip route | grep docker0 | awk '{print $9}') docker-compose ...
-      XDEBUG_CONFIG: "idekey=${XDK:-tric} remote_enable=${XDE:-1} remote_host=${XDH:-host.docker.internal} remote_port=${XDP:-9001}"
+      XDEBUG_CONFIG: "idekey=${XDK:-tric} remote_enable=${XDE:-1} remote_host=${XDH:-host.docker.internal} remote_port=${XDP:-9001} client_host=${XDH:-host.docker.internal} client_port=${XDP:-9001}"
     volumes:
       # Paths are relative to the directory that contains this file, NOT the current working directory.
       # Share the WordPress core installation files in the `_wordpress` directory.
@@ -136,7 +136,7 @@ services:
       # within the container, on macOS and Windows.
       # On Linux set the host machine IP address before calling the stack:
       # XDH=$(ip route | grep docker0 | awk '{print $9}') docker-compose ...
-      XDEBUG_CONFIG: "idekey=${XDK:-tric} remote_enable=${XDE:-1} remote_host=${XDH:-host.docker.internal} remote_port=${XDP:-9001}"
+      XDEBUG_CONFIG: "idekey=${XDK:-tric} remote_enable=${XDE:-1} remote_host=${XDH:-host.docker.internal} remote_port=${XDP:-9001} client_host=${XDH:-host.docker.internal} client_port=${XDP:-9001}"
     depends_on:
       - wordpress
     # Override the default entrypoint to wait for the WordPress container, and required services to be up and running.
@@ -171,14 +171,14 @@ services:
     command: -Lkfv --retry-connrefused --retry 30 --retry-delay 1 -o /dev/null --stderr /dev/null wordpress.test:80
 
   chrome:
-    image: selenium/standalone-chrome:3.141.59-oxygen
+    image: ${TRIC_CHROME_CONTAINER:-selenium/standalone-chrome:3.141.59-oxygen}
     networks:
       - tric
     extra_hosts:
       - "wordpress.test:172.${TRIC_TEST_SUBNET:-28}.1.1"
 
   codeception:
-    image: lucatume/codeception:cc3.1.0
+    image: lucatume/codeception:latest
     networks:
       - tric
     extra_hosts:
@@ -201,7 +201,7 @@ services:
       # within the container, on macOS and Windows.
       # On Linux set the host machine IP address before calling the stack:
       # XDH=$(ip route | grep docker0 | awk '{print $9}') docker-compose ...
-      XDEBUG_CONFIG: "idekey=${XDK:-tric} remote_enable=${XDE:-1} remote_host=${XDH:-host.docker.internal} remote_port=${XDP:-9001}"
+      XDEBUG_CONFIG: "idekey=${XDK:-tric} remote_enable=${XDE:-1} remote_host=${XDH:-host.docker.internal} remote_port=${XDP:-9001} client_host=${XDH:-host.docker.internal} client_port=${XDP:-9001}"
       # Move to the target directory before running the command from the plugins directory.
       CODECEPTION_PROJECT_DIR: /var/www/html/wp-content/plugins/${TRIC_CURRENT_PROJECT:-test}/${TRIC_CURRENT_PROJECT_SUBDIR:-}
       # When running the container in shell mode (using the tric `shell` command), then use this CC configuration.
