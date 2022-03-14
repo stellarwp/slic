@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.31] - 2022-03-14
+#### Changed
+- Version bump to pull the latest version of the fixed `codeception` container.
+
 ## [0.5.30] - 2022-03-10
 #### Changed
 - Use the `seleniarm/standalone-chromium` container for the `chrome` service on ARM architecture machines.
