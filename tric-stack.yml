@@ -178,7 +178,7 @@ services:
       - "wordpress.test:172.${TRIC_TEST_SUBNET:-28}.1.1"
 
   codeception:
-    image: lucatume/codeception:latest
+    image: lucatume/codeception:cc3.1.0-v1.1.1
     networks:
       - tric
     extra_hosts:
