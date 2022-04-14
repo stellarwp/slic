@@ -27,7 +27,7 @@ $args = args( [
 ] );
 
 $cli_name = basename( $argv[0] );
-const CLI_VERSION = '0.5.32';
+const CLI_VERSION = '0.5.33';
 
 // If the run-time option `-q`, for "quiet", is specified, then do not print the header.
 if ( in_array( '-q', $argv, true ) ) {
@@ -77,10 +77,12 @@ Available commands:
 <light_cyan>shell</light_cyan>          Opens a shell in a new stack service, defaults to the 'codeception' one.
 <light_cyan>ssh</light_cyan>            Opens a shell in a running stack service, defaults to the 'wordpress' one.
 <light_cyan>cli</light_cyan>            Runs a wp-cli command in the stack or opens a session into the wp-cli container.
+<light_cyan>wp</light_cyan>             Runs a wp-cli command in the stack or opens a session into the wp-cli container; alias of 'cli'.
 <light_cyan>site-cli</light_cyan>       Waits for WordPress to be correctly set up to run a wp-cli command in the stack.
 <light_cyan>reset</light_cyan>          Resets {$cli_name} to the initial state as configured by the env files.
 <light_cyan>update</light_cyan>         Updates the tool and the images used in its services.
 <light_cyan>upgrade</light_cyan>        Upgrades the {$cli_name} repo.
+<light_cyan>mysql</light_cyan>          Opens a mysql shell in the database service.
 
 <yellow>Info:</yellow>
 <light_cyan>build-prompt</light_cyan>   Activates or deactivates whether or not composer/npm build prompts should be provided.
@@ -120,6 +122,11 @@ if ( ! in_array( $subcommand, [ 'help', 'update'] ) ) {
 	maybe_prompt_for_stack_update();
 }
 
+// A map from the user-facing alias to the command that will be actually called.
+$aliases = [
+	'wp' => 'cli',
+];
+
 switch ( $subcommand ) {
 	default:
 	case 'help':
@@ -140,6 +147,7 @@ switch ( $subcommand ) {
 	case 'airplane-mode':
 	case 'cache':
 	case 'cli':
+	case 'wp': // Alias of the `cli` command.
 		scaffold_installation();
 		install_wordpress();
 		// Do not break, let the command be loaded then.
@@ -157,6 +165,7 @@ switch ( $subcommand ) {
 	case 'init':
 	case 'interactive':
 	case 'logs':
+	case 'mysql':
 	case 'npm':
 	case 'npm_lts':
 	case 'phpcbf':
@@ -168,6 +177,9 @@ switch ( $subcommand ) {
 	case 'use':
 	case 'using':
 	case 'xdebug':
+        if ( isset( $aliases[ $subcommand ] ) ) {
+            $subcommand = $aliases[ $subcommand ];
+        }
 		include_once __DIR__ . '/src/commands/' . $subcommand . '.php';
 		break;
 }
