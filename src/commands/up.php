@@ -1,6 +1,6 @@
 <?php
 
-namespace Tribe\Test;
+namespace TEC\Tric;
 
 if ( $is_help ) {
 	echo "Starts a container part of the stack.\n";

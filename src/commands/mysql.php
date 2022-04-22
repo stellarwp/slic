@@ -8,7 +8,7 @@
  * @var string $cli_name The current name of the ClI application, usually `tric`.
  */
 
-namespace Tribe\Test;
+namespace TEC\Tric;
 
 if ( $is_help ) {
 	echo "Opens a mysql shell in the database service.\n";

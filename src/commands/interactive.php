@@ -1,6 +1,6 @@
 <?php
 
-namespace Tribe\Test;
+namespace TEC\Tric;
 
 if ( $is_help ) {
 	echo "Activates and deactivated interactive mode. While deactivated, prompts will be suppressed and default values will be automatically selected.\n";

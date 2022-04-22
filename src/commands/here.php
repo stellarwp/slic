@@ -1,6 +1,6 @@
 <?php
 
-namespace Tribe\Test;
+namespace TEC\Tric;
 
 if ( $is_help ) {
 	echo "Sets the current plugins directory to be the one used by tric.\n";

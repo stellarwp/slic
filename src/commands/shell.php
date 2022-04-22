@@ -1,6 +1,6 @@
 <?php
 
-namespace Tribe\Test;
+namespace TEC\Tric;
 
 if ( $is_help ) {
 	echo "Opens a shell in a stack service, defaults to the 'codeception' one.\n";

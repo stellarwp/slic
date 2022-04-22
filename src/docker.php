@@ -3,7 +3,7 @@
  * docker-compose wrapper functions.
  */
 
-namespace Tribe\Test;
+namespace TEC\Tric;
 
 require_once __DIR__ . '/utils.php';
 
@@ -100,7 +100,7 @@ function cli() {
  */
 function wordpress_url() {
 	if ( is_ci() ) {
-		return 'http://tribe.test';
+		return 'http://tec.test';
 	}
 
 	$config = check_status_or_exit( docker_compose( tric_stack_array() )( [ 'config' ] ) )( 'string_output' );

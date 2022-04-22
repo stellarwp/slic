@@ -1,6 +1,6 @@
 <?php
 
-namespace Tribe\Test;
+namespace TEC\Tric;
 
 if ( $is_help ) {
 	echo "Runs a Composer command in the stack.\n";

@@ -1,6 +1,6 @@
 <?php
 
-namespace Tribe\Test;
+namespace TEC\Tric;
 
 if ( $is_help ) {
 	echo "Activates or deactivates whether or not composer/npm build should apply to sub-directories.\n";

@@ -10,15 +10,15 @@ require_once __DIR__ . '/src/themes.php';
 require_once __DIR__ . '/src/shell.php';
 require_once __DIR__ . '/src/wordpress.php';
 
-use function Tribe\Test\args;
-use function Tribe\Test\colorize;
-use function Tribe\Test\install_wordpress;
-use function Tribe\Test\light_cyan;
-use function Tribe\Test\maybe_prompt_for_repo_update;
-use function Tribe\Test\maybe_prompt_for_stack_update;
-use function Tribe\Test\root;
-use function Tribe\Test\scaffold_installation;
-use function Tribe\Test\setup_tric_env;
+use function TEC\Tric\args;
+use function TEC\Tric\colorize;
+use function TEC\Tric\install_wordpress;
+use function TEC\Tric\light_cyan;
+use function TEC\Tric\maybe_prompt_for_repo_update;
+use function TEC\Tric\maybe_prompt_for_stack_update;
+use function TEC\Tric\root;
+use function TEC\Tric\scaffold_installation;
+use function TEC\Tric\setup_tric_env;
 
 // Set up the argument parsing function.
 $args = args( [

@@ -1,6 +1,6 @@
 <?php
 
-namespace Tribe\Test;
+namespace TEC\Tric;
 
 if ( $is_help ) {
 	echo "Waits for WordPress to be correctly set up to run a wp-cli command in the stack.\n";

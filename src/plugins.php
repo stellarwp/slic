@@ -3,7 +3,7 @@
  * Plugin related functions for the build PHP scripts.
  */
 
-namespace Tribe\Test;
+namespace TEC\Tric;
 
 use SplFileInfo;
 

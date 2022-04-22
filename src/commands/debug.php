@@ -1,6 +1,6 @@
 <?php
 
-namespace Tribe\Test;
+namespace TEC\Tric;
 
 if ( $is_help ) {
 	echo "Activates or deactivates {$cli_name} debug output or returns the current debug status.\n";

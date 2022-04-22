@@ -1,5 +1,5 @@
 <?php
-namespace Tribe\Test;
+namespace TEC\Tric;
 
 if ( $is_help ) {
     echo "Returns the IP Address of the host machine from the container perspective.\n";

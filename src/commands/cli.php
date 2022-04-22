@@ -1,6 +1,6 @@
 <?php
 
-namespace Tribe\Test;
+namespace TEC\Tric;
 
 if ( $is_help ) {
 	echo "Runs a wp-cli command in the stack or opens a session into the wp-cli container.\n";

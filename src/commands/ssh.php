@@ -4,7 +4,7 @@
  * service is not already running.
  */
 
-namespace Tribe\Test;
+namespace TEC\Tric;
 
 if ( $is_help ) {
 	echo "Opens a bash shell in a running stack service, defaults to the 'wordpress' one.\n";

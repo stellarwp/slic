@@ -3,7 +3,7 @@
  * Functions to scaffold plugins for use.
  */
 
-namespace Tribe\Test;
+namespace TEC\Tric;
 
 /**
  * Creates an `.env.testing.tric` file, if one exists it will be overwritten.

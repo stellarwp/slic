@@ -7,7 +7,7 @@
  * @var \Closure $args     The argument map closure, as produced by the `args` function.
  */
 
-namespace Tribe\Test;
+namespace TEC\Tric;
 
 if ( $is_help ) {
 	echo "Activates and deactivated XDebug in the stack, returns the current XDebug status or sets its values.\n";

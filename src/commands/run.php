@@ -15,7 +15,7 @@
  * @var \Closure $args     The argument map closure, as produced by the `args` function.
  */
 
-namespace Tribe\Test;
+namespace TEC\Tric;
 
 if ( $is_help ) {
 	echo colorize( "Runs a Codeception test in the stack, the equivalent of <light_cyan>'codecept run ...'</light_cyan>, or all the tests.\n" );

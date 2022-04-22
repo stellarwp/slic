@@ -3,7 +3,7 @@
  * Functions for WordPress specific actions.
  */
 
-namespace Tribe\Test;
+namespace TEC\Tric;
 
 use CallbackFilterIterator;
 use FilesystemIterator;
@@ -65,7 +65,7 @@ function dir_has_wp_config( $dir ) {
  *                                   information.
  */
 function wp_content_dir_list( $content_type = 'plugins' ) {
-	$function = "\\Tribe\\Test\\tric_{$content_type}_dir";
+	$function = "\\TEC\\Tric\\tric_{$content_type}_dir";
 	$path     = $function();
 
 	if ( ! is_dir( $path ) ) {

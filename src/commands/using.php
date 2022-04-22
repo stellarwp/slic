@@ -6,7 +6,7 @@
  * @var \Closure $args    The argument map closure, as produced by the `args` function.
  */
 
-namespace Tribe\Test;
+namespace TEC\Tric;
 
 if ( $is_help ) {
 	echo "Returns the current 'use' target.\n";

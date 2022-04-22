@@ -6,14 +6,14 @@
  * @var \Closure $args    The argument map closure, as produced by the `args` function.
  */
 
-use function Tribe\Test\args;
-use function Tribe\Test\check_status_or;
-use function Tribe\Test\check_status_or_exit;
-use function Tribe\Test\cli_command;
-use function Tribe\Test\colorize;
-use function Tribe\Test\magenta;
-use function Tribe\Test\tric_process;
-use function Tribe\Test\tric_realtime;
+use function TEC\Tric\args;
+use function TEC\Tric\check_status_or;
+use function TEC\Tric\check_status_or_exit;
+use function TEC\Tric\cli_command;
+use function TEC\Tric\colorize;
+use function TEC\Tric\magenta;
+use function TEC\Tric\tric_process;
+use function TEC\Tric\tric_realtime;
 
 if ( $is_help ) {
 	echo "Activates and deactivates object cache support, returns the current object cache status.\n";

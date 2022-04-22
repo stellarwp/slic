@@ -7,7 +7,7 @@
  * @var string   $cli_name The current name of the main CLI command, e.g. `tric`.
  */
 
-namespace Tribe\Test;
+namespace TEC\Tric;
 
 if ( $is_help ) {
 	echo "Runs PHP Code Beautifer and Fixer against the current use target.\n";

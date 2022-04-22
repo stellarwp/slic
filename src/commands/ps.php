@@ -6,7 +6,7 @@
  * @var string   $cli_name The current name of the main CLI command, e.g. `tric`.
  */
 
-namespace Tribe\Test;
+namespace TEC\Tric;
 
 if ($is_help) {
     echo "Lists the containers part of the stack.\n";

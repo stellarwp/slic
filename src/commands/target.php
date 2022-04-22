@@ -2,10 +2,10 @@
 /**
  * Handles the execution of the `target` command.
  *
- * @packag Tribe\Test
+ * @packag TEC\Tric
  */
 
-namespace Tribe\Test;
+namespace TEC\Tric;
 
 if ( $is_help ) {
 	echo "Runs a set of commands on a set of targets.\n";

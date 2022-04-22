@@ -3,7 +3,7 @@
  * tric cli functions.
  */
 
-namespace Tribe\Test;
+namespace TEC\Tric;
 
 /**
  * Returns whether or not the tric here command was done at the site level or not.
@@ -168,7 +168,7 @@ function get_target_relative_path( $target ) {
  */
 function setup_tric_env( $root_dir ) {
 	// Let's declare we're performing trics.
-	putenv( 'TRIBE_TRIC=1' );
+	putenv( 'TEC_TRIC=1' );
 
 	$os = os();
 	if ( $os === 'macOS' || $os === 'Windows' ) {

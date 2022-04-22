@@ -3,7 +3,7 @@
  * Process related files and functions.
  */
 
-namespace Tribe\Test;
+namespace TEC\Tric;
 
 /**
  * Runs a process and returns a closure that allows getting the status or output from it.

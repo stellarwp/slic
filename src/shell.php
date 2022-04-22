@@ -3,7 +3,7 @@
  * Interactive shell dedicated wrappers.
  */
 
-namespace Tribe\Test;
+namespace TEC\Tric;
 
 /**
  * Executes a wp-cli command in the stack, echoes and returns its output.

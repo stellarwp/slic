@@ -3,7 +3,7 @@
  * Utility functions for the build PHP scripts.
  */
 
-namespace Tribe\Test;
+namespace TEC\Tric;
 
 require_once __DIR__ . '/process.php';
 require_once __DIR__ . '/colors.php';
@@ -359,7 +359,7 @@ function is_ci() {
 // Whether the current run context is a `tric` binary one or not.
 function is_tric() {
 	$env_vars = [
-		'TRIBE_TRIC',
+		'TEC_TRIC',
 		'TRIC',
 	];
 	foreach ( $env_vars as $key ) {
