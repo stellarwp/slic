@@ -83,6 +83,7 @@ Available commands:
 <light_cyan>update</light_cyan>         Updates the tool and the images used in its services.
 <light_cyan>upgrade</light_cyan>        Upgrades the {$cli_name} repo.
 <light_cyan>mysql</light_cyan>          Opens a mysql shell in the database service.
+<light_cyan>ps</light_cyan>             Lists the containers part of {$cli_name} stack.
 
 <yellow>Info:</yellow>
 <light_cyan>build-prompt</light_cyan>   Activates or deactivates whether or not composer/npm build prompts should be provided.
@@ -170,6 +171,7 @@ switch ( $subcommand ) {
 	case 'npm_lts':
 	case 'phpcbf':
 	case 'phpcs':
+    case 'ps':
 	case 'reset':
 	case 'target':
 	case 'update':
