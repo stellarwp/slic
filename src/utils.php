@@ -488,8 +488,8 @@ function ssh_auth_sock() {
  *
  * If the default value is a 'yes' or a 'no' (-ish), then the return value will be cast to a boolean.
  *
- * @param      string $question The question to ask, including the question mark?
- * @param null|string $default The default value for the answer.
+ * @param string      $question The question to ask, including the question mark?
+ * @param null|string $default  The default value for the answer.
  *
  * @return string|null The user answer or the default value if the user did not provide an answer to the question.
  */
@@ -536,11 +536,11 @@ function ask( $question, $default = null ) {
 /**
  * Changes a string to its UPPER_SNAKE_CASE version.
  *
- * @since TBD
- *
  * @param string $string The string to transform.
  *
  * @return string The transformed string.
+ * @since TBD
+ *
  */
 function upper_snake_case( $string ) {
 	return strtoupper( snake_case( $string ) );
@@ -549,11 +549,11 @@ function upper_snake_case( $string ) {
 /**
  * Changes a string to its snake_case version.
  *
- * @since TBD
- *
  * @param string $string The string to transform.
  *
  * @return string The transformed string.
+ * @since TBD
+ *
  */
 function snake_case( $string ) {
 	return preg_replace( '/[^\\w_]/', '_', $string ) ?: $string;
@@ -598,4 +598,103 @@ function rrmdir( $dir ) {
 	}
 
 	return rmdir( $dir );
+}
+
+/**
+ * Like PHP `array_merge_recursive`, but duplicate leaf keys will be overridden (`array_merge`)
+ * and not be duplicated.
+ *
+ * @param array ...$args A set of arrays to recursively merge, right to left.
+ *
+ * @return array The merged array.
+ */
+function array_merge_multi( ...$args ) {
+	$a = array_shift( $args );
+
+	foreach ( $args as $b ) {
+		foreach ( $b as $key => $val ) {
+			if ( is_array( $val ) && is_array( $a[ $key ] ) ) {
+				$b[ $key ] = array_merge_multi( $a[ $key ], $val );
+			}
+		}
+		$a = array_merge( $a, $b );
+	}
+
+	return $a;
+}
+
+/**
+ * Downloads a file to the specified path.
+ *
+ * @param string $source_url  The URL to download the file from
+ * @param string $dest_file   The name of the file to write downloaded contents to.
+ * @param bool   $verify_host Whether to verify the source host certificate or not.
+ *
+ * @return string|false Either the absolute path to the destination file, or `false`on failure.
+ */
+function download_file( $source_url, $dest_file, $verify_host = true ) {
+	$file_handle = fopen( $dest_file, 'wb' );
+
+	if ( ! is_resource( $file_handle ) ) {
+		return false;
+	}
+
+	$curl_handle = curl_init();
+
+	if ( ! is_resource( $curl_handle ) ) {
+		fclose( $file_handle );
+
+		return false;
+	}
+
+	curl_setopt( $curl_handle, CURLOPT_URL, $source_url );
+	curl_setopt( $curl_handle, CURLOPT_FAILONERROR, true );
+	curl_setopt( $curl_handle, CURLOPT_HEADER, 0 );
+	curl_setopt( $curl_handle, CURLOPT_FOLLOWLOCATION, true );
+	curl_setopt( $curl_handle, CURLOPT_AUTOREFERER, true );
+	curl_setopt( $curl_handle, CURLOPT_TIMEOUT, 10 );
+	curl_setopt( $curl_handle, CURLOPT_FILE, $file_handle );
+
+	if ( ! $verify_host ) {
+		curl_setopt( $curl_handle, CURLOPT_SSL_VERIFYHOST, 0 );
+		curl_setopt( $curl_handle, CURLOPT_SSL_VERIFYPEER, 0 );
+	}
+
+	if ( ! ( curl_exec( $curl_handle ) ) ) {
+		return false;
+	}
+
+	// This will fclose as well.
+	curl_close( $curl_handle );
+
+	return $dest_file;
+}
+
+/**
+ * Unzips a zip file contents into the specified destination directory.
+ *
+ * @param string $source_file The path to the zip file to unzip.
+ * @param string $dest_dir    The path to the directory to unzip the file contents into; if not present, it will
+ *                            be created.
+ *
+ * @return string|false The path to the directory containing the extracted files, or `false` on failure.
+ */
+function unzip_file( $source_file, $dest_dir ) {
+	$zip      = new \ZipArchive;
+	$basename = basename( $source_file );
+	$dirname  = substr( $basename, 0, strpos( $basename, '.', - strlen( $basename ) ) );
+	$tmp_dir  = cache( '/temp_zip_dir' );
+
+	if ( ! (
+		$zip->open( $source_file )
+		&& $zip->extractTo( $tmp_dir )
+		&& rrmdir( $dest_dir )
+		&& rename( $tmp_dir . '/' . $dirname, $dest_dir )
+		&& rrmdir( $tmp_dir )
+		&& $zip->close()
+	) ) {
+		return false;
+	}
+
+	return $dest_dir;
 }

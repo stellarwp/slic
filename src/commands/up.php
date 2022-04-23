@@ -11,6 +11,13 @@ if ( $is_help ) {
 }
 
 $service = args( [ 'service' ], $args( '...' ), 0 )( 'service', 'wordpress' );
-$status  = tric_realtime()( [ 'up', '-d', $service ] );
 
-exit( $status );
+if ( $service === 'wordpress' || service_requires( $service, 'wordpress' ) ) {
+	ensure_wordpress_files();
+	ensure_wordpress_configured();
+	ensure_wordpress_installed();
+}
+
+//$status  = tric_realtime()( [ 'up', '-d', $service ] );
+
+//exit( $status );

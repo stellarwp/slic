@@ -14,7 +14,7 @@ use SplFileInfo;
  */
 function maybe_generate_htaccess() {
 	$htaccess_path = root( '_wordpress/.htaccess' );
-	$htaccess = is_file( $htaccess_path ) && file_get_contents( $htaccess_path );
+	$htaccess      = is_file( $htaccess_path ) && file_get_contents( $htaccess_path );
 
 	if ( $htaccess ) {
 		return;
@@ -83,7 +83,7 @@ function wp_content_dir_list( $content_type = 'plugins' ) {
 
 	$allowed_subdirs = get_allowed_use_subdirectories();
 	foreach ( iterator_to_array( $dir ) as $key => $value ) {
-		$basename                 = basename( $key );
+		$basename          = basename( $key );
 		$dirs[ $basename ] = $value;
 		foreach ( $allowed_subdirs as $subdir ) {
 			$subdir_path = $value . '/' . $subdir;
@@ -151,4 +151,43 @@ function install_wordpress() {
 		], 'site-cli' ) ) );
 	};
 	check_status_or( $sense_installation, $install_wordpress );
+}
+
+function ensure_wordpress_files() {
+	$wp_root_dir = getenv( 'TRIC_WP_DIR' );
+
+	// Ensure the destination directory exists.
+	if ( ! is_dir( $wp_root_dir ) && ! mkdir( $wp_root_dir, 0755, false ) && ! is_dir( $wp_root_dir ) ) {
+		echo magenta( "Failed to create WordPress root directory {$wp_root_dir}." );
+		exit( 1 );
+	}
+
+	// Download WordPress.
+	$zip_file = cache( '/wordpress/wordpress.zip' );
+	if ( ! is_file( $zip_file ) ) {
+		$source_url = 'https://wordpress.org/latest.zip';
+		$zip_file   = download_file( $source_url, $zip_file );
+
+		if ( $zip_file === false ) {
+			echo magenta( "Failed to download WordPress file from $source_url." );
+			exit( 1 );
+		}
+	}
+
+	// Unzip WordPress.
+	if ( ! is_file( $wp_root_dir . '/wp-load.php' ) ) {
+		if ( ! unzip_file( $zip_file, $wp_root_dir ) ) {
+			echo magenta( "Failed to extract WordPress file $zip_file to $wp_root_dir." );
+		}
+		exit( 1 );
+	}
+
+	return true;
+}
+
+function ensure_wordpress_configured() {
+
+}
+
+function ensure_wordpress_installed() {
 }

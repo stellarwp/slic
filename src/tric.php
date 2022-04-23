@@ -1486,3 +1486,42 @@ function setup_architecture_env() {
 		putenv( 'TRIC_CHROME_CONTAINER=selenium/standalone-chrome:3.141.59-oxygen' );
 	}
 }
+
+/**
+ * Creates and returns the path to the cache directory root or a path in it.
+ *
+ * Directories part of the path will be recursively created.
+ *
+ * @param string $path The path, relative to the cache directory root directory, to return the cache absolute path for.
+ *
+ * @return string The absolute path to the created directory or file.
+ */
+function cache( $path = '/' ) {
+	$cache_root_dir = __DIR__ . '/../.cache';
+
+	if ( ! is_dir( $cache_root_dir ) && ! mkdir( $cache_root_dir, 0755, true ) && ! is_dir( $cache_root_dir ) ) {
+		echo magenta( "Failed to create cache root directory {$cache_root_dir}." );
+		exit( 1 );
+	}
+
+	$cache_root_dir = realpath( $cache_root_dir );
+
+	if ( empty( $cache_root_dir ) ) {
+		echo magenta( "Failed to resolve cache root directory real path." );
+		exit( 1 );
+	}
+
+	$dir_sep   = DIRECTORY_SEPARATOR;
+	$full_path = rtrim( realpath( $cache_root_dir ) . $dir_sep . ltrim( $path, $dir_sep ), $dir_sep );
+	// If the last dot is closer to the end of the string than the last forward slash, assume it's a file.
+	$last_dir_sep_end_offset = strpos( strrev( $full_path ), $dir_sep );
+	$is_file                 = strpos( strrev( $full_path ), '.' ) < $last_dir_sep_end_offset;
+	$dir_path                = $is_file ? substr( $full_path, 0, - $last_dir_sep_end_offset ) : $full_path;
+
+	if ( ! is_dir( $dir_path ) && ! mkdir( $dir_path ) && ! is_dir( $dir_path ) ) {
+		echo magenta( "Failed to create cache directory $dir_path." );
+		exit( 1 );
+	}
+
+	return $full_path;
+}

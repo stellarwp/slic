@@ -9,6 +9,7 @@ require_once __DIR__ . '/src/plugins.php';
 require_once __DIR__ . '/src/themes.php';
 require_once __DIR__ . '/src/shell.php';
 require_once __DIR__ . '/src/wordpress.php';
+require_once __DIR__ . '/src/services.php';
 
 use function TEC\Tric\args;
 use function TEC\Tric\colorize;
@@ -27,7 +28,7 @@ $args = args( [
 ] );
 
 $cli_name = basename( $argv[0] );
-const CLI_VERSION = '0.5.33';
+const CLI_VERSION = '0.6.0';
 
 // If the run-time option `-q`, for "quiet", is specified, then do not print the header.
 if ( in_array( '-q', $argv, true ) ) {
@@ -143,14 +144,14 @@ switch ( $subcommand ) {
 	case 'site-cli':
 	case 'ssh':
 	case 'up':
-		scaffold_installation();
+//		scaffold_installation();
 		// Do not break, let the command be loaded then.
 	case 'airplane-mode':
 	case 'cache':
 	case 'cli':
 	case 'wp': // Alias of the `cli` command.
-		scaffold_installation();
-		install_wordpress();
+//		scaffold_installation();
+//		install_wordpress();
 		// Do not break, let the command be loaded then.
 	case 'build-prompt':
 	case 'build-stack':

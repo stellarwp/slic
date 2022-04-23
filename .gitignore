@@ -33,3 +33,6 @@ _plugins
 # Any architecture detection flag file.
 .architecture_arm64
 .architecture_x86
+
+# tric own cache directory
+.cache
