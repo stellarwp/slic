@@ -10,15 +10,14 @@ require_once __DIR__ . '/src/themes.php';
 require_once __DIR__ . '/src/shell.php';
 require_once __DIR__ . '/src/wordpress.php';
 require_once __DIR__ . '/src/services.php';
+require_once __DIR__ . '/src/database.php';
 
 use function TEC\Tric\args;
 use function TEC\Tric\colorize;
-use function TEC\Tric\install_wordpress;
 use function TEC\Tric\light_cyan;
 use function TEC\Tric\maybe_prompt_for_repo_update;
 use function TEC\Tric\maybe_prompt_for_stack_update;
 use function TEC\Tric\root;
-use function TEC\Tric\scaffold_installation;
 use function TEC\Tric\setup_tric_env;
 
 // Set up the argument parsing function.
@@ -144,14 +143,14 @@ switch ( $subcommand ) {
 	case 'site-cli':
 	case 'ssh':
 	case 'up':
-//		scaffold_installation();
+        // ensure_wordpress_files();
+        // ensure_wordpress_configured();
 		// Do not break, let the command be loaded then.
 	case 'airplane-mode':
 	case 'cache':
 	case 'cli':
 	case 'wp': // Alias of the `cli` command.
-//		scaffold_installation();
-//		install_wordpress();
+        // ensure_wordpress_installed();
 		// Do not break, let the command be loaded then.
 	case 'build-prompt':
 	case 'build-stack':

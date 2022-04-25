@@ -18,6 +18,8 @@ services:
     image: mariadb:10.7.3
     networks:
       - tric
+    ports:
+      - "${TRIC_DB_LOCALHOST_PORT:-9006}:3306"
     environment:
       MYSQL_DATABASE: test
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}

@@ -74,3 +74,17 @@ function service_requires( $service, ...$dependencies ) {
 
 	return (bool) count( array_intersect( array_merge( $service_links, $service_dependencies ), $dependencies ) );
 }
+
+/**
+ * Ensures a service dependencies are all correctly set up, will
+ * exit if not possible.
+ *
+ * @param string $service The service to ensure the dependencies for.
+ */
+function ensure_service_dependencies( $service ) {
+	if ( $service === 'wordpress' || service_requires( $service, 'wordpress' ) ) {
+		ensure_wordpress_files();
+		ensure_wordpress_configured();
+		ensure_wordpress_installed();
+	}
+}

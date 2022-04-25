@@ -48,35 +48,6 @@ function args( array $map = [], array $source = null, $offset = 1 ) {
 }
 
 /**
- * Uses curl to fire a GET request to a URL.
- *
- * @param string $url The URL to fire the request to.
- * @param array  $query_args
- *
- * @return string  The curl response.
- */
-function curl_get( $url, array $query_args = [] ) {
-	$full_url = $url . ( strpos( $url, '?' ) === false ? '?' : '' ) . http_build_query( $query_args );
-
-	$curl_handle = curl_init();
-	curl_setopt( $curl_handle, CURLOPT_URL, $full_url );
-	curl_setopt( $curl_handle, CURLOPT_HEADER, 0 );
-	curl_setopt( $curl_handle, CURLOPT_RETURNTRANSFER, true );
-	curl_setopt( $curl_handle, CURLOPT_TIMEOUT, 10 );
-	curl_setopt( $curl_handle, CURLOPT_FOLLOWLOCATION, true );
-
-	if ( ! $result = curl_exec( $curl_handle ) ) {
-		echo "\nFailed to process curl request.";
-		echo "\nError: " . curl_error( $curl_handle );
-		exit( 1 );
-	}
-
-	curl_close( $curl_handle );
-
-	return $result;
-}
-
-/**
  * Parses a provided license file and puts into the env, if any.
  *
  * @param string|null $licenses_file The path to the licenses file to parse or `null` to read licenses from the
@@ -652,7 +623,7 @@ function download_file( $source_url, $dest_file, $verify_host = true ) {
 	curl_setopt( $curl_handle, CURLOPT_HEADER, 0 );
 	curl_setopt( $curl_handle, CURLOPT_FOLLOWLOCATION, true );
 	curl_setopt( $curl_handle, CURLOPT_AUTOREFERER, true );
-	curl_setopt( $curl_handle, CURLOPT_TIMEOUT, 10 );
+	curl_setopt( $curl_handle, CURLOPT_TIMEOUT, 120 );
 	curl_setopt( $curl_handle, CURLOPT_FILE, $file_handle );
 
 	if ( ! $verify_host ) {

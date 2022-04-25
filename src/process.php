@@ -62,17 +62,18 @@ function process_realtime( $command ) {
  *
  * @param string $command The command to run.
  * @param string|null $prefix The prefix to place before all output.
+ * @param bool $escape Whether the command line should be escaped or not.
  *
  * @return int The process exit status, `0` means ok.
  */
-function process_passive( $command, $prefix = null ) {
+function process_passive( $command, $prefix = null, $escape = true ) {
 	debug( "Executing command: {$command}" );
 
 	echo PHP_EOL;
 
 	setup_terminal();
 
-	$clean_command = escapeshellcmd( $command );
+	$clean_command = $escape ? escapeshellcmd( $command ) : $command;
 
 	$pipes_spec = [
 		[ 'pipe', 'r' ], // STDIN.
