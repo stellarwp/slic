@@ -1,4 +1,11 @@
 <?php
+/**
+ * Sets the directory target operations directory.
+ * The directory could be a WordPress installation directory, the one containig the `wp-config.php` file,
+ * a themes directory or a plugins directory.
+ *
+ * @var string $run_settings_file The absolute path to the file that should be used to load runtime settings.
+ */
 
 namespace TEC\Tric;
 
@@ -62,7 +69,8 @@ $env_values['TRIC_CURRENT_PROJECT_RELATIVE_PATH'] = '';
 
 write_env_file( $run_settings_file, $env_values, true );
 
-teardown_stack();
+setup_tric_env( root() );
+quietly_tear_down_stack();
 
 echo colorize( "\n<light_cyan>Tric plugin path set to</light_cyan> {$here_dir}.\n\n" );
 echo colorize( "If this is the first time setting this plugin path, be sure to <light_cyan>tric init <plugin></light_cyan>." );

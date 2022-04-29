@@ -18,6 +18,12 @@ if ( $is_help ) {
 }
 
 $service_args = args( [ 'service', '...' ], $args( '...' ), 0 );
-$service      = $service_args( 'service', 'codeception' );
+$service      = $service_args( 'service', 'tric' );
 
-tric_realtime()( [ 'exec', $service, 'bash' ] );
+tric_realtime()( [
+	'exec',
+	'--user',
+	sprintf( '"%s:%s"', getenv( 'DOCKER_RUN_UID' ), getenv( 'DOCKER_RUN_GID' ) ),
+	$service,
+	'bash'
+] );

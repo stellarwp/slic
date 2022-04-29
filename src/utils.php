@@ -150,11 +150,19 @@ function relative_path( $root, $file ) {
  * @return string The current user ID.
  */
 function uid() {
+	$cache_file = cache( '/uid.txt' );
+
+	if ( is_readable( $cache_file ) ) {
+		return file_get_contents( cache( '/uid.txt' ) );
+	}
+
 	$uid = getenv( 'UID' );
 
 	if ( false === $uid && in_array( os(), [ 'Linux', 'macOS' ] ) ) {
 		$uid = check_status_or_exit( process( 'id -u' ) )( 'string_output' );
 	}
+
+	@file_put_contents( $cache_file, $uid ?: 0 );
 
 	return false !== $uid ? $uid : 0;
 }
@@ -165,6 +173,12 @@ function uid() {
  * @return string The current user group ID.
  */
 function gid() {
+	$cache_file = cache( '/gid.txt' );
+
+	if ( is_readable( $cache_file ) ) {
+		return file_get_contents( cache( '/gid.txt' ) );
+	}
+
 	$gid = getenv( 'GID' );
 
 	if ( false === $gid && in_array( os(), [ 'Linux', 'macOS' ] ) ) {
@@ -175,6 +189,8 @@ function gid() {
 		$gid = 0;
 		putenv( 'GID=0' );
 	}
+
+	@file_put_contents( $cache_file, $gid ?: 0 );
 
 	return false !== $gid ? $gid : 0;
 }
@@ -199,15 +215,16 @@ function setup_id( $reset = false ) {
 	}
 
 	$os = os();
-	if ( 'Windows' === $os || 'macOS' === $os ) {
-		// Leave the value empty to allow the vm user-mapping to kick in.
-		putenv( 'DOCKER_RUN_UID=' );
-		putenv( 'DOCKER_RUN_GID=' );
-	} else {
+//	if ( 'Windows' === $os || 'macOS' === $os ) {
+//		// Leave the value empty to allow the vm user-mapping to kick in.
+//		putenv( 'DOCKER_RUN_UID=' );
+//		putenv( 'DOCKER_RUN_GID=' );
+//	} else {
 		// On other systems explicitly set the values.
-		putenv( 'DOCKER_RUN_UID=' . uid() );
-		putenv( 'DOCKER_RUN_GID=' . gid() );
-	}
+	putenv( 'DOCKER_RUN_UNAME=' . get_current_user() );
+	putenv( 'DOCKER_RUN_UID=' . uid() );
+	putenv( 'DOCKER_RUN_GID=' . gid() );
+//	}
 
 	putenv( 'DOCKER_RUN_SSH_AUTH_SOCK=' . ssh_auth_sock() );
 }
@@ -604,6 +621,8 @@ function array_merge_multi( ...$args ) {
  * @return string|false Either the absolute path to the destination file, or `false`on failure.
  */
 function download_file( $source_url, $dest_file, $verify_host = true ) {
+	debug( "Downloading file $source_url ...\n" );
+
 	$file_handle = fopen( $dest_file, 'wb' );
 
 	if ( ! is_resource( $file_handle ) ) {
@@ -638,6 +657,8 @@ function download_file( $source_url, $dest_file, $verify_host = true ) {
 	// This will fclose as well.
 	curl_close( $curl_handle );
 
+	debug( "File $source_url downloaded.\n" );
+
 	return $dest_file;
 }
 
@@ -651,6 +672,8 @@ function download_file( $source_url, $dest_file, $verify_host = true ) {
  * @return string|false The path to the directory containing the extracted files, or `false` on failure.
  */
 function unzip_file( $source_file, $dest_dir ) {
+	debug( "Unzipping file $source_file to $dest_dir ...\n" );
+
 	$zip      = new \ZipArchive;
 	$basename = basename( $source_file );
 	$dirname  = substr( $basename, 0, strpos( $basename, '.', - strlen( $basename ) ) );
@@ -659,7 +682,7 @@ function unzip_file( $source_file, $dest_dir ) {
 	if ( ! (
 		$zip->open( $source_file )
 		&& $zip->extractTo( $tmp_dir )
-		&& rrmdir( $dest_dir )
+		&& ( is_dir( $dest_dir ) && rrmdir( $dest_dir ) )
 		&& rename( $tmp_dir . '/' . $dirname, $dest_dir )
 		&& rrmdir( $tmp_dir )
 		&& $zip->close()
@@ -667,5 +690,21 @@ function unzip_file( $source_file, $dest_dir ) {
 		return false;
 	}
 
+	debug( "Unzipped $source_file to $dest_dir.\n" );
+
 	return $dest_dir;
+}
+
+/**
+ * Returns the path to a directory, creating it if required.
+ *
+ * @return string The absolute path to the directory.
+ */
+function ensure_dir( $dir ) {
+	if ( ! is_dir( $dir ) && mkdir( $dir, 0755, true ) && ! is_dir( $dir ) && realpath( $dir ) ) {
+		echo magenta( "Cannot create the {$dir} directory." );
+		exit( 1 );
+	}
+
+	return realpath( $dir );
 }

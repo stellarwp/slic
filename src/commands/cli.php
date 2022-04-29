@@ -12,6 +12,9 @@ if ( $is_help ) {
 }
 
 setup_id();
+ensure_tric_service_running();
+ensure_wordpress_ready();
+
 // Runs a wp-cli command in the stack, using the `cli` service.
 $command = $args( '...' );
 /*

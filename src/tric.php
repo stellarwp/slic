@@ -11,8 +11,10 @@ namespace TEC\Tric;
  * @return bool
  */
 function tric_here_is_site() {
-	return TRIC_ROOT_DIR . '/_wordpress' !== getenv( 'TRIC_WP_DIR' )
-		&& './_wordpress' !== getenv( 'TRIC_WP_DIR' );
+	$env_wp_dir = getenv( 'TRIC_WP_DIR' );
+
+	return TRIC_ROOT_DIR . '/_wordpress' !== $env_wp_dir
+	       && './_wordpress' !== $env_wp_dir;
 }
 
 /**
@@ -165,8 +167,17 @@ function get_target_relative_path( $target ) {
  * Sets up the environment from the cli tool.
  *
  * @param string $root_dir The cli tool root directory.
+ * @param bool $reset Whether to force a reset of the env vars or not, if already set up.
  */
-function setup_tric_env( $root_dir ) {
+function setup_tric_env( $root_dir, $reset = false ) {
+	static $set;
+
+	if ( ! $reset && $set === true ) {
+		return;
+	}
+
+	$set = true;
+
 	// Let's declare we're performing trics.
 	putenv( 'TEC_TRIC=1' );
 
@@ -191,54 +202,24 @@ function setup_tric_env( $root_dir ) {
 		load_env_file( $root_dir . '/.env.tric.run' );
 	}
 
+	$default_wp_dir = root('/_wordpress');
 	$wp_dir = getenv( 'TRIC_WP_DIR' );
-	if ( empty( $wp_dir ) ) {
-		$wp_dir = root( '_wordpress' );
-	} elseif ( ! is_dir( $wp_dir ) ) {
-		$wp_dir_path = trim( root( ltrim( $wp_dir, './' ) ) );
 
-		if (
-			is_dir( dirname( $wp_dir_path ) )
-			&& ! is_dir( $wp_dir_path )
-			&& ! mkdir( $wp_dir_path )
-			&& ! is_dir( $wp_dir_path )
-		) {
-			// If the WordPress directory does not exist, then create it now.
-			echo magenta( "Cannot create the {$wp_dir_path} directory" );
-			exit( 1 );
-		}
-
-		$wp_dir = realpath( $wp_dir_path );
-	}
-
-	// Whatever the case, the WordPress directory should now exist.
-	if ( ! is_dir( $wp_dir ) ) {
-		echo magenta( "The WordPress directory ({$wp_dir}) does not exist." );
+	if ( $wp_dir === './_wordpress' || $wp_dir === $default_wp_dir ) {
+		// Default WordPress directory, inside tric.
+		$wp_dir = ensure_dir( $default_wp_dir );
+	} else if ( ! is_dir( $wp_dir ) ) {
+		// Custom WordPress directory, it falls on the user to have it set up correctly.
+		echo magenta( "WordPress directory $wp_dir does not exist; is it initialized?" );
 		exit( 1 );
 	}
 
-	maybe_generate_htaccess();
-
-	$plugins_dir = getenv( 'TRIC_PLUGINS_DIR' );
-	if ( empty( $plugins_dir ) ) {
-		$plugins_dir = root( '_plugins' );
-	} elseif ( ! is_dir( $plugins_dir ) ) {
-		$plugin_dir_path = root( ltrim( $plugins_dir, './' ) );
-
-		if (
-			is_dir( basename( $plugin_dir_path ) )
-			&& ! is_dir( $plugin_dir_path )
-			&& ! mkdir( $plugin_dir_path )
-			&& ! is_dir( $plugin_dir_path )
-		) {
-			echo magenta( "Cannot create the {$plugin_dir_path} directory." );
-			exit( 1 );
-		}
-		$plugins_dir = realpath( $plugin_dir_path );
-	}
+	$wp_themes_dir = $wp_dir . '/wp-content/themes';
 
 	putenv( 'TRIC_WP_DIR=' . $wp_dir );
-	putenv( 'TRIC_PLUGINS_DIR=' . $plugins_dir );
+	putenv( 'TRIC_PLUGINS_DIR=' . ensure_dir( getenv( 'TRIC_PLUGINS_DIR' ) ?: root( '_plugins' ) ) );
+	putenv( 'TRIC_THEMES_DIR=' . ensure_dir( getenv( 'TRIC_THEMES_DIR' ) ?: $wp_themes_dir ) );
+	putenv( 'TRIC_CACHE=' . cache() );
 
 	// Most commands are nested shells that should not run with a time limit.
 	remove_time_limit();
@@ -548,8 +529,12 @@ function tric_process() {
 /**
  * Tears down tric stack.
  */
-function teardown_stack() {
-	tric_realtime()( [ 'down', '--volumes', '--remove-orphans' ] );
+function teardown_stack( $passive = false ) {
+	if ( $passive ) {
+		return tric_passive()( [ 'down', '--volumes', '--remove-orphans' ] );
+	}
+
+	return tric_realtime()( [ 'down', '--volumes', '--remove-orphans' ] );
 }
 
 /**
@@ -1111,17 +1096,18 @@ function execute_command_pool( $pool ) {
 /**
  * Returns an array of arguments to correctly run a wp-cli command in the tric stack.
  *
- * @param array<string> $command The wp-cli command to run, anything after the `wp`; e.g. `[ 'plugin', 'list' ]`.
- * @param string        $service The wp-cli service to target; defaults to the `cli` one.
+ * @param array<string> $command        The wp-cli command to run, anything after the `wp`; e.g. `['plugin', 'list']`.
+ * @param bool          $requirements   Whether to ensure the requirements to run a cli command are met or not.
  *
  * @return array<string> The complete command arguments, ready to be used in the `tric` or `tric_realtime` functions.
  */
-function cli_command( array $command = [], $service = 'cli' ) {
-	$wp_command = array_merge( [ 'wp', '--allow-root' ], $command );
-	// Put the full `wp` command in an env var to allow services that might use it, e.g. `site-cli`, to pick it up.
-	putenv( 'TRIC_' . upper_snake_case( $service ) . '_COMMAND=' . implode( ' ', $wp_command ) );
+function cli_command( array $command = [], $requirements = false ) {
+	if ( $requirements ) {
+		ensure_tric_service_running();
+		ensure_wordpress_ready();
+	}
 
-	return array_merge( [ 'run', '--rm', $service ], $wp_command );
+	return array_merge( [ 'exec', '--workdir', '/var/www/html', 'tric', 'wp', '--allow-root' ], $command );
 }
 
 /**
@@ -1492,11 +1478,12 @@ function setup_architecture_env() {
  *
  * Directories part of the path will be recursively created.
  *
- * @param string $path The path, relative to the cache directory root directory, to return the cache absolute path for.
+ * @param string $path   The path, relative to the cache directory root directory, to return the cache absolute path for.
+ * @param bool   $create Whether the directory required should be created if not present or not.
  *
  * @return string The absolute path to the created directory or file.
  */
-function cache( $path = '/' ) {
+function cache( $path = '/', $create = true ) {
 	$cache_root_dir = __DIR__ . '/../.cache';
 
 	if ( ! is_dir( $cache_root_dir ) && ! mkdir( $cache_root_dir, 0755, true ) && ! is_dir( $cache_root_dir ) ) {

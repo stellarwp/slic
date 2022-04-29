@@ -10,6 +10,8 @@
 
 namespace TEC\Tric;
 
+use function tad\WPBrowser\ensure;
+
 if ( $is_help ) {
 	echo "Activates or deactivates the airplane-mode plugin.\n";
 	echo PHP_EOL;
@@ -25,12 +27,23 @@ $toggle = args( [ 'toggle' ], $args( '...' ), 0 )( 'toggle', 'on' );
 $activate = $toggle === 'on';
 
 setup_id();
+ensure_tric_service_running();
+ensure_wordpress_ready();
+
+$ensure_airplane_mode_plugin = static function () {
+	$plugin_dir = tric_plugins_dir( 'airplane-mode' );
+	if ( ! is_dir( $plugin_dir ) ) {
+		$cloned = process_realtime( 'git clone https://github.com/norcross/airplane-mode ' . $plugin_dir );
+		if ( $cloned !== 0 ) {
+			echo magenta( "Failed to clone the airplane-mode plugin." );
+			exit( 1 );
+		}
+	}
+};
 
 check_status_or(
 	tric_process()( cli_command( [ 'plugin', 'is-installed', 'airplane-mode' ] ) ),
-	static function () {
-		process_realtime( 'git clone https://github.com/norcross/airplane-mode ' . tric_plugins_dir( 'airplane-mode' ) );
-	}
+	$ensure_airplane_mode_plugin
 );
 
 if ( $activate ) {

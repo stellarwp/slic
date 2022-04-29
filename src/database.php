@@ -3,6 +3,9 @@
 namespace TEC\Tric;
 
 
+use Exception;
+use mysqli;
+
 /**
  * Provides functions to manage and interact with the database services of the stack.
  */
@@ -13,6 +16,10 @@ namespace TEC\Tric;
  * @return bool Always `true` when successful.
  */
 function ensure_db_service_running() {
+	if ( service_running( 'db' ) ) {
+		return true;
+	}
+
 	// Start the service is not already started.
 	$status = tric_passive()( [ 'up', '--detach', 'db' ] );
 
@@ -76,18 +83,30 @@ function get_localhost_db_host() {
  * Returns an open mysqli connection handle opened accessing the
  * database from outside the containers' stack.
  *
- * @return false|\mysqli|null The database connection handle on success.
+ * @return false|mysqli|null The database connection handle on success.
  */
 function get_localhost_db_handle() {
-	setup_tric_env( root() );
+	static $handle;
 
-	return mysqli_connect(
-		'127.0.0.1',
-		get_db_user(),
-		get_db_password(),
-		get_db_name(),
-		getenv( 'TRIC_DB_LOCALHOST_PORT' )
-	);
+	if ( $handle === null ) {
+		setup_tric_env( root() );
+
+		$connection = @mysqli_connect(
+			'127.0.0.1',
+			get_db_user(),
+			get_db_password(),
+			get_db_name(),
+			getenv( 'TRIC_DB_LOCALHOST_PORT' )
+		);
+
+		if ( $connection instanceof mysqli ) {
+			$handle = $connection;
+		} else {
+			return $connection;
+		}
+	}
+
+	return $handle;
 }
 
 /**
@@ -115,4 +134,34 @@ function get_db_user() {
  */
 function get_db_password() {
 	return 'password';
+}
+
+/**
+ * Starts the stack database service, if required.
+ *
+ * @return bool Always `true` to indicate the database service was correctly started.
+ */
+function ensure_db_service_ready() {
+	setup_tric_env( root() );
+	ensure_db_service_running();
+
+	$attempts = 0;
+	while ( $attempts ++ < 30 ) {
+		debug( "Waiting for database to be ready ...\n" );
+
+		try {
+			$mysqli = get_localhost_db_handle();
+			if ( $mysqli instanceof mysqli ) {
+				debug( "Database ready.\n" );
+
+				return true;
+			}
+		} catch ( Exception $e ) {
+			// No-op, just wait.
+		}
+		sleep( 1 );
+	}
+
+	echo magenta( "Database never became available.\n" );
+	exit( 1 );
 }

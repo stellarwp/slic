@@ -2,9 +2,9 @@
 /**
  * Handles the `reset` command to reset tric to its initial state.
  *
- * @var bool     $is_help  Whether we're handling an `help` request on this command or not.
- * @var string   $cli_name The current name of tric CLI binary.
- * @var \Closure $args     The argument map closure, as produced by the `args` function.
+ * @var bool $is_help Whether we're handling an `help` request on this command or not.
+ * @var string $cli_name The current name of tric CLI binary.
+ * @var \Closure $args The argument map closure, as produced by the `args` function.
  */
 
 namespace TEC\Tric;
@@ -22,38 +22,32 @@ if ( $is_help ) {
 
 $targets = $args( '...' );
 
-if ( in_array( 'wp', $targets, true ) && is_dir( root( '_wordpress' ) ) ) {
-	echo "Removing the _wordpress directory ...";
-
-	if ( false === rrmdir( root( '_wordpress' ) ) ) {
-		echo magenta( "\nCould not remove the _wordpress directory; remove it manually.\n" );
-		exit( 1 );
-	}
-
-	if ( ! mkdir( $wp_dir = root( '_wordpress' ) ) && ! is_dir( $wp_dir ) ) {
-		echo magenta( "\nCould not create the _wordpress directory; create it manually.\n" );
-		exit( 1 );
-	}
-
-	echo light_cyan( " done\n" );
-
-	return;
-}
-
 $run_settings_file = root( '/.env.tric.run' );
-echo "Removing {$run_settings_file} ...";
+echo "Removing {$run_settings_file} ... ";
+echo ( ! file_exists( $run_settings_file ) || unlink( $run_settings_file ) ) ?
+	light_cyan( 'done' )
+	: magenta( 'fail, remove it manually' );
+echo "\n";
 
-if ( ! file_exists( $run_settings_file ) ) {
-	echo light_cyan( 'Done' );
+$cache_dir = cache( '/', false );
+echo "Removing cache directory $cache_dir ... ";
+echo ( ! is_dir( $cache_dir ) || rrmdir( $cache_dir ) ) ?
+	light_cyan( 'done' )
+	: magenta( 'fail, remove it manually' );
+echo "\n";
 
-	return;
+$wp_dir = root( '_wordpress' );
+if ( in_array( 'wp', $targets, true ) && is_dir( $wp_dir ) ) {
+	/*
+	 * The stack will lock bound files if running, tear it down to unlock them.
+	 */
+	echo 'Tearing down the stack ... ';
+	quietly_tear_down_stack();
+	echo light_cyan('done'), "\n";
+
+	echo "Removing the WordPress directory $wp_dir ... ";
+	echo ! is_dir( $wp_dir ) || rrmdir( $wp_dir ) ?
+		light_cyan( 'done' )
+		: magenta( 'fail, remove it manually' );
+	echo "\n";
 }
-
-$removed = unlink( $run_settings_file );
-
-if ( false === $removed ) {
-	echo magenta( "Could not remove the {$run_settings_file} file; remove it manually.\n" );
-	exit( 1 );
-}
-
-echo light_cyan( ' done' );

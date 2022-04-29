@@ -83,8 +83,50 @@ function service_requires( $service, ...$dependencies ) {
  */
 function ensure_service_dependencies( $service ) {
 	if ( $service === 'wordpress' || service_requires( $service, 'wordpress' ) ) {
-		ensure_wordpress_files();
-		ensure_wordpress_configured();
-		ensure_wordpress_installed();
+		ensure_wordpress_ready();
 	}
+}
+
+/**
+ * Returns whether a service is running or not.
+ *
+ * @param $service
+ *
+ * @return bool Whether a service is running or not.
+ */
+function service_running( $service ) {
+	$ps               = tric_process()( [ 'ps', '--services', '--filter', '"status=running"' ] );
+	$ps_status        = $ps( 'status' );
+	$running_services = explode( "\n", $ps( 'string_output' ) );
+
+	return $ps_status === 0 && in_array( $service, $running_services, true );
+}
+
+/**
+ * Ensures the `tric` service is running correctly.
+ *
+ * @since TBD
+ *
+ * @return void
+ */
+function ensure_tric_service_running(){
+	ensure_service_dependencies( 'tric' );
+
+	if ( ! service_running( 'tric' ) ) {
+		tric_passive()( [ 'up', '-d', 'tric' ] );
+	}
+}
+
+/**
+ * Quietly tears down the stack, silencing any error messages.
+ *
+ * @return int The process exit status.
+ */
+function quietly_tear_down_stack() {
+	ob_start();
+	setup_tric_env( root() );
+	$status = teardown_stack( true );
+	ob_end_clean();
+
+	return $status;
 }

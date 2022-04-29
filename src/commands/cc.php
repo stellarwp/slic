@@ -8,6 +8,7 @@ if ( $is_help ) {
 	echo colorize( "This command requires a use target set using the <light_cyan>use</light_cyan> command.\n" );
 	echo colorize( "usage: <light_cyan>{$cli_name} cc [...<commands>]</light_cyan>\n" );
 	echo colorize( "example: <light_cyan>{$cli_name} cc generate:wpunit wpunit Foo</light_cyan>" );
+
 	return;
 }
 
@@ -15,7 +16,17 @@ $using = tric_target_or_fail();
 echo light_cyan( "Using {$using}\n" );
 
 setup_id();
-// Run the command in the Codeception container, exit the same status as the process.
-$status = tric_realtime()( array_merge( [ 'run', '--rm', 'codeception' ], $args( '...' ) ) );
+ensure_tric_service_running();
+
+$status = tric_realtime()( array_merge( [
+		'exec',
+		'--user',
+		sprintf( '"%s:%s"', getenv( 'DOCKER_RUN_UID' ), getenv( 'DOCKER_RUN_GID' ) ),
+		'--workdir',
+		escapeshellarg( get_project_container_path() ),
+		'tric',
+		'vendor/bin/codecept'
+	], $args( '...' ) )
+);
 
 exit( $status );
