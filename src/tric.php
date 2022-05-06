@@ -5,6 +5,9 @@
 
 namespace TEC\Tric;
 
+use function TEC\Tric\Env\backup_env_var;
+use function TEC\Tric\Env\env_var_backup;
+
 /**
  * Returns whether or not the tric here command was done at the site level or not.
  *
@@ -99,7 +102,7 @@ function get_valid_targets( $as_array = true ) {
  *   - If tric here was done on the site level, "site" is also a valid target.
  *
  * @param string $target The target to check in the valid list of targets.
- * @param bool   $exit   Whether to exit if the target is invalid, or to return `false`.
+ * @param bool $exit Whether to exit if the target is invalid, or to return `false`.
  *
  * @return string|false $target The validated target or `false` to indicate the target is not valid if the `$exit`
  *                              parameter is set to `false`.
@@ -181,13 +184,11 @@ function setup_tric_env( $root_dir, $reset = false ) {
 	// Let's declare we're performing trics.
 	putenv( 'TEC_TRIC=1' );
 
-	$os = os();
-	if ( $os === 'macOS' || $os === 'Windows' ) {
-		// Do not fix file modes on hosts that implement user ID and group ID remapping at the Docker daemon level.
-		putenv( 'FIXUID=0' );
-	}
+	putenv( 'TRIC_VERSION=' . CLI_VERSION );
 
 	setup_architecture_env();
+
+	backup_env_var( 'COMPOSER_CACHE_DIR' );
 
 	// Load the distribution version configuration file, the version-controlled one.
 	load_env_file( $root_dir . '/.env.tric' );
@@ -202,8 +203,8 @@ function setup_tric_env( $root_dir, $reset = false ) {
 		load_env_file( $root_dir . '/.env.tric.run' );
 	}
 
-	$default_wp_dir = root('/_wordpress');
-	$wp_dir = getenv( 'TRIC_WP_DIR' );
+	$default_wp_dir = root( '/_wordpress' );
+	$wp_dir         = getenv( 'TRIC_WP_DIR' );
 
 	if ( $wp_dir === './_wordpress' || $wp_dir === $default_wp_dir ) {
 		// Default WordPress directory, inside tric.
@@ -220,6 +221,10 @@ function setup_tric_env( $root_dir, $reset = false ) {
 	putenv( 'TRIC_PLUGINS_DIR=' . ensure_dir( getenv( 'TRIC_PLUGINS_DIR' ) ?: root( '_plugins' ) ) );
 	putenv( 'TRIC_THEMES_DIR=' . ensure_dir( getenv( 'TRIC_THEMES_DIR' ) ?: $wp_themes_dir ) );
 	putenv( 'TRIC_CACHE=' . cache() );
+
+	if ( empty( getenv( 'COMPOSER_CACHE_DIR' ) ) ) {
+		putenv( 'COMPOSER_CACHE_DIR=' . cache( '/composer' ) );
+	}
 
 	// Most commands are nested shells that should not run with a time limit.
 	remove_time_limit();
@@ -307,7 +312,7 @@ function restart_php_services( $hard = false ) {
 /**
  * Restarts a stack services if it's running.
  *
- * @param string      $service     The name of the service to restart, e.g. `wordpress`.
+ * @param string $service The name of the service to restart, e.g. `wordpress`.
  * @param string|null $pretty_name The pretty name to use for the service, or `null` to use the service name.
  * @param bool $hard Whether to restart the service using the `docker-compose restart` command or to use full tear-down
  *                   and up again cycle.
@@ -570,7 +575,6 @@ function tric_info() {
 		'CI',
 		'TRAVIS_CI',
 		'COMPOSER_CACHE_DIR',
-		'COMPOSER_CACHE_HOST_DIR',
 		'CONTINUOUS_INTEGRATION',
 		'GITHUB_ACTION',
 		'TRIC_CURRENT_PROJECT',
@@ -594,9 +598,9 @@ function tric_info() {
 		'XDH',
 		'XDP',
 		'UID',
-		'DOCKER_RUN_UID',
+		'TRIC_UID',
 		'GID',
-		'DOCKER_RUN_GID',
+		'TRIC_GID',
 		'MYSQL_ROOT_PASSWORD',
 		'WORDPRESS_HTTP_PORT',
 		'SSH_AUTH_SOCK',
@@ -657,7 +661,7 @@ function tric_wp_dir( $path = '' ) {
  * Prints the current composer-cache status to screen.
  */
 function composer_cache_status() {
-	$host_dir = getenv( 'COMPOSER_CACHE_HOST_DIR' );
+	$host_dir = getenv( 'COMPOSER_CACHE_DIR' );
 
 	echo 'Composer cache directory: ' . ( $host_dir ? light_cyan( $host_dir ) : magenta( 'not set' ) ) . PHP_EOL;
 }
@@ -678,24 +682,15 @@ function tric_handle_composer_cache( callable $args ) {
 	}
 
 	$value = $args( 'value', null );
-	$docker_composer_cache_dir = '/host-composer-cache';
 
 	if ( 'unset' === $toggle ) {
-		$value = '/tmp';
-		$docker_composer_cache_dir = null;
+		// Pick it up from env, if possible, or use the default one.
+		$value = env_var_backup( 'COMPOSER_CACHE_DIR', cache( '/composer' ) );
 
-		write_env_file( $run_settings_file, [ 'COMPOSER_CACHE_HOST_DIR' => $value ], true );
-		write_env_file( $run_settings_file, [ 'COMPOSER_CACHE_DIR' => $docker_composer_cache_dir ], true );
+		write_env_file( $run_settings_file, [ 'COMPOSER_CACHE_DIR' => $value ], true );
 	}
 
 	echo 'Composer cache directory: ' . ( $value ? light_cyan( $value ) : magenta( 'not set' ) );
-
-	if ( $value === getenv( 'COMPOSER_CACHE_HOST_DIR' ) ) {
-		return;
-	}
-
-	write_env_file( $run_settings_file, [ 'COMPOSER_CACHE_HOST_DIR' => $value ], true );
-	write_env_file( $run_settings_file, [ 'COMPOSER_CACHE_DIR' => $docker_composer_cache_dir ], true );
 
 	echo "\n\n";
 
@@ -704,7 +699,6 @@ function tric_handle_composer_cache( callable $args ) {
 		'yes'
 	);
 	if ( $restart_services ) {
-		putenv( "COMPOSER_CACHE_HOST_DIR={$value}" );
 		putenv( "COMPOSER_CACHE_DIR={$value}" );
 
 		// Call for a hard restart to make sure the web-server will restart its php-fpm connection.
@@ -804,19 +798,19 @@ function xdebug_status() {
 
 	echo 'IDE Key: ' . light_cyan( $ide_key ) . PHP_EOL;
 	echo colorize( PHP_EOL . "You can override these values in the <light_cyan>.env.tric.local" .
-			"</light_cyan> file or by using the " .
-			"<light_cyan>'xdebug (host|key|port) <value>'</light_cyan> command." ) . PHP_EOL;
+	               "</light_cyan> file or by using the " .
+	               "<light_cyan>'xdebug (host|key|port) <value>'</light_cyan> command." ) . PHP_EOL;
 
 
 	echo PHP_EOL . 'Set up, in your IDE, a server with the following parameters to debug PHP requests:' . PHP_EOL;
 	echo 'IDE key, or server name: ' . light_cyan( $ide_key ) . PHP_EOL;
 	echo 'Host: ' . light_cyan( 'http://localhost' . ( $localhost_port === '80' ? '' : ':' . $localhost_port ) ) . PHP_EOL;
 	echo colorize( 'Path mapping (host => server): <light_cyan>'
-			. tric_plugins_dir()
-			. '</light_cyan> => <light_cyan>/var/www/html/wp-content/plugins</light_cyan>' ) . PHP_EOL;
+	               . tric_plugins_dir()
+	               . '</light_cyan> => <light_cyan>/var/www/html/wp-content/plugins</light_cyan>' ) . PHP_EOL;
 	echo colorize( 'Path mapping (host => server): <light_cyan>'
-		. tric_wp_dir()
-		. '</light_cyan> => <light_cyan>/var/www/html</light_cyan>' );
+	               . tric_wp_dir()
+	               . '</light_cyan> => <light_cyan>/var/www/html</light_cyan>' );
 
 	$default_mask = ( tric_wp_dir() === root( '/_wordpress' ) ) + 2 * ( tric_plugins_dir() === root( '/_plugins' ) );
 
@@ -824,12 +818,12 @@ function xdebug_status() {
 		case 1:
 			echo PHP_EOL . PHP_EOL;
 			echo yellow( 'Note: tric is using the default WordPress directory and a different plugins directory: ' .
-				'set path mappings correctly and keep that in mind.' );
+			             'set path mappings correctly and keep that in mind.' );
 			break;
 		case 2:
 			echo PHP_EOL . PHP_EOL;
 			echo yellow( 'Note: tric is using the default plugins directory and a different WordPress directory: ' .
-				'set path mappings correctly and keep that in mind.' );
+			             'set path mappings correctly and keep that in mind.' );
 			break;
 		case 3;
 		default:
@@ -908,7 +902,7 @@ function update_stack_images() {
  * Check if a recognized command's required file exists in the specified directory.
  *
  * @param string $base_command Command name, such as 'composer' or 'npm'.
- * @param string $path         The directory path in which to look for relevantly-required files (e.g. 'package.json').
+ * @param string $path The directory path in which to look for relevantly-required files (e.g. 'package.json').
  *
  * @return bool True if the path is a directory and the command doesn't have a known file requirement or the expected
  *              file does exist. False if the path is not a directory or a recognized command didn't find the
@@ -937,9 +931,9 @@ function dir_has_req_build_file( $base_command, $path ) {
 /**
  * Maybe run the install process (e.g. Composer, NPM) on a given target.
  *
- * @param string $base_command    Base command to run.
- * @param string $target          Target to potentially run composer install against.
- * @param array  $sub_directories Sub directories to prompt for additional execution.
+ * @param string $base_command Base command to run.
+ * @param string $target Target to potentially run composer install against.
+ * @param array $sub_directories Sub directories to prompt for additional execution.
  *
  * @return array Result of command execution.
  */
@@ -977,10 +971,10 @@ function maybe_build_install_command_pool( $base_command, $target, array $sub_di
  * If any subdirectories are provided and are available in the target, then the user will be prompted to run the same
  * command on those subdirectories.
  *
- * @param string        $base_command    The base service command to run, e.g. `npm`, `composer`, etc.
- * @param array<string> $command         The command to run, e.g. `['install','--save-dev']` in array format.
+ * @param string $base_command The base service command to run, e.g. `npm`, `composer`, etc.
+ * @param array<string> $command The command to run, e.g. `['install','--save-dev']` in array format.
  * @param array<string> $sub_directories Sub directories to prompt for additional execution.
- * @param string        $using           An optional target to use in place of the specified one.
+ * @param string $using An optional target to use in place of the specified one.
  *
  * @return array The built command pool.
  */
@@ -1010,7 +1004,7 @@ function build_command_pool( $base_command, array $command, array $sub_directori
 	}
 
 	// Build the command process.
-	$command_process = static function( $target, $subnet = '' ) use ( $using, $using_alias, $base_command, $command, $sub_directories ) {
+	$command_process = static function ( $target, $subnet = '' ) use ( $using, $using_alias, $base_command, $command, $sub_directories ) {
 		$target_name = $using_alias ?: $target;
 		$prefix      = "{$base_command}:" . light_cyan( $target_name );
 
@@ -1024,7 +1018,13 @@ function build_command_pool( $base_command, array $command, array $sub_directori
 		putenv( "TRIC_TEST_SUBNET={$subnet}" );
 
 		$network_name = "tric{$subnet}";
-		$status       = tric_passive()( array_merge( [ '-p', $network_name, 'run', '--rm', $base_command ], $command ), $prefix );
+		$status       = tric_passive()( array_merge( [
+			'-p',
+			$network_name,
+			'run',
+			'--rm',
+			$base_command
+		], $command ), $prefix );
 
 		if ( ! empty( $subnet ) ) {
 			do {
@@ -1073,6 +1073,7 @@ function build_command_pool( $base_command, array $command, array $sub_directori
  *       'command'   => (array) The command to run, e.g. `['install', '--save-dev']` in array format.
  *       'process'   => (closure) The function to execute for each Tric target.
  *     ]
+ *
  * @return int Result of combined command execution.
  */
 function execute_command_pool( $pool ) {
@@ -1085,6 +1086,7 @@ function execute_command_pool( $pool ) {
 	if ( count( $pool ) > 1 ) {
 		$status = parallel_process( $pool );
 		tric_switch_target( $using );
+
 		return $status;
 	}
 
@@ -1096,14 +1098,14 @@ function execute_command_pool( $pool ) {
 /**
  * Returns an array of arguments to correctly run a wp-cli command in the tric stack.
  *
- * @param array<string> $command        The wp-cli command to run, anything after the `wp`; e.g. `['plugin', 'list']`.
- * @param bool          $requirements   Whether to ensure the requirements to run a cli command are met or not.
+ * @param array<string> $command The wp-cli command to run, anything after the `wp`; e.g. `['plugin', 'list']`.
+ * @param bool $requirements Whether to ensure the requirements to run a cli command are met or not.
  *
  * @return array<string> The complete command arguments, ready to be used in the `tric` or `tric_realtime` functions.
  */
 function cli_command( array $command = [], $requirements = false ) {
 	if ( $requirements ) {
-		ensure_tric_service_running();
+		ensure_service_running( 'tric' );
 		ensure_wordpress_ready();
 	}
 
@@ -1119,7 +1121,7 @@ function cli_command( array $command = [], $requirements = false ) {
  * be up-to-date with the remote: this is done by design as the sync of local and remote branches should be a developer
  * concern.
  *
- * @param string      $branch The name of the branch to switch to, e.g. `release/B20.03`.
+ * @param string $branch The name of the branch to switch to, e.g. `release/B20.03`.
  * @param string|null $plugin The slug of the plugin to switch branch for; if not specified, then the current tric
  *                            target will be used.
  */
@@ -1136,7 +1138,7 @@ function switch_plugin_branch( $branch, $plugin = null ) {
 
 	echo light_cyan( "Temporarily using {$plugin}\n" );
 
-	$changed    = chdir( $plugin_dir );
+	$changed = chdir( $plugin_dir );
 
 	if ( false === $changed ) {
 		echo magenta( "Cannot change to directory {$plugin_dir}; is it accessible?\n" );
@@ -1314,10 +1316,10 @@ function build_subdir_status() {
  * If any subdirectories are provided and are available in the target, then the user will be prompted to run the same
  * command on those subdirectories.
  *
- * @param array<string> $targets         An array of targets for the command pool; note the targets are NOT validated by
+ * @param array<string> $targets An array of targets for the command pool; note the targets are NOT validated by
  *                                       this function and the validation should be done by the calling code.
- * @param string        $base_command    The base service command to run, e.g. `npm`, `composer`, etc.
- * @param array<string> $command         The command to run, e.g. `['install','--save-dev']` in array format.
+ * @param string $base_command The base service command to run, e.g. `npm`, `composer`, etc.
+ * @param array<string> $command The command to run, e.g. `['install','--save-dev']` in array format.
  * @param array<string> $sub_directories Sub directories to prompt for additional execution.
  *
  * @return array The built command pool for all the targets.
@@ -1478,8 +1480,8 @@ function setup_architecture_env() {
  *
  * Directories part of the path will be recursively created.
  *
- * @param string $path   The path, relative to the cache directory root directory, to return the cache absolute path for.
- * @param bool   $create Whether the directory required should be created if not present or not.
+ * @param string $path The path, relative to the cache directory root directory, to return the cache absolute path for.
+ * @param bool $create Whether the directory required should be created if not present or not.
  *
  * @return string The absolute path to the created directory or file.
  */

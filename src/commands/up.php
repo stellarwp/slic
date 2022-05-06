@@ -12,8 +12,5 @@ if ( $is_help ) {
 
 $service = args( [ 'service' ], $args( '...' ), 0 )( 'service', 'wordpress' );
 
-ensure_service_dependencies( $service );
+exit( ensure_service_running( $service ) );
 
-$status  = tric_realtime()( [ 'up', '-d', $service ] );
-
-exit( $status );

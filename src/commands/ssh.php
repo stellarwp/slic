@@ -23,7 +23,7 @@ $service      = $service_args( 'service', 'tric' );
 tric_realtime()( [
 	'exec',
 	'--user',
-	sprintf( '"%s:%s"', getenv( 'DOCKER_RUN_UID' ), getenv( 'DOCKER_RUN_GID' ) ),
+	sprintf( '"%s:%s"', getenv( 'TRIC_UID' ), getenv( 'TRIC_GID' ) ),
 	$service,
 	'bash'
 ] );

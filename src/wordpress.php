@@ -362,8 +362,16 @@ function ensure_wordpress_installed() {
 
 	exec( $command, $output, $status );
 
-	if ( $status !== 0 ) {
-		echo magenta( "WordPress installation failed: " . substr( implode( "\n", $output ), 0, 500 ) );
+	$error_lines       = array_filter( $output, static function ( $line ) {
+		return strpos( $line, 'Error' ) !== false;
+	} );
+	$output_has_errors = count( $error_lines );
+
+	if ( $status !== 0 || $output_has_errors ) {
+		$circa_error_lines = array_map( static function ( $line_number, $line ) use ( $output ) {
+			return strip_tags( implode( PHP_EOL, array_slice( $output, $line_number, 10 ) ) );
+		}, array_keys( $error_lines ), $error_lines );
+		echo magenta( "WordPress installation failed with message(s):\n" . implode( "\n", $circa_error_lines ) );
 		exit( 1 );
 	}
 

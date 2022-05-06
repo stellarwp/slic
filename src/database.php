@@ -110,7 +110,7 @@ function get_localhost_db_handle() {
 }
 
 /**
- * Returns the name of the database..
+ * Returns the name of the database.
  *
  * @return string The name of the default database.
  */

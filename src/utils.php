@@ -199,7 +199,7 @@ function gid() {
  * Sets up the user id and group in the environment.
  *
  * On OSes that will handle user ID and group ID mapping at the Docker daemon level, macOS and Windows, the
- * `DOCKER_RUN_UID` and `DOCKER_RUN_GID` env variables will be set to empty strings.
+ * `TRIC_UID` and `TRIC_GID` env variables will be set to empty strings.
  * This, in turn, will fill the `user` parameter of the stack services to `user: ":"` that will prompt docker-compose
  * to not set the user at all, the wanted behavior on such OSes.
  *
@@ -208,79 +208,17 @@ function gid() {
 function setup_id( $reset = false ) {
 	if (
 		false === $reset
-		&& false !== getenv( 'DOCKER_RUN_UID' )
-		&& false !== getenv( 'DOCKER_RUN_GID' )
+		&& false !== getenv( 'TRIC_UID' )
+		&& false !== getenv( 'TRIC_GID' )
 	) {
 		return;
 	}
 
-	$os = os();
-//	if ( 'Windows' === $os || 'macOS' === $os ) {
-//		// Leave the value empty to allow the vm user-mapping to kick in.
-//		putenv( 'DOCKER_RUN_UID=' );
-//		putenv( 'DOCKER_RUN_GID=' );
-//	} else {
-		// On other systems explicitly set the values.
 	putenv( 'DOCKER_RUN_UNAME=' . get_current_user() );
-	putenv( 'DOCKER_RUN_UID=' . uid() );
-	putenv( 'DOCKER_RUN_GID=' . gid() );
-//	}
+	putenv( 'TRIC_UID=' . uid() );
+	putenv( 'TRIC_GID=' . gid() );
 
 	putenv( 'DOCKER_RUN_SSH_AUTH_SOCK=' . ssh_auth_sock() );
-}
-
-/**
- * Echoes a process output.
- *
- * @param callable $process the process to output from.
- */
-function the_process_output( callable $process ) {
-	echo "\n" . implode( "\n", $process( 'output' ) );
-}
-
-/**
- * Clarifies the nature of the issue.
- *
- * @return string Helpful ASCII art.
- */
-function the_fatality() {
-	return '
-                       _..----------.._                       
-                  .-=""        _       ""=-.                  
-               .-"    _.--""j _\""""--._    "-.               
-            .-"  .-i   \   / / \;       ""--.  "-.            
-          .\'  .-"  : ( "  : :                "-.  `.          
-        .\'  .\'      `.`.   \ \                  `.  `.        
-       /  .\'      .---" ""--`."-./\'---.           `.  \       
-      /  /      .\'                    \'-.           \  \      
-     /  /      /                         `.          \  \     
-    /  /      /                  ,--._   (            \  \    
-   ,  /    \'-\')                  `---\'    `.           \  .   
-  .  :      .\'                              "-._.-.     ;  ,  
-  ;  ;     /            :;         ,-"-.    ,--.   )    :  :  
- :  :     :             ::        :_    "-. \'-\'   `,     ;  ; 
- |  |     :              \\     .--."-.    `._ _   ;     |  | 
- ;  ;     :              / "---"    "-."-.    l.`./      :  : 
-:  :      ;             :              `. "-._; \         ;  ;
-;  ;      ;             ;                `..___/\\        :  :
-;  ;      ;             :                        \\    _  :  :
-:  :     /              \'.                        ;;.__)) ;  ;
- ;  ; .-\'                 "-...______...--._      ::`--\' :  : 
- |  |  `--\'\                                "-.    \`._, |  | 
- :  :       \                                  `.   "-"  ;  ; 
-  ;  ;       `.                                  \      :   \' 
-  \'  :        ;                                   ;     ;  \'  
-   \'  \    _  : :`.                               :    /  /   
-    \  \   \`-\' ; ; ._                             ;  /  /    
-     \  \   `--\'  : ; "-.                          : /  /     
-      \  \        ;/     \                         ;/  /      
-       \  `.              ;                        \'  /       
-        `.  "-.   bug    /                          .\'        
-          `.   "-..__..-"                         .\'          
-            "-.                                .-"            
-               "-._                        _.-"               
-                   """---...______...---"""	
-	';
 }
 
 /**

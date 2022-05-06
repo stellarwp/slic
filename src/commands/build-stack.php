@@ -16,11 +16,6 @@ $service      = $service_args( 'service', '' );
 
 setup_id();
 
-if ( is_ci() ) {
-	// In CI context do NOT build the image with XDebug and waste time on unused features.
-	putenv( 'TRIC_WORDPRESS_DOCKERFILE=Dockerfile.base' );
-}
-
 // Run the command in the Codeception container, exit the same status as the process.
 $shell_args = array_merge( [ 'build', $service ], $service_args( '...' ) );
 $status     = tric_realtime()( $shell_args );

@@ -16,12 +16,12 @@ $using = tric_target_or_fail();
 echo light_cyan( "Using {$using}\n" );
 
 setup_id();
-ensure_tric_service_running();
+ensure_service_running( 'tric' );
 
 $status = tric_realtime()( array_merge( [
 		'exec',
 		'--user',
-		sprintf( '"%s:%s"', getenv( 'DOCKER_RUN_UID' ), getenv( 'DOCKER_RUN_GID' ) ),
+		sprintf( '"%s:%s"', getenv( 'TRIC_UID' ), getenv( 'TRIC_GID' ) ),
 		'--workdir',
 		escapeshellarg( get_project_container_path() ),
 		'tric',

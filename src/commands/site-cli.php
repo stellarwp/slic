@@ -67,7 +67,7 @@ if ( ! $open_bash_shell ) {
 	$status = tric_realtime()( [ 'run', '--rm', 'site-cli' ] );
 } else {
 	// What user ID are we running this as?
-	$user = getenv( 'DOCKER_RUN_UID' );
+	$user = getenv( 'TRIC_UID' );
 	// Do not run the wp-cli container as `root` to avoid a number of file mode issues, run as `www-data` instead.
 	$user   = empty( $user ) ? 'www-data' : $user;
 	$status = tric_realtime()( [ 'run', '--rm', "--user={$user}", '--entrypoint', 'bash', 'site-cli' ] );

@@ -12,6 +12,7 @@ require_once __DIR__ . '/src/wordpress.php';
 require_once __DIR__ . '/src/services.php';
 require_once __DIR__ . '/src/database.php';
 require_once __DIR__ . '/src/project.php';
+require_once __DIR__ . '/src/env.php';
 
 use function TEC\Tric\args;
 use function TEC\Tric\colorize;

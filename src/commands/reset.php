@@ -22,6 +22,8 @@ if ( $is_help ) {
 
 $targets = $args( '...' );
 
+quietly_tear_down_stack();
+
 $run_settings_file = root( '/.env.tric.run' );
 echo "Removing {$run_settings_file} ... ";
 echo ( ! file_exists( $run_settings_file ) || unlink( $run_settings_file ) ) ?
@@ -42,7 +44,6 @@ if ( in_array( 'wp', $targets, true ) && is_dir( $wp_dir ) ) {
 	 * The stack will lock bound files if running, tear it down to unlock them.
 	 */
 	echo 'Tearing down the stack ... ';
-	quietly_tear_down_stack();
 	echo light_cyan('done'), "\n";
 
 	echo "Removing the WordPress directory $wp_dir ... ";

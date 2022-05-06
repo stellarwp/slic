@@ -32,8 +32,8 @@ services:
         # Fix the version of the WordPress image to avoid issues w/ out-of-date database dumps.
         WORDPRESS_IMAGE_VERSION: 5.6-apache
         # Allow the image to be built creating the user and group ID for the host machine user.
-        DOCKER_RUN_UID: ${DOCKER_RUN_UID:-0}
-        DOCKER_RUN_GID: ${DOCKER_RUN_GID:-0}
+        TRIC_UID: ${TRIC_UID:-0}
+        TRIC_GID: ${TRIC_GID:-0}
     networks:
       tric:
         # Allow the other containers to read this container with a pretty URL.
@@ -45,7 +45,7 @@ services:
       - db
     # Run the container as the host user and group.
     # Apache will run as the same user and permission issues with WordPress generated files should not arise.
-    user: "${DOCKER_RUN_UID:-}:${DOCKER_RUN_GID:-}"
+    user: "${TRIC_UID:-}:${TRIC_GID:-}"
     sysctls:
       # Allow any user to bind ports <= 1024.
       # This is required as we're running the container as the host user and that user might not be in the root

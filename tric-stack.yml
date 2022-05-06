@@ -4,13 +4,9 @@ version: "3"
 
 networks:
   tric:
-    ipam:
-      driver: default
-      config:
-        - subnet: "172.${TRIC_TEST_SUBNET:-28}.0.0/16"
 
 volumes:
-  function-mocker-cache:
+  function-mocker-cache: # @todo move to file cache
 
 services:
 
@@ -24,31 +20,30 @@ services:
       MYSQL_DATABASE: test
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
 
+  redis:
+    image: redis
+    networks:
+      tric:
+    ports:
+      - "${TRIC_REDIS_LOCALHOST_PORT:-8379}:6379"
+
   wordpress:
-    image: tric/wordpress
+    image: the-events-calendar/tric_wordpress:${TRIC_VERSION}
     build:
       context: containers/wordpress
       # By default, build the version of Docker that does not include XDebug.
-      dockerfile: ${TRIC_WORDPRESS_DOCKERFILE:-Dockerfile.debug}
+      dockerfile: Dockerfile
       args:
         # Fix the version of the WordPress image to avoid issues w/ out-of-date database dumps.
-        WORDPRESS_IMAGE_VERSION: 5.6-apache
-        # Allow the image to be built creating the user and group ID for the host machine user.
-        DOCKER_RUN_UID: ${DOCKER_RUN_UID:-0}
-        DOCKER_RUN_GID: ${DOCKER_RUN_GID:-0}
+        WORDPRESS_IMAGE_VERSION: wordpress:5.9.3-php7.4-apache
     networks:
-      tric:
-        # Allow the other containers to read this container with a pretty URL.
-        ipv4_address: 172.${TRIC_TEST_SUBNET:-28}.1.1
-    extra_hosts:
-      # Let's make sure the WordPress service can reach itself with a pretty URL for internal requests.
-      - "wordpress.test:172.${TRIC_TEST_SUBNET:-28}.1.1"
+      - tric
     depends_on:
       - db
       - redis
     # Run the container as the host user and group.
     # Apache will run as the same user and permission issues with WordPress generated files should not arise.
-    user: "${DOCKER_RUN_UID:-}:${DOCKER_RUN_GID:-}"
+    user: "${TRIC_UID:-}:${TRIC_GID:-}"
     sysctls:
       # Allow any user to bind ports <= 1024.
       # This is required as we're running the container as the host user and that user might not be in the root
@@ -93,7 +88,7 @@ services:
       - ${TRIC_WP_DIR}:/var/www/html:cached
       - ${TRIC_PLUGINS_DIR}:/var/www/html/wp-content/plugins:cached
       - ${TRIC_THEMES_DIR}:/var/www/html/wp-content/themes:cached
-      - ${COMPOSER_CACHE_HOST_DIR}:/host-composer-cache:cached
+      - ${COMPOSER_CACHE_DIR}:${COMPOSER_CACHE_DIR}:cached
 
   chrome:
     image: ${TRIC_CHROME_CONTAINER:-selenium/standalone-chrome:3.141.59-oxygen}
@@ -103,21 +98,14 @@ services:
       - "wordpress.test:172.${TRIC_TEST_SUBNET:-28}.1.1"
 
   tric:
-    image: tec/tric:1.0.0
+    image: the-events-calendar/tric:${TRIC_VERSION}
     build:
       context: ./containers/tric
       dockerfile: Dockerfile
-      args:
-        DOCKER_RUN_UNAME: ${DOCKER_RUN_UNAME:-}
-        DOCKER_RUN_UID: ${DOCKER_RUN_UID:-}
-        DOCKER_RUN_GID: ${DOCKER_RUN_GID:-}
     networks:
       - tric
-    extra_hosts:
-      - "wordpress.test:172.${TRIC_TEST_SUBNET:-28}.1.1"
-    user: "${DOCKER_RUN_UID:-}:${DOCKER_RUN_GID:-}"
+    user: "${TRIC_UID:-}:${TRIC_GID:-}"
     environment:
-      FIXUID: "${FIXUID:-1}"
       COMPOSER_CACHE_DIR: ${COMPOSER_CACHE_DIR:-}
       # Set these values to allow the container to look wordpress up.
       WORDPRESS_DB_USER: root
@@ -149,9 +137,6 @@ services:
       COLUMNS: "${COLUMNS:-80}"
       # Explicitly set the env var that will define the Function Mocker cache path: it will be picked up by the config file.
       FUNCTION_MOCKER_CACHE_PATH: "/cache"
-    depends_on:
-      - wordpress
-      - chrome
     volumes:
       # Paths are relative to the directory that contains this file, NOT the current working directory.
       # Share the WordPress core installation files in the `_wordpress` directory.
@@ -164,78 +149,71 @@ services:
       # filesystem would be a worse cure than the disease.
       # The volume is bound to the `a+rwx` directory the `codeception` image provides to avoid file mode issues.
       - function-mocker-cache:/cache
-      - ${COMPOSER_CACHE_HOST_DIR}:/host-composer-cache:cached
+      - ${COMPOSER_CACHE_DIR}:${COMPOSER_CACHE_DIR}
 
-  npm:
-    build:
-      context: containers/npm
-      args:
-        NODE_VERSION: 10.16
-    image: tric_npm
-    user: "${DOCKER_RUN_UID:-}:${DOCKER_RUN_GID:-}"
-    environment:
-      FIXUID: ${FIXUID:-1}
-      TRIC_CURRENT_PROJECT_SUBDIR: ${TRIC_CURRENT_PROJECT_SUBDIR:-}
-    volumes:
-      # Set the current plugin as project.
-      - ${TRIC_PLUGINS_DIR}/${TRIC_CURRENT_PROJECT:-test}:/project:cached
-      # Share SSH keys with the container to pull from private repositories.
-      - ${DOCKER_RUN_SSH_AUTH_SOCK}:/ssh-agent:ro
-
-  npm_lts:
-    build:
-      context: containers/npm
-      args:
-        NODE_VERSION: lts
-    image: tric_npm_lts
-    user: "${DOCKER_RUN_UID:-}:${DOCKER_RUN_GID:-}"
-    environment:
-      FIXUID: ${FIXUID:-1}
-      TRIC_CURRENT_PROJECT_SUBDIR: ${TRIC_CURRENT_PROJECT_SUBDIR:-}
-    volumes:
-      # Set the current plugin as project.
-      - ${TRIC_PLUGINS_DIR}/${TRIC_CURRENT_PROJECT:-test}:/project:cached
-      # Share SSH keys with the container to pull from private repositories.
-      - ${DOCKER_RUN_SSH_AUTH_SOCK}:/ssh-agent:ro
-
-  adminer:
-    image: adminer
-    networks:
-      - tric
-    environment:
-      ADMINER_DEFAULT_SERVER: db
-    ports:
-      - "9080:8080"
-
-  redis:
-    image: redis
-    networks:
-      tric:
-    ports:
-      # Expose Redis port on port 8379 of localhost.
-      - "8379:6379"
-
-  redis-cli:
-    image: redis
-    networks:
-      tric:
-    depends_on:
-      - redis
-    entrypoint: ["redis-cli","-h redis","-p 6379"]
-    command: ["--version"]
-
-  mailcatcher:
-    image: dockage/mailcatcher
-    networks:
-      tric:
-    ports:
-      # Expose MailCatcher ports on localhost.
-      - "1025:1025"
-      - "1080:1080"
-
-  host-ip:
-    image: busybox
-    networks:
-      tric:
-    entrypoint: sh
-    command: -c '/bin/ip route | awk "/default/ { print $$3 }" | cut -d" " -f3'
+#  npm:
+#    build:
+#      context: containers/npm
+#      args:
+#        NODE_VERSION: 10.16
+#    image: tric_npm
+#    user: "${TRIC_UID:-}:${TRIC_GID:-}"
+#    environment:
+#      FIXUID: ${FIXUID:-1}
+#      TRIC_CURRENT_PROJECT_SUBDIR: ${TRIC_CURRENT_PROJECT_SUBDIR:-}
+#    volumes:
+#      # Set the current plugin as project.
+#      - ${TRIC_PLUGINS_DIR}/${TRIC_CURRENT_PROJECT:-test}:/project:cached
+#      # Share SSH keys with the container to pull from private repositories.
+#      - ${DOCKER_RUN_SSH_AUTH_SOCK}:/ssh-agent:ro
+#
+#  npm_lts:
+#    build:
+#      context: containers/npm
+#      args:
+#        NODE_VERSION: lts
+#    image: tric_npm_lts
+#    user: "${TRIC_UID:-}:${TRIC_GID:-}"
+#    environment:
+#      FIXUID: ${FIXUID:-1}
+#      TRIC_CURRENT_PROJECT_SUBDIR: ${TRIC_CURRENT_PROJECT_SUBDIR:-}
+#    volumes:
+#      # Set the current plugin as project.
+#      - ${TRIC_PLUGINS_DIR}/${TRIC_CURRENT_PROJECT:-test}:/project:cached
+#      # Share SSH keys with the container to pull from private repositories.
+#      - ${DOCKER_RUN_SSH_AUTH_SOCK}:/ssh-agent:ro
+#
+#  adminer:
+#    image: adminer
+#    networks:
+#      - tric
+#    environment:
+#      ADMINER_DEFAULT_SERVER: db
+#    ports:
+#      - "9080:8080"
+#
+#
+#  redis-cli:
+#    image: redis
+#    networks:
+#      tric:
+#    depends_on:
+#      - redis
+#    entrypoint: ["redis-cli","-h redis","-p 6379"]
+#    command: ["--version"]
+#
+#  mailcatcher:
+#    image: dockage/mailcatcher
+#    networks:
+#      tric:
+#    ports:
+#      # Expose MailCatcher ports on localhost.
+#      - "1025:1025"
+#      - "1080:1080"
+#
+#  host-ip:
+#    image: busybox
+#    networks:
+#      tric:
+#    entrypoint: sh
+#    command: -c '/bin/ip route | awk "/default/ { print $$3 }" | cut -d" " -f3'

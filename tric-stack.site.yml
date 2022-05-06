@@ -31,7 +31,7 @@ services:
     volumes:
       # Set the current target as project.
       - ${TRIC_HERE_DIR}/${TRIC_CURRENT_PROJECT_RELATIVE_PATH}:/project:cached
-      - ${COMPOSER_CACHE_HOST_DIR}:/host-composer-cache:cached
+      - ${COMPOSER_CACHE_DIR}:${COMPOSER_CACHE_DIR}:cached
 
   npm:
     volumes:

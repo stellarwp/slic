@@ -27,7 +27,7 @@ $toggle = args( [ 'toggle' ], $args( '...' ), 0 )( 'toggle', 'on' );
 $activate = $toggle === 'on';
 
 setup_id();
-ensure_tric_service_running();
+ensure_service_running('tric');
 ensure_wordpress_ready();
 
 $ensure_airplane_mode_plugin = static function () {
