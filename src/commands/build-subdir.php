@@ -1,4 +1,11 @@
 <?php
+/**
+ * Handles a request to toggle the sub-directory (e.g. Common) build prompt on and off.
+ *
+ * @var bool    $is_help  Whether we're handling an `help` request on this command or not.
+ * @var Closure $args     The argument map closure, as produced by the `args` function.
+ * @var string  $cli_name The current name of the `tric` CLI application.
+ */
 
 namespace TEC\Tric;
 
@@ -9,6 +16,7 @@ if ( $is_help ) {
 	echo colorize( "example: <light_cyan>{$cli_name} build-subdir on</light_cyan>\n" );
 	echo colorize( "example: <light_cyan>{$cli_name} build-subdir off</light_cyan>\n" );
 	echo colorize( "example: <light_cyan>{$cli_name} build-subdir status</light_cyan>\n" );
+
 	return;
 }
 

@@ -4,8 +4,9 @@
  *
  * @see https://github.com/norcross/airplane-mode
  *
- * @var bool    $is_help Whether we're handling an `help` request on this command or not.
- * @var Closure $args    The argument map closure, as produced by the `args` function.
+ * @var bool    $is_help  Whether we're handling an `help` request on this command or not.
+ * @var Closure $args     The argument map closure, as produced by the `args` function.
+ * @var string  $cli_name The current name of the `tric` CLI application.
  */
 
 namespace TEC\Tric;
