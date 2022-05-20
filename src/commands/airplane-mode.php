@@ -4,13 +4,11 @@
  *
  * @see https://github.com/norcross/airplane-mode
  *
- * @var bool     $is_help Whether we're handling an `help` request on this command or not.
- * @var \Closure $args    The argument map closure, as produced by the `args` function.
+ * @var bool    $is_help Whether we're handling an `help` request on this command or not.
+ * @var Closure $args    The argument map closure, as produced by the `args` function.
  */
 
 namespace TEC\Tric;
-
-use function tad\WPBrowser\ensure;
 
 if ( $is_help ) {
 	echo "Activates or deactivates the airplane-mode plugin.\n";
@@ -27,7 +25,7 @@ $toggle = args( [ 'toggle' ], $args( '...' ), 0 )( 'toggle', 'on' );
 $activate = $toggle === 'on';
 
 setup_id();
-ensure_service_running('tric');
+ensure_service_running( 'tric' );
 ensure_wordpress_ready();
 
 $ensure_airplane_mode_plugin = static function () {
