@@ -156,9 +156,11 @@ function ensure_wordpress_files( $version = null ) {
 			return true;
 		}
 
-		// Remove the previous version of WordPress.
-		echo "WordPress current version ($wp_version) does not match the requested one ($version), removing WordPress directory ... ";
+		if ( isset( $wp_version ) ) {
+			echo "WordPress current version ($wp_version) does not match the requested one ($version), removing WordPress directory ... ";
+		}
 
+		// Remove the previous version of WordPress.
 		quietly_tear_down_stack();
 
 		if ( ! rrmdir( $wp_root_dir ) ) {

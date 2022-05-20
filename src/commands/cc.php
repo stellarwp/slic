@@ -16,7 +16,8 @@ $using = tric_target_or_fail();
 echo light_cyan( "Using {$using}\n" );
 
 setup_id();
-ensure_service_running( 'tric' );
+$codeception_args = $args( '...' );
+ensure_service_running( 'tric', codeception_dependencies( $codeception_args ) );
 
 $status = tric_realtime()( array_merge( [
 		'exec',
@@ -26,7 +27,7 @@ $status = tric_realtime()( array_merge( [
 		escapeshellarg( get_project_container_path() ),
 		'tric',
 		'vendor/bin/codecept'
-	], $args( '...' ) )
+	], $codeception_args )
 );
 
 exit( $status );
