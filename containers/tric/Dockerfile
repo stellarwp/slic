@@ -45,15 +45,13 @@ RUN chmod a+x /usr/local/bin/composer1 && chmod a+x /usr/local/bin/composer
 RUN [ $(getent group 1000) ] || addgroup --gid 1000 tric && \
     [ $(id -u 1000) ] || adduser --uid 1000 --gid 1000 --home /home/tric --shell /bin/sh --disabled-password --gecos "" tric && \
     mkdir -p /home/tric && \
-    echo "PS1=\"[\\u@tric] \\w\\n ~ \"" >> /home/tric/.bashrc && \
-    echo "PS1=\"[\\u@tric] \\w\\n ~ \"" >> /root/.bashrc && \
-    echo "source /home/tric/bashrc_scripts.sh" >> /home/tric/.bashrc && \
-    echo "source /home/tric/bashrc_scripts.sh" >> /root/.bashrc && \
     curl -SsL https://github.com/boxboat/fixuid/releases/download/v0.5.1/fixuid-0.5.1-linux-amd64.tar.gz | tar -C /usr/local/bin -xzf - && \
     chown root:root /usr/local/bin/fixuid && \
     chmod 4755 /usr/local/bin/fixuid && \
     mkdir -p /etc/fixuid
 COPY fixuid.yml /etc/fixuid/config.yml
+COPY .bashrc /home/tric/.bashrc
+COPY .bashrc /root/.bashrc
 COPY bashrc_scripts.sh /home/tric/bashrc_scripts.sh
 
 COPY tric-entrypoint.sh /usr/local/bin/tric-entrypoint.sh

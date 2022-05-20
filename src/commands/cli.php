@@ -1,4 +1,11 @@
 <?php
+/**
+ * Handles a request to run a wp-cli command in the stack.
+ *
+ * @var bool    $is_help  Whether we're handling an `help` request on this command or not.
+ * @var Closure $args     The argument map closure, as produced by the `args` function.
+ * @var string  $cli_name The current name of the `tric` CLI application.
+ */
 
 namespace TEC\Tric;
 
@@ -8,6 +15,7 @@ if ( $is_help ) {
 	echo colorize( "signature: <light_cyan>{$cli_name} cli [ssh] [...<commands>]</light_cyan>\n" );
 	echo colorize( "example: <light_cyan>{$cli_name} cli plugin list --status=active</light_cyan>\n" );
 	echo colorize( "example: <light_cyan>{$cli_name} cli ssh</light_cyan>" );
+
 	return;
 }
 
@@ -22,17 +30,11 @@ $command = $args( '...' );
  * As much as it would be ideal to use the `shell` sub-command to open a shell... we cannot use the `shell` word.
  */
 $cli_command = reset( $command );
-// If the command is `bash` or is empty, then open a shell in the `cli` service.
-$open_bash_shell = empty( $cli_command ) || $cli_command === 'bash';
-if ( ! $open_bash_shell ) {
-	$status = tric_realtime()( cli_command( $command ) );
+
+// If the command is `bash` or `ssh` or is empty, then open a shell in the `cli` service.
+if ( empty( $cli_command ) || in_array( $cli_command, [ 'bash', 'ssh' ], true ) ) {
+	// @todo replace from ssh command.
 } else {
-	// What user ID are we running this as?
-	$user = getenv( 'TRIC_UID' );
-	// Do not run the wp-cli container as `root` to avoid a number of file mode issues, run as `www-data` instead.
-	$user   = empty( $user ) ? 'www-data' : $user;
-
-	$status = tric_realtime()( [ 'run', '-e PS1="wp-cli » "', '--rm', "--user={$user}", '--entrypoint', 'bash', 'cli' ] );
-
+	$status = tric_realtime()( cli_command( $command ) );
 }
 exit( $status );
