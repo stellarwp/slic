@@ -2,18 +2,12 @@
 /**
  * Handles the `cache` command.
  *
- * @var bool     $is_help Whether we're handling an `help` request on this command or not.
- * @var \Closure $args    The argument map closure, as produced by the `args` function.
+ * @var bool    $is_help  Whether we're handling an `help` request on this command or not.
+ * @var Closure $args     The argument map closure, as produced by the `args` function.
+ * @var string  $cli_name The current name of the `tric` CLI application.
  */
 
-use function TEC\Tric\args;
-use function TEC\Tric\check_status_or;
-use function TEC\Tric\check_status_or_exit;
-use function TEC\Tric\cli_command;
-use function TEC\Tric\colorize;
-use function TEC\Tric\magenta;
-use function TEC\Tric\tric_process;
-use function TEC\Tric\tric_realtime;
+namespace TEC\Tric;
 
 if ( $is_help ) {
 	echo "Activates and deactivates object cache support, returns the current object cache status.\n";
@@ -27,7 +21,12 @@ if ( $is_help ) {
 }
 
 $cache_args = args( [ 'toggle' ], $args( '...' ), 0 );
-$toggle     = $cache_args( 'toggle', 'status' );
+
+$toggle = $cache_args( 'toggle', 'status' );
+
+setup_id();
+ensure_service_running( 'tric' );
+ensure_wordpress_ready();
 
 // Ensure the plugin is installed.
 check_status_or(
