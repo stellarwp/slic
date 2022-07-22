@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.34] - 2022-07-22
+#### Changed
+- Set `xdebug.log_level=0` in the stack configuration to avoid XDebug warnings from breaking code.
+
 ## [0.5.33] - 2022-04-15
 #### Changed
 - Add the `mysql` command to quickly open a `mysql` shell in the running database container of the `tric` stack.
