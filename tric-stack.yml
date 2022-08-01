@@ -235,7 +235,7 @@ services:
       - ${COMPOSER_CACHE_HOST_DIR}:/host-composer-cache:cached
 
   composer:
-    image: lucatume/composer:php7.0
+    image: lucatume/composer:php7.4
     user: "${DOCKER_RUN_UID:-}:${DOCKER_RUN_GID:-}"
     environment:
       COMPOSER_HTACCESS_PROTECT: 0
