@@ -14,6 +14,8 @@ if ( $is_help ) {
 $using = tric_target_or_fail();
 echo light_cyan( "Using {$using}\n" );
 
+ensure_service_running( 'tric' );
+
 $command = $args( '...' );
 $pool    = build_command_pool( 'composer', $command, [ 'common' ] );
 $status  = execute_command_pool( $pool );

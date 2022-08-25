@@ -293,7 +293,6 @@ function tric_switch_target( $target ) {
 function php_services() {
 	return [
 		'wordpress'   => 'WordPress',
-		'codeception' => 'Codeception',
 	];
 }
 
@@ -855,7 +854,7 @@ function tric_handle_xdebug( callable $args ) {
 		$var = $args( 'value' );
 		echo colorize( "Setting <light_cyan>{$map[$toggle]}={$var}</light_cyan>" ) . PHP_EOL . PHP_EOL;
 		write_env_file( $run_settings_file, [ $map[ $toggle ] => $var ], true );
-		echo PHP_EOL . PHP_EOL . colorize( "Tear down the stack with <light_cyan>down</light_cyan> and restar it to apply the new settings!\n" );
+		echo PHP_EOL . PHP_EOL . colorize( "Tear down the stack with <light_cyan>down</light_cyan> and restart it to apply the new settings!\n" );
 
 		return;
 	}
@@ -1019,10 +1018,13 @@ function build_command_pool( $base_command, array $command, array $sub_directori
 
 		$network_name = "tric{$subnet}";
 		$status       = tric_passive()( array_merge( [
-			'-p',
+			'exec',
+			'-T',
+			'--user',
+			sprintf( '"%s:%s"', getenv( 'TRIC_UID' ), getenv( 'TRIC_GID' ) ),
+			'--workdir',
+			escapeshellarg( get_project_container_path() ),
 			$network_name,
-			'run',
-			'--rm',
 			$base_command
 		], $command ), $prefix );
 
