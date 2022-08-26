@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.5.33] - 2022-04-15
 #### Changed
-- Add the `mysql` command to quickly open a `mysql` shell in the running database container of the `slic` stack.
+- Add the `mysql` command to quickly open a `mysql` shell in the running database container of the `tric` stack.
 - Add the `wp` command as alias of the `cli` command.
 
 ## [0.5.32] - 2022-03-18
@@ -52,7 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.5.26] - 2021-03-05
 ### Changed
-- Allow opening a shell in the `cli` service to run wp-cli commands just using `slic cli`.
+- Allow opening a shell in the `cli` service to run wp-cli commands just using `tric cli`.
 
 ## [0.5.25] - 2021-03-02
 ### Changed
@@ -61,16 +61,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.5.24] - 2021-02-18
 ### Changed
-- Update the WordPress image version, in the `slic-stack.build.yml` file, from `5.5` to `5.6` to fix CI build issues.
+- Update the WordPress image version, in the `tric-stack.build.yml` file, from `5.5` to `5.6` to fix CI build issues.
 
 ## [0.5.23] - 2021-01-20
 ### Changed
 - Add an argument, to the `reset` command, to remove the default WordPress (`/_wordpress`) installation directory
-  using `slic reset wp`.
+  using `tric reset wp`.
 
 ## [0.5.22] - 2021-01-20
 ### Added
-- Added the `composer-cache` command so the host machine's composer cache can be leveraged within slic containers.
+- Added the `composer-cache` command so the host machine's composer cache can be leveraged within tric containers.
 
 ## [0.5.21] - 2021-01-19
 ### Changed
@@ -82,30 +82,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.5.19] - 2020-12-11
 ### Changed
-- Fix an issue where commands that required a ready and available WordPress installation in the `slic` WordPress
+- Fix an issue where commands that required a ready and available WordPress installation in the `tric` WordPress
   directory would not take care to scaffold and install it; e.g. `cli` or `site-cli`.
 
 ## [0.5.18] - 2020-12-07
 ### Changed
 - Fix an issue where the `USING_CONTAINERS` environment variable would be duplicated in environment files set up by
-  `slic` init command.
+  `tric` init command.
 - Fix an issue where a negative answer to build targets with sub-directories, e.g. TEC and ET, would result in the
   target being built anyway.
 
 ## [0.5.17] - 2020-12-04
 ### Changed
 
-- Fix the XDebug version and `wordpress` service `Dockerfile` to keep using version `2` and not update to version `3` on a rebuild (e.g. one triggered by `slic update` or `slic build-stack` commands).
-- Add the `slic ssh` command to allow opening a shell in a **running** stack service; differently from the `shell` command, the `ssh` command will **not** start the service if it's not already running.
+- Fix the XDebug version and `wordpress` service `Dockerfile` to keep using version `2` and not update to version `3` on a rebuild (e.g. one triggered by `tric update` or `tric build-stack` commands).
+- Add the `tric ssh` command to allow opening a shell in a **running** stack service; differently from the `shell` command, the `ssh` command will **not** start the service if it's not already running.
 
 ## [0.5.16] - 2020-11-26
 ### Changed
 
-- Add support for the `SLIC_HOST` environment variable. This will override the default host machine IP address lookup `slic` would perform on Linux or the hard-wired `host.docker.internal` hostname `slic` would use on Windows and Mac host to set the default `xdebug.remote_host` value.
-- Default to the host machin IP address to set `xdebug.remote_host` only if the host has not been set  by means of a call to `slic xdebug host <host>` or by setting the `XDH` environment variable explicitly.
-- Fix an issue that would reset run settings stored in the `.env.slic.run` file when using the `slic xdebug <key> <value>` command.
+- Add support for the `TRIC_HOST` environment variable. This will override the default host machine IP address lookup `tric` would perform on Linux or the hard-wired `host.docker.internal` hostname `tric` would use on Windows and Mac host to set the default `xdebug.remote_host` value.
+- Default to the host machin IP address to set `xdebug.remote_host` only if the host has not been set  by means of a call to `tric xdebug host <host>` or by setting the `XDH` environment variable explicitly.
+- Fix an issue that would reset run settings stored in the `.env.tric.run` file when using the `tric xdebug <key> <value>` command.
 - Correctly handle Docker network removal in parallel tasks to avoid "error while removing network" errors.
-- Add support for `slic run` to run all the avaiable Codeception test suites from the target one after another.
+- Add support for `tric run` to run all the avaiable Codeception test suites from the target one after another.
 
 ## [0.5.15] - 2020-11-24
 ### Changed
@@ -122,9 +122,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.5.13] - 2020-11-23
 ### Changed
 
-- Executing `slic use` without a target now attempts to set the current working directory as the target.
-- `slic info` now outputs all valid targets, which is what `slic use` without a valid target used to do.
-- The Composer prompt from `slic init` no longer appears if `composer.json` is not found, likewise for the NPM prompt if `package.json` is not found.
+- Executing `tric use` without a target now attempts to set the current working directory as the target.
+- `tric info` now outputs all valid targets, which is what `tric use` without a valid target used to do.
+- The Composer prompt from `tric init` no longer appears if `composer.json` is not found, likewise for the NPM prompt if `package.json` is not found.
 - Fixed an issue that would prevent the `npm` and `npm_lts` services from correctly returning their exit status.
 - Add support for the `--pretty` flag to the `npm` and `npm_lts` commands to print a more human-readable output.
 
@@ -169,7 +169,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.5.5] - 2020-08-19
 ### Changed
 
-- Add support for the `bash` sub-command to the `slic cli` command to allow opening a `bash` shell into the `cli` container to manage the WordPress installation currently being served by `slic serve`.
+- Add support for the `bash` sub-command to the `tric cli` command to allow opening a `bash` shell into the `cli` container to manage the WordPress installation currently being served by `tric serve`.
 
 
 ## [0.5.4] - 2020-08-18
@@ -186,7 +186,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.5.2] - 2020-08-10
 ### Changed
 
-- Fix an issue where `docker-compose` would display an error due to missing default value for the `SLIC_CURRENT_PROJECT_SUBDIR` env var.
+- Fix an issue where `docker-compose` would display an error due to missing default value for the `TRIC_CURRENT_PROJECT_SUBDIR` env var.
 
 ## [0.5.1] - 2020-08-04
 ### Changed
@@ -196,21 +196,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.5.0] - 2020-07-30
 ### Added
 
-- Added the `slic target` command to support running the same command against multiple targets.
+- Added the `tric target` command to support running the same command against multiple targets.
 
 ## [0.4.9] - 2020-07-07
 ### Changed
 
-- Fix an issue where the `slic init` command would not correctly pick up the existing environment files if not running from the plugin directory.
+- Fix an issue where the `tric init` command would not correctly pick up the existing environment files if not running from the plugin directory.
 
 ### Added
 
-- Added the `SLIC_INTERACTIVE`, `SLIC_BUILD_PROMPT` and `SLIC_BUILD_SUBDIR` env var to the `slic info` report.
+- Added the `TRIC_INTERACTIVE`, `TRIC_BUILD_PROMPT` and `TRIC_BUILD_SUBDIR` env var to the `tric info` report.
 
 ## [0.4.8] - 2020-07-02
 ### Added
 
-- Added `slic build-subdir` which allows you to control whether sub-directories (e.g. `common` in The Events Calendar) should be built during composer/npm commands or not.
+- Added `tric build-subdir` which allows you to control whether sub-directories (e.g. `common` in The Events Calendar) should be built during composer/npm commands or not.
 
 ### Changed
 
@@ -255,17 +255,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.4.0] - 2020-06-25
 ### Added
 
-- Added `slic upgrade` which allows you to upgrade `slic` to the latest tagged release.
+- Added `tric upgrade` which allows you to upgrade `tric` to the latest tagged release.
 
 ## [0.3.0] - 2020-06-25
 ### Added
 
-- Prompt to `slic update` when container build version are out of sync from the slic version.
+- Prompt to `tric update` when container build version are out of sync from the tric version.
 - Output npm error log when one is generated.
 
 ### Changed
 
-- Adjust pathing of subdirectories within the slic stack so that npm can find a `.git` directory when performing `npm install`.
+- Adjust pathing of subdirectories within the tric stack so that npm can find a `.git` directory when performing `npm install`.
 - Suppress the `fixuid` command output in the npm `docker-entrypoint.sh`.
 - Separated out poolable (passive) command functions from realtime command functions to prevent issues with interactivity.
 
@@ -277,7 +277,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Changed `slic build` to `slic build-stack`.
+- Changed `tric build` to `tric build-stack`.
 
 ## [0.1.1] - 2020-05-26
 ### Changed
