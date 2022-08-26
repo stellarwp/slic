@@ -3,11 +3,11 @@
  * Handles the `xdebug` command.
  *
  * @var bool     $is_help  Whether we're handling an `help` request on this command or not.
- * @var string   $cli_name The current name of tric CLI binary.
+ * @var string   $cli_name The current name of slic CLI binary.
  * @var \Closure $args     The argument map closure, as produced by the `args` function.
  */
 
-namespace TEC\Tric;
+namespace StellarWP\Slic;
 
 if ( $is_help ) {
 	echo "Activates and deactivated XDebug in the stack, returns the current XDebug status or sets its values.\n";
@@ -23,4 +23,4 @@ if ( $is_help ) {
 
 $xdebug_args = args( [ 'toggle', 'value' ], $args( '...' ), 0 );
 
-tric_handle_xdebug( $xdebug_args );
+slic_handle_xdebug( $xdebug_args );

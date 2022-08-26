@@ -1,6 +1,6 @@
 <?php
 
-namespace TEC\Tric;
+namespace StellarWP\Slic;
 
 if ( $is_help ) {
 	echo "Runs a Composer command in the stack.\n";
@@ -11,10 +11,10 @@ if ( $is_help ) {
 	return;
 }
 
-$using = tric_target_or_fail();
+$using = slic_target_or_fail();
 echo light_cyan( "Using {$using}\n" );
 
-ensure_service_running( 'tric' );
+ensure_service_running( 'slic' );
 
 $command = $args( '...' );
 $pool    = build_command_pool( 'composer', $command, [ 'common' ] );

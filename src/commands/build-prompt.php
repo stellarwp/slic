@@ -4,10 +4,10 @@
  *
  * @var bool    $is_help  Whether we're handling an `help` request on this command or not.
  * @var Closure $args     The argument map closure, as produced by the `args` function.
- * @var string  $cli_name The current name of the `tric` CLI application.
+ * @var string  $cli_name The current name of the `slic` CLI application.
  */
 
-namespace TEC\Tric;
+namespace StellarWP\Slic;
 
 if ( $is_help ) {
 	echo "Activates or deactivates whether or not composer/npm build prompts should be provided.\n";
@@ -21,8 +21,8 @@ if ( $is_help ) {
 
 $interactive_args = args( [ 'toggle' ], $args( '...' ), 0 );
 
-tric_handle_build_prompt( $interactive_args );
+slic_handle_build_prompt( $interactive_args );
 
-echo colorize( "\n\nToggle this setting by using: <light_cyan>tric build-prompt [on|off]</light_cyan>\n" );
+echo colorize( "\n\nToggle this setting by using: <light_cyan>slic build-prompt [on|off]</light_cyan>\n" );
 echo colorize( "- on:  commands will prompt for composer/npm installs.\n" );
 echo colorize( "- off: commands will NOT prompt for composer/npm installs.\n" );

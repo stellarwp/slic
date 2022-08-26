@@ -1,6 +1,6 @@
 <?php
 
-namespace TEC\Tric;
+namespace StellarWP\Slic;
 
 
 use Exception;
@@ -21,7 +21,7 @@ function ensure_db_service_running() {
 	}
 
 	// Start the service is not already started.
-	$status = tric_passive()( [ 'up', '--detach', 'db' ] );
+	$status = slic_passive()( [ 'up', '--detach', 'db' ] );
 
 	if ( $status !== 0 ) {
 		echo magenta( 'Failed to start or restart the database service; check the output for errors.' );
@@ -76,7 +76,7 @@ function get_default_tables_list() {
  * @return string The database host an port in `host:port` format.
  */
 function get_localhost_db_host() {
-	return '127.0.0.1:' . getenv( 'TRIC_DB_LOCALHOST_PORT' );
+	return '127.0.0.1:' . getenv( 'SLIC_DB_LOCALHOST_PORT' );
 }
 
 /**
@@ -89,14 +89,14 @@ function get_localhost_db_handle() {
 	static $handle;
 
 	if ( $handle === null ) {
-		setup_tric_env( root() );
+		setup_slic_env( root() );
 
 		$connection = @mysqli_connect(
 			'127.0.0.1',
 			get_db_user(),
 			get_db_password(),
 			get_db_name(),
-			getenv( 'TRIC_DB_LOCALHOST_PORT' )
+			getenv( 'SLIC_DB_LOCALHOST_PORT' )
 		);
 
 		if ( $connection instanceof mysqli ) {
@@ -142,7 +142,7 @@ function get_db_password() {
  * @return bool Always `true` to indicate the database service was correctly started.
  */
 function ensure_db_service_ready() {
-	setup_tric_env( root() );
+	setup_slic_env( root() );
 	ensure_db_service_running();
 
 	$attempts = 0;

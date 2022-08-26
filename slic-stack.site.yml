@@ -8,32 +8,32 @@ services:
     volumes:
       # Paths are relative to the directory that contains this file, NOT the current working directory.
       # Share the WordPress core installation files in the `_wordpress` directory.
-      - ${TRIC_WP_DIR}:/var/www/html:cached
+      - ${SLIC_WP_DIR}:/var/www/html:cached
 
   cli:
     volumes:
       # Paths are relative to the directory that contains this file, NOT the current working directory.
       # Share the WordPress core installation files in the `_wordpress` directory.
-      - ${TRIC_WP_DIR}:/var/www/html:cached
+      - ${SLIC_WP_DIR}:/var/www/html:cached
 
   codeception:
     environment:
       # Move to the target directory before running the command from the plugins directory.
-      CODECEPTION_PROJECT_DIR: /var/www/html/${TRIC_CURRENT_PROJECT_RELATIVE_PATH}
+      CODECEPTION_PROJECT_DIR: /var/www/html/${SLIC_CURRENT_PROJECT_RELATIVE_PATH}
     volumes:
       # Set the current site as project.
-      - ${TRIC_HERE_DIR}/${TRIC_CURRENT_PROJECT_RELATIVE_PATH}:/project:cached
+      - ${SLIC_HERE_DIR}/${SLIC_CURRENT_PROJECT_RELATIVE_PATH}:/project:cached
       # Paths are relative to the directory that contains this file, NOT the current working directory.
       # Share the WordPress core installation files in the `_wordpress` directory.
-      - ${TRIC_WP_DIR}:/var/www/html:cached
+      - ${SLIC_WP_DIR}:/var/www/html:cached
 
   composer:
     volumes:
       # Set the current target as project.
-      - ${TRIC_HERE_DIR}/${TRIC_CURRENT_PROJECT_RELATIVE_PATH}:/project:cached
+      - ${SLIC_HERE_DIR}/${SLIC_CURRENT_PROJECT_RELATIVE_PATH}:/project:cached
       - ${COMPOSER_CACHE_DIR}:${COMPOSER_CACHE_DIR}:cached
 
   npm:
     volumes:
       # Set the current plugin as project.
-      - ${TRIC_HERE_DIR}/${TRIC_CURRENT_PROJECT_RELATIVE_PATH}:/project:cached
+      - ${SLIC_HERE_DIR}/${SLIC_CURRENT_PROJECT_RELATIVE_PATH}:/project:cached

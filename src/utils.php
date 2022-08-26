@@ -3,7 +3,7 @@
  * Utility functions for the build PHP scripts.
  */
 
-namespace TEC\Tric;
+namespace StellarWP\Slic;
 
 require_once __DIR__ . '/process.php';
 require_once __DIR__ . '/colors.php';
@@ -199,7 +199,7 @@ function gid() {
  * Sets up the user id and group in the environment.
  *
  * On OSes that will handle user ID and group ID mapping at the Docker daemon level, macOS and Windows, the
- * `TRIC_UID` and `TRIC_GID` env variables will be set to empty strings.
+ * `SLIC_UID` and `SLIC_GID` env variables will be set to empty strings.
  * This, in turn, will fill the `user` parameter of the stack services to `user: ":"` that will prompt docker-compose
  * to not set the user at all, the wanted behavior on such OSes.
  *
@@ -208,15 +208,15 @@ function gid() {
 function setup_id( $reset = false ) {
 	if (
 		false === $reset
-		&& false !== getenv( 'TRIC_UID' )
-		&& false !== getenv( 'TRIC_GID' )
+		&& false !== getenv( 'SLIC_UID' )
+		&& false !== getenv( 'SLIC_GID' )
 	) {
 		return;
 	}
 
 	putenv( 'DOCKER_RUN_UNAME=' . get_current_user() );
-	putenv( 'TRIC_UID=' . uid() );
-	putenv( 'TRIC_GID=' . gid() );
+	putenv( 'SLIC_UID=' . uid() );
+	putenv( 'SLIC_GID=' . gid() );
 
 	putenv( 'DOCKER_RUN_SSH_AUTH_SOCK=' . ssh_auth_sock() );
 }
@@ -225,7 +225,7 @@ function setup_id( $reset = false ) {
  * Returns the host machine IP address as reachable from the containers.
  *
  * The way the host machine IP address is fetched will vary depending on the Operating System the function runs on.
- * If the `TRIC_HOST` environment variable is set, then that will be used without any further check.
+ * If the `SLIC_HOST` environment variable is set, then that will be used without any further check.
  *
  * @param string $os The operating system to get the host machine IP address for.
  *
@@ -233,7 +233,7 @@ function setup_id( $reset = false ) {
  *                an empty string to indicate the host machine IP address could not be obtained.
  */
 function host_ip( $os = 'Linux' ) {
-	if ( $env_set_host = getenv( 'TRIC_HOST' ) ) {
+	if ( $env_set_host = getenv( 'SLIC_HOST' ) ) {
 		return $env_set_host;
 	}
 
@@ -282,11 +282,11 @@ function is_ci() {
 	return false;
 }
 
-// Whether the current run context is a `tric` binary one or not.
-function is_tric() {
+// Whether the current run context is a `slic` binary one or not.
+function is_slic() {
 	$env_vars = [
-		'TEC_TRIC',
-		'TRIC',
+		'STELLAR_SLIC',
+		'SLIC',
 	];
 	foreach ( $env_vars as $key ) {
 		if ( (bool) getenv( $key ) ) {
@@ -300,11 +300,11 @@ function is_tric() {
 /**
  * Returns the current run context.
  *
- * @return string The current run context, one of `ci`, `tric` or `default`.
+ * @return string The current run context, one of `ci`, `slic` or `default`.
  */
 function run_context() {
-	if ( is_tric() ) {
-		return 'tric';
+	if ( is_slic() ) {
+		return 'slic';
 	}
 
 	if ( is_ci() ) {
@@ -347,8 +347,8 @@ function write_env_file( $file, array $lines = [], $update = false ) {
 		return "{$key}={$value}";
 	}, array_keys( $new_lines ), $new_lines ) );
 
-	// If this is the first time creating the .env.tric.run file, assume this is the first run and place the CLI version in `.build-version`.
-	if ( false !== strpos( $file, '.env.tric.run' ) && ! is_file( $file ) ) {
+	// If this is the first time creating the .env.slic.run file, assume this is the first run and place the CLI version in `.build-version`.
+	if ( false !== strpos( $file, '.env.slic.run' ) && ! is_file( $file ) ) {
 		write_build_version();
 	}
 
@@ -420,7 +420,7 @@ function ssh_auth_sock() {
  * @return string|null The user answer or the default value if the user did not provide an answer to the question.
  */
 function ask( $question, $default = null ) {
-	$is_interactive = getenv( 'TRIC_INTERACTIVE' );
+	$is_interactive = getenv( 'SLIC_INTERACTIVE' );
 
 	$prompt = colorize( "<bold>{$question}</bold>" );
 

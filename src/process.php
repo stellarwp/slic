@@ -3,7 +3,7 @@
  * Process related files and functions.
  */
 
-namespace TEC\Tric;
+namespace StellarWP\Slic;
 
 /**
  * Runs a process and returns a closure that allows getting the status or output from it.

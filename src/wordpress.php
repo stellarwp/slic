@@ -3,7 +3,7 @@
  * Functions for WordPress specific actions.
  */
 
-namespace TEC\Tric;
+namespace StellarWP\Slic;
 
 use CallbackFilterIterator;
 use FilesystemIterator;
@@ -65,7 +65,7 @@ function dir_has_wp_config( $dir ) {
  *                                   corresponding file information.
  */
 function wp_content_dir_list( $content_type = 'plugins' ) {
-	$function = "\\TEC\\Tric\\tric_{$content_type}_dir";
+	$function = "\\StellarWP\\Slic\\slic_{$content_type}_dir";
 	$path     = $function();
 
 	if ( ! is_dir( $path ) ) {
@@ -97,7 +97,7 @@ function wp_content_dir_list( $content_type = 'plugins' ) {
 }
 
 /**
- * Returns the list of allowed subdirectories for tric use.
+ * Returns the list of allowed subdirectories for slic use.
  *
  * @return array<string> Allowed subdirectories for use.
  */
@@ -125,7 +125,7 @@ function ensure_wordpress_files( $version = null ) {
 		$source_url = "https://wordpress.org/wordpress-$version.zip";
 	} else {
 		// If set, then use the WordPress version defined by the env.
-		$env_wp_version = getenv( 'TRIC_WP_VERSION' );
+		$env_wp_version = getenv( 'SLIC_WP_VERSION' );
 		$version        = $env_wp_version;
 		if ( ! empty( $env_wp_version ) ) {
 			$source_url = "https://wordpress.org/wordpress-$env_wp_version.zip";
@@ -141,7 +141,7 @@ function ensure_wordpress_files( $version = null ) {
 		$version = get_wordpress_latest_version();
 	}
 
-	$wp_root_dir  = getenv( 'TRIC_WP_DIR' );
+	$wp_root_dir  = getenv( 'SLIC_WP_DIR' );
 	$version_file = $wp_root_dir . '/wp-includes/version.php';
 
 	// Check only if the specified version is not latest.
@@ -208,7 +208,7 @@ function ensure_wordpress_files( $version = null ) {
  *              is set up correctly.
  */
 function ensure_wordpress_configured() {
-	$wp_root_dir    = getenv( 'TRIC_WP_DIR' );
+	$wp_root_dir    = getenv( 'SLIC_WP_DIR' );
 	$wp_config_file = $wp_root_dir . '/wp-config.php';
 
 	if ( is_file( $wp_config_file ) ) {
@@ -242,11 +242,11 @@ function ensure_wordpress_configured() {
 		"'password_here'",
 		"'localhost'"
 	], [
-		"<?php\n\nfunction tric_env( \$key, \$default ){\n\treturn getenv( \$key ) ?: \$default;\n}\n",
+		"<?php\n\nfunction slic_env( \$key, \$default ){\n\treturn getenv( \$key ) ?: \$default;\n}\n",
 		"'" . get_db_name() . "'",
 		"'" . get_db_user() . "'",
 		"'" . get_db_password() . "'",
-		"tric_env( 'DB_HOST', 'db' )"
+		"slic_env( 'DB_HOST', 'db' )"
 	], $wp_config_contents );
 
 	debug( "Setting up salts in $wp_config_file ...\n" );
@@ -299,7 +299,7 @@ CONFIG_EXTRAS;
  *              correctly installed.
  */
 function ensure_wordpress_installed() {
-	setup_tric_env( root() );
+	setup_slic_env( root() );
 
 	// Bring up the database.
 	ensure_db_service_ready();
@@ -339,7 +339,7 @@ function ensure_wordpress_installed() {
 
 	debug( "Default tables not found: assuming WordPress is not installed.\n" );
 
-	$wp_root_dir  = getenv( 'TRIC_WP_DIR' );
+	$wp_root_dir  = getenv( 'SLIC_WP_DIR' );
 	$install_file = realpath( $wp_root_dir . '/wp-admin/install.php' );
 
 	if ( ! is_file( $install_file ) ) {
@@ -350,7 +350,7 @@ function ensure_wordpress_installed() {
 	// In a separate process, call the installation file directly setting up the expected request vars.
 	$code = 'putenv( "DB_HOST=' . get_localhost_db_host() . '" ); ' .
 	        '$_GET["step"] = 2; ' .
-	        '$_POST["weblog_title"] = "Tric Test Site"; ' .
+	        '$_POST["weblog_title"] = "Slic Test Site"; ' .
 	        '$_POST["user_name"] = "admin"; ' .
 	        '$_POST["admin_password"] = "password"; ' .
 	        '$_POST["admin_password2"] = "password"; ' .

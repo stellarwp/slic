@@ -4,10 +4,10 @@
  *
  * @var bool    $is_help  Whether we're handling an `help` request on this command or not.
  * @var Closure $args     The argument map closure, as produced by the `args` function.
- * @var string  $cli_name The current name of the `tric` CLI application.
+ * @var string  $cli_name The current name of the `slic` CLI application.
  */
 
-namespace TEC\Tric;
+namespace StellarWP\Slic;
 
 if ( $is_help ) {
 	echo "Activates or deactivates whether or not composer/npm build should apply to sub-directories.\n";
@@ -22,8 +22,8 @@ if ( $is_help ) {
 
 $subdir_args = args( [ 'toggle' ], $args( '...' ), 0 );
 
-tric_handle_build_subdir( $subdir_args );
+slic_handle_build_subdir( $subdir_args );
 
-echo colorize( "\n\nToggle this setting by using: <light_cyan>tric build-subdir [on|off]</light_cyan>\n" );
+echo colorize( "\n\nToggle this setting by using: <light_cyan>slic build-subdir [on|off]</light_cyan>\n" );
 echo colorize( "- on:  composer/npm commands will apply to sub-directories.\n" );
 echo colorize( "- off: composer/npm commands will NOT apply to sub-directories.\n" );

@@ -1,13 +1,13 @@
 <?php
 /**
- * Handles the `reset` command to reset tric to its initial state.
+ * Handles the `reset` command to reset slic to its initial state.
  *
  * @var bool $is_help Whether we're handling an `help` request on this command or not.
- * @var string $cli_name The current name of tric CLI binary.
+ * @var string $cli_name The current name of slic CLI binary.
  * @var \Closure $args The argument map closure, as produced by the `args` function.
  */
 
-namespace TEC\Tric;
+namespace StellarWP\Slic;
 
 if ( $is_help ) {
 	echo "Resets the tool to its initial state configured by the env files.\n" .
@@ -24,7 +24,7 @@ $targets = $args( '...' );
 
 quietly_tear_down_stack();
 
-$run_settings_file = root( '/.env.tric.run' );
+$run_settings_file = root( '/.env.slic.run' );
 echo "Removing {$run_settings_file} ... ";
 echo ( ! file_exists( $run_settings_file ) || unlink( $run_settings_file ) ) ?
 	light_cyan( 'done' )

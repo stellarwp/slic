@@ -1,16 +1,16 @@
-# Xdebug in `tric`
+# Xdebug in `slic`
 
 ## Available Commands
 
-### `tric xdebug help`
+### `slic xdebug help`
 
 List the available Xdebug commands.
 
-### `tric xdebug status`
+### `slic xdebug status`
 
 See if Xdebug is enabled or disabled, the host information, and the path mapping to add to your IDE.
 
-Note that this command cannot be ran within `tric shell` because you've SSH'd into the Codeception container which has no knowledge of *tric*.
+Note that this command cannot be ran within `slic shell` because you've SSH'd into the Codeception container which has no knowledge of *slic*.
 
 #### Setup IDE for Xdebug
 
@@ -22,13 +22,13 @@ Video walk-throughs for [PhpStorm](https://drive.google.com/file/d/1sD8djXgmYWCU
 
 Screenshot from PhpStorm's video:
 
-![PhpStorm XDebug settings](images/tric-Xdebug-PhpStorm.png "PhpStorm XDebug settings")
+![PhpStorm XDebug settings](images/slic-Xdebug-PhpStorm.png "PhpStorm XDebug settings")
 
 ### Enable/Disable Xdebug
 
-1. `tric xdebug on`
-1. `tric xdebug off`
-1. Within `tric shell`:
-    1. `tric xon`
-    1. `tric xoff`
+1. `slic xdebug on`
+1. `slic xdebug off`
+1. Within `slic shell`:
+    1. `slic xon`
+    1. `slic xoff`
 

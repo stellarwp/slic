@@ -3,7 +3,7 @@
  * Plugin related functions for the build PHP scripts.
  */
 
-namespace TEC\Tric;
+namespace StellarWP\Slic;
 
 use SplFileInfo;
 

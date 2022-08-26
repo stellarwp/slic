@@ -7,10 +7,10 @@
  * @var string $run_settings_file The absolute path to the file that should be used to load runtime settings.
  */
 
-namespace TEC\Tric;
+namespace StellarWP\Slic;
 
 if ( $is_help ) {
-	echo "Sets the current plugins directory to be the one used by tric.\n";
+	echo "Sets the current plugins directory to be the one used by slic.\n";
 	echo PHP_EOL;
 	echo colorize( "signature: <light_cyan>{$cli_name} here</light_cyan>\n" );
 	echo colorize( "signature: <light_cyan>{$cli_name} here reset</light_cyan>\n" );
@@ -43,34 +43,34 @@ if ( $has_wp_config ) {
 	} elseif ( file_exists( "{$here_dir}/content" ) ) {
 		$wp_content_dir = "{$here_dir}/content";
 	} else {
-		echo magenta( "Cannot locate the wp-content directory. If you have a custom wp-content location, you will need to set the TRIC_WP_DIR, TRIC_PLUGINS_DIR, and TRIC_THEMES_DIR manually in tric's .env.tric.run file." );
+		echo magenta( "Cannot locate the wp-content directory. If you have a custom wp-content location, you will need to set the SLIC_WP_DIR, SLIC_PLUGINS_DIR, and SLIC_THEMES_DIR manually in slic's .env.slic.run file." );
 		exit( 1 );
 	}
 
-	$env_values['TRIC_HERE_DIR'] = $here_dir;
+	$env_values['SLIC_HERE_DIR'] = $here_dir;
 
 	if ( file_exists( "{$here_dir}/wp" ) ) {
 		$here_dir .= '/wp';
 	}
 
-	$env_values['TRIC_WP_DIR']       = $here_dir;
-	$env_values['TRIC_PLUGINS_DIR']  = "{$wp_content_dir}/plugins";
-	$env_values['TRIC_THEMES_DIR']   = "{$wp_content_dir}/themes";
+	$env_values['SLIC_WP_DIR']       = $here_dir;
+	$env_values['SLIC_PLUGINS_DIR']  = "{$wp_content_dir}/plugins";
+	$env_values['SLIC_THEMES_DIR']   = "{$wp_content_dir}/themes";
 } else {
-	$env_values['TRIC_HERE_DIR']     = $here_dir;
-	$env_values['TRIC_WP_DIR']       = $wp_dir;
-	$env_values['TRIC_PLUGINS_DIR']  = $here_dir;
-	$env_values['TRIC_THEMES_DIR']   = $themes_dir;
+	$env_values['SLIC_HERE_DIR']     = $here_dir;
+	$env_values['SLIC_WP_DIR']       = $wp_dir;
+	$env_values['SLIC_PLUGINS_DIR']  = $here_dir;
+	$env_values['SLIC_THEMES_DIR']   = $themes_dir;
 }
 
 // When changing the here target, clear the currently selected project.
-$env_values['TRIC_CURRENT_PROJECT']               = '';
-$env_values['TRIC_CURRENT_PROJECT_RELATIVE_PATH'] = '';
+$env_values['SLIC_CURRENT_PROJECT']               = '';
+$env_values['SLIC_CURRENT_PROJECT_RELATIVE_PATH'] = '';
 
 write_env_file( $run_settings_file, $env_values, true );
 
-setup_tric_env( root() );
+setup_slic_env( root() );
 quietly_tear_down_stack();
 
-echo colorize( "\n<light_cyan>Tric plugin path set to</light_cyan> {$here_dir}.\n\n" );
-echo colorize( "If this is the first time setting this plugin path, be sure to <light_cyan>tric init <plugin></light_cyan>." );
+echo colorize( "\n<light_cyan>Slic plugin path set to</light_cyan> {$here_dir}.\n\n" );
+echo colorize( "If this is the first time setting this plugin path, be sure to <light_cyan>slic init <plugin></light_cyan>." );

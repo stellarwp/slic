@@ -1,6 +1,6 @@
 <?php
 
-namespace TEC\Tric;
+namespace StellarWP\Slic;
 
 if ( $is_help ) {
 	echo "Activates or deactivates {$cli_name} debug output or returns the current debug status.\n";

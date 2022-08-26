@@ -3,7 +3,7 @@
  * Dynamic script functions.
  */
 
-namespace TEC\Tric;
+namespace StellarWP\Slic;
 
 /**
  * Gets the local environment's script directory.
@@ -11,7 +11,7 @@ namespace TEC\Tric;
  * @return string
  */
 function get_local_script_dir() {
-	return TRIC_ROOT_DIR . '/' . trim( getenv( 'TRIC_SCRIPTS' ), '.' ) . '/';
+	return SLIC_ROOT_DIR . '/' . trim( getenv( 'SLIC_SCRIPTS' ), '.' ) . '/';
 }
 
 /**
@@ -20,7 +20,7 @@ function get_local_script_dir() {
  * @return string
  */
 function get_mounted_script_dir() {
-	return '/tric-scripts/';
+	return '/slic-scripts/';
 }
 
 /**
@@ -34,7 +34,7 @@ function build_npm_script( $command ) {
 	$command_script = <<< SCRIPT
 	#!/bin/bash
 
-	. /tric-scripts/before-npm.sh
+	. /slic-scripts/before-npm.sh
 	$command
 	SCRIPT;
 

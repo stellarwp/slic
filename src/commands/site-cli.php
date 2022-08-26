@@ -1,6 +1,6 @@
 <?php
 
-namespace TEC\Tric;
+namespace StellarWP\Slic;
 
 if ( $is_help ) {
 	echo "Waits for WordPress to be correctly set up to run a wp-cli command in the stack.\n";
@@ -17,7 +17,7 @@ setup_id();
 $command = $args( '...' );
 
 if ( 'wp' === reset( $command ) ) {
-	// If there's an initial `wp` remove it; the user might have called the command with `tric site-cli wp ...`.
+	// If there's an initial `wp` remove it; the user might have called the command with `slic site-cli wp ...`.
 	array_shift( $command );
 }
 
@@ -47,7 +47,7 @@ if ( ! $open_bash_shell ) {
 		array_shift( $command );
 		// Set up for the quick installation.
 		array_push( $command, 'core', 'install', '--path=/var/www/html', '--url=http://wordpress.test',
-			'--title=Tric', '--admin_user=admin', '--admin_password=admin', '--admin_email=admin@wordpress.test',
+			'--title=Slic', '--admin_user=admin', '--admin_password=admin', '--admin_email=admin@wordpress.test',
 			'--skip-email' );
 	}
 
@@ -57,38 +57,38 @@ if ( ! $open_bash_shell ) {
 	/*
 	 * Due to how docker-compose works, the default `CMD` for the `wordpress:cli` image will be overridden as a
 	 * consequence of overriding the `entrypoint` configuration parameter of the service.
-	 * We cannot, thus, pass the user command directly, we use an env var, `TRIC_SITE_CLI_COMMAND`, to embed the
+	 * We cannot, thus, pass the user command directly, we use an env var, `SLIC_SITE_CLI_COMMAND`, to embed the
 	 * command we're running into the entrypoint call arguments.
 	 *
 	 * @link https://docs.docker.com/compose/compose-file/#entrypoint
 	 */
-	putenv( 'TRIC_SITE_CLI_COMMAND=' . implode( ' ', $command ) );
+	putenv( 'SLIC_SITE_CLI_COMMAND=' . implode( ' ', $command ) );
 
 	$run_configuration = [
 		'exec',
 		'--user',
-		sprintf( '"%s:%s"', getenv( 'TRIC_UID' ), getenv( 'TRIC_GID' ) ),
+		sprintf( '"%s:%s"', getenv( 'SLIC_UID' ), getenv( 'SLIC_GID' ) ),
 		'--workdir',
 		escapeshellarg( get_project_container_path() ),
-		'tric',
+		'slic',
 	];
 
 	$base_command = implode( ' ', $command );
 
 	$run_configuration[] = 'bash -c "' . $base_command . '"';
 
-	$status = tric_realtime()( $run_configuration );
+	$status = slic_realtime()( $run_configuration );
 } else {
 	// What user ID are we running this as?
-	$user = getenv( 'TRIC_UID' );
+	$user = getenv( 'SLIC_UID' );
 	// Do not run the wp-cli container as `root` to avoid a number of file mode issues, run as `www-data` instead.
 	$user   = empty( $user ) ? 'www-data' : $user;
 
 	$command = sprintf( 'docker exec -it --user "%d:%d" --workdir %s %s bash -c "wp shell"',
-		getenv( 'TRIC_UID' ),
-		getenv( 'TRIC_GID' ),
+		getenv( 'SLIC_UID' ),
+		getenv( 'SLIC_GID' ),
 		escapeshellarg( get_project_container_path() ),
-		get_service_id( 'tric' )
+		get_service_id( 'slic' )
 	);
 	$status = process_realtime( $command );
 }

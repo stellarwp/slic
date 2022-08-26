@@ -1,6 +1,0 @@
-user: tric
-group: tric
-paths:
-  - /home/tric
-  - /tmp
-  - /var/www/html

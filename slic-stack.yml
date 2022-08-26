@@ -3,7 +3,7 @@
 version: "3"
 
 networks:
-  tric:
+  slic:
 
 volumes:
   function-mocker-cache: # @todo move to file cache
@@ -13,9 +13,9 @@ services:
   db:
     image: mariadb:10.7.3
     networks:
-      - tric
+      - slic
     ports:
-      - "${TRIC_DB_LOCALHOST_PORT:-9006}:3306"
+      - "${SLIC_DB_LOCALHOST_PORT:-9006}:3306"
     environment:
       MYSQL_DATABASE: test
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
@@ -23,12 +23,12 @@ services:
   redis:
     image: redis
     networks:
-      tric:
+      slic:
     ports:
-      - "${TRIC_REDIS_LOCALHOST_PORT:-8379}:6379"
+      - "${SLIC_REDIS_LOCALHOST_PORT:-8379}:6379"
 
   wordpress:
-    image: the-events-calendar/tric_wordpress:${TRIC_VERSION}
+    image: the-events-calendar/slic_wordpress:${SLIC_VERSION}
     build:
       context: containers/wordpress
       # By default, build the version of Docker that does not include XDebug.
@@ -37,13 +37,13 @@ services:
         # Fix the version of the WordPress image to avoid issues w/ out-of-date database dumps.
         WORDPRESS_IMAGE_VERSION: wordpress:5.9.3-php7.4-apache
     networks:
-      - tric
+      - slic
     depends_on:
       - db
       - redis
     # Run the container as the host user and group.
     # Apache will run as the same user and permission issues with WordPress generated files should not arise.
-    user: "${TRIC_UID:-}:${TRIC_GID:-}"
+    user: "${SLIC_UID:-}:${SLIC_GID:-}"
     sysctls:
       # Allow any user to bind ports <= 1024.
       # This is required as we're running the container as the host user and that user might not be in the root
@@ -75,36 +75,36 @@ services:
       # Configure this to debug the tests with XDebug.
       # Map the `_wordpress` directory to `/var/www/html' directory in your IDE of choice.
       # Map the `_plugins` directory to `/plugins` directory in your IDE of choice.
-      PHP_IDE_CONFIG: "serverName=${XDK:-tric}"
+      PHP_IDE_CONFIG: "serverName=${XDK:-slic}"
       # The `remote_host` is set to `host.docker.internal` that will resolve to the host machine IP address, from
       # within the container, on macOS and Windows.
       # On Linux set the host machine IP address before calling the stack:
       # XDH=$(ip route | grep docker0 | awk '{print $9}') docker-compose ...
-      XDEBUG_CONFIG: "idekey=${XDK:-tric} remote_enable=${XDE:-1} remote_host=${XDH:-host.docker.internal} remote_port=${XDP:-9001} client_host=${XDH:-host.docker.internal} client_port=${XDP:-9001}"
+      XDEBUG_CONFIG: "idekey=${XDK:-slic} remote_enable=${XDE:-1} remote_host=${XDH:-host.docker.internal} remote_port=${XDP:-9001} client_host=${XDH:-host.docker.internal} client_port=${XDP:-9001}"
       # Whether to disable the XDebug extension in the Codeception container completely or not.
       XDEBUG_DISABLE: "${XDEBUG_DISABLE:-0}"
     volumes:
       # Paths are relative to the directory that contains this file, NOT the current working directory.
-      - ${TRIC_WP_DIR}:/var/www/html:cached
-      - ${TRIC_PLUGINS_DIR}:/var/www/html/wp-content/plugins:cached
-      - ${TRIC_THEMES_DIR}:/var/www/html/wp-content/themes:cached
+      - ${SLIC_WP_DIR}:/var/www/html:cached
+      - ${SLIC_PLUGINS_DIR}:/var/www/html/wp-content/plugins:cached
+      - ${SLIC_THEMES_DIR}:/var/www/html/wp-content/themes:cached
       - ${COMPOSER_CACHE_DIR}:${COMPOSER_CACHE_DIR}:cached
 
   chrome:
-    image: ${TRIC_CHROME_CONTAINER:-selenium/standalone-chrome:3.141.59-oxygen}
+    image: ${SLIC_CHROME_CONTAINER:-selenium/standalone-chrome:3.141.59-oxygen}
     networks:
-      - tric
+      - slic
     extra_hosts:
-      - "wordpress.test:172.${TRIC_TEST_SUBNET:-28}.1.1"
+      - "wordpress.test:172.${SLIC_TEST_SUBNET:-28}.1.1"
 
-  tric:
-    image: the-events-calendar/tric:${TRIC_VERSION}
+  slic:
+    image: the-events-calendar/slic:${SLIC_VERSION}
     build:
-      context: ./containers/tric
+      context: ./containers/slic
       dockerfile: Dockerfile
     networks:
-      - tric
-    user: "${TRIC_UID:-}:${TRIC_GID:-}"
+      - slic
+    user: "${SLIC_UID:-}:${SLIC_GID:-}"
     environment:
       COMPOSER_CACHE_DIR: ${COMPOSER_CACHE_DIR:-}
       # Set these values to allow the container to look wordpress up.
@@ -116,20 +116,20 @@ services:
       # Configure this to debug the tests with XDebug.
       # Map the `_wordpress` directory to `/var/www/html' directory in your IDE of choice.
       # Map the `_plugins` directory to `/plugins' directory in your IDE of choice.
-      PHP_IDE_CONFIG: "serverName=${XDK:-tric}"
+      PHP_IDE_CONFIG: "serverName=${XDK:-slic}"
       # The `remote_host` is set to `host.docker.internal` that will resolve to the host machine IP address, from
       # within the container, on macOS and Windows.
       # On Linux set the host machine IP address before calling the stack:
       # XDH=$(ip route | grep docker0 | awk '{print $9}') docker-compose ...
-      XDEBUG_CONFIG: "idekey=${XDK:-tric} remote_enable=${XDE:-1} remote_host=${XDH:-host.docker.internal} remote_port=${XDP:-9001} client_host=${XDH:-host.docker.internal} client_port=${XDP:-9001}"
+      XDEBUG_CONFIG: "idekey=${XDK:-slic} remote_enable=${XDE:-1} remote_host=${XDH:-host.docker.internal} remote_port=${XDP:-9001} client_host=${XDH:-host.docker.internal} client_port=${XDP:-9001}"
       # Move to the target directory before running the command from the plugins directory.
-      CODECEPTION_PROJECT_DIR: /var/www/html/wp-content/plugins/${TRIC_CURRENT_PROJECT:-test}/${TRIC_CURRENT_PROJECT_SUBDIR:-}
-      # When running the container in shell mode (using the tric `shell` command), then use this CC configuration.
-      CODECEPTION_SHELL_CONFIG: "-c codeception.tric.yml"
+      CODECEPTION_PROJECT_DIR: /var/www/html/wp-content/plugins/${SLIC_CURRENT_PROJECT:-test}/${SLIC_CURRENT_PROJECT_SUBDIR:-}
+      # When running the container in shell mode (using the slic `shell` command), then use this CC configuration.
+      CODECEPTION_SHELL_CONFIG: "-c codeception.slic.yml"
       # Whether to disable the XDebug extension in the Codeception container completely or not.
       XDEBUG_DISABLE: "${XDEBUG_DISABLE:-0}"
-      # Declare that we are in a tric context so plugins can set custom test configs.
-      TRIBE_TRIC: 1
+      # Declare that we are in a slic context so plugins can set custom test configs.
+      TRIBE_SLIC: 1
       # If we're in CI context, then pass it through.
       CI: "${CI:-}"
       # Let's set the lines and columns number explicitly to have the shell mirror the current one.
@@ -140,10 +140,10 @@ services:
     volumes:
       # Paths are relative to the directory that contains this file, NOT the current working directory.
       # Share the WordPress core installation files in the `_wordpress` directory.
-      - ${TRIC_WP_DIR}:/var/www/html:cached
+      - ${SLIC_WP_DIR}:/var/www/html:cached
       # Share the plugins in the `/var/www/hmtl/wp-content/plugins` directory.
-      - ${TRIC_PLUGINS_DIR}:/var/www/html/wp-content/plugins:cached
-      - ${TRIC_THEMES_DIR}:/var/www/html/wp-content/themes:cached
+      - ${SLIC_PLUGINS_DIR}:/var/www/html/wp-content/plugins:cached
+      - ${SLIC_THEMES_DIR}:/var/www/html/wp-content/themes:cached
       # In some plugins we use function-mocker and set it up to cache in `/tmp/function-mocker`.
       # To avoid a long re-caching on each run, let's cache in a docker volume, caching on the host
       # filesystem would be a worse cure than the disease.
@@ -151,12 +151,12 @@ services:
       - function-mocker-cache:/cache
       - ${COMPOSER_CACHE_DIR}:${COMPOSER_CACHE_DIR}
       # Scripts volume
-      - ${TRIC_SCRIPTS}:/tric-scripts:cached
+      - ${SLIC_SCRIPTS}:/slic-scripts:cached
 
 #  adminer:
 #    image: adminer
 #    networks:
-#      - tric
+#      - slic
 #    environment:
 #      ADMINER_DEFAULT_SERVER: db
 #    ports:
@@ -166,7 +166,7 @@ services:
 #  redis-cli:
 #    image: redis
 #    networks:
-#      tric:
+#      slic:
 #    depends_on:
 #      - redis
 #    entrypoint: ["redis-cli","-h redis","-p 6379"]
@@ -175,7 +175,7 @@ services:
 #  mailcatcher:
 #    image: dockage/mailcatcher
 #    networks:
-#      tric:
+#      slic:
 #    ports:
 #      # Expose MailCatcher ports on localhost.
 #      - "1025:1025"

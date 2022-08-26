@@ -1,5 +1,5 @@
 <?php
-namespace TEC\Tric;
+namespace StellarWP\Slic;
 
 if ( $is_help ) {
     echo "Returns the IP Address of the host machine from the container perspective.\n";
@@ -10,12 +10,12 @@ if ( $is_help ) {
 
 // Buffer the output to avoid printing empty blank lines that might mangle the output in quite mode.
 ob_start();
-//tric_passive()( [ 'run', '--rm', 'host-ip' ] );
-$command = sprintf( 'docker exec --user "%d:%d" --workdir %s %s bash -c ". /tric-scripts/host-ip.sh"',
-	getenv( 'TRIC_UID' ),
-	getenv( 'TRIC_GID' ),
+//slic_passive()( [ 'run', '--rm', 'host-ip' ] );
+$command = sprintf( 'docker exec --user "%d:%d" --workdir %s %s bash -c ". /slic-scripts/host-ip.sh"',
+	getenv( 'SLIC_UID' ),
+	getenv( 'SLIC_GID' ),
 	escapeshellarg( get_project_container_path() ),
-	get_service_id( 'tric' )
+	get_service_id( 'slic' )
 );
 process_realtime( $command );
 echo trim( ob_get_clean() );

@@ -1,6 +1,6 @@
 <?php
 
-namespace TEC\Tric;
+namespace StellarWP\Slic;
 
 if ( $is_help ) {
 	echo "Updates the tool and the images used in its services.\n";

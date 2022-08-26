@@ -6,10 +6,10 @@
  *
  * @var bool    $is_help  Whether we're handling an `help` request on this command or not.
  * @var Closure $args     The argument map closure, as produced by the `args` function.
- * @var string  $cli_name The current name of the `tric` CLI application.
+ * @var string  $cli_name The current name of the `slic` CLI application.
  */
 
-namespace TEC\Tric;
+namespace StellarWP\Slic;
 
 if ( $is_help ) {
 	echo "Activates or deactivates the airplane-mode plugin.\n";
@@ -26,11 +26,11 @@ $toggle = args( [ 'toggle' ], $args( '...' ), 0 )( 'toggle', 'on' );
 $activate = $toggle === 'on';
 
 setup_id();
-ensure_service_running( 'tric' );
+ensure_service_running( 'slic' );
 ensure_wordpress_ready();
 
 $ensure_airplane_mode_plugin = static function () {
-	$plugin_dir = tric_plugins_dir( 'airplane-mode' );
+	$plugin_dir = slic_plugins_dir( 'airplane-mode' );
 	if ( ! is_dir( $plugin_dir ) ) {
 		$cloned = process_realtime( 'git clone https://github.com/norcross/airplane-mode ' . $plugin_dir );
 		if ( $cloned !== 0 ) {
@@ -41,16 +41,16 @@ $ensure_airplane_mode_plugin = static function () {
 };
 
 check_status_or(
-	tric_process()( cli_command( [ 'plugin', 'is-installed', 'airplane-mode' ] ) ),
+	slic_process()( cli_command( [ 'plugin', 'is-installed', 'airplane-mode' ] ) ),
 	$ensure_airplane_mode_plugin
 );
 
 if ( $activate ) {
 	echo "Activating the airplane-mode plugin...\n";
-	check_status_or_exit( tric_process()( cli_command( [ 'plugin', 'activate', 'airplane-mode' ] ) ) );
+	check_status_or_exit( slic_process()( cli_command( [ 'plugin', 'activate', 'airplane-mode' ] ) ) );
 	echo light_cyan( 'Airplane mode plugin activated: all external data calls are now disabled.' );
 } else {
 	echo "Deactivating the airplane-mode plugin...\n";
-	check_status_or_exit( tric_process()( cli_command( [ 'plugin', 'deactivate', 'airplane-mode' ] ) ) );
+	check_status_or_exit( slic_process()( cli_command( [ 'plugin', 'deactivate', 'airplane-mode' ] ) ) );
 	echo light_cyan( 'Airplane mode plugin deactivated: external data calls are now enabled.' );
 }

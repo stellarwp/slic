@@ -1,7 +1,7 @@
 #! /usr/bin/env bash
 
-export PS1="[\\u@tric] \\w\\n > "
+export PS1="[\\u@slic] \\w\\n > "
 
 [[ -s $NVM_DIR/nvm.sh ]] && . $NVM_DIR/nvm.sh
 
-source /home/tric/bashrc_scripts.sh
+source /home/slic/bashrc_scripts.sh

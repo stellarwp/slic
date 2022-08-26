@@ -3,10 +3,10 @@
  * Lists the containers part of the stack.
  *
  * @var bool     $is_help  Whether we're handling an `help` request on this command or not.
- * @var string   $cli_name The current name of the main CLI command, e.g. `tric`.
+ * @var string   $cli_name The current name of the main CLI command, e.g. `slic`.
  */
 
-namespace TEC\Tric;
+namespace StellarWP\Slic;
 
 if ($is_help) {
     echo "Lists the containers part of the stack.\n";
@@ -17,4 +17,4 @@ if ($is_help) {
     return;
 }
 
-tric_realtime()(['ps']);
+slic_realtime()(['ps']);

@@ -1,4 +1,4 @@
-# `tric` Setup
+# `slic` Setup
 
 ## Prerequisites
 
@@ -6,23 +6,23 @@
 
 ## Setup
 
-1. Clone this repository to your machine. Should be a common location, not within a single WP site's directory (e.g. `~/git/tric`)
-1. Ensure the `tric` command is runnable by adding it to your path or symlinking `tric` into a directory that is in your path.
+1. Clone this repository to your machine. Should be a common location, not within a single WP site's directory (e.g. `~/git/slic`)
+1. Ensure the `slic` command is runnable by adding it to your path or symlinking `slic` into a directory that is in your path.
 
 ### Add to your path
 
 Edit your `.bashrc` or `.zshrc` or equivalent file in your home directory and add:
 
 ```bash
-export PATH=$PATH:/PATH/TO/tric
+export PATH=$PATH:/PATH/TO/slic
 
-# An example entry in .zshrc is where this repo is cloned to ~/git/tric:
-# export PATH=$PATH:$HOME/git/tric
+# An example entry in .zshrc is where this repo is cloned to ~/git/slic:
+# export PATH=$PATH:$HOME/git/slic
 ```
 
-### Symlink `tric`
+### Symlink `slic`
 
 ```bash
 cd /usr/local/bin
-ln -s /PATH/TO/tric
+ln -s /PATH/TO/slic
 ```

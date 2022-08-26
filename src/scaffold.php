@@ -3,16 +3,16 @@
  * Functions to scaffold plugins for use.
  */
 
-namespace TEC\Tric;
+namespace StellarWP\Slic;
 
 /**
- * Creates an `.env.testing.tric` file, if one exists it will be overwritten.
+ * Creates an `.env.testing.slic` file, if one exists it will be overwritten.
  *
  * @param string $plugin_path The plugin path.
  *
- * @return bool Whether or not the .env.testing.tric was created.
+ * @return bool Whether or not the .env.testing.slic was created.
  */
-function write_tric_env_file( $plugin_path ) {
+function write_slic_env_file( $plugin_path ) {
 	$mysql_root_password = getenv( 'MYSQL_ROOT_PASSWORD' );
 
 	$plugin_env          = null;
@@ -127,11 +127,11 @@ function write_tric_env_file( $plugin_path ) {
 	if ( false === strpos( $plugin_env, 'USING_CONTAINERS=' ) ) {
 		$plugin_env .= "\n# We're using Docker to run the tests.\nUSING_CONTAINERS=1\n";
 	} else {
-		// In `tric`, we're most definitely using containers.
+		// In `slic`, we're most definitely using containers.
 		$plugin_env = str_replace( 'USING_CONTAINERS=0', 'USING_CONTAINERS=1', $plugin_env );
 	}
 
-	$file = $plugin_path . '/.env.testing.tric';
+	$file = $plugin_path . '/.env.testing.slic';
 	$put =  file_put_contents( $file, $plugin_env );
 
 	if ( false === $put ) {
@@ -141,7 +141,7 @@ function write_tric_env_file( $plugin_path ) {
 }
 
 /**
- * Returns the lines that should be written to a `tests-config.php` file for tric to work correclty.
+ * Returns the lines that should be written to a `tests-config.php` file for slic to work correclty.
  *
  * @param array<string,string> $overrides A map of lines to write, where the key is the type of entry and the value are
  *                                        the lines to write for that entry.
@@ -149,14 +149,14 @@ function write_tric_env_file( $plugin_path ) {
  *
  * @return array<string,string> A map of the lines to write.
  */
-function get_tric_test_config_lines( array $overrides = [] ) {
+function get_slic_test_config_lines( array $overrides = [] ) {
 	$defaults = [];
 
 	return array_merge( $defaults, $overrides );
 }
 
 /**
- * Creates a `test_config.tric.php` file, if one exists it will be overwritten.
+ * Creates a `test_config.slic.php` file, if one exists it will be overwritten.
  *
  * The function will not write anything if there are no test config lines to write.
  *
@@ -167,13 +167,13 @@ function get_tric_test_config_lines( array $overrides = [] ) {
  *
  * @return bool Whether or not the test-config.php was created.
  */
-function write_tric_test_config( $plugin_path, array $config_lines = [] ) {
-	$file = $plugin_path . '/test-config.tric.php';
+function write_slic_test_config( $plugin_path, array $config_lines = [] ) {
+	$file = $plugin_path . '/test-config.slic.php';
 
-	$test_config_lines = get_tric_test_config_lines( $config_lines );
+	$test_config_lines = get_slic_test_config_lines( $config_lines );
 
 	if ( empty( $test_config_lines ) ) {
-		// There's no need for a tric test config file, let's skip this.
+		// There's no need for a slic test config file, let's skip this.
 		return false;
 	}
 
@@ -188,11 +188,11 @@ function write_tric_test_config( $plugin_path, array $config_lines = [] ) {
 }
 
 /**
- * Creates a `codeception.tric.yml` file if needed.
+ * Creates a `codeception.slic.yml` file if needed.
  *
- * The file is the one tric will load, using the `-c` or `--configuration` option, on top of the usual Codeception
+ * The file is the one slic will load, using the `-c` or `--configuration` option, on top of the usual Codeception
  * configuration files.
- * This function will override the existing file by design: users should be able to change some values, or update tric,
+ * This function will override the existing file by design: users should be able to change some values, or update slic,
  * and have that reflected in a new configuration file.
  *
  * @param string $plugin_path The plugin path.
@@ -201,15 +201,15 @@ function write_tric_test_config( $plugin_path, array $config_lines = [] ) {
  *
  */
 function write_codeception_config( $plugin_path ) {
-	$file = $plugin_path . '/codeception.tric.yml';
+	$file = $plugin_path . '/codeception.slic.yml';
 
 	$codeception = <<< CONFIG
 params:
   # read dynamic configuration parameters from the .env file
-  - .env.testing.tric
+  - .env.testing.slic
 CONFIG;
 
-	$test_config_lines = get_tric_test_config_lines();
+	$test_config_lines = get_slic_test_config_lines();
 
 	if ( ! empty( $test_config_lines ) ) {
 		// Add a section for a custom test configuration file only if required.
@@ -217,7 +217,7 @@ CONFIG;
 modules:
   config:
     WPLoader:
-      configFile: test-config.tric.php
+      configFile: test-config.slic.php
 WPLOADER_TEST_CONFIG;
 
 		$codeception .= $wploader_test_config;

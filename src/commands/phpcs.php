@@ -4,10 +4,10 @@
  *
  * @var bool     $is_help  Whether we're handling an `help` request on this command or not.
  * @var \Closure $args     The argument map closure, as produced by the `args` function.
- * @var string   $cli_name The current name of the main CLI command, e.g. `tric`.
+ * @var string   $cli_name The current name of the main CLI command, e.g. `slic`.
  */
 
-namespace TEC\Tric;
+namespace StellarWP\Slic;
 
 if ( $is_help ) {
 	echo "Runs PHP_CodeSniffer against the current use target.\n";
@@ -17,22 +17,22 @@ if ( $is_help ) {
 	return;
 }
 
-$using = tric_target_or_fail();
+$using = slic_target_or_fail();
 echo light_cyan( "Using {$using}\n" );
 
-ensure_service_running( 'tric' );
+ensure_service_running( 'slic' );
 
 setup_id();
 $phpcs_args = $args( '...' );
-$status = tric_realtime()(
+$status = slic_realtime()(
 	array_merge(
 		[
 			'exec',
 			'--user',
-			sprintf( '"%s:%s"', getenv( 'TRIC_UID' ), getenv( 'TRIC_GID' ) ),
+			sprintf( '"%s:%s"', getenv( 'SLIC_UID' ), getenv( 'SLIC_GID' ) ),
 			'--workdir',
 			escapeshellarg( get_project_container_path() ),
-			'tric',
+			'slic',
 			'vendor/bin/phpcs',
 		],
 		$phpcs_args
