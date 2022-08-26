@@ -114,6 +114,7 @@ function ensure_service_ready( $service ) {
 					[ 'wordpress' => 'wordpress.test' ]
 				);
 			};
+			service_up_notify( $service );
 		default:
 			return $noop;
 	}
@@ -350,6 +351,7 @@ function propagate_ip_address_of_to( array $of_services, array $to_services, arr
  */
 function ensure_service_running( $service, array $dependencies = null ) {
 	if ( empty( $dependencies ) && service_running( $service ) ) {
+		service_up_notify( $service );
 		return 0;
 	}
 
@@ -358,6 +360,7 @@ function ensure_service_running( $service, array $dependencies = null ) {
 		: ensure_services_running( $dependencies );
 
 	if ( service_running( $service ) ) {
+		service_up_notify( $service );
 		return 0;
 	}
 
@@ -367,9 +370,26 @@ function ensure_service_running( $service, array $dependencies = null ) {
 	service_running( $service, true );
 
 	if ( $up_status !== 0 ) {
+		service_up_notify( $service );
 		return $up_status;
 	}
 
 	$dependencies_on_up( $service );
 	$own_on_up( $service );
+
+	service_up_notify( $service );
+}
+
+/**
+ * Notifies about the up status of a service.
+ *
+ * @param string $service
+ */
+function service_up_notify( $service ) {
+	switch ( $service ) {
+		case 'wordpress':
+			echo colorize( "\nYour WordPress site is reachable at: <yellow>http://localhost:" . getenv( 'WORDPRESS_HTTP_PORT' ) . "</yellow>\n" );
+		default:
+			return;
+	}
 }
