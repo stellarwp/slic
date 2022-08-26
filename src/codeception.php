@@ -32,6 +32,7 @@ function codeception_dependencies( array $codeception_args = [] ) {
 		'run',
 	], $codeception_args ) ) ) {
 		$dependencies[] = 'wordpress';
+		$dependencies[] = 'db';
 	}
 
 	return array_values( array_unique( array_filter( $dependencies ) ) );

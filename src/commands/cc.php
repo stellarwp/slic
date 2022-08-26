@@ -26,6 +26,11 @@ setup_id();
 $codeception_args = $args( '...' );
 ensure_service_running( 'tric', codeception_dependencies( $codeception_args ) );
 
+$codeception_config = '';
+if ( file_exists( get_project_local_path() . '/codeception.tric.yml' ) ) {
+	$codeception_config = '-c codeception.tric.yml';
+}
+
 $status = tric_realtime()( array_merge( [
 		'exec',
 		'--user',
@@ -33,7 +38,7 @@ $status = tric_realtime()( array_merge( [
 		'--workdir',
 		escapeshellarg( get_project_container_path() ),
 		'tric',
-		'vendor/bin/codecept'
+		'vendor/bin/codecept ' . $codeception_config,
 	], $codeception_args )
 );
 
