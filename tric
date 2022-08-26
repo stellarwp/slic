@@ -104,7 +104,6 @@ Available commands:
 <light_cyan>down</light_cyan>           Tears down the stack, stopping containers and removing volumes.
 <light_cyan>up</light_cyan>             Starts a container part of the stack.
 <light_cyan>restart</light_cyan>        Restarts a container part of the stack.
-<light_cyan>serve</light_cyan>          Starts the stack and serves it on localhost.
 
 HELP;
 
