@@ -153,38 +153,6 @@ services:
       # Scripts volume
       - ${TRIC_SCRIPTS}:/tric-scripts:cached
 
-#  npm:
-#    build:
-#      context: containers/npm
-#      args:
-#        NODE_VERSION: 10.16
-#    image: tric_npm
-#    user: "${TRIC_UID:-}:${TRIC_GID:-}"
-#    environment:
-#      FIXUID: ${FIXUID:-1}
-#      TRIC_CURRENT_PROJECT_SUBDIR: ${TRIC_CURRENT_PROJECT_SUBDIR:-}
-#    volumes:
-#      # Set the current plugin as project.
-#      - ${TRIC_PLUGINS_DIR}/${TRIC_CURRENT_PROJECT:-test}:/project:cached
-#      # Share SSH keys with the container to pull from private repositories.
-#      - ${DOCKER_RUN_SSH_AUTH_SOCK}:/ssh-agent:ro
-#
-#  npm_lts:
-#    build:
-#      context: containers/npm
-#      args:
-#        NODE_VERSION: lts
-#    image: tric_npm_lts
-#    user: "${TRIC_UID:-}:${TRIC_GID:-}"
-#    environment:
-#      FIXUID: ${FIXUID:-1}
-#      TRIC_CURRENT_PROJECT_SUBDIR: ${TRIC_CURRENT_PROJECT_SUBDIR:-}
-#    volumes:
-#      # Set the current plugin as project.
-#      - ${TRIC_PLUGINS_DIR}/${TRIC_CURRENT_PROJECT:-test}:/project:cached
-#      # Share SSH keys with the container to pull from private repositories.
-#      - ${DOCKER_RUN_SSH_AUTH_SOCK}:/ssh-agent:ro
-#
 #  adminer:
 #    image: adminer
 #    networks:
