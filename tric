@@ -17,13 +17,7 @@ require_once __DIR__ . '/src/project.php';
 require_once __DIR__ . '/src/env.php';
 require_once __DIR__ . '/src/codeception.php';
 
-use function StellarWP\Slic\args;
 use function StellarWP\Slic\colorize;
-use function StellarWP\Slic\light_cyan;
-use function StellarWP\Slic\maybe_prompt_for_repo_update;
-use function StellarWP\Slic\maybe_prompt_for_stack_update;
-use function StellarWP\Slic\root;
-use function StellarWP\Slic\setup_slic_env;
 
 $alert_message_template = <<< MESSAGE
 ************************************************
