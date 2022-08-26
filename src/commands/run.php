@@ -31,6 +31,8 @@ if ( $is_help ) {
 $using = tric_target_or_fail();
 echo light_cyan( "Using {$using}\n" );
 
+ensure_service_running( 'tric' );
+
 setup_id();
 
 maybe_generate_htaccess();
