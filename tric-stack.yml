@@ -150,6 +150,8 @@ services:
       # The volume is bound to the `a+rwx` directory the `codeception` image provides to avoid file mode issues.
       - function-mocker-cache:/cache
       - ${COMPOSER_CACHE_DIR}:${COMPOSER_CACHE_DIR}
+      # Scripts volume
+      - ${TRIC_SCRIPTS}:/tric-scripts:cached
 
 #  npm:
 #    build:

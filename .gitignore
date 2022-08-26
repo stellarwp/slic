@@ -7,6 +7,9 @@ vendor
 *.log
 local-config.php
 
+# Any dot prefixed scripts are dynamically generated and should be ignored.
+containers/scripts/.*
+
 wp-content/uploads
 wp-content/plugins
 wp-content/themes
