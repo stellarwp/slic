@@ -12,21 +12,19 @@ if ( $is_help ) {
 }
 
 $service_args = args( [ 'service', '...' ], $args( '...' ), 0 );
-$service      = $service_args( 'service', 'codeception' );
 
 $using = tric_target_or_fail();
 echo light_cyan( "Using {$using}\n" );
 
+ensure_service_running( 'db' );
+ensure_service_running( 'tric' );
+
 setup_id();
 
-if ( 'codeception' === $service ) {
-	// If the shell is for the `codeception` container, then use its built-in shell support.
-	$shell_args = array_merge( [ 'run', '--rm', $service, 'shell' ], $service_args( '...' ) );
-} else {
-	$shell_args = array_merge( [ 'run', '--rm', '--entrypoint', 'shell', $service ], $service_args( '...' ) );
-}
-
-// Run the command in the container, exit the same status as the process.
-$status = tric_realtime()( $shell_args );
-
-exit( $status );
+$command = sprintf( 'docker exec -it --user "%d:%d" --workdir %s %s bash',
+	getenv( 'TRIC_UID' ),
+	getenv( 'TRIC_GID' ),
+	escapeshellarg( get_project_container_path() ),
+	get_service_id( $service )
+);
+process_realtime( $command );
