@@ -385,7 +385,7 @@ function ensure_service_running( $service, array $dependencies = null ) {
  *
  * @param string $service
  */
-function service_up_notify( $service ) {
+function service_up_notify( string $service ) : void {
 	switch ( $service ) {
 		case 'wordpress':
 			echo colorize( "\nYour WordPress site is reachable at: <yellow>http://localhost:" . getenv( 'WORDPRESS_HTTP_PORT' ) . "</yellow>\n" );

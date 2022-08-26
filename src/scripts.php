@@ -10,7 +10,7 @@ namespace TEC\Tric;
  *
  * @return string
  */
-function get_local_script_dir() {
+function get_local_script_dir() : string {
 	return TRIC_ROOT_DIR . '/' . trim( getenv( 'TRIC_SCRIPTS' ), '.' ) . '/';
 }
 
@@ -19,7 +19,7 @@ function get_local_script_dir() {
  *
  * @return string
  */
-function get_mounted_script_dir() {
+function get_mounted_script_dir() : string {
 	return '/tric-scripts/';
 }
 
@@ -30,7 +30,7 @@ function get_mounted_script_dir() {
  *
  * @return string
  */
-function build_npm_script( $command ) {
+function build_npm_script( string $command ) : string {
 	$command_script = <<< SCRIPT
 	#!/bin/bash
 
@@ -53,6 +53,6 @@ function build_npm_script( $command ) {
  *
  * @return string
  */
-function get_script_command( $script ) {
+function get_script_command( string $script ) : string {
 	return 'bash -c ". ' . $script . '"';
 }
