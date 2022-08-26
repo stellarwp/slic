@@ -293,7 +293,6 @@ function tric_switch_target( $target ) {
 function php_services() {
 	return [
 		'wordpress'   => 'WordPress',
-		'codeception' => 'Codeception',
 	];
 }
 
@@ -855,7 +854,7 @@ function tric_handle_xdebug( callable $args ) {
 		$var = $args( 'value' );
 		echo colorize( "Setting <light_cyan>{$map[$toggle]}={$var}</light_cyan>" ) . PHP_EOL . PHP_EOL;
 		write_env_file( $run_settings_file, [ $map[ $toggle ] => $var ], true );
-		echo PHP_EOL . PHP_EOL . colorize( "Tear down the stack with <light_cyan>down</light_cyan> and restar it to apply the new settings!\n" );
+		echo PHP_EOL . PHP_EOL . colorize( "Tear down the stack with <light_cyan>down</light_cyan> and restart it to apply the new settings!\n" );
 
 		return;
 	}
@@ -1006,23 +1005,40 @@ function build_command_pool( $base_command, array $command, array $sub_directori
 	// Build the command process.
 	$command_process = static function ( $target, $subnet = '' ) use ( $using, $using_alias, $base_command, $command, $sub_directories ) {
 		$target_name = $using_alias ?: $target;
-		$prefix      = "{$base_command}:" . light_cyan( $target_name );
+
+		// If the command is wrapped in a bash -c "", then let's not spit out the bash -c "" part.
+		if ( preg_match( '/bash -c "(.*)"/', $base_command, $results ) ) {
+			$friendly_base_command = $results[1];
+		} else {
+			$friendly_base_command = $base_command;
+		}
+
+		// If the command is executing a dynamic script in the scripts directory, grab the command name.
+		if ( preg_match( '!\. /tric-scripts/(\..*.sh)!', $friendly_base_command, $results ) ) {
+			$file = escapeshellarg( TRIC_ROOT_DIR . '/' . trim( getenv( 'TRIC_SCRIPTS' ), '.' ) . '/' . $results[1] );
+			$friendly_base_command = `tail -n 1 $file`;
+		}
+
+		$prefix      = "{$friendly_base_command}:" . light_cyan( $target_name );
 
 		// Execute command as the parent.
 		if ( 'target' !== $target ) {
 			tric_switch_target( "{$using}/{$target}" );
 			$sub_target_name = $using_alias ? "{$using_alias}/{$target}" : $target;
-			$prefix          = "{$base_command}:" . yellow( $sub_target_name );
+			$prefix          = "{$friendly_base_command}:" . yellow( $sub_target_name );
 		}
 
 		putenv( "TRIC_TEST_SUBNET={$subnet}" );
 
 		$network_name = "tric{$subnet}";
 		$status       = tric_passive()( array_merge( [
-			'-p',
+			'exec',
+			'-T',
+			'--user',
+			sprintf( '"%s:%s"', getenv( 'TRIC_UID' ), getenv( 'TRIC_GID' ) ),
+			'--workdir',
+			escapeshellarg( get_project_container_path() ),
 			$network_name,
-			'run',
-			'--rm',
 			$base_command
 		], $command ), $prefix );
 

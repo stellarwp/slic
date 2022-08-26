@@ -31,6 +31,8 @@ if ( $is_help ) {
 $using = tric_target_or_fail();
 echo light_cyan( "Using {$using}\n" );
 
+ensure_service_running( 'tric' );
+
 setup_id();
 
 maybe_generate_htaccess();
@@ -86,10 +88,18 @@ switch ( $available_configs_mask ) {
 		break;
 }
 // Add tric configuration file, if existing.
-$run_configuration = array_merge( [ 'run', '--rm', 'codeception', 'run' ], $config_files );
+$run_configuration = [
+	'exec',
+	'--user',
+	sprintf( '"%s:%s"', getenv( 'TRIC_UID' ), getenv( 'TRIC_GID' ) ),
+	'--workdir',
+	escapeshellarg( get_project_container_path() ),
+	'tric',
+];
 
-$run_args    = $args( '...' );
-$run_suites = [];
+$base_command = array_merge( [ 'vendor/bin/codecept', ], $config_files, [ 'run' ] );
+$run_args     = $args( '...' );
+$run_suites   = [];
 
 if ( empty( $run_args ) ) {
 	$run_suites = collect_target_suites();
@@ -98,11 +108,15 @@ if ( empty( $run_args ) ) {
 // Finally run the command.
 if ( empty( $run_suites ) ) {
 	// Run the command as per user input.
-	$status = tric_realtime()( array_merge( $run_configuration, $run_args ) );
+	$command = array_merge( $base_command, $run_args );
+	$run_configuration[] = 'bash -c "' . implode( ' ', $command ) . '"';
+	$status = tric_realtime()( $run_configuration );
 } else {
 	// Run all the suites sequentially, stop at first error.
 	foreach ( $run_suites as $suite ) {
-		$status = tric_realtime()( array_merge( $run_configuration, [ $suite ] ) );
+		$command = array_merge( $base_command, $suite );
+		$run_configuration[] = 'bash -c "' . implode( ' ', $command ) . '"';
+		$status = tric_realtime()( $run_configuration );
 		if ( $status !== 0 ) {
 			exit( $status );
 		}

@@ -25,6 +25,7 @@ $cache_args = args( [ 'toggle' ], $args( '...' ), 0 );
 $toggle = $cache_args( 'toggle', 'status' );
 
 setup_id();
+ensure_service_running( 'redis' );
 ensure_service_running( 'tric' );
 ensure_wordpress_ready();
 

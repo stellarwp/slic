@@ -18,6 +18,8 @@ if ( $is_help ) {
 	return;
 }
 
+ensure_service_running( 'db' );
+
 setup_id();
 
 // Run the command in the container, exit the same status as the process.

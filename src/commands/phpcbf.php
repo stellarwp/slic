@@ -20,9 +20,24 @@ if ( $is_help ) {
 $using = tric_target_or_fail();
 echo light_cyan( "Using {$using}\n" );
 
+ensure_service_running( 'tric' );
+
 setup_id();
 $phpcbf_args = $args( '...' );
-$status      = tric_realtime()( array_merge( [ 'run', '--rm', 'php', 'vendor/bin/phpcbf' ], $phpcbf_args ) );
+$status = tric_realtime()(
+	array_merge(
+		[
+			'exec',
+			'--user',
+			sprintf( '"%s:%s"', getenv( 'TRIC_UID' ), getenv( 'TRIC_GID' ) ),
+			'--workdir',
+			escapeshellarg( get_project_container_path() ),
+			'tric',
+			'vendor/bin/phpcbf',
+		],
+		$phpcbf_args
+	)
+);
 
 // If there is a status other than 0, we have an error. Bail.
 if ( $status ) {

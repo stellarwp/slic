@@ -16,7 +16,7 @@ RUN chmod a+x /usr/local/bin/install-php-extensions && \
 
 # Install some more packages required by wp-cli and Composer.
 RUN apt-get update && apt-get install -y \
-    default-mysql-client curl git zip unzip \
+    default-mysql-client curl git zip unzip iproute2 \
     && apt-get clean && rm -rf /var/lib/apt/lists/* \
 
 # Use our own ini configuration file to set up some PHP default.
@@ -41,9 +41,21 @@ COPY --from=composer1 /usr/bin/composer /usr/local/bin/composer1
 COPY --from=composer2 /usr/bin/composer /usr/local/bin/composer
 RUN chmod a+x /usr/local/bin/composer1 && chmod a+x /usr/local/bin/composer
 
+# Install nvm.
+ENV NODE_VERSION=16.6.1
+ENV NVM_DIR=/usr/local/bin/.nvm
+RUN mkdir /usr/local/bin/.nvm
+RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
+RUN bash -c '. $NVM_DIR/nvm.sh && nvm install $NODE_VERSION'
+RUN bash -c '. $NVM_DIR/nvm.sh && nvm alias default $NODE_VERSION'
+RUN bash -c '. $NVM_DIR/nvm.sh && nvm use default'
+
+ENV PATH $NVM_DIR/versions/node/v$NODE_VERSION/bin:$NVM_DIR:$PATH
+RUN chmod a+x $NVM_DIR/nvm.sh
+
 # Create a `tric` user and group fixuid will use.
 RUN [ $(getent group 1000) ] || addgroup --gid 1000 tric && \
-    [ $(id -u 1000) ] || adduser --uid 1000 --gid 1000 --home /home/tric --shell /bin/sh --disabled-password --gecos "" tric && \
+    [ $(id -u 1000) ] || adduser --uid 1000 --gid 1000 --home /home/tric --shell /bin/bash --disabled-password --gecos "" tric && \
     mkdir -p /home/tric && \
     curl -SsL https://github.com/boxboat/fixuid/releases/download/v0.5.1/fixuid-0.5.1-linux-amd64.tar.gz | tar -C /usr/local/bin -xzf - && \
     chown root:root /usr/local/bin/fixuid && \
@@ -53,6 +65,8 @@ COPY fixuid.yml /etc/fixuid/config.yml
 COPY .bashrc /home/tric/.bashrc
 COPY .bashrc /root/.bashrc
 COPY bashrc_scripts.sh /home/tric/bashrc_scripts.sh
+
+RUN chown -R tric:tric $NVM_DIR
 
 COPY tric-entrypoint.sh /usr/local/bin/tric-entrypoint.sh
 RUN chmod a+x /usr/local/bin/tric-entrypoint.sh

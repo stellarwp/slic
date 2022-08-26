@@ -22,3 +22,10 @@ function xoff(){
 }
 
 xoff
+
+echo ""
+echo "  c = codecept"
+echo "  cr = codecept run"
+echo "  xon = turn xdebug on"
+echo "  xoff = turn xdebug off"
+echo ""

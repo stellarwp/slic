@@ -7,6 +7,7 @@ require_once __DIR__ . '/src/tric.php';
 require_once __DIR__ . '/src/docker.php';
 require_once __DIR__ . '/src/plugins.php';
 require_once __DIR__ . '/src/themes.php';
+require_once __DIR__ . '/src/scripts.php';
 require_once __DIR__ . '/src/shell.php';
 require_once __DIR__ . '/src/wordpress.php';
 require_once __DIR__ . '/src/services.php';
@@ -67,8 +68,7 @@ Available commands:
 <light_cyan>init</light_cyan>           Initializes a plugin for use in tric.
 <light_cyan>composer</light_cyan>       Runs a Composer command in the stack.
 <light_cyan>composer-cache</light_cyan> Sets or shows the composer cache directory.
-<light_cyan>npm</light_cyan>            Runs an npm command in the stack using the node 8.9 container.
-<light_cyan>npm_lts</light_cyan>        Runs an npm command in the stack using the node LTS container. 
+<light_cyan>npm</light_cyan>            Runs an npm command in the stack using the version of node specified by .nvmrc.
 <light_cyan>target</light_cyan>         Runs a set of commands on a set of targets.
 <light_cyan>group</light_cyan>          Create or remove group of targets for the current plugins directory.
 <light_cyan>xdebug</light_cyan>         Activates and deactivates XDebug in the stack, returns the current XDebug status or sets its values.
@@ -104,7 +104,6 @@ Available commands:
 <light_cyan>down</light_cyan>           Tears down the stack, stopping containers and removing volumes.
 <light_cyan>up</light_cyan>             Starts a container part of the stack.
 <light_cyan>restart</light_cyan>        Restarts a container part of the stack.
-<light_cyan>serve</light_cyan>          Starts the stack and serves it on localhost.
 
 HELP;
 

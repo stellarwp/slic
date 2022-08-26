@@ -64,13 +64,33 @@ if ( ! $open_bash_shell ) {
 	 */
 	putenv( 'TRIC_SITE_CLI_COMMAND=' . implode( ' ', $command ) );
 
-	$status = tric_realtime()( [ 'run', '--rm', 'site-cli' ] );
+	$run_configuration = [
+		'exec',
+		'--user',
+		sprintf( '"%s:%s"', getenv( 'TRIC_UID' ), getenv( 'TRIC_GID' ) ),
+		'--workdir',
+		escapeshellarg( get_project_container_path() ),
+		'tric',
+	];
+
+	$base_command = implode( ' ', $command );
+
+	$run_configuration[] = 'bash -c "' . $base_command . '"';
+
+	$status = tric_realtime()( $run_configuration );
 } else {
 	// What user ID are we running this as?
 	$user = getenv( 'TRIC_UID' );
 	// Do not run the wp-cli container as `root` to avoid a number of file mode issues, run as `www-data` instead.
 	$user   = empty( $user ) ? 'www-data' : $user;
-	$status = tric_realtime()( [ 'run', '--rm', "--user={$user}", '--entrypoint', 'bash', 'site-cli' ] );
+
+	$command = sprintf( 'docker exec -it --user "%d:%d" --workdir %s %s bash -c "wp shell"',
+		getenv( 'TRIC_UID' ),
+		getenv( 'TRIC_GID' ),
+		escapeshellarg( get_project_container_path() ),
+		get_service_id( 'tric' )
+	);
+	$status = process_realtime( $command );
 }
 
 exit( $status );

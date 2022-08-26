@@ -34,6 +34,13 @@ $cli_command = reset( $command );
 // If the command is `bash` or `ssh` or is empty, then open a shell in the `cli` service.
 if ( empty( $cli_command ) || in_array( $cli_command, [ 'bash', 'ssh' ], true ) ) {
 	// @todo replace from ssh command.
+	$command = sprintf( 'docker exec -it --user "%d:%d" --workdir %s %s bash -c "wp shell"',
+		getenv( 'TRIC_UID' ),
+		getenv( 'TRIC_GID' ),
+		escapeshellarg( get_project_container_path() ),
+		get_service_id( 'tric' )
+	);
+	$status = process_realtime( $command );
 } else {
 	$status = tric_realtime()( cli_command( $command ) );
 }

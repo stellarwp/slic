@@ -26,9 +26,10 @@ $service = $service_args( 'service', 'tric' );
 
 ensure_service_running( $service );
 
-$command = sprintf( 'docker exec -it --user "%d:%d" %s bash',
+$command = sprintf( 'docker exec -it --user "%d:%d" --workdir %s %s bash',
 	getenv( 'TRIC_UID' ),
 	getenv( 'TRIC_GID' ),
+	escapeshellarg( get_project_container_path() ),
 	get_service_id( $service )
 );
 process_realtime( $command );

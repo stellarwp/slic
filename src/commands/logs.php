@@ -16,4 +16,6 @@ if ( $is_help ) {
 	return;
 }
 
+ensure_service_running( 'tric' );
+
 tric_realtime()( [ 'logs', '--follow' ] );
