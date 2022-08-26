@@ -23,15 +23,13 @@ if ( '--pretty' === end( $command ) ) {
 	$command = 'npm ' . implode( ' ', $command );
 	$command = get_script_command( build_npm_script( $command ) );
 
-	$status = tric_realtime()( [
-		'exec',
-		'--user',
-		sprintf( '"%s:%s"', getenv( 'TRIC_UID' ), getenv( 'TRIC_GID' ) ),
-		'--workdir',
+	$docker_command = sprintf( 'docker exec --user "%d:%d" --workdir %s %s ' . $command,
+		getenv( 'TRIC_UID' ),
+		getenv( 'TRIC_GID' ),
 		escapeshellarg( get_project_container_path() ),
-		'tric',
-		$command,
-	] );
+		get_service_id( 'tric' )
+	);
+	$status = process_realtime( $docker_command );
 
 	// If there is a status other than 0, we have an error. Bail.
 	if ( $status ) {
@@ -47,15 +45,13 @@ if ( '--pretty' === end( $command ) ) {
 
 		echo light_cyan( "Temporarily using " . tric_target() . "\n" );
 
-		$status = tric_realtime()( [
-			'exec',
-			'--user',
-			sprintf( '"%s:%s"', getenv( 'TRIC_UID' ), getenv( 'TRIC_GID' ) ),
-			'--workdir',
+		$docker_command = sprintf( 'docker exec --user "%d:%d" --workdir %s %s ' . $command,
+			getenv( 'TRIC_UID' ),
+			getenv( 'TRIC_GID' ),
 			escapeshellarg( get_project_container_path() ),
-			'tric',
-			$command,
-		] );
+			get_service_id( 'tric' )
+		);
+		$status = process_realtime( $docker_command );
 
 		tric_switch_target( $using );
 
