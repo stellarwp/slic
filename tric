@@ -1,4 +1,61 @@
 #!/usr/bin/env php
 <?php
 
+// Requires the function files we might need.
+require_once __DIR__ . '/src/utils.php';
+require_once __DIR__ . '/src/scaffold.php';
+require_once __DIR__ . '/src/slic.php';
+require_once __DIR__ . '/src/docker.php';
+require_once __DIR__ . '/src/plugins.php';
+require_once __DIR__ . '/src/themes.php';
+require_once __DIR__ . '/src/scripts.php';
+require_once __DIR__ . '/src/shell.php';
+require_once __DIR__ . '/src/wordpress.php';
+require_once __DIR__ . '/src/services.php';
+require_once __DIR__ . '/src/database.php';
+require_once __DIR__ . '/src/project.php';
+require_once __DIR__ . '/src/env.php';
+require_once __DIR__ . '/src/codeception.php';
+
+use function StellarWP\Slic\args;
+use function StellarWP\Slic\colorize;
+use function StellarWP\Slic\light_cyan;
+use function StellarWP\Slic\maybe_prompt_for_repo_update;
+use function StellarWP\Slic\maybe_prompt_for_stack_update;
+use function StellarWP\Slic\root;
+use function StellarWP\Slic\setup_slic_env;
+
+$alert_message_template = <<< MESSAGE
+************************************************
+
+                                         _.oo.
+                 _.u[[/;:,.         .odMMMMMM'
+              .o888UU[[[/;:-.  .o@P^    MMM^
+             oN88888UU[[[/;::-.        dP^
+            dNMMNN888UU[[[/;:--.   .o@P^
+           ,MMMMMMN888UU[[/;::-. o@^
+           NNMMMNN888UU[[[/~.o@P^
+           888888888UU[[[/o@^-..
+          oI8888UU[[[/o@P^:--..
+       .@^  YUU[[[/o@^;::---..
+     oMP     ^/o@P^;:::---..
+  .dMMM    .o@^ ^;::---...
+ dMMMMMMM@^`       `^^^^
+YMMMUP^
+ ^^
+
+    The <red>tric</red> command has been replaced with:
+                     <yellow>slic</yellow>
+
+      "<red>tric</red>" will continue to work for now.
+        You should use <yellow>"slic"</yellow> instead. All
+            the cool kids are doing it.
+
+************************************************
+MESSAGE;
+
+$alert_message = colorize( $alert_message_template );
+
+echo $alert_message;
+
 require_once __DIR__ . '/slic';
