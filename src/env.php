@@ -3,7 +3,7 @@
  * Provides function to interact with environment variables.
  */
 
-namespace TEC\Tric\Env;
+namespace StellarWP\Slic\Env;
 
 /**
  * Returns the current backup vault.

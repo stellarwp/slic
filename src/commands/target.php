@@ -2,15 +2,15 @@
 /**
  * Handles the execution of the `target` command.
  *
- * @packag TEC\Tric
+ * @packag StellarWP\Slic
  */
 
-namespace TEC\Tric;
+namespace StellarWP\Slic;
 
 if ( $is_help ) {
 	echo "Runs a set of commands on a set of targets.\n";
 	echo PHP_EOL;
-	echo colorize( "usage: <light_cyan>tric target</light_cyan>\n" );
+	echo colorize( "usage: <light_cyan>slic target</light_cyan>\n" );
 
 	return;
 }
@@ -29,10 +29,10 @@ $command_lines = [];
 
 echo yellow( "\nTargets: " ) . implode( ', ', $targets ) . "\n\n";
 
-// Allow users to enter a command prefixing it with `tric` or not.
+// Allow users to enter a command prefixing it with `slic` or not.
 do {
 	$last_command_line = trim(
-		preg_replace( '/^\\s*tric/', '', ask( 'Command (return when done):', null )
+		preg_replace( '/^\\s*slic/', '', ask( 'Command (return when done):', null )
 		)
 	);
 	if ( ! empty( $last_command_line ) ) {
@@ -57,9 +57,9 @@ if ( preg_match( '/^n/i', ask(
 }
 
 // Store the previous target, if any.
-$previous_target = tric_target();
+$previous_target = slic_target();
 // The command will fail if a target is not set at this time, so we set one.
-tric_switch_target( reset( $targets ) );
+slic_switch_target( reset( $targets ) );
 
 $status = 0;
 foreach ( $command_lines as $command_line ) {
@@ -68,14 +68,14 @@ foreach ( $command_lines as $command_line ) {
 	$status       = execute_command_pool( build_targets_command_pool( $targets, $base_command, $command, [ 'common' ] ) );
 	if ( 0 !== (int) $status ) {
 		// Restore the previous target, if any.
-		tric_switch_target( $previous_target );
+		slic_switch_target( $previous_target );
 		// If any previous command fails, then exit.
 		exit( $status );
 	}
 }
 
 // Restore the previous target, if any.
-tric_switch_target( $previous_target );
+slic_switch_target( $previous_target );
 
 exit( $status );
 

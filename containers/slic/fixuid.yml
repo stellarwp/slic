@@ -1,0 +1,6 @@
+user: slic
+group: slic
+paths:
+  - /home/slic
+  - /tmp
+  - /var/www/html

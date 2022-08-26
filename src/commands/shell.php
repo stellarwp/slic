@@ -1,6 +1,6 @@
 <?php
 
-namespace TEC\Tric;
+namespace StellarWP\Slic;
 
 if ( $is_help ) {
 	echo "Opens a shell in a stack service, defaults to the 'codeception' one.\n";
@@ -12,19 +12,19 @@ if ( $is_help ) {
 }
 
 $service_args = args( [ 'service', '...' ], $args( '...' ), 0 );
-$service = $service_args( 'service', 'tric' );
+$service = $service_args( 'service', 'slic' );
 
-$using = tric_target_or_fail();
+$using = slic_target_or_fail();
 echo light_cyan( "Using {$using}\n" );
 
 ensure_service_running( 'db' );
-ensure_service_running( 'tric' );
+ensure_service_running( 'slic' );
 
 setup_id();
 
 $command = sprintf( 'docker exec -it --user "%d:%d" --workdir %s %s bash',
-	getenv( 'TRIC_UID' ),
-	getenv( 'TRIC_GID' ),
+	getenv( 'SLIC_UID' ),
+	getenv( 'SLIC_GID' ),
 	escapeshellarg( get_project_container_path() ),
 	get_service_id( $service )
 );

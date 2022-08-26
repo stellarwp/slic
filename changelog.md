@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - TBD
+
+### Changed
+- Rebranded `tric` to `slic`.
+- Consolidated many of the containers into a single `slic` container to simplify the stack and reduce the time to start up and shut down containers.
+- Containers are no longer brought down upon completion of a command.
+- Removed the `serve` command. Since containers remain up, the `up` command can be used to start the stack and make the local site available.
+- Reworked how `slic` handles npm. It now uses `nvm` under the hood and automatically installs the version of node that is dictated by `.nvmrc`.
+- Removed the `npm_lts` command. It is no longer needed after the reworking of the `npm` command.
+
 ## [0.6.0] - 2022-04-15
 #### Changed
 - Add the `ps` command to list the current containers information.
@@ -12,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.5.33] - 2022-04-15
 #### Changed
 - Add the `mysql` command to quickly open a `mysql` shell in the running database container of the `tric` stack.
-- Add the `wp` command as alias of the `cli` command. 
+- Add the `wp` command as alias of the `cli` command.
 
 ## [0.5.32] - 2022-03-18
 #### Changed
@@ -46,7 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.5.25] - 2021-03-02
 ### Changed
-- Set `COMPOSER_HTACCESS_PROTECT=0` explicitly in the `docker-compose` configuration file to avoid an `.htaccess` 
+- Set `COMPOSER_HTACCESS_PROTECT=0` explicitly in the `docker-compose` configuration file to avoid an `.htaccess`
   file being created in the root directory of the current target.
 
 ## [0.5.24] - 2021-02-18
@@ -55,9 +65,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.5.23] - 2021-01-20
 ### Changed
-- Add an argument, to the `reset` command, to remove the default WordPress (`/_wordpress`) installation directory 
+- Add an argument, to the `reset` command, to remove the default WordPress (`/_wordpress`) installation directory
   using `tric reset wp`.
-  
+
 ## [0.5.22] - 2021-01-20
 ### Added
 - Added the `composer-cache` command so the host machine's composer cache can be leveraged within tric containers.
@@ -72,14 +82,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.5.19] - 2020-12-11
 ### Changed
-- Fix an issue where commands that required a ready and available WordPress installation in the `tric` WordPress 
+- Fix an issue where commands that required a ready and available WordPress installation in the `tric` WordPress
   directory would not take care to scaffold and install it; e.g. `cli` or `site-cli`.
 
 ## [0.5.18] - 2020-12-07
 ### Changed
-- Fix an issue where the `USING_CONTAINERS` environment variable would be duplicated in environment files set up by 
-  `tric` init command.  
-- Fix an issue where a negative answer to build targets with sub-directories, e.g. TEC and ET, would result in the 
+- Fix an issue where the `USING_CONTAINERS` environment variable would be duplicated in environment files set up by
+  `tric` init command.
+- Fix an issue where a negative answer to build targets with sub-directories, e.g. TEC and ET, would result in the
   target being built anyway.
 
 ## [0.5.17] - 2020-12-04

@@ -1,22 +1,22 @@
 <?php
 /**
- * tric cli functions.
+ * slic cli functions.
  */
 
-namespace TEC\Tric;
+namespace StellarWP\Slic;
 
-use function TEC\Tric\Env\backup_env_var;
-use function TEC\Tric\Env\env_var_backup;
+use function StellarWP\Slic\Env\backup_env_var;
+use function StellarWP\Slic\Env\env_var_backup;
 
 /**
- * Returns whether or not the tric here command was done at the site level or not.
+ * Returns whether or not the slic here command was done at the site level or not.
  *
  * @return bool
  */
-function tric_here_is_site() {
-	$env_wp_dir = getenv( 'TRIC_WP_DIR' );
+function slic_here_is_site() {
+	$env_wp_dir = getenv( 'SLIC_WP_DIR' );
 
-	return TRIC_ROOT_DIR . '/_wordpress' !== $env_wp_dir
+	return SLIC_ROOT_DIR . '/_wordpress' !== $env_wp_dir
 	       && './_wordpress' !== $env_wp_dir;
 }
 
@@ -43,7 +43,7 @@ function get_cwd_dir_name() {
  *
  * Valid targets are:
  *   - Anything in the plugins directory.
- *   - If tric here was done on the site level, "site" is also a valid target.
+ *   - If slic here was done on the site level, "site" is also a valid target.
  *
  * @param bool $as_array Whether to output as an array. If falsy, will output as a formatted string, including
  *                       headings, line breaks, and indentation.
@@ -61,7 +61,7 @@ function get_valid_targets( $as_array = true ) {
 
 	$targets = $plugins;
 
-	if ( tric_here_is_site() ) {
+	if ( slic_here_is_site() ) {
 		$targets     = array_merge( [ 'site' ], $plugins, $themes );
 		$targets_str .= PHP_EOL . '  Site:' . PHP_EOL;
 		$targets_str .= '    - site';
@@ -76,7 +76,7 @@ function get_valid_targets( $as_array = true ) {
 		)
 	);
 
-	if ( tric_here_is_site() && $themes ) {
+	if ( slic_here_is_site() && $themes ) {
 		$targets_str .= PHP_EOL . "  Themes:" . PHP_EOL;
 		$targets_str .= implode(
 			PHP_EOL, array_map(
@@ -99,7 +99,7 @@ function get_valid_targets( $as_array = true ) {
  *
  * Valid targets are:
  *   - Anything in the plugins directory.
- *   - If tric here was done on the site level, "site" is also a valid target.
+ *   - If slic here was done on the site level, "site" is also a valid target.
  *
  * @param string $target The target to check in the valid list of targets.
  * @param bool $exit Whether to exit if the target is invalid, or to return `false`.
@@ -149,8 +149,8 @@ function get_target_relative_path( $target ) {
 		return '';
 	}
 
-	$plugin_dir = getenv( 'TRIC_PLUGINS_DIR' );
-	$theme_dir  = getenv( 'TRIC_THEMES_DIR' );
+	$plugin_dir = getenv( 'SLIC_PLUGINS_DIR' );
+	$theme_dir  = getenv( 'SLIC_THEMES_DIR' );
 
 	if ( file_exists( "{$plugin_dir}/{$target}" ) ) {
 		$parent_path = $plugin_dir;
@@ -161,7 +161,7 @@ function get_target_relative_path( $target ) {
 		exit( 1 );
 	}
 
-	$parent_path = str_replace( getenv( 'TRIC_HERE_DIR' ) . '/', '', $parent_path );
+	$parent_path = str_replace( getenv( 'SLIC_HERE_DIR' ) . '/', '', $parent_path );
 
 	return "{$parent_path}/{$target}";
 }
@@ -172,7 +172,7 @@ function get_target_relative_path( $target ) {
  * @param string $root_dir The cli tool root directory.
  * @param bool $reset Whether to force a reset of the env vars or not, if already set up.
  */
-function setup_tric_env( $root_dir, $reset = false ) {
+function setup_slic_env( $root_dir, $reset = false ) {
 	static $set;
 
 	if ( ! $reset && $set === true ) {
@@ -181,33 +181,33 @@ function setup_tric_env( $root_dir, $reset = false ) {
 
 	$set = true;
 
-	// Let's declare we're performing trics.
-	putenv( 'TEC_TRIC=1' );
+	// Let's declare we're performing slics.
+	putenv( 'STELLAR_SLIC=1' );
 
-	putenv( 'TRIC_VERSION=' . CLI_VERSION );
+	putenv( 'SLIC_VERSION=' . CLI_VERSION );
 
 	setup_architecture_env();
 
 	backup_env_var( 'COMPOSER_CACHE_DIR' );
 
 	// Load the distribution version configuration file, the version-controlled one.
-	load_env_file( $root_dir . '/.env.tric' );
+	load_env_file( $root_dir . '/.env.slic' );
 
 	// Load the local overrides, this file is not version controlled.
-	if ( file_exists( $root_dir . '/.env.tric.local' ) ) {
-		load_env_file( $root_dir . '/.env.tric.local' );
+	if ( file_exists( $root_dir . '/.env.slic.local' ) ) {
+		load_env_file( $root_dir . '/.env.slic.local' );
 	}
 
 	// Load the current session configuration file.
-	if ( file_exists( $root_dir . '/.env.tric.run' ) ) {
-		load_env_file( $root_dir . '/.env.tric.run' );
+	if ( file_exists( $root_dir . '/.env.slic.run' ) ) {
+		load_env_file( $root_dir . '/.env.slic.run' );
 	}
 
 	$default_wp_dir = root( '/_wordpress' );
-	$wp_dir         = getenv( 'TRIC_WP_DIR' );
+	$wp_dir         = getenv( 'SLIC_WP_DIR' );
 
 	if ( $wp_dir === './_wordpress' || $wp_dir === $default_wp_dir ) {
-		// Default WordPress directory, inside tric.
+		// Default WordPress directory, inside slic.
 		$wp_dir = ensure_dir( $default_wp_dir );
 	} else if ( ! is_dir( $wp_dir ) ) {
 		// Custom WordPress directory, it falls on the user to have it set up correctly.
@@ -217,10 +217,10 @@ function setup_tric_env( $root_dir, $reset = false ) {
 
 	$wp_themes_dir = $wp_dir . '/wp-content/themes';
 
-	putenv( 'TRIC_WP_DIR=' . $wp_dir );
-	putenv( 'TRIC_PLUGINS_DIR=' . ensure_dir( getenv( 'TRIC_PLUGINS_DIR' ) ?: root( '_plugins' ) ) );
-	putenv( 'TRIC_THEMES_DIR=' . ensure_dir( getenv( 'TRIC_THEMES_DIR' ) ?: $wp_themes_dir ) );
-	putenv( 'TRIC_CACHE=' . cache() );
+	putenv( 'SLIC_WP_DIR=' . $wp_dir );
+	putenv( 'SLIC_PLUGINS_DIR=' . ensure_dir( getenv( 'SLIC_PLUGINS_DIR' ) ?: root( '_plugins' ) ) );
+	putenv( 'SLIC_THEMES_DIR=' . ensure_dir( getenv( 'SLIC_THEMES_DIR' ) ?: $wp_themes_dir ) );
+	putenv( 'SLIC_CACHE=' . cache() );
 
 	if ( empty( getenv( 'COMPOSER_CACHE_DIR' ) ) ) {
 		putenv( 'COMPOSER_CACHE_DIR=' . cache( '/composer' ) );
@@ -238,9 +238,9 @@ function setup_tric_env( $root_dir, $reset = false ) {
  * @return string|string Either the current target or `false` if the target is not set. If `$require` is `true` then the
  *                       return value will always be a non empty string.
  */
-function tric_target( $require = true ) {
-	$using        = getenv( 'TRIC_CURRENT_PROJECT' );
-	$using_subdir = getenv( 'TRIC_CURRENT_PROJECT_SUBDIR' );
+function slic_target( $require = true ) {
+	$using        = getenv( 'SLIC_CURRENT_PROJECT' );
+	$using_subdir = getenv( 'SLIC_CURRENT_PROJECT_SUBDIR' );
 	$using_full   = $using . ( $using_subdir ? '/' . $using_subdir : '' );
 
 	if ( $require ) {
@@ -260,13 +260,13 @@ function tric_target( $require = true ) {
  *
  * @param string $target Target to switch to.
  */
-function tric_switch_target( $target ) {
+function slic_switch_target( $target ) {
 	$root                 = root();
-	$run_settings_file    = "{$root}/.env.tric.run";
+	$run_settings_file    = "{$root}/.env.slic.run";
 	$target_relative_path = '';
 	$subdir               = '';
 
-	if ( tric_here_is_site() ) {
+	if ( slic_here_is_site() ) {
 		$target_relative_path = get_target_relative_path( $target );
 	}
 
@@ -275,14 +275,14 @@ function tric_switch_target( $target ) {
 	}
 
 	$env_values = [
-		'TRIC_CURRENT_PROJECT'               => $target,
-		'TRIC_CURRENT_PROJECT_RELATIVE_PATH' => $target_relative_path,
-		'TRIC_CURRENT_PROJECT_SUBDIR'        => $subdir,
+		'SLIC_CURRENT_PROJECT'               => $target,
+		'SLIC_CURRENT_PROJECT_RELATIVE_PATH' => $target_relative_path,
+		'SLIC_CURRENT_PROJECT_SUBDIR'        => $subdir,
 	];
 
 	write_env_file( $run_settings_file, $env_values, true );
 
-	setup_tric_env( $root );
+	setup_slic_env( $root );
 }
 
 /**
@@ -318,17 +318,17 @@ function restart_php_services( $hard = false ) {
  */
 function restart_service( $service, $pretty_name = null, $hard = false ) {
 	$pretty_name   = $pretty_name ?: $service;
-	$tric          = docker_compose( tric_stack_array() );
-	$tric_realtime = docker_compose_realtime( tric_stack_array() );
+	$slic          = docker_compose( slic_stack_array() );
+	$slic_realtime = docker_compose_realtime( slic_stack_array() );
 
-	$service_running = $tric( [ 'ps', '-q', $service ] )( 'string_output' );
+	$service_running = $slic( [ 'ps', '-q', $service ] )( 'string_output' );
 	if ( ! empty( $service_running ) ) {
 		echo colorize( "Restarting {$pretty_name} service...\n" );
 		if ( $hard ) {
-			$tric_realtime( [ 'rm', '--stop', '--force', $service ] );
-			$tric_realtime( [ 'up', '-d', $service ] );
+			$slic_realtime( [ 'rm', '--stop', '--force', $service ] );
+			$slic_realtime( [ 'up', '-d', $service ] );
 		} else {
-			$tric_realtime( [ 'restart', $service ] );
+			$slic_realtime( [ 'restart', $service ] );
 		}
 		echo colorize( "<light_cyan>{$pretty_name} service restarted.</light_cyan>\n" );
 	} else {
@@ -337,39 +337,39 @@ function restart_service( $service, $pretty_name = null, $hard = false ) {
 }
 
 /**
- * Returns the absolute path to the current plugins directory tric is using.
+ * Returns the absolute path to the current plugins directory slic is using.
  *
- * @param string $path An optional path to append to the current tric plugin directory.
+ * @param string $path An optional path to append to the current slic plugin directory.
  *
- * @return string The absolute path to the current plugins directory tric is using.
+ * @return string The absolute path to the current plugins directory slic is using.
  *
  */
-function tric_plugins_dir( $path = '' ) {
-	return tric_content_type_dir( 'plugins', $path );
+function slic_plugins_dir( $path = '' ) {
+	return slic_content_type_dir( 'plugins', $path );
 }
 
 /**
- * Returns the absolute path to the current plugins directory tric is using.
+ * Returns the absolute path to the current plugins directory slic is using.
  *
- * @param string $path An optional path to append to the current tric plugin directory.
+ * @param string $path An optional path to append to the current slic plugin directory.
  *
- * @return string The absolute path to the current plugins directory tric is using.
+ * @return string The absolute path to the current plugins directory slic is using.
  *
  */
-function tric_themes_dir( $path = '' ) {
-	return tric_content_type_dir( 'themes', $path );
+function slic_themes_dir( $path = '' ) {
+	return slic_content_type_dir( 'themes', $path );
 }
 
 /**
- * Returns the absolute path to the current content directory tric is using.
+ * Returns the absolute path to the current content directory slic is using.
  *
- * @param string $path An optional path to append to the current tric content directory.
+ * @param string $path An optional path to append to the current slic content directory.
  *
- * @return string The absolute path to the current content directory tric is using.
+ * @return string The absolute path to the current content directory slic is using.
  *
  */
-function tric_content_type_dir( $content_type = 'plugins', $path = '' ) {
-	$content_type_dir = getenv( 'TRIC_' . strtoupper( $content_type ) . '_DIR' );
+function slic_content_type_dir( $content_type = 'plugins', $path = '' ) {
+	$content_type_dir = getenv( 'SLIC_' . strtoupper( $content_type ) . '_DIR' );
 	$root_dir         = root();
 
 	if ( 'plugins' === $content_type ) {
@@ -379,17 +379,17 @@ function tric_content_type_dir( $content_type = 'plugins', $path = '' ) {
 	}
 
 	if ( empty( $content_type_dir ) ) {
-		// Use the default directory in tric repository.
+		// Use the default directory in slic repository.
 		$dir = $root_dir . $default_path;
 	} elseif ( is_dir( $content_type_dir ) ) {
 		// Use the specified directory.
 		$dir = $content_type_dir;
 	} else {
 		if ( 0 === strpos( $content_type_dir, '.' ) ) {
-			// Resolve the './...' paths a relative to the root directory in tric repository.
+			// Resolve the './...' paths a relative to the root directory in slic repository.
 			$dir = preg_replace( '/^\\./', $root_dir, $content_type_dir );
 		} else {
-			// Use a directory relative to the root directory in tric reopository.
+			// Use a directory relative to the root directory in slic reopository.
 			$dir = $root_dir . '/' . ltrim( $content_type_dir, '\\/' );
 		}
 	}
@@ -405,8 +405,8 @@ function tric_content_type_dir( $content_type = 'plugins', $path = '' ) {
  *                       will be cloned.
  */
 function clone_plugin( $plugin, $branch = null ) {
-	$plugin_dir  = tric_plugins_dir();
-	$plugin_path = tric_plugins_dir( $plugin );
+	$plugin_dir  = slic_plugins_dir();
+	$plugin_path = slic_plugins_dir( $plugin );
 
 	if ( ! file_exists( $plugin_dir ) ) {
 		echo "Creating the plugins directory...\n";
@@ -442,12 +442,12 @@ function clone_plugin( $plugin, $branch = null ) {
 }
 
 /**
- * Sets up the files required to run tests in the plugin using tric stack.
+ * Sets up the files required to run tests in the plugin using slic stack.
  *
  * @param string $plugin The plugin name, e.g. 'the-events-calendar` or `event-tickets`.
  */
 function setup_plugin_tests( $plugin ) {
-	$plugin_path    = tric_plugins_dir() . '/' . $plugin;
+	$plugin_path    = slic_plugins_dir() . '/' . $plugin;
 	$relative_paths = [ '' ];
 
 	if ( file_exists( "{$plugin_path}/common" ) ) {
@@ -458,18 +458,18 @@ function setup_plugin_tests( $plugin ) {
 		$target_path   = "{$plugin_path}/{$relative_path}";
 		$relative_path = empty( $relative_path ) ? '' : "{$relative_path}/";
 
-		if ( write_tric_test_config( $target_path ) ) {
-			echo colorize( "Created/updated <light_cyan>{$relative_path}test-config.tric.php</light_cyan> " .
+		if ( write_slic_test_config( $target_path ) ) {
+			echo colorize( "Created/updated <light_cyan>{$relative_path}test-config.slic.php</light_cyan> " .
 			               "in {$plugin}.\n" );
 		}
 
-		write_tric_env_file( $target_path );
-		echo colorize( "Created/updated <light_cyan>{$relative_path}.env.testing.tric</light_cyan> " .
+		write_slic_env_file( $target_path );
+		echo colorize( "Created/updated <light_cyan>{$relative_path}.env.testing.slic</light_cyan> " .
 		               "in <light_cyan>{$plugin}</light_cyan>.\n" );
 
 
 		write_codeception_config( $target_path );
-		echo colorize( "Created/updated <light_cyan>{$relative_path}codeception.tric.yml</light_cyan> in " .
+		echo colorize( "Created/updated <light_cyan>{$relative_path}codeception.slic.yml</light_cyan> in " .
 		               "<light_cyan>{$plugin}</light_cyan>.\n" );
 	}
 }
@@ -477,13 +477,13 @@ function setup_plugin_tests( $plugin ) {
 /**
  * Returns the git domain from which to clone git plugins.
  *
- * Configured using the `TRIC_GIT_DOMAIN` env variable.
+ * Configured using the `SLIC_GIT_DOMAIN` env variable.
  * Examples: gitlab.com, bitbucket.org, git.example.com
  *
  * @return string The git domain from which to clone plugins.
  */
 function git_domain() {
-	$domain = getenv( 'TRIC_GIT_DOMAIN' );
+	$domain = getenv( 'SLIC_GIT_DOMAIN' );
 
 	return ! empty( $domain ) ? trim( $domain ) : 'github.com';
 }
@@ -491,68 +491,68 @@ function git_domain() {
 /**
  * Returns the handle (username) of the company from which to clone git plugins.
  *
- * Configured using the `TRIC_GIT_HANDLE` env variable.
+ * Configured using the `SLIC_GIT_HANDLE` env variable.
  *
  * @return string The git handle from which to clone plugins.
  */
 function git_handle() {
-	$handle = getenv( 'TRIC_GIT_HANDLE' );
+	$handle = getenv( 'SLIC_GIT_HANDLE' );
 
 	return ! empty( $handle ) ? trim( $handle ) : 'the-events-calendar';
 }
 
 /**
- * Runs a process in passive mode in tric stack and returns the exit status.
+ * Runs a process in passive mode in slic stack and returns the exit status.
  *
  * This approach is used when running commands that can be done in parallel or forked processes.
  *
- * @return \Closure The process closure to start a real-time process using tric stack.
+ * @return \Closure The process closure to start a real-time process using slic stack.
  */
-function tric_passive() {
-	return docker_compose_passive( tric_stack_array() );
+function slic_passive() {
+	return docker_compose_passive( slic_stack_array() );
 }
 
 /**
- * Runs a process in tric stack and returns the exit status.
+ * Runs a process in slic stack and returns the exit status.
  *
- * @return \Closure The process closure to start a real-time process using tric stack.
+ * @return \Closure The process closure to start a real-time process using slic stack.
  */
-function tric_realtime() {
-	return docker_compose_realtime( tric_stack_array() );
+function slic_realtime() {
+	return docker_compose_realtime( slic_stack_array() );
 }
 
 /**
- * Returns the process Closure to start a real-time process using tric stack.
+ * Returns the process Closure to start a real-time process using slic stack.
  *
- * @return \Closure The process closure to start a real-time process using tric stack.
+ * @return \Closure The process closure to start a real-time process using slic stack.
  */
-function tric_process() {
-	return docker_compose( tric_stack_array() );
+function slic_process() {
+	return docker_compose( slic_stack_array() );
 }
 
 /**
- * Tears down tric stack.
+ * Tears down slic stack.
  */
 function teardown_stack( $passive = false ) {
 	if ( $passive ) {
-		return tric_passive()( [ 'down', '--volumes', '--remove-orphans' ] );
+		return slic_passive()( [ 'down', '--volumes', '--remove-orphans' ] );
 	}
 
-	return tric_realtime()( [ 'down', '--volumes', '--remove-orphans' ] );
+	return slic_realtime()( [ 'down', '--volumes', '--remove-orphans' ] );
 }
 
 /**
- * Rebuilds the tric stack.
+ * Rebuilds the slic stack.
  */
 function rebuild_stack() {
 	echo "Building the stack images...\n\n";
 
 	if ( is_ci() ) {
 		// In CI context do NOT build the image with XDebug and waste time on unused features.
-		putenv( 'TRIC_WORDPRESS_DOCKERFILE=Dockerfile.base' );
+		putenv( 'SLIC_WORDPRESS_DOCKERFILE=Dockerfile.base' );
 	}
 
-	tric_realtime()( [ 'build' ] );
+	slic_realtime()( [ 'build' ] );
 	write_build_version();
 	echo light_cyan( "\nStack images built.\n\n" );
 }
@@ -561,65 +561,65 @@ function rebuild_stack() {
  * Write the current CLI_VERSION to the build-version file
  */
 function write_build_version() {
-	file_put_contents( TRIC_ROOT_DIR . '/.build-version', CLI_VERSION );
+	file_put_contents( SLIC_ROOT_DIR . '/.build-version', CLI_VERSION );
 }
 
 /**
- * Prints information about tric tool.
+ * Prints information about slic tool.
  */
-function tric_info() {
+function slic_info() {
 	$config_vars = [
-		'TRIC_TEST_SUBNET',
+		'SLIC_TEST_SUBNET',
 		'CLI_VERBOSITY',
 		'CI',
 		'TRAVIS_CI',
 		'COMPOSER_CACHE_DIR',
 		'CONTINUOUS_INTEGRATION',
 		'GITHUB_ACTION',
-		'TRIC_CURRENT_PROJECT',
-		'TRIC_CURRENT_PROJECT_RELATIVE_PATH',
-		'TRIC_CURRENT_PROJECT_SUBDIR',
-		'TRIC_HOST',
-		'TRIC_PLUGINS',
-		'TRIC_THEMES',
-		'TRIC_GIT_DOMAIN',
-		'TRIC_GIT_HANDLE',
-		'TRIC_HERE_DIR',
-		'TRIC_PLUGINS_DIR',
-		'TRIC_THEMES_DIR',
-		'TRIC_WP_DIR',
-		'TRIC_INTERACTIVE',
-		'TRIC_BUILD_PROMPT',
-		'TRIC_BUILD_SUBDIR',
+		'SLIC_CURRENT_PROJECT',
+		'SLIC_CURRENT_PROJECT_RELATIVE_PATH',
+		'SLIC_CURRENT_PROJECT_SUBDIR',
+		'SLIC_HOST',
+		'SLIC_PLUGINS',
+		'SLIC_THEMES',
+		'SLIC_GIT_DOMAIN',
+		'SLIC_GIT_HANDLE',
+		'SLIC_HERE_DIR',
+		'SLIC_PLUGINS_DIR',
+		'SLIC_THEMES_DIR',
+		'SLIC_WP_DIR',
+		'SLIC_INTERACTIVE',
+		'SLIC_BUILD_PROMPT',
+		'SLIC_BUILD_SUBDIR',
 		'TERM',
 		'XDK',
 		'XDE',
 		'XDH',
 		'XDP',
 		'UID',
-		'TRIC_UID',
+		'SLIC_UID',
 		'GID',
-		'TRIC_GID',
+		'SLIC_GID',
 		'MYSQL_ROOT_PASSWORD',
 		'WORDPRESS_HTTP_PORT',
 		'SSH_AUTH_SOCK',
 	];
 
 	echo colorize( "<yellow>Configuration read from the following files:</yellow>\n" );
-	$tric_root = root();
+	$slic_root = root();
 	echo implode( "\n", array_filter( [
-			file_exists( $tric_root . '/.env.tric' ) ? "  - " . $tric_root . '/.env.tric' : null,
-			file_exists( $tric_root . '/.env.tric.local' ) ? "  - " . $tric_root . '/.env.tric.local' : null,
-			file_exists( $tric_root . '/.env.tric.run' ) ? "  - " . $tric_root . '/.env.tric.run' : null,
+			file_exists( $slic_root . '/.env.slic' ) ? "  - " . $slic_root . '/.env.slic' : null,
+			file_exists( $slic_root . '/.env.slic.local' ) ? "  - " . $slic_root . '/.env.slic.local' : null,
+			file_exists( $slic_root . '/.env.slic.run' ) ? "  - " . $slic_root . '/.env.slic.run' : null,
 		] ) ) . "\n\n";
 
 	echo colorize( "<yellow>Current configuration:</yellow>\n" );
 	foreach ( $config_vars as $key ) {
 		$value = print_r( getenv( $key ), true );
 
-		if ( $key === 'TRIC_PLUGINS_DIR' && $value !== tric_plugins_dir() ) {
+		if ( $key === 'SLIC_PLUGINS_DIR' && $value !== slic_plugins_dir() ) {
 			// If the configuration is using a relative path, then expose the absolute path.
-			$value .= ' => ' . tric_plugins_dir();
+			$value .= ' => ' . slic_plugins_dir();
 		}
 
 		echo colorize( "  - <light_cyan>{$key}</light_cyan>: {$value}\n" );
@@ -631,18 +631,18 @@ function tric_info() {
 }
 
 /**
- * Returns the absolute path to the WordPress Core directory currently used by tric.
+ * Returns the absolute path to the WordPress Core directory currently used by slic.
  *
  * The function will not check for the directory existence as we might be using this function to get a path to create.
  *
  * @param string $path An optional, relative, path to append to the WordPress Core directory absolute path.
  *
- * @return string The absolute path to the WordPress Core directory currently used by tric.
+ * @return string The absolute path to the WordPress Core directory currently used by slic.
  */
-function tric_wp_dir( $path = '' ) {
+function slic_wp_dir( $path = '' ) {
 	$default = root( '/_wordpress' );
 
-	$wp_dir = getenv( 'TRIC_WP_DIR' );
+	$wp_dir = getenv( 'SLIC_WP_DIR' );
 
 	if ( ! empty( $wp_dir ) ) {
 		if ( ! is_dir( $wp_dir ) ) {
@@ -670,8 +670,8 @@ function composer_cache_status() {
  *
  * @param callable $args The closure that will produce the current interactive request arguments.
  */
-function tric_handle_composer_cache( callable $args ) {
-	$run_settings_file = root( '/.env.tric.run' );
+function slic_handle_composer_cache( callable $args ) {
+	$run_settings_file = root( '/.env.slic.run' );
 	$toggle            = $args( 'toggle', 'status' );
 
 	if ( 'status' === $toggle ) {
@@ -713,7 +713,7 @@ function tric_handle_composer_cache( callable $args ) {
  * Prints the current build-prompt status to screen.
  */
 function build_prompt_status() {
-	$enabled = getenv( 'TRIC_BUILD_PROMPT' );
+	$enabled = getenv( 'SLIC_BUILD_PROMPT' );
 
 	echo 'Interactive status is: ' . ( $enabled ? light_cyan( 'on' ) : magenta( 'off' ) ) . PHP_EOL;
 }
@@ -723,8 +723,8 @@ function build_prompt_status() {
  *
  * @param callable $args The closure that will produce the current interactive request arguments.
  */
-function tric_handle_build_prompt( callable $args ) {
-	$run_settings_file = root( '/.env.tric.run' );
+function slic_handle_build_prompt( callable $args ) {
+	$run_settings_file = root( '/.env.slic.run' );
 	$toggle            = $args( 'toggle', 'on' );
 
 	if ( 'status' === $toggle ) {
@@ -736,18 +736,18 @@ function tric_handle_build_prompt( callable $args ) {
 	$value = 'on' === $toggle ? 1 : 0;
 	echo 'Build Prompt status: ' . ( $value ? light_cyan( 'on' ) : magenta( 'off' ) );
 
-	if ( $value === (int) getenv( 'TRIC_BUILD_PROMPT' ) ) {
+	if ( $value === (int) getenv( 'SLIC_BUILD_PROMPT' ) ) {
 		return;
 	}
 
-	write_env_file( $run_settings_file, [ 'TRIC_BUILD_PROMPT' => $value ], true );
+	write_env_file( $run_settings_file, [ 'SLIC_BUILD_PROMPT' => $value ], true );
 }
 
 /**
  * Prints the current interactive status to screen.
  */
 function interactive_status() {
-	$enabled = getenv( 'TRIC_INTERACTIVE' );
+	$enabled = getenv( 'SLIC_INTERACTIVE' );
 
 	echo 'Interactive status is: ' . ( $enabled ? light_cyan( 'on' ) : magenta( 'off' ) ) . PHP_EOL;
 }
@@ -757,8 +757,8 @@ function interactive_status() {
  *
  * @param callable $args The closure that will produce the current interactive request arguments.
  */
-function tric_handle_interactive( callable $args ) {
-	$run_settings_file = root( '/.env.tric.run' );
+function slic_handle_interactive( callable $args ) {
+	$run_settings_file = root( '/.env.slic.run' );
 	$toggle            = $args( 'toggle', 'on' );
 
 	if ( 'status' === $toggle ) {
@@ -770,11 +770,11 @@ function tric_handle_interactive( callable $args ) {
 	$value = 'on' === $toggle ? 1 : 0;
 	echo 'Interactive status: ' . ( $value ? light_cyan( 'on' ) : magenta( 'off' ) );
 
-	if ( $value === (int) getenv( 'TRIC_INTERACTIVE' ) ) {
+	if ( $value === (int) getenv( 'SLIC_INTERACTIVE' ) ) {
 		return;
 	}
 
-	write_env_file( $run_settings_file, [ 'TRIC_INTERACTIVE' => $value ], true );
+	write_env_file( $run_settings_file, [ 'SLIC_INTERACTIVE' => $value ], true );
 }
 
 /**
@@ -784,7 +784,7 @@ function xdebug_status() {
 	$enabled = getenv( 'XDE' );
 	$ide_key = getenv( 'XDK' );
 	if ( empty( $ide_key ) ) {
-		$ide_key = 'tric';
+		$ide_key = 'slic';
 	}
 	$localhost_port = getenv( 'WORDPRESS_HTTP_PORT' );
 	if ( empty( $localhost_port ) ) {
@@ -796,7 +796,7 @@ function xdebug_status() {
 	echo 'Remote port: ' . light_cyan( getenv( 'XDP' ) ) . PHP_EOL;
 
 	echo 'IDE Key: ' . light_cyan( $ide_key ) . PHP_EOL;
-	echo colorize( PHP_EOL . "You can override these values in the <light_cyan>.env.tric.local" .
+	echo colorize( PHP_EOL . "You can override these values in the <light_cyan>.env.slic.local" .
 	               "</light_cyan> file or by using the " .
 	               "<light_cyan>'xdebug (host|key|port) <value>'</light_cyan> command." ) . PHP_EOL;
 
@@ -805,23 +805,23 @@ function xdebug_status() {
 	echo 'IDE key, or server name: ' . light_cyan( $ide_key ) . PHP_EOL;
 	echo 'Host: ' . light_cyan( 'http://localhost' . ( $localhost_port === '80' ? '' : ':' . $localhost_port ) ) . PHP_EOL;
 	echo colorize( 'Path mapping (host => server): <light_cyan>'
-	               . tric_plugins_dir()
+	               . slic_plugins_dir()
 	               . '</light_cyan> => <light_cyan>/var/www/html/wp-content/plugins</light_cyan>' ) . PHP_EOL;
 	echo colorize( 'Path mapping (host => server): <light_cyan>'
-	               . tric_wp_dir()
+	               . slic_wp_dir()
 	               . '</light_cyan> => <light_cyan>/var/www/html</light_cyan>' );
 
-	$default_mask = ( tric_wp_dir() === root( '/_wordpress' ) ) + 2 * ( tric_plugins_dir() === root( '/_plugins' ) );
+	$default_mask = ( slic_wp_dir() === root( '/_wordpress' ) ) + 2 * ( slic_plugins_dir() === root( '/_plugins' ) );
 
 	switch ( $default_mask ) {
 		case 1:
 			echo PHP_EOL . PHP_EOL;
-			echo yellow( 'Note: tric is using the default WordPress directory and a different plugins directory: ' .
+			echo yellow( 'Note: slic is using the default WordPress directory and a different plugins directory: ' .
 			             'set path mappings correctly and keep that in mind.' );
 			break;
 		case 2:
 			echo PHP_EOL . PHP_EOL;
-			echo yellow( 'Note: tric is using the default plugins directory and a different WordPress directory: ' .
+			echo yellow( 'Note: slic is using the default plugins directory and a different WordPress directory: ' .
 			             'set path mappings correctly and keep that in mind.' );
 			break;
 		case 3;
@@ -835,8 +835,8 @@ function xdebug_status() {
  *
  * @param callable $args The closure that will produce the current XDebug request arguments.
  */
-function tric_handle_xdebug( callable $args ) {
-	$run_settings_file = root( '/.env.tric.run' );
+function slic_handle_xdebug( callable $args ) {
+	$run_settings_file = root( '/.env.slic.run' );
 	$toggle            = $args( 'toggle', 'on' );
 
 	if ( 'status' === $toggle ) {
@@ -893,7 +893,7 @@ function tric_handle_xdebug( callable $args ) {
  */
 function update_stack_images() {
 	echo "Updating the stack images...\n\n";
-	tric_realtime()( [ 'pull', '--include-deps' ] );
+	slic_realtime()( [ 'pull', '--include-deps' ] );
 	echo light_cyan( "\n\nStack images updated.\n" );
 }
 
@@ -938,7 +938,7 @@ function dir_has_req_build_file( $base_command, $path ) {
  */
 function maybe_build_install_command_pool( $base_command, $target, array $sub_directories = [] ) {
 	// Only prompt if the target itself has has been identified as available to build. If any subs need to build, will auto-try.
-	if ( dir_has_req_build_file( $base_command, tric_plugins_dir( $target ) ) ) {
+	if ( dir_has_req_build_file( $base_command, slic_plugins_dir( $target ) ) ) {
 		$run = ask(
 			"\n" . yellow( $target . ':' ) . " Would you like to run the {$base_command} install processes for this plugin?",
 			'yes'
@@ -979,22 +979,22 @@ function maybe_build_install_command_pool( $base_command, $target, array $sub_di
  */
 function build_command_pool( $base_command, array $command, array $sub_directories = [], $using = null ) {
 	$using_alias = $using;
-	$using       = $using ?: tric_target();
+	$using       = $using ?: slic_target();
 	$targets     = [];
 
 	// If applicable, include target plugin before subdirectory plugins.
-	if ( dir_has_req_build_file( $base_command, tric_plugins_dir( tric_target() ) ) ) {
+	if ( dir_has_req_build_file( $base_command, slic_plugins_dir( slic_target() ) ) ) {
 		$targets[] = 'target';
 	}
 
 	// Prompt for execution within subdirectories, if enabled.
-	if ( getenv( 'TRIC_BUILD_SUBDIR' ) ) {
+	if ( getenv( 'SLIC_BUILD_SUBDIR' ) ) {
 		foreach ( $sub_directories as $dir ) {
 			$sub_target = $using_alias ? "{$using_alias}/{$dir}" : "{$using}/{$dir}";
 
 			$question = "\n" . yellow( $sub_target . ':' ) . " Would you like to run the {$base_command} command against {$sub_target}?";
 			if (
-				dir_has_req_build_file( $base_command, tric_plugins_dir( $sub_target ) )
+				dir_has_req_build_file( $base_command, slic_plugins_dir( $sub_target ) )
 				&& ask( $question, 'yes' )
 			) {
 				$targets[] = $dir;
@@ -1014,8 +1014,8 @@ function build_command_pool( $base_command, array $command, array $sub_directori
 		}
 
 		// If the command is executing a dynamic script in the scripts directory, grab the command name.
-		if ( preg_match( '!\. /tric-scripts/(\..*.sh)!', $friendly_base_command, $results ) ) {
-			$file = escapeshellarg( TRIC_ROOT_DIR . '/' . trim( getenv( 'TRIC_SCRIPTS' ), '.' ) . '/' . $results[1] );
+		if ( preg_match( '!\. /slic-scripts/(\..*.sh)!', $friendly_base_command, $results ) ) {
+			$file = escapeshellarg( SLIC_ROOT_DIR . '/' . trim( getenv( 'SLIC_SCRIPTS' ), '.' ) . '/' . $results[1] );
 			$friendly_base_command = `tail -n 1 $file`;
 		}
 
@@ -1023,19 +1023,19 @@ function build_command_pool( $base_command, array $command, array $sub_directori
 
 		// Execute command as the parent.
 		if ( 'target' !== $target ) {
-			tric_switch_target( "{$using}/{$target}" );
+			slic_switch_target( "{$using}/{$target}" );
 			$sub_target_name = $using_alias ? "{$using_alias}/{$target}" : $target;
 			$prefix          = "{$friendly_base_command}:" . yellow( $sub_target_name );
 		}
 
-		putenv( "TRIC_TEST_SUBNET={$subnet}" );
+		putenv( "SLIC_TEST_SUBNET={$subnet}" );
 
-		$network_name = "tric{$subnet}";
-		$status       = tric_passive()( array_merge( [
+		$network_name = "slic{$subnet}";
+		$status       = slic_passive()( array_merge( [
 			'exec',
 			'-T',
 			'--user',
-			sprintf( '"%s:%s"', getenv( 'TRIC_UID' ), getenv( 'TRIC_GID' ) ),
+			sprintf( '"%s:%s"', getenv( 'SLIC_UID' ), getenv( 'SLIC_GID' ) ),
 			'--workdir',
 			escapeshellarg( get_project_container_path() ),
 			$network_name,
@@ -1051,12 +1051,12 @@ function build_command_pool( $base_command, array $command, array $sub_directori
 				 * When this happens, the return status of the command will be a `1`.
 				 * We iterate until the status is a `0`.
 				 */
-				$network_rm_status = (int) process( "docker network rm {$network_name}_tric {$network_name}_default" )( 'status' );
+				$network_rm_status = (int) process( "docker network rm {$network_name}_slic {$network_name}_default" )( 'status' );
 			} while ( $network_rm_status !== 0 );
 		}
 
 		if ( 'target' !== $target ) {
-			tric_switch_target( $using );
+			slic_switch_target( $using );
 		}
 
 		exit( pcntl_exit( $status ) );
@@ -1084,10 +1084,10 @@ function build_command_pool( $base_command, array $command, array $sub_directori
  *
  * @param array $pool Pool of processes to execute in parallel.
  *     $pool[] = [
- *       'target'    => (string) Tric target.
+ *       'target'    => (string) Slic target.
  *       'container' => (string) Container on which to execute the command.
  *       'command'   => (array) The command to run, e.g. `['install', '--save-dev']` in array format.
- *       'process'   => (closure) The function to execute for each Tric target.
+ *       'process'   => (closure) The function to execute for each Slic target.
  *     ]
  *
  * @return int Result of combined command execution.
@@ -1097,11 +1097,11 @@ function execute_command_pool( $pool ) {
 		return 0;
 	}
 
-	$using = tric_target();
+	$using = slic_target();
 
 	if ( count( $pool ) > 1 ) {
 		$status = parallel_process( $pool );
-		tric_switch_target( $using );
+		slic_switch_target( $using );
 
 		return $status;
 	}
@@ -1112,20 +1112,20 @@ function execute_command_pool( $pool ) {
 }
 
 /**
- * Returns an array of arguments to correctly run a wp-cli command in the tric stack.
+ * Returns an array of arguments to correctly run a wp-cli command in the slic stack.
  *
  * @param array<string> $command The wp-cli command to run, anything after the `wp`; e.g. `['plugin', 'list']`.
  * @param bool $requirements Whether to ensure the requirements to run a cli command are met or not.
  *
- * @return array<string> The complete command arguments, ready to be used in the `tric` or `tric_realtime` functions.
+ * @return array<string> The complete command arguments, ready to be used in the `slic` or `slic_realtime` functions.
  */
 function cli_command( array $command = [], $requirements = false ) {
 	if ( $requirements ) {
-		ensure_service_running( 'tric' );
+		ensure_service_running( 'slic' );
 		ensure_wordpress_ready();
 	}
 
-	return array_merge( [ 'exec', '--workdir', '/var/www/html', 'tric', 'wp', '--allow-root' ], $command );
+	return array_merge( [ 'exec', '--workdir', '/var/www/html', 'slic', 'wp', '--allow-root' ], $command );
 }
 
 /**
@@ -1138,7 +1138,7 @@ function cli_command( array $command = [], $requirements = false ) {
  * concern.
  *
  * @param string $branch The name of the branch to switch to, e.g. `release/B20.03`.
- * @param string|null $plugin The slug of the plugin to switch branch for; if not specified, then the current tric
+ * @param string|null $plugin The slug of the plugin to switch branch for; if not specified, then the current slic
  *                            target will be used.
  */
 function switch_plugin_branch( $branch, $plugin = null ) {
@@ -1149,8 +1149,8 @@ function switch_plugin_branch( $branch, $plugin = null ) {
 		exit( 1 );
 	}
 
-	$plugin     = null === $plugin ? tric_target() : $plugin;
-	$plugin_dir = tric_plugins_dir( $plugin );
+	$plugin     = null === $plugin ? slic_target() : $plugin;
+	$plugin_dir = slic_plugins_dir( $plugin );
 
 	echo light_cyan( "Temporarily using {$plugin}\n" );
 
@@ -1204,7 +1204,7 @@ function switch_plugin_branch( $branch, $plugin = null ) {
 	}
 
 	// Restore the current working directory to the previous value.
-	echo light_cyan( 'Using ' . tric_target() . " once again\n" );
+	echo light_cyan( 'Using ' . slic_target() . " once again\n" );
 	$restored = chdir( $cwd );
 
 	if ( false === $restored ) {
@@ -1214,7 +1214,7 @@ function switch_plugin_branch( $branch, $plugin = null ) {
 }
 
 /**
- * If tric itself is out of date, prompt to update repo.
+ * If slic itself is out of date, prompt to update repo.
  */
 function maybe_prompt_for_repo_update() {
 	$remote_version = null;
@@ -1222,13 +1222,13 @@ function maybe_prompt_for_repo_update() {
 	$cli_version    = CLI_VERSION;
 	$today          = date( 'Y-m-d' );
 
-	if ( file_exists( TRIC_ROOT_DIR . '/.remote-version' ) ) {
-		list( $check_date, $remote_version ) = explode( ':', file_get_contents( TRIC_ROOT_DIR . '/.remote-version' ) );
+	if ( file_exists( SLIC_ROOT_DIR . '/.remote-version' ) ) {
+		list( $check_date, $remote_version ) = explode( ':', file_get_contents( SLIC_ROOT_DIR . '/.remote-version' ) );
 	}
 
 	if ( empty( $remote_version ) || empty( $check_date ) || $today > $check_date ) {
 		$current_dir = getcwd();
-		chdir( TRIC_ROOT_DIR );
+		chdir( SLIC_ROOT_DIR );
 
 		$tags = explode( "\n", shell_exec( 'git ls-remote --tags origin' ) );
 
@@ -1243,7 +1243,7 @@ function maybe_prompt_for_repo_update() {
 
 		$remote_version = array_pop( $tags );
 
-		file_put_contents( TRIC_ROOT_DIR . '/.remote-version', "{$today}:{$remote_version}" );
+		file_put_contents( SLIC_ROOT_DIR . '/.remote-version', "{$today}:{$remote_version}" );
 	}
 
 	// If the version of the CLI is the same as the most recently built version, bail.
@@ -1252,25 +1252,25 @@ function maybe_prompt_for_repo_update() {
 	}
 
 	echo magenta( "\n****************************************************************\n\n" );
-	echo colorize( "<magenta>Version</magenta> <yellow>{$remote_version}</yellow> <magenta>of tric is available! You are currently</magenta>\n" );
+	echo colorize( "<magenta>Version</magenta> <yellow>{$remote_version}</yellow> <magenta>of slic is available! You are currently</magenta>\n" );
 	echo magenta( "running version {$cli_version}. To update, execute the following:\n\n" );
-	echo yellow( "                         tric upgrade\n\n" );
+	echo yellow( "                         slic upgrade\n\n" );
 	echo magenta( "****************************************************************\n" );
 }
 
 /**
- * If tric stack is out of date, prompt for an execution of tric update.
+ * If slic stack is out of date, prompt for an execution of slic update.
  */
 function maybe_prompt_for_stack_update() {
 	$build_version = '0.0.1';
 	$cli_version   = CLI_VERSION;
 
-	if ( file_exists( TRIC_ROOT_DIR . '/.build-version' ) ) {
-		$build_version = file_get_contents( TRIC_ROOT_DIR . '/.build-version' );
+	if ( file_exists( SLIC_ROOT_DIR . '/.build-version' ) ) {
+		$build_version = file_get_contents( SLIC_ROOT_DIR . '/.build-version' );
 	}
 
-	// If there isn't a .env.tric.run, this is likely a fresh install. Bail.
-	if ( ! file_exists( TRIC_ROOT_DIR . '/.env.tric.run' ) ) {
+	// If there isn't a .env.slic.run, this is likely a fresh install. Bail.
+	if ( ! file_exists( SLIC_ROOT_DIR . '/.env.slic.run' ) ) {
 		return;
 	}
 
@@ -1286,9 +1286,9 @@ function maybe_prompt_for_stack_update() {
 	echo yellow( "                  |   __|   \_    _/   |  |\n" );
 	echo yellow( "                  |  |        |  |     |  |\n" );
 	echo yellow( "                  |__|        |__|     |__|\n\n" );
-	echo magenta( "Your tric containers are not up to date with the latest version.\n" );
+	echo magenta( "Your slic containers are not up to date with the latest version.\n" );
 	echo magenta( "                  To update, please run:\n\n" );
-	echo yellow( "                         tric update\n\n" );
+	echo yellow( "                         slic update\n\n" );
 	echo magenta( "****************************************************************\n" );
 }
 
@@ -1297,8 +1297,8 @@ function maybe_prompt_for_stack_update() {
  *
  * @param callable $args The closure that will produce the current subdirectories build arguments.
  */
-function tric_handle_build_subdir( callable $args ) {
-	$run_settings_file = root( '/.env.tric.run' );
+function slic_handle_build_subdir( callable $args ) {
+	$run_settings_file = root( '/.env.slic.run' );
 	$toggle            = $args( 'toggle', 'on' );
 
 	if ( 'status' === $toggle ) {
@@ -1310,18 +1310,18 @@ function tric_handle_build_subdir( callable $args ) {
 	$value = 'on' === $toggle ? 1 : 0;
 	echo 'Build Sub-directories status: ' . ( $value ? light_cyan( 'on' ) : magenta( 'off' ) );
 
-	if ( $value === (int) getenv( 'TRIC_BUILD_SUBDIR' ) ) {
+	if ( $value === (int) getenv( 'SLIC_BUILD_SUBDIR' ) ) {
 		return;
 	}
 
-	write_env_file( $run_settings_file, [ 'TRIC_BUILD_SUBDIR' => $value ], true );
+	write_env_file( $run_settings_file, [ 'SLIC_BUILD_SUBDIR' => $value ], true );
 }
 
 /**
  * Prints the current build-subdir status to screen.
  */
 function build_subdir_status() {
-	$enabled = getenv( 'TRIC_BUILD_SUBDIR' );
+	$enabled = getenv( 'SLIC_BUILD_SUBDIR' );
 
 	echo 'Sub-directories build status is: ' . ( $enabled ? light_cyan( 'on' ) : magenta( 'off' ) ) . PHP_EOL;
 }
@@ -1381,8 +1381,8 @@ function build_targets_command_pool( array $targets, $base_command, array $comma
  *
  * @return string The current target, if set, else the function will exit.
  */
-function tric_target_or_fail( $reason = null ) {
-	$target = tric_target();
+function slic_target_or_fail( $reason = null ) {
+	$target = slic_target();
 
 	if ( empty( $target ) ) {
 		$reason = $reason
@@ -1404,8 +1404,8 @@ function tric_target_or_fail( $reason = null ) {
  * @return string The absolute path to the current target.
  */
 function target_absolute_path( $append_path = null ) {
-	$here_abs_path    = rtrim( getenv( 'TRIC_HERE_DIR' ), '\\/' );
-	$target_rel_path  = '/' . trim( tric_target(), '\\/' );
+	$here_abs_path    = rtrim( getenv( 'SLIC_HERE_DIR' ), '\\/' );
+	$target_rel_path  = '/' . trim( slic_target(), '\\/' );
 	$full_target_path = $here_abs_path . $target_rel_path;
 	if ( empty( $append_path ) ) {
 		return $full_target_path;
@@ -1438,7 +1438,7 @@ function collect_target_suites() {
  * Returns whether the current system is ARM-based or not.
  *
  * The function will, on first run, create a flag file in
- * the `tric` root directory under the reasonable assumption
+ * the `slic` root directory under the reasonable assumption
  * the architecture will not change on the same machine.
  *
  * @return bool Whether the current system is ARM-based or not.
@@ -1483,11 +1483,11 @@ function is_arm64() {
  */
 function setup_architecture_env() {
 	if ( is_arm64() ) {
-		putenv( 'TRIC_ARCHITECTURE=arm64' );
-		putenv( 'TRIC_CHROME_CONTAINER=seleniarm/standalone-chromium:4.1.2-20220227' );
+		putenv( 'SLIC_ARCHITECTURE=arm64' );
+		putenv( 'SLIC_CHROME_CONTAINER=seleniarm/standalone-chromium:4.1.2-20220227' );
 	} else {
-		putenv( 'TRIC_ARCHITECTURE=x86' );
-		putenv( 'TRIC_CHROME_CONTAINER=selenium/standalone-chrome:3.141.59-oxygen' );
+		putenv( 'SLIC_ARCHITECTURE=x86' );
+		putenv( 'SLIC_CHROME_CONTAINER=selenium/standalone-chrome:3.141.59-oxygen' );
 	}
 }
 

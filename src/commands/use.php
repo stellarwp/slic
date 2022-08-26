@@ -1,6 +1,6 @@
 <?php
 
-namespace TEC\Tric;
+namespace StellarWP\Slic;
 
 if ( $is_help ) {
 	echo "Sets the plugin to use in the tests.\n";
@@ -18,7 +18,7 @@ $target   = $sub_args( 'target', false );
 $target = (string) ensure_valid_target( $target );
 
 if ( ! empty( $target ) ) {
-	tric_switch_target( $target );
+	slic_switch_target( $target );
 }
 
 echo light_cyan( "Using {$target}\n" );

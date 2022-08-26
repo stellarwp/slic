@@ -5,7 +5,7 @@
  * @
  */
 
-namespace TEC\Tric;
+namespace StellarWP\Slic;
 
 /**
  * Returns a set of service dependencies required to run a Codeception

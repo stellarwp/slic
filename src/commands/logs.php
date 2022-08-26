@@ -3,10 +3,10 @@
  * Opens and follows the stack logs.
  *
  * @var bool   $is_help  Whether we're handling an `help` request on this command or not.
- * @var string $cli_name The current name of the `tric` CLI application.
+ * @var string $cli_name The current name of the `slic` CLI application.
  */
 
-namespace TEC\Tric;
+namespace StellarWP\Slic;
 
 if ( $is_help ) {
 	echo "Displays the stack logs.\n";
@@ -16,6 +16,6 @@ if ( $is_help ) {
 	return;
 }
 
-ensure_service_running( 'tric' );
+ensure_service_running( 'slic' );
 
-tric_realtime()( [ 'logs', '--follow' ] );
+slic_realtime()( [ 'logs', '--follow' ] );

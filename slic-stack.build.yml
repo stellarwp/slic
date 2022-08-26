@@ -3,11 +3,11 @@
 version: "3"
 
 networks:
-  tric:
+  slic:
     ipam:
       driver: default
       config:
-        - subnet: "172.${TRIC_TEST_SUBNET:-28}.0.0/16"
+        - subnet: "172.${SLIC_TEST_SUBNET:-28}.0.0/16"
 
 volumes:
   function-mocker-cache:
@@ -17,35 +17,35 @@ services:
   db:
     image: mariadb
     networks:
-      - tric
+      - slic
     environment:
       MYSQL_DATABASE: test
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
 
   wordpress:
-    image: tric/wordpress
+    image: slic/wordpress
     build:
       context: containers/wordpress
       # By default, build the version of Docker that does not include XDebug.
-      dockerfile: ${TRIC_WORDPRESS_DOCKERFILE:-Dockerfile.debug}
+      dockerfile: ${SLIC_WORDPRESS_DOCKERFILE:-Dockerfile.debug}
       args:
         # Fix the version of the WordPress image to avoid issues w/ out-of-date database dumps.
         WORDPRESS_IMAGE_VERSION: 5.6-apache
         # Allow the image to be built creating the user and group ID for the host machine user.
-        TRIC_UID: ${TRIC_UID:-0}
-        TRIC_GID: ${TRIC_GID:-0}
+        SLIC_UID: ${SLIC_UID:-0}
+        SLIC_GID: ${SLIC_GID:-0}
     networks:
-      tric:
+      slic:
         # Allow the other containers to read this container with a pretty URL.
-        ipv4_address: 172.${TRIC_TEST_SUBNET:-28}.1.1
+        ipv4_address: 172.${SLIC_TEST_SUBNET:-28}.1.1
     extra_hosts:
       # Let's make sure the WordPress service can reach itself with a pretty URL for internal requests.
-      - "wordpress.test:172.${TRIC_TEST_SUBNET:-28}.1.1"
+      - "wordpress.test:172.${SLIC_TEST_SUBNET:-28}.1.1"
     depends_on:
       - db
     # Run the container as the host user and group.
     # Apache will run as the same user and permission issues with WordPress generated files should not arise.
-    user: "${TRIC_UID:-}:${TRIC_GID:-}"
+    user: "${SLIC_UID:-}:${SLIC_GID:-}"
     sysctls:
       # Allow any user to bind ports <= 1024.
       # This is required as we're running the container as the host user and that user might not be in the root
@@ -75,16 +75,16 @@ services:
       # Configure this to debug the tests with XDebug.
       # Map the `_wordpress` directory to `/var/www/html' directory in your IDE of choice.
       # Map the `_plugins` directory to `/plugins` directory in your IDE of choice.
-      PHP_IDE_CONFIG: "serverName=${XDK:-tric}"
+      PHP_IDE_CONFIG: "serverName=${XDK:-slic}"
       # The `remote_host` is set to `host.docker.internal` that will resolve to the host machine IP address, from
       # within the container, on macOS and Windows.
       # On Linux set the host machine IP address before calling the stack:
       # XDH=$(ip route | grep docker0 | awk '{print $9}') docker-compose ...
-      XDEBUG_CONFIG: "idekey=${XDK:-tric} remote_enable=${XDE:-1} remote_host=${XDH:-host.docker.internal} remote_port=${XDP:-9001}"
+      XDEBUG_CONFIG: "idekey=${XDK:-slic} remote_enable=${XDE:-1} remote_host=${XDH:-host.docker.internal} remote_port=${XDP:-9001}"
       # Whether to disable the XDebug extension in the Codeception container completely or not.
       XDEBUG_DISABLE: "${XDEBUG_DISABLE:-0}"
     volumes:
       # Paths are relative to the directory that contains this file, NOT the current working directory.
       # Share the WordPress core installation files in the `_wordpress` directory.
-      - ${TRIC_WP_DIR}:/var/www/html:cached
+      - ${SLIC_WP_DIR}:/var/www/html:cached
       - ${COMPOSER_CACHE_HOST_DIR}:/host-composer-cache:cached

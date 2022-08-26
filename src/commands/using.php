@@ -6,7 +6,7 @@
  * @var \Closure $args    The argument map closure, as produced by the `args` function.
  */
 
-namespace TEC\Tric;
+namespace StellarWP\Slic;
 
 if ( $is_help ) {
 	echo "Returns the current 'use' target.\n";
@@ -15,8 +15,8 @@ if ( $is_help ) {
 	return;
 }
 
-$using = tric_target();
-$target_path = tric_plugins_dir( $using );
+$using = slic_target();
+$target_path = slic_plugins_dir( $using );
 if ( empty( $using ) ) {
 	echo magenta( "Currently not using any target, commands requiring a target will fail.\n" );
 	return;
@@ -24,7 +24,7 @@ if ( empty( $using ) ) {
 
 echo light_cyan( "Using {$using}\n" );
 
-if ( tric_plugins_dir() !== root( '_plugins' ) ) {
+if ( slic_plugins_dir() !== root( '_plugins' ) ) {
 	echo light_cyan( "\nFull target path: " ) . $target_path;
 }
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace TEC\Tric;
+namespace StellarWP\Slic;
 
 if ( $is_help ) {
 	echo "Activates and deactivated interactive mode. While deactivated, prompts will be suppressed and default values will be automatically selected.\n";
@@ -14,8 +14,8 @@ if ( $is_help ) {
 
 $interactive_args = args( [ 'toggle' ], $args( '...' ), 0 );
 
-tric_handle_interactive( $interactive_args );
+slic_handle_interactive( $interactive_args );
 
-echo colorize( "\n\nToggle this setting by using: <light_cyan>tric interactive [on|off]</light_cyan>\n" );
+echo colorize( "\n\nToggle this setting by using: <light_cyan>slic interactive [on|off]</light_cyan>\n" );
 echo colorize( "- on:  commands with prompts will prompt for input interactively.\n" );
 echo colorize( "- off: commands with prompts will NOT prompt and will use defaults.\n" );

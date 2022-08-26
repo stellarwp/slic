@@ -4,10 +4,10 @@
  *
  * @var bool    $is_help  Whether we're handling an `help` request on this command or not.
  * @var Closure $args     The argument map closure, as produced by the `args` function.
- * @var string  $cli_name The current name of the `tric` CLI application.
+ * @var string  $cli_name The current name of the `slic` CLI application.
  */
 
-namespace TEC\Tric;
+namespace StellarWP\Slic;
 
 if ( $is_help ) {
 	echo "Runs a Codeception command in the stack, the equivalent of <light_cyan>'codecept ...'</light_cyan>.\n";
@@ -19,25 +19,25 @@ if ( $is_help ) {
 	return;
 }
 
-$using = tric_target_or_fail();
+$using = slic_target_or_fail();
 echo light_cyan( "Using {$using}\n" );
 
 setup_id();
 $codeception_args = $args( '...' );
-ensure_service_running( 'tric', codeception_dependencies( $codeception_args ) );
+ensure_service_running( 'slic', codeception_dependencies( $codeception_args ) );
 
 $codeception_config = '';
-if ( file_exists( get_project_local_path() . '/codeception.tric.yml' ) ) {
-	$codeception_config = '-c codeception.tric.yml';
+if ( file_exists( get_project_local_path() . '/codeception.slic.yml' ) ) {
+	$codeception_config = '-c codeception.slic.yml';
 }
 
-$status = tric_realtime()( array_merge( [
+$status = slic_realtime()( array_merge( [
 		'exec',
 		'--user',
-		sprintf( '"%s:%s"', getenv( 'TRIC_UID' ), getenv( 'TRIC_GID' ) ),
+		sprintf( '"%s:%s"', getenv( 'SLIC_UID' ), getenv( 'SLIC_GID' ) ),
 		'--workdir',
 		escapeshellarg( get_project_container_path() ),
-		'tric',
+		'slic',
 		'vendor/bin/codecept ' . $codeception_config,
 	], $codeception_args )
 );

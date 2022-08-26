@@ -3,7 +3,7 @@
  * Interactive shell dedicated wrappers.
  */
 
-namespace TEC\Tric;
+namespace StellarWP\Slic;
 
 /**
  * Executes a wp-cli command in the stack, echoes and returns its output.
@@ -81,7 +81,7 @@ function get_terminal_lines_cols() {
 }
 
 /**
- * Set up the terminal, by means of environment vars, to improve the output and behavior of tric processes.
+ * Set up the terminal, by means of environment vars, to improve the output and behavior of slic processes.
  *
  * @param bool $force Whether to force the re-fetch and re-set of the terminal or to skip if already done.
  */

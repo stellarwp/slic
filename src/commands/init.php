@@ -1,15 +1,15 @@
 <?php
 /**
- * Handles the `init` command to initialize a plugin to use tric.
+ * Handles the `init` command to initialize a plugin to use slic.
  *
  * @var bool     $is_help Whether we're handling an `help` request on this command or not.
  * @var \Closure $args    The argument map closure, as produced by the `args` function.
  */
 
-namespace TEC\Tric;
+namespace StellarWP\Slic;
 
 if ( $is_help ) {
-	echo "Initializes a plugin for use in tric.\n";
+	echo "Initializes a plugin for use in slic.\n";
 	echo PHP_EOL;
 	echo colorize( "signature: <light_cyan>{$cli_name} init <plugin> [<branch>]</light_cyan>\n" );
 	echo colorize( "example: <light_cyan>{$cli_name} init the-events-calendar</light_cyan>\n" );
@@ -24,7 +24,7 @@ $branch = $sub_args( 'branch' );
 
 // If a plugin isn't passed as an argument, the target is the current plugin being used.
 if ( empty( $plugin ) ) {
-	$plugin = tric_target();
+	$plugin = slic_target();
 	echo light_cyan( "Using {$plugin}\n" );
 }
 
@@ -38,11 +38,11 @@ if ( null !== $branch ) {
 setup_plugin_tests( $plugin );
 
 // No building happens without first prompting; therefore, CLI needs to explicitly run its commands separately.
-if ( getenv( 'TRIC_BUILD_PROMPT' ) ) {
-	$current_target = tric_target();
+if ( getenv( 'SLIC_BUILD_PROMPT' ) ) {
+	$current_target = slic_target();
 
 	if ( $current_target !== $plugin ) {
-		tric_switch_target( $plugin );
+		slic_switch_target( $plugin );
 	}
 
 	$command_pool = maybe_build_install_command_pool( 'composer', $plugin, [ 'common' ] );
@@ -50,7 +50,7 @@ if ( getenv( 'TRIC_BUILD_PROMPT' ) ) {
 	execute_command_pool( $command_pool );
 
 	if ( $current_target !== $plugin ) {
-		tric_switch_target( $current_target );
+		slic_switch_target( $current_target );
 	}
 }
 

@@ -23,19 +23,19 @@ test/_plugin_store
 # Ignore the local version of WordPress and the plugins files used in local development and testing.
 _wordpress
 _plugins
-# Any .using file created by the tric cli tool.
+# Any .using file created by the slic cli tool.
 .using
-# Any .env.tric.* file created to override the tric cli tool configuration or to configure the runs.
-.env.tric.local
-.env.tric.run
+# Any .env.slic.* file created to override the slic cli tool configuration or to configure the runs.
+.env.slic.local
+.env.slic.run
 
-# Any .build-version file created by the tric cli tool.
+# Any .build-version file created by the slic cli tool.
 .build-version
-# Any .remote-version file created by the tric cli tool.
+# Any .remote-version file created by the slic cli tool.
 .remote-version
 # Any architecture detection flag file.
 .architecture_arm64
 .architecture_x86
 
-# tric own cache directory
+# slic own cache directory
 .cache

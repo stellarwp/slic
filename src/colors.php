@@ -3,7 +3,7 @@
  * Functions to colorize and style CLI output.
  */
 
-namespace TEC\Tric;
+namespace StellarWP\Slic;
 
 /**
  * Colorizes a string in a specific color.
@@ -88,7 +88,7 @@ function colorize( $string ) {
 	$result = preg_replace_callback(
 		'/<(?<style>[\\w]+)>(?<string>.*?)<\\/\\k<style>>/us',
 		static function ( array $m ) {
-			$function_name = '\\TEC\\Tric\\' . $m['style'];
+			$function_name = '\\StellarWP\\Slic\\' . $m['style'];
 			if ( ! function_exists( $function_name ) ) {
 				return $m['string'];
 			}

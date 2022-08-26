@@ -1,6 +1,6 @@
 <?php
 
-namespace TEC\Tric;
+namespace StellarWP\Slic;
 
 if ( $is_help ) {
 	echo "Tears down the stack, stopping containers and removing volumes.\n";
@@ -9,6 +9,6 @@ if ( $is_help ) {
 	return;
 }
 
-$status = tric_realtime()( [ 'down', '--volumes', '--remove-orphans' ] );
+$status = slic_realtime()( [ 'down', '--volumes', '--remove-orphans' ] );
 
 exit( $status );

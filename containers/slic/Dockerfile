@@ -53,23 +53,23 @@ RUN bash -c '. $NVM_DIR/nvm.sh && nvm use default'
 ENV PATH $NVM_DIR/versions/node/v$NODE_VERSION/bin:$NVM_DIR:$PATH
 RUN chmod a+x $NVM_DIR/nvm.sh
 
-# Create a `tric` user and group fixuid will use.
-RUN [ $(getent group 1000) ] || addgroup --gid 1000 tric && \
-    [ $(id -u 1000) ] || adduser --uid 1000 --gid 1000 --home /home/tric --shell /bin/bash --disabled-password --gecos "" tric && \
-    mkdir -p /home/tric && \
+# Create a `slic` user and group fixuid will use.
+RUN [ $(getent group 1000) ] || addgroup --gid 1000 slic && \
+    [ $(id -u 1000) ] || adduser --uid 1000 --gid 1000 --home /home/slic --shell /bin/bash --disabled-password --gecos "" slic && \
+    mkdir -p /home/slic && \
     curl -SsL https://github.com/boxboat/fixuid/releases/download/v0.5.1/fixuid-0.5.1-linux-amd64.tar.gz | tar -C /usr/local/bin -xzf - && \
     chown root:root /usr/local/bin/fixuid && \
     chmod 4755 /usr/local/bin/fixuid && \
     mkdir -p /etc/fixuid
 COPY fixuid.yml /etc/fixuid/config.yml
-COPY .bashrc /home/tric/.bashrc
+COPY .bashrc /home/slic/.bashrc
 COPY .bashrc /root/.bashrc
-COPY bashrc_scripts.sh /home/tric/bashrc_scripts.sh
+COPY bashrc_scripts.sh /home/slic/bashrc_scripts.sh
 
-RUN chown -R tric:tric $NVM_DIR
+RUN chown -R slic:slic $NVM_DIR
 
-COPY tric-entrypoint.sh /usr/local/bin/tric-entrypoint.sh
-RUN chmod a+x /usr/local/bin/tric-entrypoint.sh
-ENTRYPOINT ["/usr/local/bin/tric-entrypoint.sh"]
+COPY slic-entrypoint.sh /usr/local/bin/slic-entrypoint.sh
+RUN chmod a+x /usr/local/bin/slic-entrypoint.sh
+ENTRYPOINT ["/usr/local/bin/slic-entrypoint.sh"]
 
-USER tric:tric
+USER slic:slic

@@ -1,6 +1,6 @@
 <?php
 
-namespace TEC\Tric;
+namespace StellarWP\Slic;
 
 if ( $is_help ) {
 	echo "Prints the stack configuration as interpolated from the environment.\n";
@@ -9,8 +9,8 @@ if ( $is_help ) {
 	return;
 }
 
-$using = tric_target();
+$using = slic_target();
 setup_id();
-$status = tric_realtime()( [ 'config' ] );
+$status = slic_realtime()( [ 'config' ] );
 
 exit( $status );

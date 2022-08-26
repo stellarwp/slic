@@ -3,13 +3,13 @@
  * Functions to start, stop, set up services.
  */
 
-namespace TEC\Tric;
+namespace StellarWP\Slic;
 
 use Closure;
 use Exception;
 
 /**
- * Returns the `docker-compose` schema parsed from the `tric` files loaded in the current
+ * Returns the `docker-compose` schema parsed from the `slic` files loaded in the current
  * request.
  *
  * @return array<string,array> The loaded `docker-compose` format files, merged in array format.
@@ -24,7 +24,7 @@ function stack_schema() {
 	require_once __DIR__ . '/../includes/Spyc/Spyc.php';
 
 	$schemas = [];
-	$stack   = tric_stack_array( true );
+	$stack   = slic_stack_array( true );
 	foreach ( $stack as $file ) {
 		if ( ! is_readable( $file ) ) {
 			echo magenta( "File $file cannot be found or is not readable." );
@@ -46,7 +46,7 @@ function stack_schema() {
 
 /**
  * Returns the `service` section of the `docker-compose` format stack files loaded in the request
- * for `tric`.
+ * for `slic`.
  *
  * @return array<string,array> The `services` section of the loaded `docker-compose` format files.
  */
@@ -172,7 +172,7 @@ function service_running( $service, $set = null ) {
 
 	if ( $running_services === null ) {
 		// Pull from docker, ignore the set flag as it will be live.
-		$ps = tric_process()( [ 'ps', '--services', '--filter', '"status=running"' ] );
+		$ps = slic_process()( [ 'ps', '--services', '--filter', '"status=running"' ] );
 		$ps_status = $ps( 'status' );
 
 		if ( $ps_status !== 0 ) {
@@ -197,7 +197,7 @@ function service_running( $service, $set = null ) {
  */
 function quietly_tear_down_stack() {
 	ob_start();
-	setup_tric_env( root() );
+	setup_slic_env( root() );
 	$status = teardown_stack( true );
 	ob_end_clean();
 
@@ -316,7 +316,7 @@ function propagate_ip_address_of_to( array $of_services, array $to_services, arr
 	$all_services = array_unique( array_merge( $of_services, $to_services ) );
 	$services_ids = array_combine(
 		$all_services,
-		array_map( 'TEC\Tric\get_service_id', $all_services )
+		array_map( 'StellarWP\Slic\get_service_id', $all_services )
 	);
 
 	$of_services_ids = array_intersect_key( $services_ids, array_combine( $of_services, array_fill( 0, count( $of_services ), true ) ) );
@@ -324,7 +324,7 @@ function propagate_ip_address_of_to( array $of_services, array $to_services, arr
 
 	$ip_addresses = array_combine(
 		$of_services,
-		array_map( 'TEC\Tric\get_service_ip_address', $of_services_ids )
+		array_map( 'StellarWP\Slic\get_service_ip_address', $of_services_ids )
 	);
 
 	$hosts = array_merge( ...array_map( static function ( $service ) use ( $ip_addresses, $hostname_map ) {
@@ -366,7 +366,7 @@ function ensure_service_running( $service, array $dependencies = null ) {
 
 	$own_on_up = ensure_service_ready( $service );
 
-	$up_status = tric_realtime()( [ 'up', '-d', $service ] );
+	$up_status = slic_realtime()( [ 'up', '-d', $service ] );
 	service_running( $service, true );
 
 	if ( $up_status !== 0 ) {

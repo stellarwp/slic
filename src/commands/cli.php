@@ -4,10 +4,10 @@
  *
  * @var bool    $is_help  Whether we're handling an `help` request on this command or not.
  * @var Closure $args     The argument map closure, as produced by the `args` function.
- * @var string  $cli_name The current name of the `tric` CLI application.
+ * @var string  $cli_name The current name of the `slic` CLI application.
  */
 
-namespace TEC\Tric;
+namespace StellarWP\Slic;
 
 if ( $is_help ) {
 	echo "Runs a wp-cli command in the stack or opens a session into the wp-cli container.\n";
@@ -20,7 +20,7 @@ if ( $is_help ) {
 }
 
 setup_id();
-ensure_service_running( 'tric' );
+ensure_service_running( 'slic' );
 ensure_wordpress_ready();
 
 // Runs a wp-cli command in the stack, using the `cli` service.
@@ -35,13 +35,13 @@ $cli_command = reset( $command );
 if ( empty( $cli_command ) || in_array( $cli_command, [ 'bash', 'ssh' ], true ) ) {
 	// @todo replace from ssh command.
 	$command = sprintf( 'docker exec -it --user "%d:%d" --workdir %s %s bash -c "wp shell"',
-		getenv( 'TRIC_UID' ),
-		getenv( 'TRIC_GID' ),
+		getenv( 'SLIC_UID' ),
+		getenv( 'SLIC_GID' ),
 		escapeshellarg( get_project_container_path() ),
-		get_service_id( 'tric' )
+		get_service_id( 'slic' )
 	);
 	$status = process_realtime( $command );
 } else {
-	$status = tric_realtime()( cli_command( $command ) );
+	$status = slic_realtime()( cli_command( $command ) );
 }
 exit( $status );
