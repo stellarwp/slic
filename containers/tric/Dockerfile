@@ -66,6 +66,8 @@ COPY .bashrc /home/tric/.bashrc
 COPY .bashrc /root/.bashrc
 COPY bashrc_scripts.sh /home/tric/bashrc_scripts.sh
 
+RUN chown -R tric:tric $NVM_DIR
+
 COPY tric-entrypoint.sh /usr/local/bin/tric-entrypoint.sh
 RUN chmod a+x /usr/local/bin/tric-entrypoint.sh
 ENTRYPOINT ["/usr/local/bin/tric-entrypoint.sh"]
