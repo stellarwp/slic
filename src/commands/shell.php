@@ -12,7 +12,7 @@ if ( $is_help ) {
 }
 
 $service_args = args( [ 'service', '...' ], $args( '...' ), 0 );
-$service = $service_args( 'service' ) ?? 'tric';
+$service = $service_args( 'service', 'tric' );
 
 $using = slic_target_or_fail();
 echo light_cyan( "Using {$using}\n" );

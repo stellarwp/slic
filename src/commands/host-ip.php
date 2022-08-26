@@ -10,7 +10,6 @@ if ( $is_help ) {
 
 // Buffer the output to avoid printing empty blank lines that might mangle the output in quite mode.
 ob_start();
-//slic_passive()( [ 'run', '--rm', 'host-ip' ] );
 $command = sprintf( 'docker exec --user "%d:%d" --workdir %s %s bash -c ". /slic-scripts/host-ip.sh"',
 	getenv( 'SLIC_UID' ),
 	getenv( 'SLIC_GID' ),
