@@ -180,10 +180,3 @@ services:
 #      # Expose MailCatcher ports on localhost.
 #      - "1025:1025"
 #      - "1080:1080"
-#
-#  host-ip:
-#    image: busybox
-#    networks:
-#      tric:
-#    entrypoint: sh
-#    command: -c '/bin/ip route | awk "/default/ { print $$3 }" | cut -d" " -f3'

@@ -16,7 +16,7 @@ RUN chmod a+x /usr/local/bin/install-php-extensions && \
 
 # Install some more packages required by wp-cli and Composer.
 RUN apt-get update && apt-get install -y \
-    default-mysql-client curl git zip unzip \
+    default-mysql-client curl git zip unzip iproute2 \
     && apt-get clean && rm -rf /var/lib/apt/lists/* \
 
 # Use our own ini configuration file to set up some PHP default.
