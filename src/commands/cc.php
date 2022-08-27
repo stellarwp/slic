@@ -11,9 +11,11 @@ namespace StellarWP\Slic;
 
 if ( $is_help ) {
 	$help = <<< HELP
-	Runs a Codeception command in the stack, the equivalent of <light_cyan>'codecept ...'</light_cyan>.
+	SUMMARY:
 
-	This command requires a use target set using the <light_cyan>use</light_cyan> command.
+		Runs a Codeception command in the stack, the equivalent of <light_cyan>'codecept ...'</light_cyan>.
+
+		This command requires a use target set using the <light_cyan>use</light_cyan> command.
 
 	USAGE:
 

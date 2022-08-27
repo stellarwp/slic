@@ -10,12 +10,28 @@
 namespace StellarWP\Slic;
 
 if ( $is_help ) {
-	echo "Sets or displays the composer cache directory setting.\n";
-	echo PHP_EOL;
-	echo colorize( "signature: <light_cyan>{$cli_name} composer-cache [(set <dir>|unset)]</light_cyan>\n" );
-	echo colorize( "example: <light_cyan>{$cli_name} composer-cache</light_cyan>\n" );
-	echo colorize( "example: <light_cyan>{$cli_name} composer-cache unset</light_cyan>\n" );
-	echo colorize( "example: <light_cyan>{$cli_name} composer-cache set /home/person/.cache/composer</light_cyan>\n" );
+	$help = <<< HELP
+	SUMMARY:
+
+		Sets or displays the composer cache directory setting.
+
+	USAGE:
+
+		<yellow>{$cli_name} {$subcommand} [(set <dir>|unset)]</yellow>
+
+	EXAMPLES:
+
+		<light_cyan>{$cli_name} {$subcommand}</light_cyan>
+		Shows the current composer cache directory setting.
+
+		<light_cyan>{$cli_name} {$subcommand} unset</light_cyan>
+		Removes the composer cache directory setting.
+
+		<light_cyan>{$cli_name} {$subcommand} set /home/person/.cache/composer</light_cyan>
+		Sets the composer cache directory to a specific directory.
+	HELP;
+
+	echo colorize( $help );
 
 	return;
 }

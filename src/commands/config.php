@@ -3,9 +3,17 @@
 namespace StellarWP\Slic;
 
 if ( $is_help ) {
-	echo "Prints the stack configuration as interpolated from the environment.\n";
-	echo PHP_EOL;
-	echo colorize( "usage: <light_cyan>{$cli_name} config</light_cyan>" );
+	$help = <<< HELP
+	SUMMARY:
+
+		Prints the stack configuration as interpolated from the environment.
+
+	USAGE:
+
+		<yellow>{$cli_name} config</yellow>
+	HELP;
+
+	echo colorize( $help );
 	return;
 }
 

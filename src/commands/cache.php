@@ -11,7 +11,9 @@ namespace StellarWP\Slic;
 
 if ( $is_help ) {
 	$help = <<< HELP
-	Activates and deactivates object cache support, returns the current object cache status.
+	SUMMARY:
+
+		Activates and deactivates object cache support, returns the current object cache status.
 
 	USAGE:
 

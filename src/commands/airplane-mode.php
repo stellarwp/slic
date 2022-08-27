@@ -13,7 +13,9 @@ namespace StellarWP\Slic;
 
 if ( $is_help ) {
 	$help = <<< HELP
-	Activates or deactivates the airplane-mode plugin. If the plugin is not installed, it will be installed.
+	SUMMARY:
+
+		Activates or deactivates the airplane-mode plugin. If the plugin is not installed, it will be installed.
 
 	USAGE:
 

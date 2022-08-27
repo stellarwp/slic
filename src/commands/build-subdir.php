@@ -11,7 +11,9 @@ namespace StellarWP\Slic;
 
 if ( $is_help ) {
 	$help = <<< HELP
-	Activates or deactivates whether or not composer/npm build should apply to sub-directories.
+	SUMMARY:
+
+		Activates or deactivates whether or not composer/npm build should apply to sub-directories.
 
 	USAGE:
 

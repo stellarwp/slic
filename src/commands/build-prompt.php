@@ -11,7 +11,9 @@ namespace StellarWP\Slic;
 
 if ( $is_help ) {
 	$help = <<< HELP
-	Activates or deactivates whether or not composer/npm build prompts should be provided.
+	SUMMARY:
+
+		Activates or deactivates whether or not composer/npm build prompts should be provided.
 
 	USAGE:
 

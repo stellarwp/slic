@@ -11,7 +11,9 @@ namespace StellarWP\Slic;
 
 if ( $is_help ) {
 	$help = <<< HELP
-	Builds the stack containers that require it, or builds a specific service image.
+	SUMMARY:
+
+		Builds the stack containers that require it, or builds a specific service image.
 
 	USAGE:
 

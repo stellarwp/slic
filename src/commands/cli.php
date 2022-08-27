@@ -11,7 +11,9 @@ namespace StellarWP\Slic;
 
 if ( $is_help ) {
 	$help = <<< HELP
-	Runs a wp-cli command or opens a `wp-cli shell` in the stack.
+	SUMMARY:
+
+		Runs a wp-cli command or opens a `wp-cli shell` in the stack.
 
 	USAGE:
 

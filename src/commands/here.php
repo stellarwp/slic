@@ -10,10 +10,25 @@
 namespace StellarWP\Slic;
 
 if ( $is_help ) {
-	echo "Sets the current plugins directory to be the one used by slic.\n";
-	echo PHP_EOL;
-	echo colorize( "signature: <light_cyan>{$cli_name} here</light_cyan>\n" );
-	echo colorize( "signature: <light_cyan>{$cli_name} here reset</light_cyan>\n" );
+	$help = <<< HELP
+	SUMMARY:
+
+		Sets the current plugins directory to be the one used by slic.
+
+	USAGE:
+
+		<yellow>{$cli_name} {$subcommand} [reset]</yellow>
+
+	EXAMPLES:
+
+		<light_cyan>{$cli_name} here</light_cyan>
+		Sets the current directory to be used within the slic stack for selecting targets.
+
+		<light_cyan>{$cli_name} here reset</light_cyan>
+		Unsets the directory that slic uses to select targets.
+	HELP;
+
+	echo colorize( $help );
 	return;
 }
 

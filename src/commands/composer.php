@@ -3,16 +3,39 @@
 namespace StellarWP\Slic;
 
 if ( $is_help ) {
-	echo "Runs a Composer command in the stack.\n";
-	echo PHP_EOL;
-	echo colorize( "This command requires a use target set using the <light_cyan>use</light_cyan> command.\n" );
-	echo colorize( "usage: <light_cyan>{$cli_name} composer [...<commands>] [set-version <1|2>] [get-version] [reset-version]</light_cyan>\n" );
-	echo colorize( "example: <light_cyan>{$cli_name} composer install</light_cyan>\n" );
-	echo colorize( "example: <light_cyan>{$cli_name} composer install --no-dev</light_cyan>\n" );
-	echo colorize( "example: <light_cyan>{$cli_name} composer update</light_cyan>\n" );
-	echo colorize( "example: <light_cyan>{$cli_name} composer set-version 1</light_cyan>\n" );
-	echo colorize( "example: <light_cyan>{$cli_name} composer get-version</light_cyan>\n" );
-	echo colorize( "example: <light_cyan>{$cli_name} composer reset-version</light_cyan>" );
+	$help = <<< HELP
+	SUMMARY:
+
+		Runs a Composer command in the stack.
+
+		This command requires a use target set using the <light_cyan>use</light_cyan> command.
+
+	USAGE:
+
+		<yellow>{$cli_name} composer [...<commands>] [set-version <1|2>] [get-version] [reset-version]</yellow>
+
+	EXAMPLES:
+
+		<light_cyan>{$cli_name} composer install</light_cyan>
+		Run composer install in the current <light_cyan>use</light_cyan> target.
+
+		<light_cyan>{$cli_name} composer install --no-dev</light_cyan>
+		Run composer install --no-dev in the current <light_cyan>use</light_cyan> target.
+
+		<light_cyan>{$cli_name} composer update</light_cyan>
+		Run composer update in the current <light_cyan>use</light_cyan> target.
+
+		<light_cyan>{$cli_name} composer set-version 1</light_cyan>
+		Sets the current composer version to 1.
+
+		<light_cyan>{$cli_name} composer get-version</light_cyan>
+		Gets the current composer version.
+
+		<light_cyan>{$cli_name} composer reset-version</light_cyan>
+		Resets the composer version to the default.
+	HELP;
+
+	echo colorize( $help );
 
 	return;
 }
