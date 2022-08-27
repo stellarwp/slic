@@ -13,3 +13,9 @@ $cli_header_extra = <<< MESSAGE
 MESSAGE;
 
 require_once __DIR__ . '/slic.php';
+
+use function StellarWP\Slic\colorize;
+
+if ( $subcommand ) {
+   echo colorize( PHP_EOL . "⚠️ Use <light_cyan>slic</light_cyan> instead of <red>tric</red>." . PHP_EOL );
+}
