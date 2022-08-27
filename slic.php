@@ -138,11 +138,11 @@ $aliases = [
 switch ( $subcommand ) {
 	default:
 	case 'help':
-		echo $help_message . "\n";
+		echo $help_message . PHP_EOL;
 		if ( $original_subcommand ) {
-			echo "\n" . $help_advanced_message;
+			echo PHP_EOL . $help_advanced_message;
 		} else {
-			echo colorize( "\nThere are a lot more commands. Use <light_cyan>slic help</light_cyan> to see them all!\n" );
+			echo colorize( PHP_EOL . "There are a lot more commands. Use <light_cyan>slic help</light_cyan> to see them all!" . PHP_EOL );
 		}
 		maybe_prompt_for_repo_update();
 		maybe_prompt_for_stack_update();
@@ -201,5 +201,5 @@ switch ( $subcommand ) {
 }
 
 // Add a break line at the end of each command to avoid dirty terminal issues.
-echo "\n";
+echo PHP_EOL;
 

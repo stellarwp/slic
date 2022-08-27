@@ -26,18 +26,18 @@ if ( $is_help ) {
 $using = slic_target();
 $target_path = slic_plugins_dir( $using );
 if ( empty( $using ) ) {
-	echo magenta( "Currently not using any target, commands requiring a target will fail.\n" );
+	echo magenta( "Currently not using any target, commands requiring a target will fail." . PHP_EOL );
 	return;
 }
 
-echo light_cyan( "Using {$using}\n" );
+echo light_cyan( "Using {$using}" . PHP_EOL );
 
 if ( slic_plugins_dir() !== root( '_plugins' ) ) {
-	echo light_cyan( "\nFull target path: " ) . $target_path;
+	echo light_cyan( PHP_EOL . "Full target path: " ) . $target_path;
 }
 
 if ( $target_path === getcwd() ) {
-	echo light_cyan( "\nThis directory is the current use target." );
+	echo light_cyan( PHP_EOL . "The directory you are in is the current use target." );
 } else {
-	echo yellow( "\nThis directory is not the current use target." );
+	echo yellow( PHP_EOL . "The directory you are in is not the current use target." );
 }

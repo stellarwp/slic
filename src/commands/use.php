@@ -34,4 +34,4 @@ if ( ! empty( $target ) ) {
 	slic_switch_target( $target );
 }
 
-echo light_cyan( "Using {$target}\n" );
+echo light_cyan( "Using {$target}" . PHP_EOL );

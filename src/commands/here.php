@@ -87,5 +87,5 @@ write_env_file( $run_settings_file, $env_values, true );
 setup_slic_env( root() );
 quietly_tear_down_stack();
 
-echo colorize( "\n<light_cyan>Slic plugin path set to</light_cyan> {$here_dir}.\n\n" );
+echo colorize( PHP_EOL . "<light_cyan>Slic plugin path set to</light_cyan> {$here_dir}." . PHP_EOL . PHP_EOL );
 echo colorize( "If this is the first time setting this plugin path, be sure to <light_cyan>slic init <plugin></light_cyan>." );

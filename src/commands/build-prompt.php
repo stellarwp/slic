@@ -39,6 +39,6 @@ $interactive_args = args( [ 'toggle' ], $args( '...' ), 0 );
 
 slic_handle_build_prompt( $interactive_args );
 
-echo colorize( "\n\nToggle this setting by using: <light_cyan>slic build-prompt [on|off]</light_cyan>\n" );
-echo colorize( "- on:  commands will prompt for composer/npm installs.\n" );
-echo colorize( "- off: commands will NOT prompt for composer/npm installs.\n" );
+echo colorize( PHP_EOL . PHP_EOL . "Toggle this setting by using: <light_cyan>slic build-prompt [on|off]</light_cyan>" . PHP_EOL );
+echo colorize( "- on:  commands will prompt for composer/npm installs." . PHP_EOL );
+echo colorize( "- off: commands will NOT prompt for composer/npm installs." . PHP_EOL );

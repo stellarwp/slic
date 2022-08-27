@@ -51,7 +51,7 @@ check_status_or(
 	static function () {
 		$status = slic_realtime()( cli_command( [ 'plugin', 'install', 'redis-cache' ] ) );
 		if ( 0 !== $status ) {
-			echo magenta( "Installation of redis-cache plugin failed; see above.\n" );
+			echo magenta( "Installation of redis-cache plugin failed; see above." . PHP_EOL );
 			exit( 1 );
 		}
 	}

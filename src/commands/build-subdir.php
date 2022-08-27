@@ -40,6 +40,6 @@ $subdir_args = args( [ 'toggle' ], $args( '...' ), 0 );
 
 slic_handle_build_subdir( $subdir_args );
 
-echo colorize( "\n\nToggle this setting by using: <light_cyan>slic build-subdir [on|off]</light_cyan>\n" );
-echo colorize( "- on:  composer/npm commands will apply to sub-directories.\n" );
-echo colorize( "- off: composer/npm commands will NOT apply to sub-directories.\n" );
+echo colorize( PHP_EOL . PHP_EOL . "Toggle this setting by using: <light_cyan>slic build-subdir [on|off]</light_cyan>" . PHP_EOL );
+echo colorize( "- on:  composer/npm commands will apply to sub-directories." . PHP_EOL );
+echo colorize( "- off: composer/npm commands will NOT apply to sub-directories." . PHP_EOL );

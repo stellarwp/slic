@@ -44,7 +44,7 @@ if ( $is_help ) {
 }
 
 $using = slic_target_or_fail();
-echo light_cyan( "Using {$using}\n" );
+echo light_cyan( "Using {$using}" . PHP_EOL );
 
 ensure_service_running( 'slic', codeception_dependencies() );
 
@@ -58,12 +58,12 @@ $root = slic_plugins_dir( slic_target( true ) );
 // Object-cache is disruptive in the context of tests; remove the object cache drop-in before running the tests.
 $object_cache_dropin = slic_wp_dir( 'wp-content/object-cache.php' );
 if ( file_exists( $object_cache_dropin ) ) {
-	echo "Removing the object cache drop-in file before tests...\n";
+	echo "Removing the object cache drop-in file before tests..." . PHP_EOL;
 	if ( ! unlink( $object_cache_dropin ) ) {
-		echo magenta( "Failed to remove the {$object_cache_dropin} file.\n" );
+		echo magenta( "Failed to remove the {$object_cache_dropin} file." . PHP_EOL );
 		exit( 1 );
 	}
-	echo "Object cache drop-in file removed.\n";
+	echo "Object cache drop-in file removed." . PHP_EOL;
 }
 
 /*
@@ -83,7 +83,7 @@ $config_files = [];
 switch ( $available_configs_mask ) {
 	case 0:
 		// There is no configuration file; needs configuration.
-		echo magenta( "No Codeception configuration file found: run the 'init' subcommand to initialize the project.\n" );
+		echo magenta( "No Codeception configuration file found: run the 'init' subcommand to initialize the project." . PHP_EOL );
 		exit( 1 );
 	case 1:
 		// Dist config file only; this will work if `slic` is the dist tool used locally and in CI, CC will pick it up.

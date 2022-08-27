@@ -35,7 +35,7 @@ $targets = array_unique( $targets );
 
 $command_lines = [];
 
-echo yellow( "\nTargets: " ) . implode( ', ', $targets ) . "\n\n";
+echo yellow( PHP_EOL . "Targets: " ) . implode( ', ', $targets ) . PHP_EOL . PHP_EOL;
 
 // Allow users to enter a command prefixing it with `slic` or not.
 do {
@@ -48,7 +48,7 @@ do {
 	}
 } while ( ! empty( $last_command_line ) );
 
-echo yellow( "\nTargets: " ) . implode( ', ', $command_lines ) . "\n\n";
+echo yellow( PHP_EOL . "Targets: " ) . implode( ', ', $command_lines ) . PHP_EOL . PHP_EOL;
 
 if ( preg_match( '/^n/i', ask(
 	colorize(
@@ -59,7 +59,7 @@ if ( preg_match( '/^n/i', ask(
 	),
 	'yes'
 ) ) ) {
-	echo "\nDone!";
+	echo PHP_EOL . "Done!";
 
 	return;
 }

@@ -60,11 +60,11 @@ check_status_or(
 );
 
 if ( $activate ) {
-	echo "Activating the airplane-mode plugin...\n";
+	echo "Activating the airplane-mode plugin..." . PHP_EOL;
 	check_status_or_exit( slic_process()( cli_command( [ 'plugin', 'activate', 'airplane-mode' ] ) ) );
 	echo light_cyan( 'Airplane mode plugin activated: all external data calls are now disabled.' );
 } else {
-	echo "Deactivating the airplane-mode plugin...\n";
+	echo "Deactivating the airplane-mode plugin..." . PHP_EOL;
 	check_status_or_exit( slic_process()( cli_command( [ 'plugin', 'deactivate', 'airplane-mode' ] ) ) );
 	echo light_cyan( 'Airplane mode plugin deactivated: external data calls are now enabled.' );
 }

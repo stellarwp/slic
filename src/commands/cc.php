@@ -34,7 +34,7 @@ if ( $is_help ) {
 }
 
 $using = slic_target_or_fail();
-echo light_cyan( "Using {$using}\n" );
+echo light_cyan( "Using {$using}" . PHP_EOL );
 
 setup_id();
 $codeception_args = $args( '...' );

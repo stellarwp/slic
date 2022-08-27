@@ -39,7 +39,7 @@ $branch = $sub_args( 'branch' );
 // If a plugin isn't passed as an argument, the target is the current plugin being used.
 if ( empty( $plugin ) ) {
 	$plugin = slic_target();
-	echo light_cyan( "Using {$plugin}\n" );
+	echo light_cyan( "Using {$plugin}" . PHP_EOL );
 }
 
 clone_plugin( $plugin, $branch );
@@ -68,4 +68,4 @@ if ( getenv( 'SLIC_BUILD_PROMPT' ) ) {
 	}
 }
 
-echo light_cyan( "Finished initializing {$plugin}\n" );
+echo light_cyan( "Finished initializing {$plugin}" . PHP_EOL );

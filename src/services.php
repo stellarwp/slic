@@ -227,7 +227,7 @@ function get_service_id( $service ) {
 	$root    = root();
 	$command = "docker ps -f label=com.docker.compose.project.working_dir='$root' " .
 	           "-f label=com.docker.compose.service=$service --format '{{.ID}}'";
-	debug( "Executing command: $command\n" );
+	debug( "Executing command: $command" . PHP_EOL );
 	exec( $command, $output, $status );
 
 	return $status === 0 ? reset( $output ) : null;
@@ -243,7 +243,7 @@ function get_service_id( $service ) {
  */
 function get_service_ip_address( $service_id ) {
 	$command = "docker inspect --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $service_id";
-	debug( "Executing command: $command\n" );
+	debug( "Executing command: $command" . PHP_EOL );
 	exec( $command, $output, $status );
 
 	return $status === 0 ? reset( $output ) : null;
@@ -269,7 +269,7 @@ function get_service_ip_address( $service_id ) {
 function add_hosts_to_service( $service_id, array $hosts ) {
 	// Read the current contents of the `/etc/hosts` file.
 	$read_command = "docker exec -u '0:0' $service_id bash -c 'cat /etc/hosts'";
-	debug( "Executing command: $read_command\n" );
+	debug( "Executing command: $read_command" . PHP_EOL );
 	exec( $read_command, $output, $status );
 
 	if ( $status !== 0 ) {
@@ -294,7 +294,7 @@ function add_hosts_to_service( $service_id, array $hosts ) {
 
 	// Write the new lines replacing the `/etc/hosts` file contents.
 	$write_command = "docker exec -u '0:0' $service_id bash -c 'echo -e \"$new_lines\\\n\" > /etc/hosts'";
-	debug( "Executing command: $write_command\n" );
+	debug( "Executing command: $write_command" . PHP_EOL );
 	exec( $write_command, $output, $status );
 
 	if ( $status !== 0 ) {
@@ -400,7 +400,7 @@ function ensure_service_running( $service, array $dependencies = null ) {
 function service_up_notify( string $service ) : void {
 	switch ( $service ) {
 		case 'wordpress':
-			echo colorize( "\nYour WordPress site is reachable at: <yellow>http://localhost:" . getenv( 'WORDPRESS_HTTP_PORT' ) . "</yellow>\n" );
+			echo colorize( PHP_EOL . "Your WordPress site is reachable at: <yellow>http://localhost:" . getenv( 'WORDPRESS_HTTP_PORT' ) . "</yellow>" . PHP_EOL );
 		default:
 			return;
 	}

@@ -33,6 +33,6 @@ $interactive_args = args( [ 'toggle' ], $args( '...' ), 0 );
 
 slic_handle_interactive( $interactive_args );
 
-echo colorize( "\n\nToggle this setting by using: <light_cyan>slic interactive [on|off]</light_cyan>\n" );
-echo colorize( "- on:  commands with prompts will prompt for input interactively.\n" );
-echo colorize( "- off: commands with prompts will NOT prompt and will use defaults.\n" );
+echo colorize( PHP_EOL . PHP_EOL . "Toggle this setting by using: <light_cyan>slic interactive [on|off]</light_cyan>" . PHP_EOL );
+echo colorize( "- on:  commands with prompts will prompt for input interactively." . PHP_EOL );
+echo colorize( "- off: commands with prompts will NOT prompt and will use defaults." . PHP_EOL );

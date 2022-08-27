@@ -57,7 +57,7 @@ function parse_license_file( $licenses_file = null ) {
 	if ( null !== $licenses_file ) {
 		load_env_file( $licenses_file );
 	} else {
-		echo "\nLicenses file not specified, licenses will be read from environment.";
+		echo PHP_EOL . "Licenses file not specified, licenses will be read from environment.";
 	}
 }
 
@@ -83,7 +83,7 @@ function load_env_file( $env_file ) {
  */
 function read_env_file( $env_file ) {
 	if ( ! file_exists( $env_file ) ) {
-		echo "\nenv file ${env_file} does not exist.";
+		echo PHP_EOL . "env file ${env_file} does not exist.";
 		exit( 1 );
 	}
 
@@ -251,7 +251,7 @@ function host_ip( $os = 'Linux' ) {
 		}
 
 		if ( false === $host_ip ) {
-			echo magenta( "Cannot get the host machine IP address.\n" );
+			echo magenta( "Cannot get the host machine IP address." . PHP_EOL );
 			exit( 1 );
 		}
 	} else {
@@ -355,7 +355,7 @@ function write_env_file( $file, array $lines = [], $update = false ) {
 	$put = file_put_contents( $file, $data );
 
 	if ( false === $put ) {
-		echo "\nCould not write env file {$file}";
+		echo PHP_EOL . "Could not write env file {$file}";
 		exit( 1 );
 	}
 }
@@ -404,8 +404,8 @@ function ssh_auth_sock() {
 		return $env_ssh_sock;
 	}
 
-	echo colorize( "<red>SSH_AUTH_SOCK environment variable is not set!</red>\n" );
-	echo colorize( "Read why and how to debug here: <light_cyan>https://developer.github.com/v3/guides/using-ssh-agent-forwarding/</light_cyan>\n" );
+	echo colorize( "<red>SSH_AUTH_SOCK environment variable is not set!</red>" . PHP_EOL );
+	echo colorize( "Read why and how to debug here: <light_cyan>https://developer.github.com/v3/guides/using-ssh-agent-forwarding/</light_cyan>" . PHP_EOL );
 	exit( 1 );
 }
 
@@ -559,7 +559,7 @@ function array_merge_multi( ...$args ) {
  * @return string|false Either the absolute path to the destination file, or `false`on failure.
  */
 function download_file( $source_url, $dest_file, $verify_host = true ) {
-	debug( "Downloading file $source_url ...\n" );
+	debug( "Downloading file $source_url ..." . PHP_EOL );
 
 	$file_handle = fopen( $dest_file, 'wb' );
 
@@ -595,7 +595,7 @@ function download_file( $source_url, $dest_file, $verify_host = true ) {
 	// This will fclose as well.
 	curl_close( $curl_handle );
 
-	debug( "File $source_url downloaded.\n" );
+	debug( "File $source_url downloaded." . PHP_EOL );
 
 	return $dest_file;
 }
@@ -610,7 +610,7 @@ function download_file( $source_url, $dest_file, $verify_host = true ) {
  * @return string|false The path to the directory containing the extracted files, or `false` on failure.
  */
 function unzip_file( $source_file, $dest_dir ) {
-	debug( "Unzipping file $source_file to $dest_dir ...\n" );
+	debug( "Unzipping file $source_file to $dest_dir ..." . PHP_EOL );
 
 	$zip      = new \ZipArchive;
 	$basename = basename( $source_file );
@@ -628,7 +628,7 @@ function unzip_file( $source_file, $dest_dir ) {
 		return false;
 	}
 
-	debug( "Unzipped $source_file to $dest_dir.\n" );
+	debug( "Unzipped $source_file to $dest_dir." . PHP_EOL );
 
 	return $dest_dir;
 }

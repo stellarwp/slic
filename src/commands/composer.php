@@ -41,7 +41,7 @@ if ( $is_help ) {
 }
 
 $using = slic_target_or_fail();
-echo light_cyan( "Using {$using}\n" );
+echo light_cyan( "Using {$using}" . PHP_EOL );
 
 ensure_service_running( 'slic' );
 
@@ -57,7 +57,7 @@ switch ( $sub_command ) {
 	case 'set-version':
 		$version = $command[1] ?? null;
 		if ( $version === null ) {
-			echo magenta( "Error: set-version requires a Composer version number, either 1 or 2.\n" );
+			echo magenta( "Error: set-version requires a Composer version number, either 1 or 2." . PHP_EOL );
 			exit( 1 );
 		}
 		$run_settings_file = root( '/.env.slic.run' );

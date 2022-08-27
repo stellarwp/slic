@@ -57,7 +57,7 @@ if ( ! $open_bash_shell ) {
 	if ( $_install ) {
 		$confirm = ask( "The _install sub-command is meant for CI use, " .
 		                "if you want to install WordPress use the '{$cli_name} site-cli core install' command. " .
-		                "\nDo you really want to run it?", 'yes' );
+		                PHP_EOL . "Do you really want to run it?", 'yes' );
 
 		if ( ! $confirm ) {
 			exit( 0 );

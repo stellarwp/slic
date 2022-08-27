@@ -31,16 +31,16 @@ $service = args( [ 'service' ], $args( '...' ), 0 )( 'service' );
 if ( ! $service ) {
 	ensure_service_running( 'slic' );
 	ensure_service_running( 'wordpress' );
-	echo colorize( "\n<green>All containers are running.</green>\n" );
+	echo colorize( PHP_EOL . "<green>All containers are running.</green>" . PHP_EOL );
 	exit;
 }
 
 $exit_status = ensure_service_running( $service );
 
 if ( $exit_status !== 0 ) {
-	echo colorize( "\n<red>{$service} failed to start.</red>\n" );
+	echo colorize( PHP_EOL . "<red>{$service} failed to start.</red>" . PHP_EOL );
 } else {
-	echo colorize( "\n<green>{$service} is running.</green>\n" );
+	echo colorize( PHP_EOL . "<green>{$service} is running.</green>" . PHP_EOL );
 }
 
 exit( $exit_status );

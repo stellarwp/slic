@@ -25,7 +25,7 @@ if ( $is_help ) {
 }
 
 $using = slic_target_or_fail();
-echo light_cyan( "Using {$using}\n" );
+echo light_cyan( "Using {$using}" . PHP_EOL );
 
 ensure_service_running( 'slic' );
 
@@ -53,10 +53,10 @@ if ( '--pretty' === end( $command ) ) {
 		return;
 	}
 
-	if ( ask( "\nWould you like to run that npm command against common?", 'no' ) ) {
+	if ( ask( PHP_EOL . "Would you like to run that npm command against common?", 'no' ) ) {
 		slic_switch_target( "{$using}/common" );
 
-		echo light_cyan( "Temporarily using " . slic_target() . "\n" );
+		echo light_cyan( "Temporarily using " . slic_target() . PHP_EOL );
 
 		$docker_command = sprintf( 'docker exec --user "%d:%d" --workdir %s %s ' . $command,
 			getenv( 'SLIC_UID' ),
@@ -68,7 +68,7 @@ if ( '--pretty' === end( $command ) ) {
 
 		slic_switch_target( $using );
 
-		echo light_cyan( "Using " . slic_target() ." once again\n" );
+		echo light_cyan( "Using " . slic_target() ." once again" . PHP_EOL );
 	}
 
 	exit( $status );
