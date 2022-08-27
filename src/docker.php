@@ -108,7 +108,7 @@ function wordpress_url() {
 	preg_match( '/wordpress_debug:.*?ports:.*?(?<port>\\d+):80\\/tcp/us', $config, $m );
 
 	if ( ! isset( $m['port'] ) ) {
-		echo PHP_EOL . "<red>Could not read the 'wordpress_debug' service localhost port from the stack " .
+		echo PHP_EOL . "❌ <red>Could not read the 'wordpress_debug' service localhost port from the stack " .
 		     "configuration:" . PHP_EOL . $config;
 		exit( 1 );
 	}

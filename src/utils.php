@@ -404,7 +404,7 @@ function ssh_auth_sock() {
 		return $env_ssh_sock;
 	}
 
-	echo colorize( "<red>SSH_AUTH_SOCK environment variable is not set!</red>" . PHP_EOL );
+	echo colorize( "❌ <red>SSH_AUTH_SOCK environment variable is not set!</red>" . PHP_EOL );
 	echo colorize( "Read why and how to debug here: <light_cyan>https://developer.github.com/v3/guides/using-ssh-agent-forwarding/</light_cyan>" . PHP_EOL );
 	exit( 1 );
 }
