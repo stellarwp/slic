@@ -14,6 +14,11 @@ if ( $is_help ) {
 }
 
 setup_id();
+
+ensure_service_running( 'wordpress' );
+ensure_service_running( 'slic' );
+ensure_wordpress_ready();
+
 $command = $args( '...' );
 
 if ( 'wp' === reset( $command ) ) {
