@@ -20,7 +20,7 @@ function cli_header( $cli_name, $full = false, $extra = null ) {
 		return implode( '', $header_parts ) . PHP_EOL;
 	}
 
-	$header_parts[0] = '                    ' . $header_parts[0];
+	$header_parts[0] = '                     ' . $header_parts[0];
 	$header_parts[2] = '        ' . $header_parts[2];
 
 	$message_start = <<< MESSAGE
