@@ -8,6 +8,60 @@ namespace StellarWP\Slic;
 use function StellarWP\Slic\Env\backup_env_var;
 use function StellarWP\Slic\Env\env_var_backup;
 
+function cli_header( $cli_name, $full = false, $extra = null ) {
+	$header_parts = [
+		light_cyan( $cli_name ) . ' version ' . light_cyan( CLI_VERSION ),
+		$full ? PHP_EOL : ' - ',
+		'StellarWP local testing and development tool',
+		PHP_EOL,
+	];
+
+	if ( ! $full ) {
+		return implode( '', $header_parts ) . PHP_EOL;
+	}
+
+	$header_parts[0] = '                    ' . $header_parts[0];
+	$header_parts[2] = '        ' . $header_parts[2];
+
+	$message_start = <<< MESSAGE
+	******************************************************************
+
+	                                                 _.oo.
+	                         <light_cyan>_.u[[/;:,.</light_cyan>         .odMMMMMM'
+	                      <light_cyan>.o888UU[[[/;:-.</light_cyan>  .o@P^    MMM^
+	                     <light_cyan>oN88888UU[[[/;::-.</light_cyan>        dP^
+	                    <light_cyan>dNMMNN888UU[[[/;:--.</light_cyan>   .o@P^
+	                   <light_cyan>,MMMMMMN888UU[[/;::-.</light_cyan> o@^
+	                   <light_cyan>NNMMMNN888UU[[[/~.</light_cyan>o@P^
+	                   <light_cyan>888888888UU[[[</light_cyan>/o@^<light_cyan>-..</light_cyan>
+	                  o<light_cyan>I8888UU[[[</light_cyan>/o@P^<light_cyan>:--..</light_cyan>
+	               .@^  <light_cyan>YUU[[[</light_cyan>/o@^<light_cyan>;::---..</light_cyan>
+	             oMP     <light_cyan>^</light_cyan>/o@P^<light_cyan>;:::---..</light_cyan>
+	          .dMMM    .o@^ ^<light_cyan>;::---...</light_cyan>
+	         dMMMMMMM@^`       <light_cyan>`^^^^</light_cyan>
+	        YMMMUP^
+	         ^^
+
+	MESSAGE;
+
+	if ( $extra ) {
+		$message_start = str_replace( 'light_cyan', 'red', $message_start );
+	}
+
+	$message_start .= implode( '', $header_parts );
+
+	if ( $extra ) {
+		$message_start .= PHP_EOL . $extra . PHP_EOL;
+	}
+
+	$message_end = <<< MESSAGE
+
+	******************************************************************
+	MESSAGE;
+
+	return colorize( $message_start . $message_end . PHP_EOL . PHP_EOL );
+}
+
 /**
  * Returns whether or not the slic here command was done at the site level or not.
  *
