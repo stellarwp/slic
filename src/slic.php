@@ -355,6 +355,7 @@ function slic_switch_target( $target ) {
 function php_services() {
 	return [
 		'wordpress'   => 'WordPress',
+		'slic'        => 'slic',
 	];
 }
 
@@ -385,7 +386,7 @@ function restart_service( $service, $pretty_name = null, $hard = false ) {
 
 	$service_running = $slic( [ 'ps', '-q', $service ] )( 'string_output' );
 	if ( ! empty( $service_running ) ) {
-		echo colorize( "Restarting {$pretty_name} service..." . PHP_EOL );
+		echo colorize( PHP_EOL . "Restarting {$pretty_name} service..." . PHP_EOL );
 		if ( $hard ) {
 			$slic_realtime( [ 'rm', '--stop', '--force', $service ] );
 			$slic_realtime( [ 'up', '-d', $service ] );
@@ -945,7 +946,7 @@ function slic_handle_xdebug( callable $args ) {
 	echo PHP_EOL . PHP_EOL;
 
 	$restart_services = ask(
-		'Would you like to restart the WordPress (NOT the database) and Codeception services now?',
+		'Would you like to restart the WordPress (NOT the database) services now?',
 		'yes'
 	);
 	if ( $restart_services ) {
