@@ -14,7 +14,7 @@ if ( $is_help ) {
 	echo PHP_EOL;
 	echo colorize( "usage: <light_cyan>{$cli_name} build-stack [<service>] [...<args>]</light_cyan>\n" );
 	echo colorize( "example: <light_cyan>{$cli_name} build-stack</light_cyan>\n" );
-	echo colorize( "example: <light_cyan>{$cli_name} build-stack npm</light_cyan>\n" );
+	echo colorize( "example: <light_cyan>{$cli_name} build-stack wordpress</light_cyan>\n" );
 	return;
 }
 
