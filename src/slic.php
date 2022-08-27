@@ -354,8 +354,8 @@ function slic_switch_target( $target ) {
  */
 function php_services() {
 	return [
-		'wordpress'   => 'WordPress',
 		'slic'        => 'slic',
+		'wordpress'   => 'WordPress',
 	];
 }
 
@@ -393,10 +393,15 @@ function restart_service( $service, $pretty_name = null, $hard = false ) {
 		} else {
 			$slic_realtime( [ 'restart', $service ] );
 		}
-		echo colorize( "<light_cyan>{$pretty_name} service restarted.</light_cyan>" . PHP_EOL );
+		echo colorize( PHP_EOL . "✅ <light_cyan>{$pretty_name} service restarted.</light_cyan>" . PHP_EOL );
 	} else {
-		echo colorize( "{$pretty_name} service was not running. Starting it." . PHP_EOL );
-		ensure_service_running( $service );
+		echo colorize( PHP_EOL . "{$pretty_name} service was not running. Starting it." . PHP_EOL );
+		$exit_status = ensure_service_running( $service );
+		if ( $exit_status !== 0 ) {
+			echo colorize( "✅ <light_cyan>{$pretty_name} service started.</light_cyan>" . PHP_EOL );
+		} else {
+			echo colorize( "❌ <red>{$pretty_name} service could not be started.</red>" . PHP_EOL );
+		}
 	}
 }
 
@@ -407,6 +412,16 @@ function restart_all_services() {
 	$services = get_services();
 	foreach ( $services as $service ) {
 		restart_service( $service );
+	}
+}
+
+/**
+ * Starts all services in the stack.
+ */
+function start_all_services() {
+	$services = get_services();
+	foreach ( $services as $service ) {
+		ensure_service_running( $service );
 	}
 }
 

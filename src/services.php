@@ -382,7 +382,6 @@ function ensure_service_running( $service, array $dependencies = null ) {
 	service_running( $service, true );
 
 	if ( $up_status !== 0 ) {
-		service_up_notify( $service );
 		return $up_status;
 	}
 
@@ -390,6 +389,8 @@ function ensure_service_running( $service, array $dependencies = null ) {
 	$own_on_up( $service );
 
 	service_up_notify( $service );
+
+	return 0;
 }
 
 /**

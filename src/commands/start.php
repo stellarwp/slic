@@ -24,23 +24,20 @@ if ( $is_help ) {
 	return;
 }
 
-require __DIR__ . '/up.php';
-
 $service = args( [ 'service' ], $args( '...' ), 0 )( 'service' );
 
 if ( ! $service ) {
-	ensure_service_running( 'slic' );
-	ensure_service_running( 'wordpress' );
-	echo colorize( PHP_EOL . "<green>All containers are running.</green>" . PHP_EOL );
+	start_all_services();
+	echo colorize( PHP_EOL . "✅ <green>All containers are running.</green>" . PHP_EOL );
 	exit;
 }
 
 $exit_status = ensure_service_running( $service );
 
 if ( $exit_status !== 0 ) {
-	echo colorize( PHP_EOL . "<red>{$service} failed to start.</red>" . PHP_EOL );
+	echo colorize( PHP_EOL . "❌ <red>{$service} failed to start.</red>" . PHP_EOL );
 } else {
-	echo colorize( PHP_EOL . "<green>{$service} is running.</green>" . PHP_EOL );
+	echo colorize( PHP_EOL . "✅ <green>{$service} is running.</green>" . PHP_EOL );
 }
 
 exit( $exit_status );
