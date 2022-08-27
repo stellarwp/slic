@@ -73,7 +73,7 @@ Available commands:
   <light_cyan>stop</light_cyan>           Stops containers in the stack.
   <light_cyan>use</light_cyan>            Sets the plugin to use in the tests.
   <light_cyan>using</light_cyan>          Returns the current <light_cyan>use</light_cyan> target.
-  <light_cyan>wp</light_cyan>             Runs a wp-cli command in the stack or opens a session into the wp-cli container.
+  <light_cyan>wp</light_cyan>             Runs a wp-cli command or opens a `wp-cli shell` in the stack.
   <light_cyan>xdebug</light_cyan>         Activates and deactivates XDebug in the stack, returns the current XDebug status or sets its values.
 
 Type <light_cyan>{$cli_name} <command> help</light_cyan> for info about each command.
@@ -87,7 +87,7 @@ $help_advanced_message_template = <<< HELP
   <light_cyan>build-subdir</light_cyan>   Activates or deactivates whether or not composer/npm build should apply to sub-directories.
   <light_cyan>cache</light_cyan>          Activates and deactivates object cache support, returns the current object cache status.
   <light_cyan>cc</light_cyan>             Runs a Codeception command in the stack, the equivalent of <light_cyan>'codecept ...'</light_cyan>.
-  <light_cyan>cli</light_cyan>            Runs a wp-cli command in the stack or opens a session into the wp-cli container; alias of `wp`.
+  <light_cyan>cli</light_cyan>            Runs a wp-cli command or opens a `wp-cli shell` in the stack; alias of `wp`.
   <light_cyan>composer-cache</light_cyan> Sets or shows the composer cache directory.
   <light_cyan>config</light_cyan>         Prints the stack configuration as interpolated from the environment.
   <light_cyan>debug</light_cyan>          Activates or deactivates {$cli_name} debug output or returns the current debug status.
