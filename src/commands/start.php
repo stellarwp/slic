@@ -26,7 +26,8 @@ require __DIR__ . '/up.php';
 $service = args( [ 'service' ], $args( '...' ), 0 )( 'service' );
 
 if ( ! $service ) {
-	ensure_services_running( [ 'wordpress', 'slic' ] );
+	ensure_service_running( 'slic' );
+	ensure_service_running( 'wordpress' );
 	echo colorize( "\n<green>All containers are running.</green>\n" );
 	exit;
 }

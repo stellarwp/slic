@@ -10,12 +10,24 @@
 namespace StellarWP\Slic;
 
 if ( $is_help ) {
-	echo "Activates or deactivates whether or not composer/npm build prompts should be provided.\n";
-	echo PHP_EOL;
-	echo colorize( "signature: <light_cyan>{$cli_name} build-prompt (on|off|status)</light_cyan>\n" );
-	echo colorize( "example: <light_cyan>{$cli_name} build-prompt on</light_cyan>\n" );
-	echo colorize( "example: <light_cyan>{$cli_name} build-prompt off</light_cyan>\n" );
-	echo colorize( "example: <light_cyan>{$cli_name} build-prompt status</light_cyan>\n" );
+	$help = <<< HELP
+	Activates or deactivates whether or not composer/npm build prompts should be provided.
+
+	Usage: <yellow>{$cli_name} build-prompt (on|off|status)</yellow>
+
+	Examples:
+
+	  <light_cyan>{$cli_name} build-prompt on</light_cyan>
+	    Turns on prompting for running composer/npm commands in subdirectories.
+
+	  <light_cyan>{$cli_name} build-prompt off</light_cyan>
+	    Turns off prompting for running composer/npm commands in subdirectories.
+
+	  <light_cyan>{$cli_name} build-prompt status</light_cyan>
+	    Gives the current setting for running composer/npm commands in subdirectories.
+	HELP;
+
+	echo colorize( $help );
 	return;
 }
 

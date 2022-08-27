@@ -12,11 +12,21 @@
 namespace StellarWP\Slic;
 
 if ( $is_help ) {
-	echo "Activates or deactivates the airplane-mode plugin.\n";
-	echo PHP_EOL;
-	echo colorize( "usage: <light_cyan>{$cli_name} airplane-mode (on|off) </light_cyan>\n" );
-	echo colorize( "example: <light_cyan>{$cli_name} airplane-mode on</light_cyan>\n" );
-	echo colorize( "example: <light_cyan>{$cli_name} airplane-mode off</light_cyan>\n" );
+	$help = <<< HELP
+	Activates or deactivates the airplane-mode plugin. If the plugin is not installed, it will be installed.
+
+	Usage: <light_cyan>{$cli_name} airplane-mode (on|off) </light_cyan>
+
+	Examples:
+
+	  <light_cyan>{$cli_name} airplane-mode on</light_cyan>
+	    Turns airplane mode on.
+
+	  <light_cyan>{$cli_name} airplane-mode off</light_cyan>
+	    Turns airplane mode off.
+	HELP;
+
+	echo colorize( $help );
 
 	return;
 }
