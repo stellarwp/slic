@@ -122,6 +122,14 @@ $cli_name = basename( $argv[0] );
 
 if ( 'help' !== $subcommand ) {
 	maybe_prompt_for_repo_update();
+} else {
+	$help_subcommand = $args( '...' );
+
+	if ( $help_subcommand ) {
+		$subcommand = $help_subcommand[0];
+		$is_help    = true;
+	}
+
 }
 
 if ( ! in_array( $subcommand, [ 'help', 'update'] ) ) {
