@@ -59,7 +59,7 @@ function services_schema() {
 /**
  * Returns a list of dependencies for service.
  *
- * Dependencies are ready from the stack docker-compose format file in the `links` and
+ * Dependencies are read from the stack docker-compose format file in the `links` and
  * `depends_on` sections.
  *
  * @param string $service The name of the service to get the dependencies for.
