@@ -10,12 +10,27 @@
 namespace StellarWP\Slic;
 
 if ( $is_help ) {
-	echo "Activates and deactivates object cache support, returns the current object cache status.\n";
-	echo PHP_EOL;
-	echo colorize( "signature: <light_cyan>{$cli_name} cache (status|on|off)</light_cyan>\n" );
-	echo colorize( "example: <light_cyan>{$cli_name} cache status</light_cyan>\n" );
-	echo colorize( "example: <light_cyan>{$cli_name} cache on</light_cyan>\n" );
-	echo colorize( "example: <light_cyan>{$cli_name} cache off</light_cyan>" );
+	$help = <<< HELP
+	Activates and deactivates object cache support, returns the current object cache status.
+
+	USAGE:
+
+		<yellow>{$cli_name} {$subcommand} (status|on|off)</yellow>
+
+	EXAMPLES:
+
+		<light_cyan>{$cli_name} {$subcommand} on</light_cyan>
+		Turns cache support on.
+
+		<light_cyan>{$cli_name} {$subcommand} off</light_cyan>
+		Turns cache support off.
+
+		<light_cyan>{$cli_name} {$subcommand} status</light_cyan>
+		Shows the current status of cache support.
+
+	HELP;
+
+	echo colorize( $help );
 
 	return;
 }

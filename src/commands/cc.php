@@ -10,11 +10,23 @@
 namespace StellarWP\Slic;
 
 if ( $is_help ) {
-	echo "Runs a Codeception command in the stack, the equivalent of <light_cyan>'codecept ...'</light_cyan>.\n";
-	echo PHP_EOL;
-	echo colorize( "This command requires a use target set using the <light_cyan>use</light_cyan> command.\n" );
-	echo colorize( "usage: <light_cyan>{$cli_name} cc [...<commands>]</light_cyan>\n" );
-	echo colorize( "example: <light_cyan>{$cli_name} cc generate:wpunit wpunit Foo</light_cyan>" );
+	$help = <<< HELP
+	Runs a Codeception command in the stack, the equivalent of <light_cyan>'codecept ...'</light_cyan>.
+
+	This command requires a use target set using the <light_cyan>use</light_cyan> command.
+
+	USAGE:
+
+		<yellow>{$cli_name} cc [...<commands>]</yellow>
+
+	EXAMPLES:
+
+		<light_cyan>{$cli_name} cc generate:wpunit wpunit Foo</light_cyan>
+		Generate a Codeception wpunit test in the wpunit suite and call it Foo.
+
+	HELP;
+
+	echo colorize( $help );
 
 	return;
 }

@@ -10,11 +10,23 @@
 namespace StellarWP\Slic;
 
 if ( $is_help ) {
-	echo "Builds the stack containers that require it, or builds a specific service image.\n";
-	echo PHP_EOL;
-	echo colorize( "usage: <light_cyan>{$cli_name} build-stack [<service>] [...<args>]</light_cyan>\n" );
-	echo colorize( "example: <light_cyan>{$cli_name} build-stack</light_cyan>\n" );
-	echo colorize( "example: <light_cyan>{$cli_name} build-stack wordpress</light_cyan>\n" );
+	$help = <<< HELP
+	Builds the stack containers that require it, or builds a specific service image.
+
+	USAGE:
+
+		<yellow>{$cli_name} {$subcommand} [<service>] [...<args>]</yellow>
+
+	EXAMPLES:
+
+		<light_cyan>{$cli_name} {$subcommand}</light_cyan>
+		Builds the stack services.
+
+		<light_cyan>{$cli_name} {$subcommand} wordpress</light_cyan>
+		Builds the wordpress container in the stack.
+	HELP;
+
+	echo colorize( $help );
 	return;
 }
 

@@ -15,15 +15,17 @@ if ( $is_help ) {
 	$help = <<< HELP
 	Activates or deactivates the airplane-mode plugin. If the plugin is not installed, it will be installed.
 
-	Usage: <light_cyan>{$cli_name} airplane-mode (on|off) </light_cyan>
+	USAGE:
 
-	Examples:
+		<yellow>{$cli_name} airplane-mode (on|off) </yellow>
 
-	  <light_cyan>{$cli_name} airplane-mode on</light_cyan>
-	    Turns airplane mode on.
+	EXAMPLES:
 
-	  <light_cyan>{$cli_name} airplane-mode off</light_cyan>
-	    Turns airplane mode off.
+		<light_cyan>{$cli_name} airplane-mode on</light_cyan>
+		Turns airplane mode on.
+
+		<light_cyan>{$cli_name} airplane-mode off</light_cyan>
+		Turns airplane mode off.
 	HELP;
 
 	echo colorize( $help );

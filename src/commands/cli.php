@@ -10,17 +10,29 @@
 namespace StellarWP\Slic;
 
 if ( $is_help ) {
-	echo "Runs a wp-cli command in the stack or opens a session into the wp-cli container.\n";
-	echo PHP_EOL;
-	echo colorize( "signature: <light_cyan>{$cli_name} cli [ssh] [...<commands>]</light_cyan>\n" );
-	echo colorize( "example: <light_cyan>{$cli_name} cli plugin list --status=active</light_cyan>\n" );
-	echo colorize( "example: <light_cyan>{$cli_name} cli ssh</light_cyan>" );
+	$help = <<< HELP
+	Runs a wp-cli command or opens a `wp-cli shell` in the stack.
+
+	USAGE:
+
+		<yellow>{$cli_name} {$subcommand} [ssh] [...<commands>]</yellow>
+
+	EXAMPLES:
+
+		<light_cyan>{$cli_name} {$subcommand} plugin list --status=active</light_cyan>
+		Run the wp-cli "plugin list" command in the stack.
+
+		<light_cyan>{$cli_name} {$subcommand} ssh</light_cyan>
+		Open a shell session with wp-cli.
+	HELP;
+
+	echo colorize( $help );
 
 	return;
 }
 
 setup_id();
-ensure_services_running( [ 'wordpress', 'slic' ] );
+ensure_services_running( [ 'slic', 'db' ] );
 ensure_wordpress_ready();
 
 // Runs a wp-cli command in the stack, using the `cli` service.

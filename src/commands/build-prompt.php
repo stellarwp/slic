@@ -13,18 +13,20 @@ if ( $is_help ) {
 	$help = <<< HELP
 	Activates or deactivates whether or not composer/npm build prompts should be provided.
 
-	Usage: <yellow>{$cli_name} build-prompt (on|off|status)</yellow>
+	USAGE:
 
-	Examples:
+		<yellow>{$cli_name} build-prompt (on|off|status)</yellow>
 
-	  <light_cyan>{$cli_name} build-prompt on</light_cyan>
-	    Turns on prompting for running composer/npm commands in subdirectories.
+	EXAMPLES:
 
-	  <light_cyan>{$cli_name} build-prompt off</light_cyan>
-	    Turns off prompting for running composer/npm commands in subdirectories.
+		<light_cyan>{$cli_name} build-prompt on</light_cyan>
+		Turns on prompting for running composer/npm commands in subdirectories.
 
-	  <light_cyan>{$cli_name} build-prompt status</light_cyan>
-	    Gives the current setting for running composer/npm commands in subdirectories.
+		<light_cyan>{$cli_name} build-prompt off</light_cyan>
+		Turns off prompting for running composer/npm commands in subdirectories.
+
+		<light_cyan>{$cli_name} build-prompt status</light_cyan>
+		Gives the current setting for running composer/npm commands in subdirectories.
 	HELP;
 
 	echo colorize( $help );
