@@ -9,9 +9,17 @@
 namespace StellarWP\Slic;
 
 if ( $is_help ) {
-	echo "Returns the current 'use' target.\n";
-	echo PHP_EOL;
-	echo colorize( "signature: <light_cyan>{$cli_name} using</light_cyan>\n" );
+	$help = <<< HELP
+	SUMMARY:
+
+		Returns the current 'use' target.
+
+	USAGE:
+
+		<yellow>{$cli_name} {$subcommand}</yellow>
+	HELP;
+
+	echo colorize( $help );
 	return;
 }
 

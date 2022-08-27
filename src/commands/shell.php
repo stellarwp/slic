@@ -3,11 +3,27 @@
 namespace StellarWP\Slic;
 
 if ( $is_help ) {
-	echo "Opens a shell in a stack service, defaults to the 'codeception' one.\n";
-	echo PHP_EOL;
-	echo colorize( "This command requires a use target set using the <light_cyan>use</light_cyan> command.\n" );
-	echo colorize( "usage: <light_cyan>{$cli_name} shell [<service>]</light_cyan>\n" );
-	echo colorize( "example: <light_cyan>{$cli_name} shell chrome</light_cyan>\n" );
+	$help = <<< HELP
+	SUMMARY:
+
+		Opens a shell in a stack service, defaults to the 'slic' one.
+
+		This command requires a use target set using the <light_cyan>use</light_cyan> command.
+
+	USAGE:
+
+		<yellow>{$cli_name} shell [<service>]</yellow>
+
+	EXAMPLES:
+
+		<light_cyan>{$cli_name} shell slic</light_cyan>
+		Open a shell into the the main slic service.
+
+		<light_cyan>{$cli_name} shell chrome</light_cyan>
+		Open a shell into the chrome service.
+	HELP;
+
+	echo colorize( $help );
 	return;
 }
 

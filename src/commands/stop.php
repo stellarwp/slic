@@ -4,9 +4,13 @@ namespace StellarWP\Slic;
 
 if ( $is_help ) {
 	$help = <<< HELP
-	Stops containers in the stack.
+	SUMMARY:
 
-	Usage: <light_cyan>{$cli_name} {$subcommand}</light_cyan>
+		Stops containers in the stack.
+
+	USAGE:
+
+		<yellow>{$cli_name} {$subcommand}</yellow>
 	HELP;
 
 	echo colorize( $help );

@@ -3,9 +3,17 @@
 namespace StellarWP\Slic;
 
 if ( $is_help ) {
-	echo "Upgrades slic to the latest version.\n";
-	echo PHP_EOL;
-	echo colorize( "usage: <light_cyan>{$cli_name} upgrade</light_cyan>" );
+	$help = <<< HELP
+	SUMMARY:
+
+		Upgrades slic to the latest version.
+
+	USAGE:
+
+		<yellow>{$cli_name} {$subcommand}</yellow>
+	HELP;
+
+	echo colorize( $help );
 	return;
 }
 

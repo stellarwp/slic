@@ -9,9 +9,17 @@
 namespace StellarWP\Slic;
 
 if ( $is_help ) {
-	echo "Displays the stack logs.\n";
-	echo PHP_EOL;
-	echo colorize( "usage: <light_cyan>{$cli_name} logs</light_cyan>" );
+	$help = <<< HELP
+	SUMMARY:
+
+		Displays the stack logs.
+
+	USAGE:
+
+		<yellow>{$cli_name} logs</yell>
+	HELP;
+
+	echo colorize( $help );
 
 	return;
 }

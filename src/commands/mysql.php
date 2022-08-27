@@ -11,9 +11,15 @@
 namespace StellarWP\Slic;
 
 if ( $is_help ) {
-	echo "Opens a mysql shell in the database service.\n";
-	echo PHP_EOL;
-	echo colorize( "usage: <light_cyan>{$cli_name} mysql\n" );
+	$help = <<< HELP
+	SUMMARY:
+
+		Opens a mysql shell in the database service.
+
+	USAGE:
+
+		<yellow>{$cli_name} {$subcommand}</yellow>
+	HELP;
 
 	return;
 }

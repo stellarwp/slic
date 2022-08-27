@@ -10,14 +10,33 @@
 namespace StellarWP\Slic;
 
 if ( $is_help ) {
-	echo "Activates and deactivated XDebug in the stack, returns the current XDebug status or sets its values.\n";
-	echo colorize( "Any change to XDebug settings will require tearing down the stack with <light_cyan>down</light_cyan> and restarting it!\n" );
-	echo PHP_EOL;
-	echo colorize( "signature: <light_cyan>{$cli_name} xdebug (on|off|status|port|host|key) [<value>]</light_cyan>\n" );
-	echo colorize( "example: <light_cyan>{$cli_name} xdebug on</light_cyan>\n" );
-	echo colorize( "example: <light_cyan>{$cli_name} xdebug status</light_cyan>\n" );
-	echo colorize( "example: <light_cyan>{$cli_name} xdebug host 192.168.1.2</light_cyan>\n" );
-	echo colorize( "example: <light_cyan>{$cli_name} xdebug port 9009</light_cyan>" );
+	$help = <<< HELP
+	SUMMARY:
+
+		Activates and deactivated XDebug in the stack, returns the current XDebug status or sets its values.
+
+		Any change to XDebug settings will require tearing down the stack with <light_cyan>down</light_cyan> and restarting it!
+
+	USAGE:
+
+		<yellow>{$cli_name} xdebug (on|off|status|port|host|key) [<value>]</yellow>
+
+	EXAMPLES:
+
+		<light_cyan>{$cli_name} xdebug on</light_cyan>
+		Turns xdebug on.
+
+		<light_cyan>{$cli_name} xdebug status</light_cyan>
+		Gets the xdebug status.
+
+		<light_cyan>{$cli_name} xdebug host 192.168.1.2</light_cyan>
+		Sets the xdebug host to 192.168.1.2.
+
+		<light_cyan>{$cli_name} xdebug port 9009</light_cyan>
+		Sets the xdebug port to 9009.
+	HELP;
+
+	echo colorize( $help );
 	return;
 }
 

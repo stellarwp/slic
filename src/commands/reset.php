@@ -10,13 +10,27 @@
 namespace StellarWP\Slic;
 
 if ( $is_help ) {
-	echo "Resets the tool to its initial state configured by the env files.\n" .
-	     "Additionally remove the default WP directory.\n";
-	echo PHP_EOL;
-	echo colorize( "usage: <light_cyan>{$cli_name} reset [wp]</light_cyan>\n" );
-	echo colorize( "example: <light_cyan>{$cli_name} reset </light_cyan>\n" );
-	echo colorize( "example: <light_cyan>{$cli_name} reset wp</light_cyan>\n" );
+	$help = <<< HELP
+	SUMMARY:
 
+		Resets the tool to its initial state configured by the env files.
+
+		Additionally remove the default WP directory if <light_cyan>wp</light_cyan> is provided.
+
+	USAGE:
+
+		<yellow>{$cli_name} reset [wp]</yellow>
+
+	EXAMPLES:
+
+		<light_cyan>{$cli_name} reset</light_cyan>
+		Resets slic back to its initial state.
+
+		<light_cyan>{$cli_name} reset wp</light_cyan>
+		Resets slic back to its initial state and removes the default WP directory.
+	HELP;
+
+	echo colorize( $help );
 	return;
 }
 

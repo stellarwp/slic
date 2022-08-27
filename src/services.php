@@ -57,6 +57,18 @@ function services_schema() {
 }
 
 /**
+ * Returns the services in the stack.
+ *
+ * @return array<string> The services in the stack.
+ */
+function get_services() {
+	$services = services_schema();
+	$services = array_keys( $services );
+	sort( $services );
+	return $services;
+}
+
+/**
  * Returns a list of dependencies for service.
  *
  * Dependencies are read from the stack docker-compose format file in the `links` and

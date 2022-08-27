@@ -9,11 +9,25 @@
 namespace StellarWP\Slic;
 
 if ( $is_help ) {
-	echo "Initializes a plugin for use in slic.\n";
-	echo PHP_EOL;
-	echo colorize( "signature: <light_cyan>{$cli_name} init <plugin> [<branch>]</light_cyan>\n" );
-	echo colorize( "example: <light_cyan>{$cli_name} init the-events-calendar</light_cyan>\n" );
-	echo colorize( "example: <light_cyan>{$cli_name} init event-tickets release/B20.04</light_cyan>\n" );
+	$help = <<< HELP
+	SUMMARY:
+
+		Initializes a plugin for use in slic.
+
+	USAGE:
+
+		<yellow>{$cli_name} init <plugin> [<branch>]</yellow>
+
+	EXAMPLES:
+
+		<light_cyan>{$cli_name} init the-events-calendar</light_cyan>
+		Initializes the-events-calendar plugin for use in slic.
+
+		<light_cyan>{$cli_name} init event-tickets release/B20.04</light_cyan>
+		Initializes event-tickets plugin for use in slic and switches to the release/B20.04 branch.
+	HELP;
+
+	echo colorize( $help );
 	return;
 }
 

@@ -4,17 +4,20 @@ namespace StellarWP\Slic;
 
 if ( $is_help ) {
 	$help = <<< HELP
-	Starts containers in the stack.
+	SUMMARY:
+		Starts containers in the stack.
 
-	Usage: <yellow>{$cli_name} {$subcommand} [service]</yellow>
+	USAGE:
 
-	Examples:
+		<yellow>{$cli_name} {$subcommand} [service]</yellow>
 
-	  <light_cyan>{$cli_name} {$subcommand}</light_cyan>
-	    Start all containers in the stack.
+	EXAMPLES:
 
-	  <light_cyan>{$cli_name} {$subcommand} wordpress</light_cyan>
-	    Start the wordpress container in the stack.
+		<light_cyan>{$cli_name} {$subcommand}</light_cyan>
+		Start all containers in the stack.
+
+		<light_cyan>{$cli_name} {$subcommand} wordpress</light_cyan>
+		Start the wordpress container in the stack.
 	HELP;
 
 	echo colorize( $help );

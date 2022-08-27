@@ -10,10 +10,19 @@
 namespace StellarWP\Slic;
 
 if ( $is_help ) {
-	echo "Runs PHP Code Beautifer and Fixer against the current use target.\n";
-	echo PHP_EOL;
-	echo colorize( "This command requires a use target set using the <light_cyan>use</light_cyan> command.\n" );
-	echo colorize( "usage: <light_cyan>{$cli_name} phpcbf [...<commands>]</light_cyan>\n" );
+	$help = <<< HELP
+	SUMMARY:
+
+		Runs PHP Code Beautifer and Fixer against the current use target.
+
+		This command requires a use target set using the <light_cyan>use</light_cyan> command.
+
+	USAGE:
+
+		<yellow>{$cli_name} {$subcommand} [...<commands>]</yellow>
+	HELP;
+
+	echo colorize( $help );
 	return;
 }
 

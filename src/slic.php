@@ -332,7 +332,18 @@ function restart_service( $service, $pretty_name = null, $hard = false ) {
 		}
 		echo colorize( "<light_cyan>{$pretty_name} service restarted.</light_cyan>\n" );
 	} else {
-		echo colorize( "{$pretty_name} service was not running.\n" );
+		echo colorize( "{$pretty_name} service was not running. Starting it.\n" );
+		ensure_service_running( $service );
+	}
+}
+
+/**
+ * Restarts all services in the stack.
+ */
+function restart_all_services() {
+	$services = get_services();
+	foreach ( $services as $service ) {
+		restart_service( $service );
 	}
 }
 

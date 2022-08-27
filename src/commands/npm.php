@@ -3,11 +3,24 @@
 namespace StellarWP\Slic;
 
 if ( $is_help ) {
-	echo "Runs an npm command in the stack using the node 8.9 container.\n";
-	echo PHP_EOL;
-	echo colorize( "This command requires a use target set using the <light_cyan>use</light_cyan> command.\n" );
-	echo colorize( "usage: <light_cyan>{$cli_name} npm [...<commands>]</light_cyan>\n" );
-	echo colorize( "example: <light_cyan>{$cli_name} npm install</light_cyan>" );
+	$help = <<< HELP
+	SUMMARY:
+
+		Runs an npm command in the stack. If an .nvmrc is present, that version of node will be used.
+
+		This command requires a use target set using the <light_cyan>use</light_cyan> command.
+
+	USAGE:
+
+		<yellow>{$cli_name} {$subcommand} [...<commands>]</yellow>
+
+	EXAMPLES:
+
+		<light_cyan>{$cli_name} npm install</light_cyan>
+		Runs npm install in the stack.
+	HELP;
+
+	echo colorize( $help );
 	return;
 }
 
