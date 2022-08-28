@@ -35,9 +35,9 @@ if ( $is_help ) {
 $sub_args    = args( [ 'reset' ], $args( '...' ), 0 );
 $reset       = $sub_args( 'reset', false );
 
-$wp_dir      = './_wordpress';
-$plugins_dir = './_plugins';
-$themes_dir  = './_wordpress/wp-content/themes';
+$wp_dir      = SLIC_ROOT_DIR . '/_wordpress';
+$plugins_dir = SLIC_ROOT_DIR . '/_plugins';
+$themes_dir  = SLIC_ROOT_DIR . '/_wordpress/wp-content/themes';
 
 if ( empty( $reset ) ) {
 	$here_dir = getcwd();
@@ -64,6 +64,7 @@ if ( $has_wp_config ) {
 
 	$env_values['SLIC_HERE_DIR'] = $here_dir;
 
+	// Support WP skeleton.
 	if ( file_exists( "{$here_dir}/wp" ) ) {
 		$here_dir .= '/wp';
 	}
