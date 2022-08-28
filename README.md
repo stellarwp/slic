@@ -1,6 +1,6 @@
 # slic
 
-The slic (**S**tellarWP **L**ocal **I**interactive **C**ontainers) CLI command provides a containerized and consistent environment for running automated tests.
+The slic (**S**tellarWP **L**ocal **I**nteractive **C**ontainers) CLI command provides a containerized and consistent environment for running automated tests.
 
 ## Table of Contents
 
