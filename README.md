@@ -49,22 +49,23 @@ That's the only prerequisite. Get that installed and running on your machine and
 
 #### 1. Clone the repo
 
-> These instructions are assuming that you are cloning the `slic` repository in `~/git`. If you want it in a different location, feel free to tweak the example commands below.
+> These instructions are assuming that you are cloning the `slic` repository in `~/projects`. If you want it in a different location, feel free to tweak the example commands below.
 
 ```bash
-cd ~/git
+cd ~/projects
 git clone git@github.com:stellarwp/slic.git
 ```
 
 #### 2. Add `slic` to your `$PATH`
 
-_Assuming you are cloning the `slic` repository in `~/git`:_
+_Assuming you are cloning the `slic` repository in `~/projects`:_
 
 ```bash
-# Change ~/.bashrc if you aren't using zsh.
-echo "export PATH=$HOME/git/slic:$PATH" >> ~/.zshrc
-source ~/.zshrc
+echo "export PATH=$HOME/projects/slic:$PATH" >> ~/.bashrc
+source ~/.bashrc
 ```
+
+> If you are using zsh, change `~/.bashrc` to `~/.zshrc`.
 
 ### The most important command to know
 
@@ -138,7 +139,12 @@ from which to run tests. This also has the benefit of running tests within the W
 ### Point `slic` at your project
 
 Before you can do anything productive with `slic`, you need to tell it which
-project you wish to use and then you can initialize the project, run tests, and execute other commands to your heart's content!
+project you wish to use and then you can initialize the project, run tests, and
+execute other commands to your heart's content!
+
+Assuming you have a plugin called `the-events-calendar` in the plugins directory
+where you ran `slic here`, you can tell `slic` you want to take actions on that
+plugin using the following command:
 
 ```bash
 slic use the-events-calendar
