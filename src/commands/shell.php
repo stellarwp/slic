@@ -17,7 +17,7 @@ if ( $is_help ) {
 	EXAMPLES:
 
 		<light_cyan>{$cli_name} shell slic</light_cyan>
-		Open a shell into the the main slic service.
+		Open a shell into the the main {$cli_name} service.
 
 		<light_cyan>{$cli_name} shell chrome</light_cyan>
 		Open a shell into the chrome service.

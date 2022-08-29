@@ -12,7 +12,7 @@ if ( $is_help ) {
 	$help = <<< HELP
 	SUMMARY:
 
-		Initializes a plugin for use in slic.
+		Initializes a plugin for use in {$cli_name}.
 
 	USAGE:
 
@@ -21,10 +21,10 @@ if ( $is_help ) {
 	EXAMPLES:
 
 		<light_cyan>{$cli_name} init the-events-calendar</light_cyan>
-		Initializes the-events-calendar plugin for use in slic.
+		Initializes the-events-calendar plugin for use in {$cli_name}.
 
 		<light_cyan>{$cli_name} init event-tickets release/B20.04</light_cyan>
-		Initializes event-tickets plugin for use in slic and switches to the release/B20.04 branch.
+		Initializes event-tickets plugin for use in {$cli_name} and switches to the release/B20.04 branch.
 	HELP;
 
 	echo colorize( $help );

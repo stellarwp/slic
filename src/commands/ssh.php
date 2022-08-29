@@ -14,7 +14,7 @@ if ( $is_help ) {
 	$help = <<< HELP
 	SUMMARY:
 
-		Opens a bash shell in a running stack service, defaults to the 'wordpress' one.
+		Opens a bash shell in a running stack service, defaults to the '{$cli_name}' one.
 
 	USAGE:
 

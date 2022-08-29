@@ -13,7 +13,7 @@ if ( $is_help ) {
 	$help = <<< HELP
 	SUMMARY:
 
-		Activates or deactivates whether or not composer/npm build prompts should be provided.
+		Activates or deactivates whether or not Composer/npm build prompts should be provided.
 
 	USAGE:
 
@@ -22,13 +22,13 @@ if ( $is_help ) {
 	EXAMPLES:
 
 		<light_cyan>{$cli_name} build-prompt on</light_cyan>
-		Turns on prompting for running composer/npm commands in subdirectories.
+		Turns on prompting for running Composer/npm commands in subdirectories.
 
 		<light_cyan>{$cli_name} build-prompt off</light_cyan>
-		Turns off prompting for running composer/npm commands in subdirectories.
+		Turns off prompting for running Composer/npm commands in subdirectories.
 
 		<light_cyan>{$cli_name} build-prompt status</light_cyan>
-		Gives the current setting for running composer/npm commands in subdirectories.
+		Gives the current setting for running Composer/npm commands in subdirectories.
 	HELP;
 
 	echo colorize( $help );
