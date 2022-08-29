@@ -245,6 +245,8 @@ function setup_slic_env( $root_dir, $reset = false ) {
 
 	// Let's declare we're performing slics.
 	putenv( 'STELLAR_SLIC=1' );
+	// Backwards compat
+	putenv( 'TRIBE_TRIC=1' );
 
 	putenv( 'SLIC_VERSION=' . CLI_VERSION );
 

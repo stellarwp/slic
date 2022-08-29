@@ -129,7 +129,9 @@ services:
       # Whether to disable the XDebug extension in the Codeception container completely or not.
       XDEBUG_DISABLE: "${XDEBUG_DISABLE:-0}"
       # Declare that we are in a slic context so plugins can set custom test configs.
-      TRIBE_SLIC: 1
+      STELLAR_SLIC: 1
+      # Backwards compatibility
+      TRIBE_TRIC: 1
       # If we're in CI context, then pass it through.
       CI: "${CI:-}"
       # Let's set the lines and columns number explicitly to have the shell mirror the current one.
