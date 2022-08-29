@@ -6,7 +6,7 @@ if ( $is_help ) {
 	$help = <<< HELP
 	SUMMARY:
 
-		Updates slic and the images used in its services.
+		Updates {$cli_name} and the images used in its services.
 
 	USAGE:
 

@@ -22,10 +22,10 @@ if ( $is_help ) {
 	EXAMPLES:
 
 		<light_cyan>{$cli_name} here</light_cyan>
-		Sets the current directory to be used within the slic stack for selecting targets.
+		Sets the current directory to be used within the {$cli_name} stack for selecting targets.
 
 		<light_cyan>{$cli_name} here reset</light_cyan>
-		Unsets the directory that slic uses to select targets.
+		Unsets the directory that {$cli_name} uses to select targets.
 	HELP;
 
 	echo colorize( $help );

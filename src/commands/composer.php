@@ -26,13 +26,13 @@ if ( $is_help ) {
 		Run composer update in the current <light_cyan>use</light_cyan> target.
 
 		<light_cyan>{$cli_name} composer set-version 1</light_cyan>
-		Sets the current composer version to 1.
+		Sets the current Composer version to 1.
 
 		<light_cyan>{$cli_name} composer get-version</light_cyan>
-		Gets the current composer version.
+		Gets the current Composer version.
 
 		<light_cyan>{$cli_name} composer reset-version</light_cyan>
-		Resets the composer version to the default.
+		Resets the Composer version to the default.
 	HELP;
 
 	echo colorize( $help );

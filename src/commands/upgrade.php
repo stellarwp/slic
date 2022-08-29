@@ -6,7 +6,7 @@ if ( $is_help ) {
 	$help = <<< HELP
 	SUMMARY:
 
-		Upgrades slic to the latest version.
+		Upgrades {$cli_name} to the latest version.
 
 	USAGE:
 

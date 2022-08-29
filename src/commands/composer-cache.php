@@ -13,7 +13,7 @@ if ( $is_help ) {
 	$help = <<< HELP
 	SUMMARY:
 
-		Sets or displays the composer cache directory setting.
+		Sets or displays the Composer cache directory setting.
 
 	USAGE:
 
@@ -22,13 +22,13 @@ if ( $is_help ) {
 	EXAMPLES:
 
 		<light_cyan>{$cli_name} {$subcommand}</light_cyan>
-		Shows the current composer cache directory setting.
+		Shows the current Composer cache directory setting.
 
 		<light_cyan>{$cli_name} {$subcommand} unset</light_cyan>
-		Removes the composer cache directory setting.
+		Removes the Composer cache directory setting.
 
 		<light_cyan>{$cli_name} {$subcommand} set /home/person/.cache/composer</light_cyan>
-		Sets the composer cache directory to a specific directory.
+		Sets the Composer cache directory to a specific directory.
 	HELP;
 
 	echo colorize( $help );

@@ -24,10 +24,10 @@ if ( $is_help ) {
 	EXAMPLES:
 
 		<light_cyan>{$cli_name} reset</light_cyan>
-		Resets slic back to its initial state.
+		Resets {$cli_name} back to its initial state.
 
 		<light_cyan>{$cli_name} reset wp</light_cyan>
-		Resets slic back to its initial state and removes the default WP directory.
+		Resets {$cli_name} back to its initial state and removes the default WP directory.
 	HELP;
 
 	echo colorize( $help );

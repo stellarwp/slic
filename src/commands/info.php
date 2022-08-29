@@ -6,7 +6,7 @@ if ( $is_help ) {
 	$help = <<< HELP
 	SUMMARY:
 
-		Displays information about the slic tool.
+		Displays information about the {$cli_name} tool.
 
 	USAGE:
 
