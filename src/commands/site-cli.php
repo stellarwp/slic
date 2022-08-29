@@ -3,20 +3,35 @@
 namespace StellarWP\Slic;
 
 if ( $is_help ) {
-	echo "Waits for WordPress to be correctly set up to run a wp-cli command in the stack.\n";
-	echo PHP_EOL;
-	echo colorize( "signature: <light_cyan>{$cli_name} site-cli [ssh] [...<commands>]</light_cyan>\n" );
-	echo colorize( "example: <light_cyan>{$cli_name} site-cli plugin list --status=active</light_cyan>\n" );
-	echo colorize( "example: <light_cyan>{$cli_name} site-cli theme install twentytwenty</light_cyan>\n" );
-	echo colorize( "example: <light_cyan>{$cli_name} site-cli _install</light_cyan>" );
+	$help = <<< HELP
+	SUMMARY:
+
+		Waits for WordPress to be correctly set up to run a wp-cli command in the stack.
+
+	USAGE:
+
+		<yellow>{$cli_name} {$subcommand} [ssh] [...<commands>]</yellow>
+
+	EXAMPLES:
+
+		<light_cyan>{$cli_name} {$subcommand} plugin list --status=active</light_cyan>
+		Get the plugin list using wp-cli.
+
+		<light_cyan>{$cli_name} {$subcommand} theme install twentytwenty</light_cyan>
+		Install the twentytwenty theme using wp-cli.
+
+		<light_cyan>{$cli_name} {$subcommand} _install</light_cyan>
+		Install WP using wp-cli.
+	HELP;
+
+	echo colorize( $help );
 
 	return;
 }
 
 setup_id();
 
-ensure_service_running( 'wordpress' );
-ensure_service_running( 'slic' );
+ensure_services_running( [ 'wordpress', 'slic' ] );
 ensure_wordpress_ready();
 
 $command = $args( '...' );
@@ -42,7 +57,7 @@ if ( ! $open_bash_shell ) {
 	if ( $_install ) {
 		$confirm = ask( "The _install sub-command is meant for CI use, " .
 		                "if you want to install WordPress use the '{$cli_name} site-cli core install' command. " .
-		                "\nDo you really want to run it?", 'yes' );
+		                PHP_EOL . "Do you really want to run it?", 'yes' );
 
 		if ( ! $confirm ) {
 			exit( 0 );

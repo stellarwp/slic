@@ -147,12 +147,12 @@ function ensure_db_service_ready() {
 
 	$attempts = 0;
 	while ( $attempts ++ < 30 ) {
-		debug( "Waiting for database to be ready ...\n" );
+		debug( "Waiting for database to be ready ..." . PHP_EOL );
 
 		try {
 			$mysqli = get_localhost_db_handle();
 			if ( $mysqli instanceof mysqli ) {
-				debug( "Database ready.\n" );
+				debug( "Database ready." . PHP_EOL );
 
 				return true;
 			}
@@ -162,6 +162,6 @@ function ensure_db_service_ready() {
 		sleep( 1 );
 	}
 
-	echo magenta( "Database never became available.\n" );
+	echo magenta( "Database never became available." . PHP_EOL );
 	exit( 1 );
 }

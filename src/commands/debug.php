@@ -3,11 +3,28 @@
 namespace StellarWP\Slic;
 
 if ( $is_help ) {
-	echo "Activates or deactivates {$cli_name} debug output or returns the current debug status.\n";
-	echo PHP_EOL;
-	echo colorize( "signature: <light_cyan>{$cli_name} debug (on|off)</light_cyan>\n" );
-	echo colorize( "example: <light_cyan>{$cli_name} debug on</light_cyan>" );
-	echo colorize( "example: <light_cyan>{$cli_name} debug status</light_cyan>" );
+	$help = <<< HELP
+	SUMMARY:
+
+		Activates or deactivates {$cli_name} debug output or returns the current debug status.
+
+	USAGE:
+
+		<yellow>{$cli_name} {$subcommand} (on|off)</yellow>
+
+	EXAMPLES:
+
+		<light_cyan>{$cli_name} {$subcommand} on</light_cyan>
+		Turns debug on.
+
+		<light_cyan>{$cli_name} {$subcommand} off</light_cyan>
+		Turns debug off.
+
+		<light_cyan>{$cli_name} {$subcommand} status</light_cyan>
+		Returns the current debug status.
+	HELP;
+
+	echo colorize( $help );
 	return;
 }
 

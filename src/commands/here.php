@@ -10,19 +10,34 @@
 namespace StellarWP\Slic;
 
 if ( $is_help ) {
-	echo "Sets the current plugins directory to be the one used by slic.\n";
-	echo PHP_EOL;
-	echo colorize( "signature: <light_cyan>{$cli_name} here</light_cyan>\n" );
-	echo colorize( "signature: <light_cyan>{$cli_name} here reset</light_cyan>\n" );
+	$help = <<< HELP
+	SUMMARY:
+
+		Sets the current plugins directory to be the one used by slic.
+
+	USAGE:
+
+		<yellow>{$cli_name} {$subcommand} [reset]</yellow>
+
+	EXAMPLES:
+
+		<light_cyan>{$cli_name} here</light_cyan>
+		Sets the current directory to be used within the {$cli_name} stack for selecting targets.
+
+		<light_cyan>{$cli_name} here reset</light_cyan>
+		Unsets the directory that {$cli_name} uses to select targets.
+	HELP;
+
+	echo colorize( $help );
 	return;
 }
 
 $sub_args    = args( [ 'reset' ], $args( '...' ), 0 );
 $reset       = $sub_args( 'reset', false );
 
-$wp_dir      = './_wordpress';
-$plugins_dir = './_plugins';
-$themes_dir  = './_wordpress/wp-content/themes';
+$wp_dir      = SLIC_ROOT_DIR . '/_wordpress';
+$plugins_dir = SLIC_ROOT_DIR . '/_plugins';
+$themes_dir  = SLIC_ROOT_DIR . '/_wordpress/wp-content/themes';
 
 if ( empty( $reset ) ) {
 	$here_dir = getcwd();
@@ -49,6 +64,7 @@ if ( $has_wp_config ) {
 
 	$env_values['SLIC_HERE_DIR'] = $here_dir;
 
+	// Support WP skeleton.
 	if ( file_exists( "{$here_dir}/wp" ) ) {
 		$here_dir .= '/wp';
 	}
@@ -72,5 +88,5 @@ write_env_file( $run_settings_file, $env_values, true );
 setup_slic_env( root() );
 quietly_tear_down_stack();
 
-echo colorize( "\n<light_cyan>Slic plugin path set to</light_cyan> {$here_dir}.\n\n" );
+echo colorize( PHP_EOL . "<light_cyan>Slic plugin path set to</light_cyan> {$here_dir}." . PHP_EOL . PHP_EOL );
 echo colorize( "If this is the first time setting this plugin path, be sure to <light_cyan>slic init <plugin></light_cyan>." );

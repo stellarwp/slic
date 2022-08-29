@@ -134,10 +134,10 @@ function ensure_wordpress_files( $version = null ) {
 
 	$version = $version ?: 'latest';
 
-	debug( "Checking if WordPress version $version is installed and configured ... \n" );
+	debug( "Checking if WordPress version $version is installed and configured ... " . PHP_EOL );
 
 	if ( $version === 'latest' ) {
-		debug( "Resolving latest version to a semantic version string ...\n" );
+		debug( "Resolving latest version to a semantic version string ..." . PHP_EOL );
 		$version = get_wordpress_latest_version();
 	}
 
@@ -151,7 +151,7 @@ function ensure_wordpress_files( $version = null ) {
 		// `$wp_version` is globally defined in the `wp-includes/version.php` file.
 		if ( isset( $wp_version ) && version_compare( $wp_version, $version ) === 0 ) {
 
-			debug( "WordPress current version ($wp_version) matches the requested one ($version)\n" );
+			debug( "WordPress current version ($wp_version) matches the requested one ($version)" . PHP_EOL );
 
 			return true;
 		}
@@ -164,13 +164,13 @@ function ensure_wordpress_files( $version = null ) {
 		quietly_tear_down_stack();
 
 		if ( ! rrmdir( $wp_root_dir ) ) {
-			magenta( "Failed to remove the previous WordPress directory, try manually.\n" );
+			magenta( "Failed to remove the previous WordPress directory, try manually." . PHP_EOL );
 			exit( 1 );
 		}
 
-		echo light_cyan( "done\n" );
+		echo light_cyan( "done" . PHP_EOL );
 	} else {
-		debug( "Previous WordPress directory not found.\n" );
+		debug( "Previous WordPress directory not found." . PHP_EOL );
 	}
 
 	// Ensure the destination directory exists.
@@ -182,7 +182,7 @@ function ensure_wordpress_files( $version = null ) {
 	// Download WordPress.
 	$zip_file = cache( '/wordpress/wordpress.zip' );
 	if ( ! is_file( $zip_file ) ) {
-		debug( "WordPress zip file $zip_file not found.\n" );
+		debug( "WordPress zip file $zip_file not found." . PHP_EOL );
 
 		$zip_file = download_file( $source_url, $zip_file );
 
@@ -212,7 +212,7 @@ function ensure_wordpress_configured() {
 	$wp_config_file = $wp_root_dir . '/wp-config.php';
 
 	if ( is_file( $wp_config_file ) ) {
-		debug( "Found $wp_config_file, assuming WordPress already configured.\n" );
+		debug( "Found $wp_config_file, assuming WordPress already configured." . PHP_EOL );
 
 		// If the wp-config.php file already exists, assume WordPress is already configured correctly.
 		return true;
@@ -232,7 +232,7 @@ function ensure_wordpress_configured() {
 		exit( 1 );
 	}
 
-	debug( "Setting up credentials in $wp_config_file ...\n" );
+	debug( "Setting up credentials in $wp_config_file ..." . PHP_EOL );
 
 	// Set up the db credentials, rely on the placeholders that come with a default WordPress installation.
 	$wp_config_contents = str_replace( [
@@ -249,7 +249,7 @@ function ensure_wordpress_configured() {
 		"slic_env( 'DB_HOST', 'db' )"
 	], $wp_config_contents );
 
-	debug( "Setting up salts in $wp_config_file ...\n" );
+	debug( "Setting up salts in $wp_config_file ..." . PHP_EOL );
 
 	// As is common practice, use the "That's all, stop editing! Happy publishing" line as a marker.
 	$marker = "/* That's all, stop editing! Happy publishing. */";
@@ -267,7 +267,7 @@ function ensure_wordpress_configured() {
 		$wp_config_contents = preg_replace( '/put your unique phrase here/', $salt, $wp_config_contents, 1 );
 	}
 
-	debug( "Setting up config extras in $wp_config_file ...\n" );
+	debug( "Setting up config extras in $wp_config_file ..." . PHP_EOL );
 
 	$config_extras      = <<< CONFIG_EXTRAS
 \$scheme = empty( \$_SERVER['HTTPS'] ) ? 'http' : 'https';
@@ -287,7 +287,7 @@ CONFIG_EXTRAS;
 		exit( 1 );
 	}
 
-	debug( "WordPress $wp_config_file updated.\n" );
+	debug( "WordPress $wp_config_file updated." . PHP_EOL );
 
 	return true;
 }
@@ -304,7 +304,7 @@ function ensure_wordpress_installed() {
 	// Bring up the database.
 	ensure_db_service_ready();
 
-	debug( "Trying to connect to the database ...\n" );
+	debug( "Trying to connect to the database ..." . PHP_EOL );
 
 	// Run a query to check for the installation.
 	$db = get_localhost_db_handle();
@@ -314,7 +314,7 @@ function ensure_wordpress_installed() {
 		exit( 1 );
 	}
 
-	debug( "Getting tables list ...\n" );
+	debug( "Getting tables list ..." . PHP_EOL );
 
 	// Check if the default tables are there or not.
 	$tables = $db->query( 'SHOW TABLES' );
@@ -331,13 +331,13 @@ function ensure_wordpress_installed() {
 
 		if ( count( array_diff( $default_tables, $tables_list ) ) === 0 ) {
 
-			debug( "Default tables found: assuming WordPress is installed.\n" );
+			debug( "Default tables found: assuming WordPress is installed." . PHP_EOL );
 
 			return true;
 		}
 	}
 
-	debug( "Default tables not found: assuming WordPress is not installed.\n" );
+	debug( "Default tables not found: assuming WordPress is not installed." . PHP_EOL );
 
 	$wp_root_dir  = getenv( 'SLIC_WP_DIR' );
 	$install_file = realpath( $wp_root_dir . '/wp-admin/install.php' );
@@ -360,7 +360,7 @@ function ensure_wordpress_installed() {
 
 	$command = escapeshellarg( PHP_BINARY ) . ' -r \'' . $code . '\'';
 
-	debug( "Installing WordPress with command $command ... \n" );
+	debug( "Installing WordPress with command $command ... " . PHP_EOL );
 
 	exec( $command, $output, $status );
 
@@ -373,11 +373,11 @@ function ensure_wordpress_installed() {
 		$circa_error_lines = array_map( static function ( $line_number, $line ) use ( $output ) {
 			return strip_tags( implode( PHP_EOL, array_slice( $output, $line_number, 10 ) ) );
 		}, array_keys( $error_lines ), $error_lines );
-		echo magenta( "WordPress installation failed with message(s):\n" . implode( "\n", $circa_error_lines ) );
+		echo magenta( "WordPress installation failed with message(s):" . PHP_EOL . implode( PHP_EOL, $circa_error_lines ) );
 		exit( 1 );
 	}
 
-	debug( "WordPress installed.\n" );
+	debug( "WordPress installed." . PHP_EOL );
 
 	return true;
 }
@@ -401,14 +401,14 @@ function get_wordpress_latest_version() {
 
 	// Invalidate after a day.
 	if ( is_readable( $cache_file ) && ( time() - (int) filectime( $cache_file ) ) < 86400 ) {
-		debug( "Reading latest version string from cache file $cache_file.\n" );
+		debug( "Reading latest version string from cache file $cache_file." . PHP_EOL );
 
 		$current_latest_version = file_get_contents( $cache_file );
 
 		return $current_latest_version;
 	}
 
-	debug( "Fetching latest WordPress version string ...\n" );
+	debug( "Fetching latest WordPress version string ..." . PHP_EOL );
 	$json = file_get_contents( 'https://api.wordpress.org/core/version-check/1.7/' );
 
 	if ( $json === false ) {
@@ -423,14 +423,14 @@ function get_wordpress_latest_version() {
 	if ( $decoded !== false && isset( $decoded['offers'][0]['current'] ) ) {
 		$current_latest_version = $decoded['offers'][0]['current'];
 
-		debug( "Fetched WordPress latest version: $current_latest_version\n" );
+		debug( "Fetched WordPress latest version: $current_latest_version" . PHP_EOL );
 
 		file_put_contents( $cache_file, $current_latest_version );
 
 		return $current_latest_version;
 	}
 
-	debug( "Fetched latest version response malformed, falling back to 1.0.0\n" );
+	debug( "Fetched latest version response malformed, falling back to 1.0.0" . PHP_EOL );
 
 	// We could not tell, return something that will trigger a refresh.
 	return '1.0.0';

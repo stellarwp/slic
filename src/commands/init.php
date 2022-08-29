@@ -9,11 +9,25 @@
 namespace StellarWP\Slic;
 
 if ( $is_help ) {
-	echo "Initializes a plugin for use in slic.\n";
-	echo PHP_EOL;
-	echo colorize( "signature: <light_cyan>{$cli_name} init <plugin> [<branch>]</light_cyan>\n" );
-	echo colorize( "example: <light_cyan>{$cli_name} init the-events-calendar</light_cyan>\n" );
-	echo colorize( "example: <light_cyan>{$cli_name} init event-tickets release/B20.04</light_cyan>\n" );
+	$help = <<< HELP
+	SUMMARY:
+
+		Initializes a plugin for use in {$cli_name}.
+
+	USAGE:
+
+		<yellow>{$cli_name} init <plugin> [<branch>]</yellow>
+
+	EXAMPLES:
+
+		<light_cyan>{$cli_name} init the-events-calendar</light_cyan>
+		Initializes the-events-calendar plugin for use in {$cli_name}.
+
+		<light_cyan>{$cli_name} init event-tickets release/B20.04</light_cyan>
+		Initializes event-tickets plugin for use in {$cli_name} and switches to the release/B20.04 branch.
+	HELP;
+
+	echo colorize( $help );
 	return;
 }
 
@@ -25,7 +39,7 @@ $branch = $sub_args( 'branch' );
 // If a plugin isn't passed as an argument, the target is the current plugin being used.
 if ( empty( $plugin ) ) {
 	$plugin = slic_target();
-	echo light_cyan( "Using {$plugin}\n" );
+	echo light_cyan( "Using {$plugin}" . PHP_EOL );
 }
 
 clone_plugin( $plugin, $branch );
@@ -54,4 +68,4 @@ if ( getenv( 'SLIC_BUILD_PROMPT' ) ) {
 	}
 }
 
-echo light_cyan( "Finished initializing {$plugin}\n" );
+echo light_cyan( "Finished initializing {$plugin}" . PHP_EOL );

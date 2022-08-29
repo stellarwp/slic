@@ -2,10 +2,18 @@
 namespace StellarWP\Slic;
 
 if ( $is_help ) {
-    echo "Returns the IP Address of the host machine from the container perspective.\n";
-    echo PHP_EOL;
-    echo colorize( "example: <light_cyan>{$cli_name} host-ip</light_cyan>\n" );
-    return;
+	$help = <<< HELP
+	SUMMARY:
+
+		Returns the IP Address of the host machine from the container perspective.
+
+	USAGE:
+
+		<yellow>{$cli_name} {$subcommand}</yellow>
+	HELP;
+
+	echo colorize( $help );
+	return;
 }
 
 // Buffer the output to avoid printing empty blank lines that might mangle the output in quite mode.

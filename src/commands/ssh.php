@@ -11,12 +11,28 @@
 namespace StellarWP\Slic;
 
 if ( $is_help ) {
-	echo "Opens a bash shell in a running stack service, defaults to the 'wordpress' one.\n";
-	echo PHP_EOL;
-	echo colorize( "usage: <light_cyan>{$cli_name} shell [<service>]</light_cyan>\n" );
-	echo colorize( "example: <light_cyan>{$cli_name} shell wordpress</light_cyan>\n" );
-	echo colorize( "example: <light_cyan>{$cli_name} shell chrome</light_cyan>\n" );
-	echo colorize( "example: <light_cyan>{$cli_name} shell db</light_cyan>\n" );
+	$help = <<< HELP
+	SUMMARY:
+
+		Opens a bash shell in a running stack service, defaults to the '{$cli_name}' one.
+
+	USAGE:
+
+		<yellow>{$cli_name} {$subcommand} [<service>]</yellow>
+
+	EXAMPLES:
+
+		<light_cyan>{$cli_name} {$subcommand} wordpress</light_cyan>
+		Open a bash shell into the wordpress service.
+
+		<light_cyan>{$cli_name} {$subcommand} chrome</light_cyan>
+		Open a bash shell into the chrome service.
+
+		<light_cyan>{$cli_name} {$subcommand} db</light_cyan>
+		Open a bash shell into the db service.
+	HELP;
+
+	echo colorize( $help );
 
 	return;
 }

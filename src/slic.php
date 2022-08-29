@@ -9,6 +9,68 @@ use function StellarWP\Slic\Env\backup_env_var;
 use function StellarWP\Slic\Env\env_var_backup;
 
 /**
+ * Get the CLI header.
+ *
+ * @param string $cli_name CLI command name.
+ * @param boolean $full Should the full heading be returned?
+ * @param string|null $extra Extra message to add to the header.
+ * @return void
+ */
+function cli_header( $cli_name, $full = false, $extra = null ) {
+	$header_parts = [
+		light_cyan( $cli_name ) . ' version ' . light_cyan( CLI_VERSION ),
+		$full ? PHP_EOL : ' - ',
+		'StellarWP local testing and development tool',
+		PHP_EOL,
+	];
+
+	if ( ! $full ) {
+		return implode( '', $header_parts ) . PHP_EOL;
+	}
+
+	$header_parts[0] = '                     ' . $header_parts[0];
+	$header_parts[2] = '        ' . $header_parts[2];
+
+	$message_start = <<< MESSAGE
+	******************************************************************
+
+	                                                 _.oo.
+	                         <light_cyan>_.u[[/;:,.</light_cyan>         .odMMMMMM'
+	                      <light_cyan>.o888UU[[[/;:-.</light_cyan>  .o@P^    MMM^
+	                     <light_cyan>oN88888UU[[[/;::-.</light_cyan>        dP^
+	                    <light_cyan>dNMMNN888UU[[[/;:--.</light_cyan>   .o@P^
+	                   <light_cyan>,MMMMMMN888UU[[/;::-.</light_cyan> o@^
+	                   <light_cyan>NNMMMNN888UU[[[/~.</light_cyan>o@P^
+	                   <light_cyan>888888888UU[[[</light_cyan>/o@^<light_cyan>-..</light_cyan>
+	                  o<light_cyan>I8888UU[[[</light_cyan>/o@P^<light_cyan>:--..</light_cyan>
+	               .@^  <light_cyan>YUU[[[</light_cyan>/o@^<light_cyan>;::---..</light_cyan>
+	             oMP     <light_cyan>^</light_cyan>/o@P^<light_cyan>;:::---..</light_cyan>
+	          .dMMM    .o@^ ^<light_cyan>;::---...</light_cyan>
+	         dMMMMMMM@^`       <light_cyan>`^^^^</light_cyan>
+	        YMMMUP^
+	         ^^
+
+	MESSAGE;
+
+	if ( $extra ) {
+		$message_start = str_replace( 'light_cyan', 'red', $message_start );
+	}
+
+	$message_start .= implode( '', $header_parts );
+
+	if ( $extra ) {
+		$message_start .= PHP_EOL . $extra . PHP_EOL;
+	}
+
+	$message_end = <<< MESSAGE
+
+	******************************************************************
+	MESSAGE;
+
+	return colorize( $message_start . $message_end . PHP_EOL . PHP_EOL );
+}
+
+/**
  * Returns whether or not the slic here command was done at the site level or not.
  *
  * @return bool
@@ -116,7 +178,7 @@ function ensure_valid_target( $target, $exit = true ) {
 		$target = get_cwd_dir_name();
 
 		if ( ! in_array( $target, $targets, true ) ) {
-			echo magenta( "Detecting the current directory of '{$target}' as the target was not valid.\nAvailable targets are:\n${targets_str}\n" );
+			echo magenta( "Detecting the current directory of '{$target}' as the target was not valid." . PHP_EOL . "Available targets are: " . PHP_EOL . "${targets_str}" . PHP_EOL );
 			if ( $exit ) {
 				exit( 1 );
 			}
@@ -126,7 +188,7 @@ function ensure_valid_target( $target, $exit = true ) {
 	}
 
 	if ( ! in_array( $target, $targets, true ) ) {
-		echo magenta( "'{$target}' is not a valid target; available targets are:\n${targets_str}\n" );
+		echo magenta( "'{$target}' is not a valid target; available targets are:" . PHP_EOL . "${targets_str}" . PHP_EOL );
 		if ( $exit ) {
 			exit( 1 );
 		}
@@ -157,7 +219,7 @@ function get_target_relative_path( $target ) {
 	} elseif ( file_exists( "{$theme_dir}/{$target}" ) ) {
 		$parent_path = $theme_dir;
 	} else {
-		echo magenta( "Unable to locate a path to the desired target ({$target}). Searched in: \n- {$plugin_dir}\n- {$theme_dir}" );
+		echo magenta( "Unable to locate a path to the desired target ({$target}). Searched in: " . PHP_EOL . "- {$plugin_dir}" . PHP_EOL . "- {$theme_dir}" );
 		exit( 1 );
 	}
 
@@ -183,6 +245,8 @@ function setup_slic_env( $root_dir, $reset = false ) {
 
 	// Let's declare we're performing slics.
 	putenv( 'STELLAR_SLIC=1' );
+	// Backwards compat
+	putenv( 'TRIBE_TRIC=1' );
 
 	putenv( 'SLIC_VERSION=' . CLI_VERSION );
 
@@ -248,7 +312,7 @@ function slic_target( $require = true ) {
 	}
 
 	if ( empty( $using_full ) ) {
-		echo magenta( "Use target not set; use the 'use' sub-command to set it.\n" );
+		echo magenta( "Use target not set; use the 'use' sub-command to set it." . PHP_EOL );
 		exit( 1 );
 	}
 
@@ -292,6 +356,7 @@ function slic_switch_target( $target ) {
  */
 function php_services() {
 	return [
+		'slic'        => 'slic',
 		'wordpress'   => 'WordPress',
 	];
 }
@@ -323,16 +388,42 @@ function restart_service( $service, $pretty_name = null, $hard = false ) {
 
 	$service_running = $slic( [ 'ps', '-q', $service ] )( 'string_output' );
 	if ( ! empty( $service_running ) ) {
-		echo colorize( "Restarting {$pretty_name} service...\n" );
+		echo colorize( PHP_EOL . "Restarting {$pretty_name} service..." . PHP_EOL );
 		if ( $hard ) {
 			$slic_realtime( [ 'rm', '--stop', '--force', $service ] );
 			$slic_realtime( [ 'up', '-d', $service ] );
 		} else {
 			$slic_realtime( [ 'restart', $service ] );
 		}
-		echo colorize( "<light_cyan>{$pretty_name} service restarted.</light_cyan>\n" );
+		echo colorize( PHP_EOL . "✅ <light_cyan>{$pretty_name} service restarted.</light_cyan>" . PHP_EOL );
 	} else {
-		echo colorize( "{$pretty_name} service was not running.\n" );
+		echo colorize( PHP_EOL . "{$pretty_name} service was not running. Starting it." . PHP_EOL );
+		$exit_status = ensure_service_running( $service );
+		if ( $exit_status !== 0 ) {
+			echo colorize( "✅ <light_cyan>{$pretty_name} service started.</light_cyan>" . PHP_EOL );
+		} else {
+			echo colorize( "❌ <red>{$pretty_name} service could not be started.</red>" . PHP_EOL );
+		}
+	}
+}
+
+/**
+ * Restarts all services in the stack.
+ */
+function restart_all_services() {
+	$services = get_services();
+	foreach ( $services as $service ) {
+		restart_service( $service );
+	}
+}
+
+/**
+ * Starts all services in the stack.
+ */
+function start_all_services() {
+	$services = get_services();
+	foreach ( $services as $service ) {
+		ensure_service_running( $service );
 	}
 }
 
@@ -409,7 +500,7 @@ function clone_plugin( $plugin, $branch = null ) {
 	$plugin_path = slic_plugins_dir( $plugin );
 
 	if ( ! file_exists( $plugin_dir ) ) {
-		echo "Creating the plugins directory...\n";
+		echo "Creating the plugins directory..." . PHP_EOL;
 		if ( ! mkdir( $plugin_dir ) && ! is_dir( $plugin_dir ) ) {
 			echo magenta( "Could not create {$plugin_dir} directory; please check the parent directory is writeable." );
 			exit( 1 );
@@ -421,7 +512,7 @@ function clone_plugin( $plugin, $branch = null ) {
 		return;
 	}
 
-	echo "Cloning {$plugin}...\n";
+	echo "Cloning {$plugin}..." . PHP_EOL;
 
 	$repository = git_handle() . '/' . escapeshellcmd( $plugin );
 
@@ -460,17 +551,17 @@ function setup_plugin_tests( $plugin ) {
 
 		if ( write_slic_test_config( $target_path ) ) {
 			echo colorize( "Created/updated <light_cyan>{$relative_path}test-config.slic.php</light_cyan> " .
-			               "in {$plugin}.\n" );
+			               "in {$plugin}." . PHP_EOL );
 		}
 
 		write_slic_env_file( $target_path );
 		echo colorize( "Created/updated <light_cyan>{$relative_path}.env.testing.slic</light_cyan> " .
-		               "in <light_cyan>{$plugin}</light_cyan>.\n" );
+		               "in <light_cyan>{$plugin}</light_cyan>." . PHP_EOL );
 
 
 		write_codeception_config( $target_path );
 		echo colorize( "Created/updated <light_cyan>{$relative_path}codeception.slic.yml</light_cyan> in " .
-		               "<light_cyan>{$plugin}</light_cyan>.\n" );
+		               "<light_cyan>{$plugin}</light_cyan>." . PHP_EOL );
 	}
 }
 
@@ -545,7 +636,7 @@ function teardown_stack( $passive = false ) {
  * Rebuilds the slic stack.
  */
 function rebuild_stack() {
-	echo "Building the stack images...\n\n";
+	echo "Building the stack images..." . PHP_EOL . PHP_EOL;
 
 	if ( is_ci() ) {
 		// In CI context do NOT build the image with XDebug and waste time on unused features.
@@ -554,7 +645,7 @@ function rebuild_stack() {
 
 	slic_realtime()( [ 'build' ] );
 	write_build_version();
-	echo light_cyan( "\nStack images built.\n\n" );
+	echo light_cyan( PHP_EOL . "Stack images built." . PHP_EOL . PHP_EOL );
 }
 
 /**
@@ -605,15 +696,15 @@ function slic_info() {
 		'SSH_AUTH_SOCK',
 	];
 
-	echo colorize( "<yellow>Configuration read from the following files:</yellow>\n" );
+	echo colorize( "<yellow>Configuration read from the following files:</yellow>" . PHP_EOL );
 	$slic_root = root();
-	echo implode( "\n", array_filter( [
+	echo implode( PHP_EOL, array_filter( [
 			file_exists( $slic_root . '/.env.slic' ) ? "  - " . $slic_root . '/.env.slic' : null,
 			file_exists( $slic_root . '/.env.slic.local' ) ? "  - " . $slic_root . '/.env.slic.local' : null,
 			file_exists( $slic_root . '/.env.slic.run' ) ? "  - " . $slic_root . '/.env.slic.run' : null,
-		] ) ) . "\n\n";
+		] ) ) . PHP_EOL . PHP_EOL;
 
-	echo colorize( "<yellow>Current configuration:</yellow>\n" );
+	echo colorize( "<yellow>Current configuration:</yellow>" . PHP_EOL );
 	foreach ( $config_vars as $key ) {
 		$value = print_r( getenv( $key ), true );
 
@@ -622,10 +713,10 @@ function slic_info() {
 			$value .= ' => ' . slic_plugins_dir();
 		}
 
-		echo colorize( "  - <light_cyan>{$key}</light_cyan>: {$value}\n" );
+		echo colorize( "  - <light_cyan>{$key}</light_cyan>: {$value}" . PHP_EOL );
 	}
 
-	echo "\n";
+	echo PHP_EOL;
 	echo colorize( "<yellow>Valid Targets:</yellow>" );
 	echo get_valid_targets( false );
 }
@@ -691,7 +782,7 @@ function slic_handle_composer_cache( callable $args ) {
 
 	echo 'Composer cache directory: ' . ( $value ? light_cyan( $value ) : magenta( 'not set' ) );
 
-	echo "\n\n";
+	echo PHP_EOL . PHP_EOL;
 
 	$restart_services = ask(
 		'Would you like to restart the WordPress (NOT the database) and Codeception services now?',
@@ -704,7 +795,7 @@ function slic_handle_composer_cache( callable $args ) {
 		restart_php_services( true );
 	} else {
 		echo colorize(
-			"\n\nTear down the stack with <light_cyan>down</light_cyan> and restart it to apply the new settings!\n"
+			PHP_EOL . PHP_EOL . "Tear down the stack with <light_cyan>down</light_cyan> and restart it to apply the new settings!" . PHP_EOL
 		);
 	}
 }
@@ -854,7 +945,7 @@ function slic_handle_xdebug( callable $args ) {
 		$var = $args( 'value' );
 		echo colorize( "Setting <light_cyan>{$map[$toggle]}={$var}</light_cyan>" ) . PHP_EOL . PHP_EOL;
 		write_env_file( $run_settings_file, [ $map[ $toggle ] => $var ], true );
-		echo PHP_EOL . PHP_EOL . colorize( "Tear down the stack with <light_cyan>down</light_cyan> and restart it to apply the new settings!\n" );
+		echo PHP_EOL . PHP_EOL . colorize( "Tear down the stack with <light_cyan>down</light_cyan> and restart it to apply the new settings!" . PHP_EOL );
 
 		return;
 	}
@@ -869,10 +960,10 @@ function slic_handle_xdebug( callable $args ) {
 	$xdebug_env_vars = [ 'XDE' => $value, 'XDEBUG_DISABLE' => 1 === $value ? 0 : 1 ];
 	write_env_file( $run_settings_file, $xdebug_env_vars, true );
 
-	echo "\n\n";
+	echo PHP_EOL . PHP_EOL;
 
 	$restart_services = ask(
-		'Would you like to restart the WordPress (NOT the database) and Codeception services now?',
+		'Would you like to restart the WordPress (NOT the database) services now?',
 		'yes'
 	);
 	if ( $restart_services ) {
@@ -883,7 +974,7 @@ function slic_handle_xdebug( callable $args ) {
 		restart_php_services( true );
 	} else {
 		echo colorize(
-			"\n\nTear down the stack with <light_cyan>down</light_cyan> and restar it to apply the new settings!\n"
+			PHP_EOL . PHP_EOL . "Tear down the stack with <light_cyan>down</light_cyan> and restar it to apply the new settings!" . PHP_EOL
 		);
 	}
 }
@@ -892,9 +983,9 @@ function slic_handle_xdebug( callable $args ) {
  * Updates the stack images by pulling the latest version of each.
  */
 function update_stack_images() {
-	echo "Updating the stack images...\n\n";
+	echo "Updating the stack images..." . PHP_EOL . PHP_EOL;
 	slic_realtime()( [ 'pull', '--include-deps' ] );
-	echo light_cyan( "\n\nStack images updated.\n" );
+	echo light_cyan( PHP_EOL . PHP_EOL . "Stack images updated." . PHP_EOL );
 }
 
 /**
@@ -940,7 +1031,7 @@ function maybe_build_install_command_pool( $base_command, $target, array $sub_di
 	// Only prompt if the target itself has has been identified as available to build. If any subs need to build, will auto-try.
 	if ( dir_has_req_build_file( $base_command, slic_plugins_dir( $target ) ) ) {
 		$run = ask(
-			"\n" . yellow( $target . ':' ) . " Would you like to run the {$base_command} install processes for this plugin?",
+			PHP_EOL . yellow( $target . ':' ) . " Would you like to run the {$base_command} install processes for this plugin?",
 			'yes'
 		);
 	}
@@ -992,7 +1083,7 @@ function build_command_pool( $base_command, array $command, array $sub_directori
 		foreach ( $sub_directories as $dir ) {
 			$sub_target = $using_alias ? "{$using_alias}/{$dir}" : "{$using}/{$dir}";
 
-			$question = "\n" . yellow( $sub_target . ':' ) . " Would you like to run the {$base_command} command against {$sub_target}?";
+			$question = PHP_EOL . yellow( $sub_target . ':' ) . " Would you like to run the {$base_command} command against {$sub_target}?";
 			if (
 				dir_has_req_build_file( $base_command, slic_plugins_dir( $sub_target ) )
 				&& ask( $question, 'yes' )
@@ -1145,19 +1236,19 @@ function switch_plugin_branch( $branch, $plugin = null ) {
 	$cwd = getcwd();
 
 	if ( false === $cwd ) {
-		echo magenta( "Cannot get current working directory; is it accessible?j\n" );
+		echo magenta( "Cannot get current working directory; is it accessible?" . PHP_EOL );
 		exit( 1 );
 	}
 
 	$plugin     = null === $plugin ? slic_target() : $plugin;
 	$plugin_dir = slic_plugins_dir( $plugin );
 
-	echo light_cyan( "Temporarily using {$plugin}\n" );
+	echo light_cyan( "Temporarily using {$plugin}" . PHP_EOL );
 
 	$changed = chdir( $plugin_dir );
 
 	if ( false === $changed ) {
-		echo magenta( "Cannot change to directory {$plugin_dir}; is it accessible?\n" );
+		echo magenta( "Cannot change to directory {$plugin_dir}; is it accessible?" . PHP_EOL );
 		exit( 1 );
 	}
 
@@ -1191,24 +1282,24 @@ function switch_plugin_branch( $branch, $plugin = null ) {
 
 		if ( 0 !== $status ) {
 			// If we could not fetch from any remote we failed.
-			echo magenta( "Remote branch fetch failed.\n" );
+			echo magenta( "Remote branch fetch failed." . PHP_EOL );
 			exit( 1 );
 		}
 	} else {
 		echo "Branch {$branch} found locally: checking it out...";
 		$command = 'git checkout --recurse-submodules ' . $branch;
 		if ( 0 !== process_realtime( $command ) ) {
-			echo magenta( "Branch switch failed.\n" );
+			echo magenta( "Branch switch failed." . PHP_EOL );
 			exit( 1 );
 		}
 	}
 
 	// Restore the current working directory to the previous value.
-	echo light_cyan( 'Using ' . slic_target() . " once again\n" );
+	echo light_cyan( 'Using ' . slic_target() . " once again". PHP_EOL );
 	$restored = chdir( $cwd );
 
 	if ( false === $restored ) {
-		echo magenta( "Could not restore working directory {$cwd}\n" );
+		echo magenta( "Could not restore working directory {$cwd}" . PHP_EOL );
 		exit( 1 );
 	}
 }
@@ -1251,11 +1342,11 @@ function maybe_prompt_for_repo_update() {
 		return;
 	}
 
-	echo magenta( "\n****************************************************************\n\n" );
-	echo colorize( "<magenta>Version</magenta> <yellow>{$remote_version}</yellow> <magenta>of slic is available! You are currently</magenta>\n" );
-	echo magenta( "running version {$cli_version}. To update, execute the following:\n\n" );
-	echo yellow( "                         slic upgrade\n\n" );
-	echo magenta( "****************************************************************\n" );
+	echo magenta( PHP_EOL . "****************************************************************" . PHP_EOL . PHP_EOL );
+	echo colorize( "<magenta>Version</magenta> <yellow>{$remote_version}</yellow> <magenta>of slic is available! You are currently</magenta>" . PHP_EOL );
+	echo magenta( "running version {$cli_version}. To update, execute the following:" . PHP_EOL . PHP_EOL );
+	echo yellow( "                         slic upgrade" . PHP_EOL . PHP_EOL );
+	echo magenta( "****************************************************************" . PHP_EOL );
 }
 
 /**
@@ -1279,17 +1370,17 @@ function maybe_prompt_for_stack_update() {
 		return;
 	}
 
-	echo magenta( "\n****************************************************************\n\n" );
-	echo yellow( "                  ____________    ____  __\n" );
-	echo yellow( "                  |   ____\   \  /   / |  |\n" );
-	echo yellow( "                  |  |__   \   \/   /  |  |\n" );
-	echo yellow( "                  |   __|   \_    _/   |  |\n" );
-	echo yellow( "                  |  |        |  |     |  |\n" );
-	echo yellow( "                  |__|        |__|     |__|\n\n" );
-	echo magenta( "Your slic containers are not up to date with the latest version.\n" );
-	echo magenta( "                  To update, please run:\n\n" );
-	echo yellow( "                         slic update\n\n" );
-	echo magenta( "****************************************************************\n" );
+	echo magenta( PHP_EOL . "****************************************************************" . PHP_EOL . PHP_EOL );
+	echo yellow( "                  ____________    ____  __" . PHP_EOL );
+	echo yellow( "                  |   ____\   \  /   / |  |" . PHP_EOL );
+	echo yellow( "                  |  |__   \   \/   /  |  |" . PHP_EOL );
+	echo yellow( "                  |   __|   \_    _/   |  |" . PHP_EOL );
+	echo yellow( "                  |  |        |  |     |  |" . PHP_EOL );
+	echo yellow( "                  |__|        |__|     |__|" . PHP_EOL . PHP_EOL );
+	echo magenta( "Your slic containers are not up to date with the latest version." . PHP_EOL );
+	echo magenta( "                  To update, please run:" . PHP_EOL . PHP_EOL );
+	echo yellow( "                         slic update" . PHP_EOL . PHP_EOL );
+	echo magenta( "****************************************************************" . PHP_EOL );
 }
 
 /**

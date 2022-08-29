@@ -18,18 +18,33 @@
 namespace StellarWP\Slic;
 
 if ( $is_help ) {
-	echo colorize( "Runs a Codeception test in the stack, the equivalent of <light_cyan>'codecept run ...'</light_cyan>, or all the tests.\n" );
-	echo PHP_EOL;
-	echo colorize( "This command requires a use target set using the <light_cyan>use</light_cyan> command.\n" );
-	echo colorize( "usage: <light_cyan>{$cli_name} run</light_cyan>\n" );
-	echo colorize( "usage: <light_cyan>{$cli_name} run [...<commands>]</light_cyan>\n" );
-	echo colorize( "example: <light_cyan>{$cli_name} run wpunit</light_cyan>" );
+	$help = <<< HELP
+	SUMMARY:
+
+		Runs a Codeception test in the stack, the equivalent of <light_cyan>'codecept run ...'</light_cyan>, or all the tests.
+
+		This command requires a use target set using the <light_cyan>use</light_cyan> command.
+
+	USAGE:
+
+		<yellow>{$cli_name} run [...<commands>]</yellow>
+
+	EXAMPLES:
+
+		<light_cyan>{$cli_name} run</light_cyan>
+		Runs all suites in sequential order.
+
+		<light_cyan>{$cli_name} run wpunit</light_cyan>
+		Runs the wpunit suite.
+	HELP;
+
+	echo colorize( $help );
 
 	return;
 }
 
 $using = slic_target_or_fail();
-echo light_cyan( "Using {$using}\n" );
+echo light_cyan( "Using {$using}" . PHP_EOL );
 
 ensure_service_running( 'slic', codeception_dependencies() );
 
@@ -43,12 +58,12 @@ $root = slic_plugins_dir( slic_target( true ) );
 // Object-cache is disruptive in the context of tests; remove the object cache drop-in before running the tests.
 $object_cache_dropin = slic_wp_dir( 'wp-content/object-cache.php' );
 if ( file_exists( $object_cache_dropin ) ) {
-	echo "Removing the object cache drop-in file before tests...\n";
+	echo "Removing the object cache drop-in file before tests..." . PHP_EOL;
 	if ( ! unlink( $object_cache_dropin ) ) {
-		echo magenta( "Failed to remove the {$object_cache_dropin} file.\n" );
+		echo magenta( "Failed to remove the {$object_cache_dropin} file." . PHP_EOL );
 		exit( 1 );
 	}
-	echo "Object cache drop-in file removed.\n";
+	echo "Object cache drop-in file removed." . PHP_EOL;
 }
 
 /*
@@ -68,7 +83,7 @@ $config_files = [];
 switch ( $available_configs_mask ) {
 	case 0:
 		// There is no configuration file; needs configuration.
-		echo magenta( "No Codeception configuration file found: run the 'init' subcommand to initialize the project.\n" );
+		echo magenta( "No Codeception configuration file found: run the 'init' subcommand to initialize the project." . PHP_EOL );
 		exit( 1 );
 	case 1:
 		// Dist config file only; this will work if `slic` is the dist tool used locally and in CI, CC will pick it up.

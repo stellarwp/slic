@@ -180,7 +180,7 @@ function write_slic_test_config( $plugin_path, array $config_lines = [] ) {
 	$put = file_put_contents( $file, "<?php\n" . implode( "\n", $test_config_lines ) );
 
 	if ( false === $put ) {
-		echo magenta( "Could not write {$file}; please check the directory exists and is writeable.\n" );
+		echo magenta( "Could not write {$file}; please check the directory exists and is writeable." . PHP_EOL );
 		exit( 1 );
 	}
 
@@ -226,7 +226,7 @@ WPLOADER_TEST_CONFIG;
 	$put = file_put_contents( $file, $codeception );
 
 	if ( false === $put ) {
-		echo magenta( "Could not write {$file}; please check the directory exists and is writeable.\n" );
+		echo magenta( "Could not write {$file}; please check the directory exists and is writeable." . PHP_EOL );
 		exit( 1 );
 	}
 }

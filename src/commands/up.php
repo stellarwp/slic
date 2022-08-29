@@ -2,15 +2,4 @@
 
 namespace StellarWP\Slic;
 
-if ( $is_help ) {
-	echo "Starts a container part of the stack.\n";
-	echo PHP_EOL;
-	echo colorize( "signature: <light_cyan>{$cli_name} up <service></light_cyan>\n" );
-	echo colorize( "example: <light_cyan>{$cli_name} up adminer</light_cyan>" );
-	return;
-}
-
-$service = args( [ 'service' ], $args( '...' ), 0 )( 'service', 'wordpress' );
-
-exit( ensure_service_running( $service ) );
-
+require __DIR__ . '/start.php';
