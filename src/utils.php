@@ -613,15 +613,13 @@ function unzip_file( $source_file, $dest_dir ) {
 	debug( "Unzipping file $source_file to $dest_dir ..." . PHP_EOL );
 
 	$zip      = new \ZipArchive;
-	$basename = basename( $source_file );
-	$dirname  = substr( $basename, 0, strpos( $basename, '.', - strlen( $basename ) ) );
 	$tmp_dir  = cache( '/temp_zip_dir' );
 
 	if ( ! (
 		$zip->open( $source_file )
 		&& $zip->extractTo( $tmp_dir )
 		&& ( is_dir( $dest_dir ) && rrmdir( $dest_dir ) )
-		&& rename( $tmp_dir . '/' . $dirname, $dest_dir )
+		&& rename( $tmp_dir . '/wordpress', $dest_dir )
 		&& rrmdir( $tmp_dir )
 		&& $zip->close()
 	) ) {

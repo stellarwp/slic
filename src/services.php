@@ -180,24 +180,14 @@ function ensure_services_running( array $services ) {
  * @return bool Whether a service is running or not.
  */
 function service_running( $service, $set = null ) {
-	static $running_services;
+	$ps = slic_process()( [ 'ps', '--services', '--filter', '"status=running"' ] );
+	$ps_status = $ps( 'status' );
 
-	if ( $running_services === null ) {
-		// Pull from docker, ignore the set flag as it will be live.
-		$ps = slic_process()( [ 'ps', '--services', '--filter', '"status=running"' ] );
-		$ps_status = $ps( 'status' );
-
-		if ( $ps_status !== 0 ) {
-			return false;
-		}
-
-		$running_services = explode( "\n", $ps( 'string_output' ) );
-	} else if ( $set !== null ) {
-		// Update the cached value.
-		$running_services = $set ?
-			array_unique( array_merge( $running_services, [ $service ] ) )
-			: array_values( array_diff( $running_services, [ $service ] ) );
+	if ( $ps_status !== 0 ) {
+		return false;
 	}
+
+	$running_services = explode( "\n", $ps( 'string_output' ) );
 
 	return in_array( $service, $running_services, true );
 }
