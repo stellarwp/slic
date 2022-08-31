@@ -118,7 +118,7 @@ function ensure_service_ready( $service ) {
 	switch ( $service ) {
 		case 'wordpress':
 			ensure_wordpress_ready();
-
+			service_up_notify( $service );
 			return static function ( $service ) {
 				propagate_ip_address_of_to(
 					[ 'wordpress' ],
@@ -126,7 +126,6 @@ function ensure_service_ready( $service ) {
 					[ 'wordpress' => 'wordpress.test' ]
 				);
 			};
-			service_up_notify( $service );
 		default:
 			return $noop;
 	}
@@ -159,7 +158,6 @@ function ensure_service_dependencies( $service ) {
 function ensure_services_running( array $services ) {
 	$on_up = [];
 	foreach ( $services as $service ) {
-		$on_up[] = ensure_service_ready( $service );
 		ensure_service_running( $service );
 	}
 

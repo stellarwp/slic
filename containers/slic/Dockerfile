@@ -17,17 +17,17 @@ RUN chmod a+x /usr/local/bin/install-php-extensions && \
 # Install some more packages required by wp-cli and Composer.
 RUN apt-get update && apt-get install -y \
     default-mysql-client curl git zip unzip iproute2 \
-    && apt-get clean && rm -rf /var/lib/apt/lists/* \
-
-# Use our own ini configuration file to set up some PHP default.
-COPY php.ini /usr/local/etc/php/conf.d/docker-php-defaults.ini
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Configure the uopz extension.
-COPY docker-php-ext-uopz.ini /usr/local/etc/php/conf.d/docker-php-ext-uopz.ini
+COPY ./docker-php-ext-uopz.ini /usr/local/etc/php/conf.d/docker-php-ext-uopz.ini
+
+# Use our own ini configuration file to set up some PHP default.
+COPY ./php.ini /usr/local/etc/php/conf.d/999-slic.ini
 
 # Add the XDebug control scripts.
-COPY xdebug-on.sh /usr/local/bin/xdebug-on
-COPY xdebug-off.sh /usr/local/bin/xdebug-off
+COPY ./xdebug-on.sh /usr/local/bin/xdebug-on
+COPY ./xdebug-off.sh /usr/local/bin/xdebug-off
 RUN chmod a+x /usr/local/bin/xdebug-on && \
     chmod a+x /usr/local/bin/xdebug-off
 
@@ -61,14 +61,14 @@ RUN [ $(getent group 1000) ] || addgroup --gid 1000 slic && \
     chown root:root /usr/local/bin/fixuid && \
     chmod 4755 /usr/local/bin/fixuid && \
     mkdir -p /etc/fixuid
-COPY fixuid.yml /etc/fixuid/config.yml
-COPY .bashrc /home/slic/.bashrc
-COPY .bashrc /root/.bashrc
-COPY bashrc_scripts.sh /home/slic/bashrc_scripts.sh
+COPY ./fixuid.yml /etc/fixuid/config.yml
+COPY ./.bashrc /home/slic/.bashrc
+COPY ./.bashrc /root/.bashrc
+COPY ./bashrc_scripts.sh /home/slic/bashrc_scripts.sh
 
 RUN chown -R slic:slic $NVM_DIR
 
-COPY slic-entrypoint.sh /usr/local/bin/slic-entrypoint.sh
+COPY ./slic-entrypoint.sh /usr/local/bin/slic-entrypoint.sh
 RUN chmod a+x /usr/local/bin/slic-entrypoint.sh
 ENTRYPOINT ["/usr/local/bin/slic-entrypoint.sh"]
 
