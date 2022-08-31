@@ -613,7 +613,6 @@ function unzip_file( $source_file, $dest_dir ) {
 	debug( "Unzipping file $source_file to $dest_dir ..." . PHP_EOL );
 
 	$zip      = new \ZipArchive;
-	$basename = basename( $source_file );
 	$tmp_dir  = cache( '/temp_zip_dir' );
 
 	if ( ! (
