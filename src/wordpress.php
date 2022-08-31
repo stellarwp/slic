@@ -173,6 +173,9 @@ function ensure_wordpress_files( $version = null ) {
 		debug( "Previous WordPress directory not found." . PHP_EOL );
 	}
 
+	// Tear down the stack to avoid containers from locking the bound directories.
+	quietly_tear_down_stack();
+
 	// Ensure the destination directory exists.
 	if ( ! is_dir( $wp_root_dir ) && ! mkdir( $wp_root_dir, 0755, false ) && ! is_dir( $wp_root_dir ) ) {
 		echo magenta( "Failed to create WordPress root directory {$wp_root_dir}" );
@@ -180,7 +183,7 @@ function ensure_wordpress_files( $version = null ) {
 	}
 
 	// Download WordPress.
-	$zip_file = cache( '/wordpress/wordpress.zip' );
+	$zip_file = cache( "/wordpress/wordpress-$version.zip" );
 	if ( ! is_file( $zip_file ) ) {
 		debug( "WordPress zip file $zip_file not found." . PHP_EOL );
 
