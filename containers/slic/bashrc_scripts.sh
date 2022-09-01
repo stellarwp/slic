@@ -9,23 +9,29 @@ function xdebug_config_file(){
 
 # Activates the XDebug extension.
 function xon(){
-  xdebug_config_file=$(xdebug_config_file)
-  sed -i '/^;zend_extension/ s/;zend_extension/zend_extension/g' "$xdebug_config_file"
-  php -v
+  xdebug-on
+  echo "#!/bin/bash" > ~/xdebug-setting.sh
+  echo "xdebug-on" >> ~/xdebug-setting.sh
+  chmod +x ~/xdebug-setting.sh
 }
 
 # Deactivates the XDebug extension completely.
 function xoff(){
-  xdebug_config_file=$(xdebug_config_file)
-  sed -i '/^zend_extension/ s/zend_extension/;zend_extension/g' "$xdebug_config_file"
-  php -v
+  xdebug-off
+  echo "#!/bin/bash" > ~/xdebug-setting.sh
+  echo "xdebug-off" >> ~/xdebug-setting.sh
+  chmod +x ~/xdebug-setting.sh
 }
 
-xoff
+XDEBUG_FILE=~/xdebug-setting.sh
+if [ -f "$XDEBUG_FILE" ]; then
+  . ~/xdebug-setting.sh
+else
+  xoff
+fi
 
-echo ""
-echo "  c = codecept"
-echo "  cr = codecept run"
-echo "  xon = turn xdebug on"
+echo "  c    = codecept"
+echo "  cr   = codecept run"
+echo "  xon  = turn xdebug on"
 echo "  xoff = turn xdebug off"
 echo ""
