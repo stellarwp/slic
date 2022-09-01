@@ -1,6 +1,6 @@
 # Some aliases to save some typing.
-alias c="vendor/bin/codecept -c codeception.slic.yml"
-alias cr="vendor/bin/codecept -c codeception.slic.yml run"
+alias c="vendor/bin/codecept -c $(if [ -f 'codeception.slic.yml' ]; then echo 'codeception.slic.yml'; else echo 'codeception.tric.yml'; fi)"
+alias cr="vendor/bin/codecept -c $(if [ -f 'codeception.slic.yml' ]; then echo 'codeception.slic.yml'; else echo 'codeception.tric.yml'; fi) run"
 
 # Returns the path to the PHP version configuration file.
 function xdebug_config_file(){
