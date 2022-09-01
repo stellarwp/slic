@@ -1,11 +1,19 @@
 <?php
 
-namespace Tribe\Test;
+namespace StellarWP\Slic;
 
 if ( $is_help ) {
-	echo "Updates the tool and the images used in its services.\n";
-	echo PHP_EOL;
-	echo colorize( "usage: <light_cyan>{$cli_name} update</light_cyan>\n" );
+	$help = <<< HELP
+	SUMMARY:
+
+		Updates {$cli_name} and the images used in its services.
+
+	USAGE:
+
+		<yellow>{$cli_name} {$subcommand}</yellow>
+	HELP;
+
+	echo colorize( $help );
 	return;
 }
 

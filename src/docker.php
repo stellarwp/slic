@@ -3,7 +3,7 @@
  * docker-compose wrapper functions.
  */
 
-namespace Tribe\Test;
+namespace StellarWP\Slic;
 
 require_once __DIR__ . '/utils.php';
 
@@ -86,7 +86,7 @@ function wordpress_container_root_dir( $path = '/' ) {
  */
 function cli() {
 	$service     = is_ci() ? 'cli' : 'cli_debug';
-	$stack_array = tric_stack_array();
+	$stack_array = slic_stack_array();
 
 	return docker_compose( array_merge( $stack_array, [ 'run', $service, '--allow-root' ] ) );
 }
@@ -100,16 +100,16 @@ function cli() {
  */
 function wordpress_url() {
 	if ( is_ci() ) {
-		return 'http://tribe.test';
+		return 'http://tec.test';
 	}
 
-	$config = check_status_or_exit( docker_compose( tric_stack_array() )( [ 'config' ] ) )( 'string_output' );
+	$config = check_status_or_exit( docker_compose( slic_stack_array() )( [ 'config' ] ) )( 'string_output' );
 
 	preg_match( '/wordpress_debug:.*?ports:.*?(?<port>\\d+):80\\/tcp/us', $config, $m );
 
 	if ( ! isset( $m['port'] ) ) {
-		echo "\n<red>Could not read the 'wordpress_debug' service localhost port from the stack " .
-		     "configuration:\n" . $config;
+		echo PHP_EOL . "❌ <red>Could not read the 'wordpress_debug' service localhost port from the stack " .
+		     "configuration:" . PHP_EOL . $config;
 		exit( 1 );
 	}
 
@@ -129,8 +129,8 @@ function stack( $postfix = '' ) {
 	$test_dir    = $root_dir . '/test';
 	$run_context = run_context();
 	switch ( $run_context ) {
-		case 'tric';
-			$stack = $root_dir . '/tric-stack' . $postfix . '.yml';
+		case 'slic';
+			$stack = $root_dir . '/slic-stack' . $postfix . '.yml';
 			break;
 		default:
 		case 'default':
@@ -145,20 +145,24 @@ function stack( $postfix = '' ) {
 /**
  * Builds a collection of docker-compose yaml files for spinning up a stack.
  *
- * Typically, this would be tric-stack.yml for plugin-only setups, but if running in site mode, it adds tric-stack.site.yml.
+ * Typically, this would be slic-stack.yml for plugin-only setups, but if running in site mode, it adds slic-stack.site.yml.
+ *
+ * @param bool $filenames_only Return only the files part of the stack, without including option flags.
  *
  * @return string[] Array of docker-compose arguments indicating the files that should be used to initialize the stack.
  */
-function tric_stack_array() {
+function slic_stack_array( $filenames_only = false ) {
+	$file_prefix = $filenames_only ? '' : '-f';
+	$quote       = $filenames_only ? '' : '"';
 	$base_stack  = stack();
-	$stack_array = [ '-f', '"' . $base_stack . '"' ];
+	$stack_array = [ $file_prefix, $quote . $base_stack . $quote ];
 
-	if ( tric_here_is_site() ) {
-		$stack_array[] = '-f';
-		$stack_array[] = '"' . stack( '.site' ) . '"';
+	if ( slic_here_is_site() ) {
+		$stack_array[] = $file_prefix;
+		$stack_array[] = $quote . stack( '.site' ) . $quote;
 	}
 
-	return $stack_array;
+	return array_values( array_filter( $stack_array ) );
 }
 
 /**

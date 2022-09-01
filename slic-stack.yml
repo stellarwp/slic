@@ -1,0 +1,184 @@
+# docker-compose configuration file used to run cross-activation tests.
+
+version: "3"
+
+networks:
+  slic:
+
+volumes:
+  function-mocker-cache: # @todo move to file cache
+
+services:
+
+  db:
+    image: mariadb:10.7.3
+    networks:
+      - slic
+    ports:
+      - "${SLIC_DB_LOCALHOST_PORT:-9006}:3306"
+    environment:
+      MYSQL_DATABASE: test
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+
+  redis:
+    image: redis
+    networks:
+      slic:
+    ports:
+      - "${SLIC_REDIS_LOCALHOST_PORT:-8379}:6379"
+
+  wordpress:
+    image: the-events-calendar/slic_wordpress:${SLIC_VERSION}
+    build:
+      context: containers/wordpress
+      # By default, build the version of Docker that does not include XDebug.
+      dockerfile: Dockerfile
+      args:
+        # Fix the version of the WordPress image to avoid issues w/ out-of-date database dumps.
+        WORDPRESS_IMAGE_VERSION: wordpress:5.9.3-php7.4-apache
+    networks:
+      - slic
+    depends_on:
+      - db
+      - redis
+    # Run the container as the host user and group.
+    # Apache will run as the same user and permission issues with WordPress generated files should not arise.
+    user: "${SLIC_UID:-}:${SLIC_GID:-}"
+    sysctls:
+      # Allow any user to bind ports <= 1024.
+      # This is required as we're running the container as the host user and that user might not be in the root
+      # wheel in the container.
+      net.ipv4.ip_unprivileged_port_start: 0
+    ports:
+      # Allow reaching the site at `http://localhost:8888`.
+      # The port, in the container, is not the default `80` to allow non root users to bind (listen) to it.
+      - "${WORDPRESS_HTTP_PORT:-8888}:80"
+    environment:
+      COMPOSER_CACHE_DIR: ${COMPOSER_CACHE_DIR:-}
+      WORDPRESS_DB_USER: root
+      WORDPRESS_DB_PASSWORD: password
+      # This db is created by the db container at startup, no need to create it.
+      WORDPRESS_DB_NAME: test
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DEBUG: 1
+      # Pull plugins from the `/plugins` directory to allow debugging the files we're working on.
+      WORDPRESS_CONFIG_EXTRA: |
+        $$scheme = empty( $$_SERVER['HTTPS'] ) ? 'http' : 'https';
+        $$url    = isset( $$_SERVER['HTTP_HOST'] ) ? $$_SERVER['HTTP_HOST'] : 'wordpress.test';
+        define( 'WP_HOME', $$scheme . '://' . $$url );
+        define( 'WP_SITEURL', $$scheme . '://' . $$url );
+        define( 'WP_REDIS_HOST', 'redis' );
+        define( 'WP_REDIS_PORT', 6379 );
+        define( 'TRIBE_NO_FREEMIUS', true );
+        define( 'WP_DEBUG_DISPLAY', true );
+        define( 'WP_DEBUG_LOG', true );
+      # Configure this to debug the tests with XDebug.
+      # Map the `_wordpress` directory to `/var/www/html' directory in your IDE of choice.
+      # Map the `_plugins` directory to `/plugins` directory in your IDE of choice.
+      PHP_IDE_CONFIG: "serverName=${XDK:-slic}"
+      # The `remote_host` is set to `host.docker.internal` that will resolve to the host machine IP address, from
+      # within the container, on macOS and Windows.
+      # On Linux set the host machine IP address before calling the stack:
+      # XDH=$(ip route | grep docker0 | awk '{print $9}') docker-compose ...
+      XDEBUG_CONFIG: "idekey=${XDK:-slic} remote_enable=${XDE:-1} remote_host=${XDH:-host.docker.internal} remote_port=${XDP:-9001} client_host=${XDH:-host.docker.internal} client_port=${XDP:-9001}"
+      # Whether to disable the XDebug extension in the Codeception container completely or not.
+      XDEBUG_DISABLE: "${XDEBUG_DISABLE:-0}"
+    volumes:
+      # Paths are relative to the directory that contains this file, NOT the current working directory.
+      - ${SLIC_WP_DIR}:/var/www/html:cached
+      - ${SLIC_PLUGINS_DIR}:/var/www/html/wp-content/plugins:cached
+      - ${SLIC_THEMES_DIR}:/var/www/html/wp-content/themes:cached
+      - ${COMPOSER_CACHE_DIR}:${COMPOSER_CACHE_DIR}:cached
+
+  chrome:
+    image: ${SLIC_CHROME_CONTAINER:-selenium/standalone-chrome:3.141.59-oxygen}
+    networks:
+      - slic
+    extra_hosts:
+      - "wordpress.test:172.${SLIC_TEST_SUBNET:-28}.1.1"
+
+  slic:
+    image: the-events-calendar/slic:${SLIC_VERSION}
+    build:
+      context: ./containers/slic
+      dockerfile: Dockerfile
+    networks:
+      - slic
+    user: "${SLIC_UID:-}:${SLIC_GID:-}"
+    environment:
+      COMPOSER_CACHE_DIR: ${COMPOSER_CACHE_DIR:-}
+      # Set these values to allow the container to look wordpress up.
+      WORDPRESS_DB_USER: root
+      WORDPRESS_DB_PASSWORD: password
+      WORDPRESS_DB_NAME: test
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_URL: http://wordpress.test
+      # Configure this to debug the tests with XDebug.
+      # Map the `_wordpress` directory to `/var/www/html' directory in your IDE of choice.
+      # Map the `_plugins` directory to `/plugins' directory in your IDE of choice.
+      PHP_IDE_CONFIG: "serverName=${XDK:-slic}"
+      # The `remote_host` is set to `host.docker.internal` that will resolve to the host machine IP address, from
+      # within the container, on macOS and Windows.
+      # On Linux set the host machine IP address before calling the stack:
+      # XDH=$(ip route | grep docker0 | awk '{print $9}') docker-compose ...
+      XDEBUG_CONFIG: "idekey=${XDK:-slic} remote_enable=${XDE:-1} remote_host=${XDH:-host.docker.internal} remote_port=${XDP:-9001} client_host=${XDH:-host.docker.internal} client_port=${XDP:-9001}"
+      # Move to the target directory before running the command from the plugins directory.
+      CODECEPTION_PROJECT_DIR: /var/www/html/wp-content/plugins/${SLIC_CURRENT_PROJECT:-test}/${SLIC_CURRENT_PROJECT_SUBDIR:-}
+      # When running the container in shell mode (using the slic `shell` command), then use this CC configuration.
+      CODECEPTION_SHELL_CONFIG: "-c codeception.slic.yml"
+      # Whether to disable the XDebug extension in the Codeception container completely or not.
+      XDEBUG_DISABLE: "${XDEBUG_DISABLE:-0}"
+      # Declare that we are in a slic context so plugins can set custom test configs.
+      STELLAR_SLIC: 1
+      # Backwards compatibility
+      TRIBE_TRIC: 1
+      # If we're in CI context, then pass it through.
+      CI: "${CI:-}"
+      # Let's set the lines and columns number explicitly to have the shell mirror the current one.
+      LINES: "${LINES:-24}"
+      COLUMNS: "${COLUMNS:-80}"
+      # Explicitly set the env var that will define the Function Mocker cache path: it will be picked up by the config file.
+      FUNCTION_MOCKER_CACHE_PATH: "/cache"
+    volumes:
+      # Paths are relative to the directory that contains this file, NOT the current working directory.
+      # Share the WordPress core installation files in the `_wordpress` directory.
+      - ${SLIC_WP_DIR}:/var/www/html:cached
+      # Share the plugins in the `/var/www/hmtl/wp-content/plugins` directory.
+      - ${SLIC_PLUGINS_DIR}:/var/www/html/wp-content/plugins:cached
+      - ${SLIC_THEMES_DIR}:/var/www/html/wp-content/themes:cached
+      # In some plugins we use function-mocker and set it up to cache in `/tmp/function-mocker`.
+      # To avoid a long re-caching on each run, let's cache in a docker volume, caching on the host
+      # filesystem would be a worse cure than the disease.
+      # The volume is bound to the `a+rwx` directory the `codeception` image provides to avoid file mode issues.
+      - function-mocker-cache:/cache
+      - ${COMPOSER_CACHE_DIR}:${COMPOSER_CACHE_DIR}
+      # Scripts volume
+      - ${SLIC_SCRIPTS}:/slic-scripts:cached
+
+#  adminer:
+#    image: adminer
+#    networks:
+#      - slic
+#    environment:
+#      ADMINER_DEFAULT_SERVER: db
+#    ports:
+#      - "9080:8080"
+#
+#
+#  redis-cli:
+#    image: redis
+#    networks:
+#      slic:
+#    depends_on:
+#      - redis
+#    entrypoint: ["redis-cli","-h redis","-p 6379"]
+#    command: ["--version"]
+#
+#  mailcatcher:
+#    image: dockage/mailcatcher
+#    networks:
+#      slic:
+#    ports:
+#      # Expose MailCatcher ports on localhost.
+#      - "1025:1025"
+#      - "1080:1080"

@@ -1,14 +1,27 @@
 <?php
 
-namespace Tribe\Test;
+namespace StellarWP\Slic;
 
 if ( $is_help ) {
-	echo "Sets the plugin to use in the tests.\n";
-	echo PHP_EOL;
-	echo colorize( "signature: <light_cyan>{$cli_name} use <target>[/<subdir>]</light_cyan>\n" );
-	echo colorize( "example: <light_cyan>{$cli_name} use the-events-calendar</light_cyan>\n" );
-	echo colorize( "example: <light_cyan>{$cli_name} use event-tickets/common</light_cyan>" );
+	$help = <<< HELP
+	SUMMARY:
 
+		Sets the plugin to use in the tests.
+
+	USAGE:
+
+		<yellow>{$cli_name} {$subcommand} <target>[/<subdir>]</yellow>
+
+	EXAMPLES:
+
+	<light_cyan>{$cli_name} {$subcommand} the-events-calendar</light_cyan>
+	Set the use target to the-events-calendar.
+
+	<light_cyan>{$cli_name} {$subcommand} event-tickets/common</light_cyan>
+	Set the use target to the common/ directory within event-tickets.
+	HELP;
+
+	echo colorize( $help );
 	return;
 }
 
@@ -18,7 +31,7 @@ $target   = $sub_args( 'target', false );
 $target = (string) ensure_valid_target( $target );
 
 if ( ! empty( $target ) ) {
-	tric_switch_target( $target );
+	slic_switch_target( $target );
 }
 
-echo light_cyan( "Using {$target}\n" );
+echo light_cyan( "Using {$target}" . PHP_EOL );

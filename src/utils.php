@@ -3,7 +3,7 @@
  * Utility functions for the build PHP scripts.
  */
 
-namespace Tribe\Test;
+namespace StellarWP\Slic;
 
 require_once __DIR__ . '/process.php';
 require_once __DIR__ . '/colors.php';
@@ -48,35 +48,6 @@ function args( array $map = [], array $source = null, $offset = 1 ) {
 }
 
 /**
- * Uses curl to fire a GET request to a URL.
- *
- * @param string $url The URL to fire the request to.
- * @param array  $query_args
- *
- * @return string  The curl response.
- */
-function curl_get( $url, array $query_args = [] ) {
-	$full_url = $url . ( strpos( $url, '?' ) === false ? '?' : '' ) . http_build_query( $query_args );
-
-	$curl_handle = curl_init();
-	curl_setopt( $curl_handle, CURLOPT_URL, $full_url );
-	curl_setopt( $curl_handle, CURLOPT_HEADER, 0 );
-	curl_setopt( $curl_handle, CURLOPT_RETURNTRANSFER, true );
-	curl_setopt( $curl_handle, CURLOPT_TIMEOUT, 10 );
-	curl_setopt( $curl_handle, CURLOPT_FOLLOWLOCATION, true );
-
-	if ( ! $result = curl_exec( $curl_handle ) ) {
-		echo "\nFailed to process curl request.";
-		echo "\nError: " . curl_error( $curl_handle );
-		exit( 1 );
-	}
-
-	curl_close( $curl_handle );
-
-	return $result;
-}
-
-/**
  * Parses a provided license file and puts into the env, if any.
  *
  * @param string|null $licenses_file The path to the licenses file to parse or `null` to read licenses from the
@@ -86,7 +57,7 @@ function parse_license_file( $licenses_file = null ) {
 	if ( null !== $licenses_file ) {
 		load_env_file( $licenses_file );
 	} else {
-		echo "\nLicenses file not specified, licenses will be read from environment.";
+		echo PHP_EOL . "Licenses file not specified, licenses will be read from environment.";
 	}
 }
 
@@ -112,7 +83,7 @@ function load_env_file( $env_file ) {
  */
 function read_env_file( $env_file ) {
 	if ( ! file_exists( $env_file ) ) {
-		echo "\nenv file ${env_file} does not exist.";
+		echo PHP_EOL . "env file ${env_file} does not exist.";
 		exit( 1 );
 	}
 
@@ -179,11 +150,19 @@ function relative_path( $root, $file ) {
  * @return string The current user ID.
  */
 function uid() {
+	$cache_file = cache( '/uid.txt' );
+
+	if ( is_readable( $cache_file ) ) {
+		return file_get_contents( cache( '/uid.txt' ) );
+	}
+
 	$uid = getenv( 'UID' );
 
 	if ( false === $uid && in_array( os(), [ 'Linux', 'macOS' ] ) ) {
 		$uid = check_status_or_exit( process( 'id -u' ) )( 'string_output' );
 	}
+
+	@file_put_contents( $cache_file, $uid ?: 0 );
 
 	return false !== $uid ? $uid : 0;
 }
@@ -194,6 +173,12 @@ function uid() {
  * @return string The current user group ID.
  */
 function gid() {
+	$cache_file = cache( '/gid.txt' );
+
+	if ( is_readable( $cache_file ) ) {
+		return file_get_contents( cache( '/gid.txt' ) );
+	}
+
 	$gid = getenv( 'GID' );
 
 	if ( false === $gid && in_array( os(), [ 'Linux', 'macOS' ] ) ) {
@@ -205,6 +190,8 @@ function gid() {
 		putenv( 'GID=0' );
 	}
 
+	@file_put_contents( $cache_file, $gid ?: 0 );
+
 	return false !== $gid ? $gid : 0;
 }
 
@@ -212,7 +199,7 @@ function gid() {
  * Sets up the user id and group in the environment.
  *
  * On OSes that will handle user ID and group ID mapping at the Docker daemon level, macOS and Windows, the
- * `DOCKER_RUN_UID` and `DOCKER_RUN_GID` env variables will be set to empty strings.
+ * `SLIC_UID` and `SLIC_GID` env variables will be set to empty strings.
  * This, in turn, will fill the `user` parameter of the stack services to `user: ":"` that will prompt docker-compose
  * to not set the user at all, the wanted behavior on such OSes.
  *
@@ -221,85 +208,24 @@ function gid() {
 function setup_id( $reset = false ) {
 	if (
 		false === $reset
-		&& false !== getenv( 'DOCKER_RUN_UID' )
-		&& false !== getenv( 'DOCKER_RUN_GID' )
+		&& false !== getenv( 'SLIC_UID' )
+		&& false !== getenv( 'SLIC_GID' )
 	) {
 		return;
 	}
 
-	$os = os();
-	if ( 'Windows' === $os || 'macOS' === $os ) {
-		// Leave the value empty to allow the vm user-mapping to kick in.
-		putenv( 'DOCKER_RUN_UID=' );
-		putenv( 'DOCKER_RUN_GID=' );
-	} else {
-		// On other systems explicitly set the values.
-		putenv( 'DOCKER_RUN_UID=' . uid() );
-		putenv( 'DOCKER_RUN_GID=' . gid() );
-	}
+	putenv( 'DOCKER_RUN_UNAME=' . get_current_user() );
+	putenv( 'SLIC_UID=' . uid() );
+	putenv( 'SLIC_GID=' . gid() );
 
 	putenv( 'DOCKER_RUN_SSH_AUTH_SOCK=' . ssh_auth_sock() );
-}
-
-/**
- * Echoes a process output.
- *
- * @param callable $process the process to output from.
- */
-function the_process_output( callable $process ) {
-	echo "\n" . implode( "\n", $process( 'output' ) );
-}
-
-/**
- * Clarifies the nature of the issue.
- *
- * @return string Helpful ASCII art.
- */
-function the_fatality() {
-	return '
-                       _..----------.._                       
-                  .-=""        _       ""=-.                  
-               .-"    _.--""j _\""""--._    "-.               
-            .-"  .-i   \   / / \;       ""--.  "-.            
-          .\'  .-"  : ( "  : :                "-.  `.          
-        .\'  .\'      `.`.   \ \                  `.  `.        
-       /  .\'      .---" ""--`."-./\'---.           `.  \       
-      /  /      .\'                    \'-.           \  \      
-     /  /      /                         `.          \  \     
-    /  /      /                  ,--._   (            \  \    
-   ,  /    \'-\')                  `---\'    `.           \  .   
-  .  :      .\'                              "-._.-.     ;  ,  
-  ;  ;     /            :;         ,-"-.    ,--.   )    :  :  
- :  :     :             ::        :_    "-. \'-\'   `,     ;  ; 
- |  |     :              \\     .--."-.    `._ _   ;     |  | 
- ;  ;     :              / "---"    "-."-.    l.`./      :  : 
-:  :      ;             :              `. "-._; \         ;  ;
-;  ;      ;             ;                `..___/\\        :  :
-;  ;      ;             :                        \\    _  :  :
-:  :     /              \'.                        ;;.__)) ;  ;
- ;  ; .-\'                 "-...______...--._      ::`--\' :  : 
- |  |  `--\'\                                "-.    \`._, |  | 
- :  :       \                                  `.   "-"  ;  ; 
-  ;  ;       `.                                  \      :   \' 
-  \'  :        ;                                   ;     ;  \'  
-   \'  \    _  : :`.                               :    /  /   
-    \  \   \`-\' ; ; ._                             ;  /  /    
-     \  \   `--\'  : ; "-.                          : /  /     
-      \  \        ;/     \                         ;/  /      
-       \  `.              ;                        \'  /       
-        `.  "-.   bug    /                          .\'        
-          `.   "-..__..-"                         .\'          
-            "-.                                .-"            
-               "-._                        _.-"               
-                   """---...______...---"""	
-	';
 }
 
 /**
  * Returns the host machine IP address as reachable from the containers.
  *
  * The way the host machine IP address is fetched will vary depending on the Operating System the function runs on.
- * If the `TRIC_HOST` environment variable is set, then that will be used without any further check.
+ * If the `SLIC_HOST` environment variable is set, then that will be used without any further check.
  *
  * @param string $os The operating system to get the host machine IP address for.
  *
@@ -307,7 +233,7 @@ function the_fatality() {
  *                an empty string to indicate the host machine IP address could not be obtained.
  */
 function host_ip( $os = 'Linux' ) {
-	if ( $env_set_host = getenv( 'TRIC_HOST' ) ) {
+	if ( $env_set_host = getenv( 'SLIC_HOST' ) ) {
 		return $env_set_host;
 	}
 
@@ -325,7 +251,7 @@ function host_ip( $os = 'Linux' ) {
 		}
 
 		if ( false === $host_ip ) {
-			echo magenta( "Cannot get the host machine IP address.\n" );
+			echo magenta( "Cannot get the host machine IP address." . PHP_EOL );
 			exit( 1 );
 		}
 	} else {
@@ -356,11 +282,11 @@ function is_ci() {
 	return false;
 }
 
-// Whether the current run context is a `tric` binary one or not.
-function is_tric() {
+// Whether the current run context is a `slic` binary one or not.
+function is_slic() {
 	$env_vars = [
-		'TRIBE_TRIC',
-		'TRIC',
+		'STELLAR_SLIC',
+		'SLIC',
 	];
 	foreach ( $env_vars as $key ) {
 		if ( (bool) getenv( $key ) ) {
@@ -374,11 +300,11 @@ function is_tric() {
 /**
  * Returns the current run context.
  *
- * @return string The current run context, one of `ci`, `tric` or `default`.
+ * @return string The current run context, one of `ci`, `slic` or `default`.
  */
 function run_context() {
-	if ( is_tric() ) {
-		return 'tric';
+	if ( is_slic() ) {
+		return 'slic';
 	}
 
 	if ( is_ci() ) {
@@ -421,15 +347,15 @@ function write_env_file( $file, array $lines = [], $update = false ) {
 		return "{$key}={$value}";
 	}, array_keys( $new_lines ), $new_lines ) );
 
-	// If this is the first time creating the .env.tric.run file, assume this is the first run and place the CLI version in `.build-version`.
-	if ( false !== strpos( $file, '.env.tric.run' ) && ! is_file( $file ) ) {
+	// If this is the first time creating the .env.slic.run file, assume this is the first run and place the CLI version in `.build-version`.
+	if ( false !== strpos( $file, '.env.slic.run' ) && ! is_file( $file ) ) {
 		write_build_version();
 	}
 
 	$put = file_put_contents( $file, $data );
 
 	if ( false === $put ) {
-		echo "\nCould not write env file {$file}";
+		echo PHP_EOL . "Could not write env file {$file}";
 		exit( 1 );
 	}
 }
@@ -478,8 +404,8 @@ function ssh_auth_sock() {
 		return $env_ssh_sock;
 	}
 
-	echo colorize( "<red>SSH_AUTH_SOCK environment variable is not set!</red>\n" );
-	echo colorize( "Read why and how to debug here: <light_cyan>https://developer.github.com/v3/guides/using-ssh-agent-forwarding/</light_cyan>\n" );
+	echo colorize( "❌ <red>SSH_AUTH_SOCK environment variable is not set!</red>" . PHP_EOL );
+	echo colorize( "Read why and how to debug here: <light_cyan>https://developer.github.com/v3/guides/using-ssh-agent-forwarding/</light_cyan>" . PHP_EOL );
 	exit( 1 );
 }
 
@@ -488,13 +414,13 @@ function ssh_auth_sock() {
  *
  * If the default value is a 'yes' or a 'no' (-ish), then the return value will be cast to a boolean.
  *
- * @param      string $question The question to ask, including the question mark?
- * @param null|string $default The default value for the answer.
+ * @param string      $question The question to ask, including the question mark?
+ * @param null|string $default  The default value for the answer.
  *
  * @return string|null The user answer or the default value if the user did not provide an answer to the question.
  */
 function ask( $question, $default = null ) {
-	$is_interactive = getenv( 'TRIC_INTERACTIVE' );
+	$is_interactive = getenv( 'SLIC_INTERACTIVE' );
 
 	$prompt = colorize( "<bold>{$question}</bold>" );
 
@@ -536,11 +462,11 @@ function ask( $question, $default = null ) {
 /**
  * Changes a string to its UPPER_SNAKE_CASE version.
  *
- * @since TBD
- *
  * @param string $string The string to transform.
  *
  * @return string The transformed string.
+ * @since TBD
+ *
  */
 function upper_snake_case( $string ) {
 	return strtoupper( snake_case( $string ) );
@@ -549,11 +475,11 @@ function upper_snake_case( $string ) {
 /**
  * Changes a string to its snake_case version.
  *
- * @since TBD
- *
  * @param string $string The string to transform.
  *
  * @return string The transformed string.
+ * @since TBD
+ *
  */
 function snake_case( $string ) {
 	return preg_replace( '/[^\\w_]/', '_', $string ) ?: $string;
@@ -598,4 +524,123 @@ function rrmdir( $dir ) {
 	}
 
 	return rmdir( $dir );
+}
+
+/**
+ * Like PHP `array_merge_recursive`, but duplicate leaf keys will be overridden (`array_merge`)
+ * and not be duplicated.
+ *
+ * @param array ...$args A set of arrays to recursively merge, right to left.
+ *
+ * @return array The merged array.
+ */
+function array_merge_multi( ...$args ) {
+	$a = array_shift( $args );
+
+	foreach ( $args as $b ) {
+		foreach ( $b as $key => $val ) {
+			if ( is_array( $val ) && is_array( $a[ $key ] ) ) {
+				$b[ $key ] = array_merge_multi( $a[ $key ], $val );
+			}
+		}
+		$a = array_merge( $a, $b );
+	}
+
+	return $a;
+}
+
+/**
+ * Downloads a file to the specified path.
+ *
+ * @param string $source_url  The URL to download the file from
+ * @param string $dest_file   The name of the file to write downloaded contents to.
+ * @param bool   $verify_host Whether to verify the source host certificate or not.
+ *
+ * @return string|false Either the absolute path to the destination file, or `false`on failure.
+ */
+function download_file( $source_url, $dest_file, $verify_host = true ) {
+	debug( "Downloading file $source_url ..." . PHP_EOL );
+
+	$file_handle = fopen( $dest_file, 'wb' );
+
+	if ( ! is_resource( $file_handle ) ) {
+		return false;
+	}
+
+	$curl_handle = curl_init();
+
+	if ( ! is_resource( $curl_handle ) ) {
+		fclose( $file_handle );
+
+		return false;
+	}
+
+	curl_setopt( $curl_handle, CURLOPT_URL, $source_url );
+	curl_setopt( $curl_handle, CURLOPT_FAILONERROR, true );
+	curl_setopt( $curl_handle, CURLOPT_HEADER, 0 );
+	curl_setopt( $curl_handle, CURLOPT_FOLLOWLOCATION, true );
+	curl_setopt( $curl_handle, CURLOPT_AUTOREFERER, true );
+	curl_setopt( $curl_handle, CURLOPT_TIMEOUT, 120 );
+	curl_setopt( $curl_handle, CURLOPT_FILE, $file_handle );
+
+	if ( ! $verify_host ) {
+		curl_setopt( $curl_handle, CURLOPT_SSL_VERIFYHOST, 0 );
+		curl_setopt( $curl_handle, CURLOPT_SSL_VERIFYPEER, 0 );
+	}
+
+	if ( ! ( curl_exec( $curl_handle ) ) ) {
+		return false;
+	}
+
+	// This will fclose as well.
+	curl_close( $curl_handle );
+
+	debug( "File $source_url downloaded." . PHP_EOL );
+
+	return $dest_file;
+}
+
+/**
+ * Unzips a zip file contents into the specified destination directory.
+ *
+ * @param string $source_file The path to the zip file to unzip.
+ * @param string $dest_dir    The path to the directory to unzip the file contents into; if not present, it will
+ *                            be created.
+ *
+ * @return string|false The path to the directory containing the extracted files, or `false` on failure.
+ */
+function unzip_file( $source_file, $dest_dir ) {
+	debug( "Unzipping file $source_file to $dest_dir ..." . PHP_EOL );
+
+	$zip      = new \ZipArchive;
+	$tmp_dir  = cache( '/temp_zip_dir' );
+
+	if ( ! (
+		$zip->open( $source_file )
+		&& $zip->extractTo( $tmp_dir )
+		&& ( is_dir( $dest_dir ) && rrmdir( $dest_dir ) )
+		&& rename( $tmp_dir . '/wordpress', $dest_dir )
+		&& rrmdir( $tmp_dir )
+		&& $zip->close()
+	) ) {
+		return false;
+	}
+
+	debug( "Unzipped $source_file to $dest_dir." . PHP_EOL );
+
+	return $dest_dir;
+}
+
+/**
+ * Returns the path to a directory, creating it if required.
+ *
+ * @return string The absolute path to the directory.
+ */
+function ensure_dir( $dir ) {
+	if ( ! is_dir( $dir ) && mkdir( $dir, 0755, true ) && ! is_dir( $dir ) && realpath( $dir ) ) {
+		echo magenta( "Cannot create the {$dir} directory." );
+		exit( 1 );
+	}
+
+	return realpath( $dir );
 }

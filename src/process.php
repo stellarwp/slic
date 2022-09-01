@@ -3,7 +3,7 @@
  * Process related files and functions.
  */
 
-namespace Tribe\Test;
+namespace StellarWP\Slic;
 
 /**
  * Runs a process and returns a closure that allows getting the status or output from it.
@@ -14,7 +14,7 @@ namespace Tribe\Test;
  *                 string using the keys 'status', 'output', 'string_output' respectively.
  */
 function process( $command ) {
-	debug( "Executing command: {$command}\n" );
+	debug( "Executing command: {$command}" . PHP_EOL );
 
 	exec( escapeshellcmd( $command ), $output, $status );
 
@@ -62,17 +62,18 @@ function process_realtime( $command ) {
  *
  * @param string $command The command to run.
  * @param string|null $prefix The prefix to place before all output.
+ * @param bool $escape Whether the command line should be escaped or not.
  *
  * @return int The process exit status, `0` means ok.
  */
-function process_passive( $command, $prefix = null ) {
+function process_passive( $command, $prefix = null, $escape = true ) {
 	debug( "Executing command: {$command}" );
 
 	echo PHP_EOL;
 
 	setup_terminal();
 
-	$clean_command = escapeshellcmd( $command );
+	$clean_command = $escape ? escapeshellcmd( $command ) : $command;
 
 	$pipes_spec = [
 		[ 'pipe', 'r' ], // STDIN.
@@ -170,11 +171,11 @@ function change_time_limit( $time_limit = 0 ) {
  */
 function check_status_or_exit( callable $process, $message = null ) {
 	if ( 0 !== (int) $process( 'status' ) ) {
-		echo "\nProcess status is not 0, output: \n\n" . implode( "\n", $process( 'output' ) );
+		echo PHP_EOL . "Process status is not 0, output: " . PHP_EOL . PHP_EOL . implode( PHP_EOL, $process( 'output' ) );
 		if ( null !== $message ) {
-			echo "\nDebug:\n" .
+			echo PHP_EOL . "Debug:" . PHP_EOL .
 			     ( is_string( $message ) ? $message : json_encode( $message, JSON_PRETTY_PRINT ) ) .
-			     "\n";
+			     PHP_EOL;
 		}
 		exit ( 1 );
 	}
@@ -194,7 +195,7 @@ function check_status_or_wait( callable $process, $timeout = 10 ) {
 	$end = time() + (int) $timeout;
 	while ( time() <= $end ) {
 		if ( 0 !== (int) $process( 'status' ) ) {
-			echo "\nProcess status is not 0, waiting...";
+			echo PHP_EOL . "Process status is not 0, waiting...";
 			sleep( 2 );
 		} else {
 			return $process;
@@ -247,7 +248,7 @@ function parallel_process( $pool ) {
 		foreach ( $pool_with_subnet as $subnet => $item ) {
 			$pid = pcntl_fork();
 			if ( $pid === - 1 ) {
-				echo magenta( "Unable to fork processes.\n" );
+				echo magenta( "Unable to fork processes." . PHP_EOL );
 				exit( 1 );
 			}
 

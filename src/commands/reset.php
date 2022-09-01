@@ -1,59 +1,68 @@
 <?php
 /**
- * Handles the `reset` command to reset tric to its initial state.
+ * Handles the `reset` command to reset slic to its initial state.
  *
- * @var bool     $is_help  Whether we're handling an `help` request on this command or not.
- * @var string   $cli_name The current name of tric CLI binary.
- * @var \Closure $args     The argument map closure, as produced by the `args` function.
+ * @var bool $is_help Whether we're handling an `help` request on this command or not.
+ * @var string $cli_name The current name of slic CLI binary.
+ * @var \Closure $args The argument map closure, as produced by the `args` function.
  */
 
-namespace Tribe\Test;
+namespace StellarWP\Slic;
 
 if ( $is_help ) {
-	echo "Resets the tool to its initial state configured by the env files.\n" .
-	     "Additionally remove the default WP directory.\n";
-	echo PHP_EOL;
-	echo colorize( "usage: <light_cyan>{$cli_name} reset [wp]</light_cyan>\n" );
-	echo colorize( "example: <light_cyan>{$cli_name} reset </light_cyan>\n" );
-	echo colorize( "example: <light_cyan>{$cli_name} reset wp</light_cyan>\n" );
+	$help = <<< HELP
+	SUMMARY:
 
+		Resets the tool to its initial state configured by the env files.
+
+		Additionally remove the default WP directory if <light_cyan>wp</light_cyan> is provided.
+
+	USAGE:
+
+		<yellow>{$cli_name} reset [wp]</yellow>
+
+	EXAMPLES:
+
+		<light_cyan>{$cli_name} reset</light_cyan>
+		Resets {$cli_name} back to its initial state.
+
+		<light_cyan>{$cli_name} reset wp</light_cyan>
+		Resets {$cli_name} back to its initial state and removes the default WP directory.
+	HELP;
+
+	echo colorize( $help );
 	return;
 }
 
 $targets = $args( '...' );
 
-if ( in_array( 'wp', $targets, true ) && is_dir( root( '_wordpress' ) ) ) {
-	echo "Removing the _wordpress directory ...";
+quietly_tear_down_stack();
 
-	if ( false === rrmdir( root( '_wordpress' ) ) ) {
-		echo magenta( "\nCould not remove the _wordpress directory; remove it manually.\n" );
-		exit( 1 );
-	}
+$run_settings_file = root( '/.env.slic.run' );
+echo "Removing {$run_settings_file} ... ";
+echo ( ! file_exists( $run_settings_file ) || unlink( $run_settings_file ) ) ?
+	light_cyan( 'done' )
+	: magenta( 'fail, remove it manually' );
+echo PHP_EOL;
 
-	if ( ! mkdir( $wp_dir = root( '_wordpress' ) ) && ! is_dir( $wp_dir ) ) {
-		echo magenta( "\nCould not create the _wordpress directory; create it manually.\n" );
-		exit( 1 );
-	}
+$cache_dir = cache( '/', false );
+echo "Removing cache directory $cache_dir ... ";
+echo ( ! is_dir( $cache_dir ) || rrmdir( $cache_dir ) ) ?
+	light_cyan( 'done' )
+	: magenta( 'fail, remove it manually' );
+echo PHP_EOL;
 
-	echo light_cyan( " done\n" );
+$wp_dir = root( '_wordpress' );
+if ( in_array( 'wp', $targets, true ) && is_dir( $wp_dir ) ) {
+	/*
+	 * The stack will lock bound files if running, tear it down to unlock them.
+	 */
+	echo 'Tearing down the stack ... ';
+	echo light_cyan('done'), PHP_EOL;
 
-	return;
+	echo "Removing the WordPress directory $wp_dir ... ";
+	echo ! is_dir( $wp_dir ) || rrmdir( $wp_dir ) ?
+		light_cyan( 'done' )
+		: magenta( 'fail, remove it manually' );
+	echo PHP_EOL;
 }
-
-$run_settings_file = root( '/.env.tric.run' );
-echo "Removing {$run_settings_file} ...";
-
-if ( ! file_exists( $run_settings_file ) ) {
-	echo light_cyan( 'Done' );
-
-	return;
-}
-
-$removed = unlink( $run_settings_file );
-
-if ( false === $removed ) {
-	echo magenta( "Could not remove the {$run_settings_file} file; remove it manually.\n" );
-	exit( 1 );
-}
-
-echo light_cyan( ' done' );
