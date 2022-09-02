@@ -28,14 +28,7 @@ services:
       - "${SLIC_REDIS_LOCALHOST_PORT:-8379}:6379"
 
   wordpress:
-    image: the-events-calendar/slic_wordpress:${SLIC_VERSION}
-    build:
-      context: containers/wordpress
-      # By default, build the version of Docker that does not include XDebug.
-      dockerfile: Dockerfile
-      args:
-        # Fix the version of the WordPress image to avoid issues w/ out-of-date database dumps.
-        WORDPRESS_IMAGE_VERSION: wordpress:5.9.3-php7.4-apache
+    image: ghcr.io/stellarwp/slic-wordpress:${SLIC_VERSION}
     networks:
       - slic
     depends_on:
