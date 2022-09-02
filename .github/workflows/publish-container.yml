@@ -36,10 +36,10 @@ jobs:
       - name: Build and push slic Docker image
         uses: docker/build-push-action@v3.1.1
         with:
-          registry: ${{ env.REGISTRY }}
           context: containers/slic
           file: containers/slic/Dockerfile
           push: true
+          pull: false
           tags: ${{ steps.slic_meta.outputs.tags }}
           labels: ${{ steps.slic_meta.outputs.labels }}
 
@@ -52,9 +52,9 @@ jobs:
       - name: Build and push wordpress Docker image
         uses: docker/build-push-action@v3.1.1
         with:
-          registry: ${{ env.REGISTRY }}
           context: containers/wordpress
           file: containers/wordpress/Dockerfile
           push: true
+          pull: false
           tags: ${{ steps.wp_meta.outputs.tags }}
           labels: ${{ steps.wp_meta.outputs.labels }}
