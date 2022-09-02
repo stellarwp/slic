@@ -1,8 +1,11 @@
 name: Create and publish slic Docker image
 
 on:
+  pull_request:
   push:
-    branches: ['main','feature/publish-docker-image']
+    branches: [main]
+  release:
+    types: [published]
 
 env:
   IMAGE_NAME: ${{ github.repository }}
