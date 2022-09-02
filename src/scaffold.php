@@ -15,7 +15,7 @@ namespace StellarWP\Slic;
 function write_slic_env_file( $plugin_path ) {
 	$mysql_root_password = getenv( 'MYSQL_ROOT_PASSWORD' );
 
-	$plugin_env          = null;
+	$plugin_env          = '';
 	$candidate_env_files = [
 		'.env.testing',
 		'.env',
@@ -26,7 +26,7 @@ function write_slic_env_file( $plugin_path ) {
 		if ( ! file_exists( $candidate_full_path ) ) {
 			continue;
 		}
-		$plugin_env = file_get_contents( $candidate_full_path );
+		$plugin_env = (string) file_get_contents( $candidate_full_path );
 		break;
 	}
 
@@ -141,7 +141,7 @@ function write_slic_env_file( $plugin_path ) {
 }
 
 /**
- * Returns the lines that should be written to a `tests-config.php` file for slic to work correclty.
+ * Returns the lines that should be written to a `tests-config.php` file for slic to work correctly.
  *
  * @param array<string,string> $overrides A map of lines to write, where the key is the type of entry and the value are
  *                                        the lines to write for that entry.
