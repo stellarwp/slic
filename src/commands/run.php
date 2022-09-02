@@ -146,7 +146,7 @@ if ( empty( $run_suites ) ) {
 } else {
 	// Run all the suites sequentially, stop at first error.
 	foreach ( $run_suites as $suite ) {
-		$command = array_merge( $base_command, $suite );
+		$command = array_merge( $base_command, (array) $suite );
 		$run_configuration[] = 'bash -c "' . implode( ' ', $command ) . '"';
 		$status = slic_realtime()( $run_configuration );
 		if ( $status !== 0 ) {
