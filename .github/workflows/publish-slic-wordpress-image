@@ -47,8 +47,8 @@ jobs:
         uses: docker/build-push-action@v3.1.1
         continue-on-error: true
         with:
-          context: containers/slic
-          file: containers/slic/Dockerfile
+          context: containers/wordpress
+          file: containers/wordpress/Dockerfile
           push: true
           pull: true
           tags: |
