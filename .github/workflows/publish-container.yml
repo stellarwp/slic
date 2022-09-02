@@ -35,6 +35,7 @@ jobs:
 
       - name: Build and push slic Docker image
         uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
+        continue-on-error: true
         with:
           context: containers/slic
           file: containers/slic/Dockerfile
@@ -49,6 +50,7 @@ jobs:
 
       - name: Build and push wordpress Docker image
         uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
+        continue-on-error: true
         with:
           context: containers/wordpress
           file: containers/wordpress/Dockerfile
