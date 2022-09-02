@@ -45,21 +45,13 @@ if ( file_exists( get_project_local_path() . '/codeception.slic.yml' ) ) {
 	$codeception_config = '-c codeception.slic.yml';
 }
 
-$run_configuration = [
-	'exec',
-	'--user',
-	sprintf( '"%s:%s"', getenv( 'SLIC_UID' ), getenv( 'SLIC_GID' ) ),
-	'--workdir',
-	escapeshellarg( get_project_container_path() ),
-	'slic',
-];
-
-// If it isn't an interactive slic execution, we use -T to disable pseudo-tty allocation.
-if ( ! is_interactive() ) {
-	$run_configuration[] = '-T';
-}
-
-$status = slic_realtime()( array_merge( $run_configuration, [
+$status = slic_realtime()( array_merge( [
+		'exec',
+		'--user',
+		sprintf( '"%s:%s"', getenv( 'SLIC_UID' ), getenv( 'SLIC_GID' ) ),
+		'--workdir',
+		escapeshellarg( get_project_container_path() ),
+		'slic',
 		'vendor/bin/codecept ' . $codeception_config,
 	], $codeception_args )
 );

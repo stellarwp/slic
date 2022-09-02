@@ -189,6 +189,20 @@ function docker_compose_process( array $options = [], $is_realtime = true ) {
 	}
 
 	return static function ( array $command = [], $prefix = null ) use ( $options, $host_ip, $is_ci, $is_realtime ) {
+		if ( $is_ci || ! is_interactive() ) {
+			$no_tty_map = [
+				'exec' => [ '-T' ],
+				'logs' => [ '--no-color' ],
+				'run'  => [ '-T' ],
+			];
+			/*
+			 * In CI context, or if the command is not interactive, we want to disable pseudo-TTY allocation and set
+			 * some other options for some commands.
+			 */
+			$subcommand = array_shift( $command );
+			$command = array_merge( [ $subcommand ], ( $no_tty_map[ $subcommand ] ?? [] ), $command );
+		}
+
 		$command = 'docker-compose ' . implode( ' ', $options ) . ' ' . implode( ' ', $command );
 
 		if ( ! empty( $host_ip ) ) {
