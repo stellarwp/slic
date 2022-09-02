@@ -68,6 +68,9 @@ COPY ./bashrc_scripts.sh /home/slic/bashrc_scripts.sh
 
 RUN chown -R slic:slic $NVM_DIR
 
+# Create a /cache directory any user will be able to read, write and execute from.
+RUN mkdir /cache && chmod a+rwx /cache
+
 COPY ./slic-entrypoint.sh /usr/local/bin/slic-entrypoint.sh
 RUN chmod a+x /usr/local/bin/slic-entrypoint.sh
 ENTRYPOINT ["/usr/local/bin/slic-entrypoint.sh"]

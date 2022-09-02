@@ -6,7 +6,7 @@ networks:
   slic:
 
 volumes:
-  function-mocker-cache: # @todo move to file cache
+  function-mocker-cache:
 
 services:
 
@@ -149,7 +149,7 @@ services:
       # In some plugins we use function-mocker and set it up to cache in `/tmp/function-mocker`.
       # To avoid a long re-caching on each run, let's cache in a docker volume, caching on the host
       # filesystem would be a worse cure than the disease.
-      # The volume is bound to the `a+rwx` directory the `codeception` image provides to avoid file mode issues.
+      # The volume is bound to the `a+rwx` directory the `slic` image provides to avoid file mode issues.
       - function-mocker-cache:/cache
       - ${COMPOSER_CACHE_DIR}:${COMPOSER_CACHE_DIR}
       # Scripts volume
