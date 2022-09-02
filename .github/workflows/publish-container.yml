@@ -25,7 +25,7 @@ jobs:
         with:
           registry: ${{ env.REGISTRY }}
           username: tec-bot
-          password: ${{ secrets.GH_BOT_TOKEN }}
+          password: ${{ secrets.GH_PACKAGES_TOKEN }}
 
       - name: Extract metadata (tags, labels) for Docker
         id: slic_meta
