@@ -45,7 +45,7 @@ if ( file_exists( get_project_local_path() . '/codeception.slic.yml' ) ) {
 	$codeception_config = '-c codeception.slic.yml';
 }
 
-$docker = [
+$run_configuration = [
 	'exec',
 	'--user',
 	sprintf( '"%s:%s"', getenv( 'SLIC_UID' ), getenv( 'SLIC_GID' ) ),
@@ -56,10 +56,10 @@ $docker = [
 
 // If it isn't an interactive slic execution, we use -T to disable pseudo-tty allocation.
 if ( ! is_interactive() ) {
-	$docker[] = '-T';
+	$run_configuration[] = '-T';
 }
 
-$status = slic_realtime()( array_merge( $docker, [
+$status = slic_realtime()( array_merge( $run_configuration, [
 		'vendor/bin/codecept ' . $codeception_config,
 	], $codeception_args )
 );
