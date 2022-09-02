@@ -30,7 +30,7 @@ $args = args( [
 ] );
 
 $cli_name = 'slic';
-const CLI_VERSION = '1.0.1';
+const CLI_VERSION = '1.0.2';
 
 // If the run-time option `-q`, for "quiet", is specified, then do not print the header.
 if ( in_array( '-q', $argv, true ) ) {
