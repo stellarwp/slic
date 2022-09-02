@@ -39,8 +39,7 @@ jobs:
           context: containers/slic
           file: containers/slic/Dockerfile
           push: true
-          tags: ${{ steps.slic_meta.outputs.tags }}
-          labels: ${{ steps.slic_meta.outputs.labels }}
+          tags: ${{ env.REGISTRY }}/${{ env.SLIC_IMAGE_NAME }}:latest
 
       - name: Extract metadata (tags, labels) for Docker
         id: wp_meta
@@ -54,5 +53,4 @@ jobs:
           context: containers/wordpress
           file: containers/wordpress/Dockerfile
           push: true
-          tags: ${{ steps.wp_meta.outputs.tags }}
-          labels: ${{ steps.wp_meta.outputs.labels }}
+          tags: ${{ env.REGISTRY }}/${{ env.WP_IMAGE_NAME }}:latest
