@@ -46,8 +46,6 @@ jobs:
           push: true
           tags: ${{ steps.slic_meta.outputs.tags }}
           labels: ${{ steps.slic_meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha
 
       - name: Extract metadata (tags, labels) for Docker
         id: wp_meta
@@ -63,5 +61,3 @@ jobs:
           push: true
           tags: ${{ steps.wp_meta.outputs.tags }}
           labels: ${{ steps.wp_meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha
