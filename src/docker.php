@@ -200,7 +200,8 @@ function docker_compose_process( array $options = [], $is_realtime = true ) {
 			 * some other options for some commands.
 			 */
 			$subcommand = array_shift( $command );
-			$command = array_merge( [ $subcommand ], ( $no_tty_map[ $subcommand ] ?? [] ), $command );
+			$var = $no_tty_map[ $subcommand ] ?? [];
+			$command = array_unique( array_merge( [ $subcommand ], $var, $command ) );
 		}
 
 		$command = 'docker-compose ' . implode( ' ', $options ) . ' ' . implode( ' ', $command );
