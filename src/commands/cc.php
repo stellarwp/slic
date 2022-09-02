@@ -45,13 +45,21 @@ if ( file_exists( get_project_local_path() . '/codeception.slic.yml' ) ) {
 	$codeception_config = '-c codeception.slic.yml';
 }
 
-$status = slic_realtime()( array_merge( [
-		'exec',
-		'--user',
-		sprintf( '"%s:%s"', getenv( 'SLIC_UID' ), getenv( 'SLIC_GID' ) ),
-		'--workdir',
-		escapeshellarg( get_project_container_path() ),
-		'slic',
+$docker = [
+	'exec',
+	'--user',
+	sprintf( '"%s:%s"', getenv( 'SLIC_UID' ), getenv( 'SLIC_GID' ) ),
+	'--workdir',
+	escapeshellarg( get_project_container_path() ),
+	'slic',
+];
+
+// If it isn't an interactive slic execution, we use -T to disable pseudo-tty allocation.
+if ( ! interactive_status() ) {
+	$docker[] = '-T';
+}
+
+$status = slic_realtime()( array_merge( $docker, [
 		'vendor/bin/codecept ' . $codeception_config,
 	], $codeception_args )
 );

@@ -1216,11 +1216,6 @@ function cli_command( array $command = [], $requirements = false ) {
 		ensure_wordpress_ready();
 	}
 
-	// If it isn't an interactive slic execution, we use -T to disable pseudo-tty allocation.
-	if ( ! interactive_status() ) {
-		$command[] = '-T';
-	}
-
 	return array_merge( [ 'exec', '--workdir', '/var/www/html', 'slic', 'wp', '--allow-root' ], $command );
 }
 
