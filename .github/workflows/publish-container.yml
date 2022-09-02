@@ -1,0 +1,56 @@
+name: Create and publish a Docker image
+
+on:
+  push:
+    branches: ['main','feature/publish-docker-image']
+
+env:
+  REGISTRY: ghcr.io
+  SLIC_IMAGE_NAME: ${{ github.repository }}
+  WP_IMAGE_NAME: ${{ github.repository }}-wordpress
+
+jobs:
+  build-and-push-image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GH_BOT_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: slic_meta
+        uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.SLIC_IMAGE_NAME }}
+
+      - name: Build and push slic Docker image
+        uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
+        with:
+          context: containers/slic
+          push: true
+          tags: ${{ steps.slic_meta.outputs.tags }}
+          labels: ${{ steps.slic_meta.outputs.labels }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: wp_meta
+        uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.WP_IMAGE_NAME }}
+
+      - name: Build and push wordpress Docker image
+        uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
+        with:
+          context: containers/wordpress
+          push: true
+          tags: ${{ steps.wp_meta.outputs.tags }}
+          labels: ${{ steps.wp_meta.outputs.labels }}
