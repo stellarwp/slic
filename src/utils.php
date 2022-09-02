@@ -561,9 +561,7 @@ function array_merge_multi( ...$args ) {
 function download_file( $source_url, $dest_file, $verify_host = true ) {
 	debug( "Downloading file $source_url ..." . PHP_EOL );
 
-	echo $dest_file;
 	$file_handle = fopen( $dest_file, 'wb' );
-	var_dump( $file_handle );
 
 	if ( ! is_resource( $file_handle ) ) {
 		return false;
