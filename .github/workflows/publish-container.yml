@@ -34,13 +34,14 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.SLIC_IMAGE_NAME }}
 
       - name: Build and push slic Docker image
-        uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
-        continue-on-error: true
+        uses: docker/build-push-action@v3.1.1
         with:
+          registry: ${{ env.REGISTRY }}
           context: containers/slic
           file: containers/slic/Dockerfile
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.SLIC_IMAGE_NAME }}:latest
+          tags: ${{ steps.slic_meta.outputs.tags }}
+          labels: ${{ steps.slic_meta.outputs.labels }}
 
       - name: Extract metadata (tags, labels) for Docker
         id: wp_meta
@@ -49,10 +50,11 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.WP_IMAGE_NAME }}
 
       - name: Build and push wordpress Docker image
-        uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
-        continue-on-error: true
+        uses: docker/build-push-action@v3.1.1
         with:
+          registry: ${{ env.REGISTRY }}
           context: containers/wordpress
           file: containers/wordpress/Dockerfile
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.WP_IMAGE_NAME }}:latest
+          tags: ${{ steps.wp_meta.outputs.tags }}
+          labels: ${{ steps.wp_meta.outputs.labels }}
