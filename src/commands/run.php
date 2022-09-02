@@ -130,7 +130,7 @@ $run_configuration = [
 ];
 
 // If it isn't an interactive slic execution, we use -T to disable pseudo-tty allocation.
-if ( ! interactive_status() ) {
+if ( ! is_interactive() ) {
 	$docker[] = '-T';
 }
 

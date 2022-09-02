@@ -838,9 +838,14 @@ function slic_handle_build_prompt( callable $args ) {
  * Prints the current interactive status to screen.
  */
 function interactive_status() {
-	$enabled = getenv( 'SLIC_INTERACTIVE' );
+	echo 'Interactive status is: ' . ( is_interactive() ? light_cyan( 'on' ) : magenta( 'off' ) ) . PHP_EOL;
+}
 
-	echo 'Interactive status is: ' . ( $enabled ? light_cyan( 'on' ) : magenta( 'off' ) ) . PHP_EOL;
+/**
+ * Returns whether the interactive mode is enabled.
+ */
+function is_interactive() {
+	return (bool) getenv( 'SLIC_INTERACTIVE' );
 }
 
 /**
