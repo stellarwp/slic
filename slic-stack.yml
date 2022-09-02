@@ -98,10 +98,7 @@ services:
       - "wordpress.test:172.${SLIC_TEST_SUBNET:-28}.1.1"
 
   slic:
-    image: the-events-calendar/slic:${SLIC_VERSION}
-    build:
-      context: ./containers/slic
-      dockerfile: Dockerfile
+    image: ghcr.io/stellarwp/slic:${SLIC_VERSION}
     networks:
       - slic
     user: "${SLIC_UID:-}:${SLIC_GID:-}"
