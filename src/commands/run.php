@@ -131,7 +131,7 @@ $run_configuration = [
 
 // If it isn't an interactive slic execution, we use -T to disable pseudo-tty allocation.
 if ( ! is_interactive() ) {
-	$docker[] = '-T';
+	$run_configuration[] = '-T';
 }
 
 $base_command = array_merge( [ 'vendor/bin/codecept', ], $config_files, [ 'run' ] );
