@@ -48,36 +48,36 @@ ensure_service_running( 'slic' );
 $default_version = 1;
 $command = $args( '...' );
 $sub_command = $command[0] ?? null;
+$current_version = getenv( 'SLIC_COMPOSER_VERSION' ) ?? $default_version;
 
-$version = null;
-switch ( $sub_command ) {
-	default:
-		$version = getenv( 'SLIC_COMPOSER_VERSION' ) ?? $default_version;
-		break;
-	case 'set-version':
-		$version = $command[1] ?? null;
-		if ( $version === null ) {
-			echo magenta( "Error: set-version requires a Composer version number, either 1 or 2." . PHP_EOL );
-			exit( 1 );
-		}
-		$run_settings_file = root( '/.env.slic.run' );
-		write_env_file( $run_settings_file, [ 'SLIC_COMPOSER_VERSION' => (int) $version ], true );
-		echo colorize( "Composer version set to $version" );
+if ( in_array( $sub_command, [ 'set-version', 'get-version', 'reset-version' ] ) ) {
+	switch ( $sub_command ) {
+		case 'set-version':
+			$version = $command[1] ?? null;
+			if ( $version === null ) {
+				echo magenta( "Error: set-version requires a Composer version number, either 1 or 2." . PHP_EOL );
+				exit( 1 );
+			}
+			$run_settings_file = root( '/.env.slic.run' );
+			write_env_file( $run_settings_file, [ 'SLIC_COMPOSER_VERSION' => (int) $version ], true );
+			echo colorize( "Composer version set to $version\n" );
 
-		return;
-	case 'get-version':
-		$command = [ '--version' ];
-		break;
-	case 'reset-version':
-		$version = 1;
-		$run_settings_file = root( '/.env.slic.run' );
-		write_env_file( $run_settings_file, [ 'SLIC_COMPOSER_VERSION' => (int) $version ], true );
-		echo colorize( "Composer version reset to default: $default_version" );
+			exit( 0 );
+		case 'get-version':
+			$composer_bin = (int) $current_version === 2 ? 'composer' : 'composer1';
 
-		return;
+			exit( slic_realtime()( [ 'exec', 'slic', $composer_bin, '--version' ] ) );
+		case 'reset-version':
+			$version = 1;
+			$run_settings_file = root( '/.env.slic.run' );
+			write_env_file( $run_settings_file, [ 'SLIC_COMPOSER_VERSION' => (int) $version ], true );
+			echo colorize( "Composer version reset to default: $default_version\n" );
+
+			exit( 0 );
+	}
 }
 
-$composer_bin = (int) $version === 2 ? 'composer' : 'composer1';
+$composer_bin = (int) $current_version === 2 ? 'composer' : 'composer1';
 $pool = build_command_pool( $composer_bin, $command, [ 'common' ] );
 $status = execute_command_pool( $pool );
 
