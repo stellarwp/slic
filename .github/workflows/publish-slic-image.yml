@@ -1,12 +1,11 @@
-name: Create and publish a Docker image
+name: Create and publish slic Docker image
 
 on:
   push:
     branches: ['main','feature/publish-docker-image']
 
 env:
-  SLIC_IMAGE_NAME: ${{ github.repository }}
-  WP_IMAGE_NAME: ${{ github.repository }}-wordpress
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   build-and-push-image:
@@ -36,7 +35,7 @@ jobs:
         id: slic_meta
         uses: docker/metadata-action@v4.0.1
         with:
-          images: ghcr.io/${{ env.SLIC_IMAGE_NAME }}
+          images: ghcr.io/${{ env.IMAGE_NAME }}
 
       - name: Build and push slic Docker image
         uses: docker/build-push-action@v3.1.1
@@ -47,23 +46,5 @@ jobs:
           push: true
           tags: |
             ${{ steps.slic_meta.outputs.tags }}
-            ghcr.io/${{ env.SLIC_IMAGE_NAME }}:latest
+            ghcr.io/${{ env.IMAGE_NAME }}:latest
           labels: ${{ steps.slic_meta.outputs.labels }}
-
-      - name: Extract metadata (tags, labels) for Docker
-        id: wp_meta
-        uses: docker/metadata-action@v4.0.1
-        with:
-          images: ghcr.io/${{ env.WP_IMAGE_NAME }}
-
-      - name: Build and push wordpress Docker image
-        uses: docker/build-push-action@v3.1.1
-        continue-on-error: true
-        with:
-          context: containers/wordpress
-          file: containers/wordpress/Dockerfile
-          push: true
-          tags: |
-            ${{ steps.wp_meta.outputs.tags }}
-            ghcr.io/${{ env.WP_IMAGE_NAME }}:latest
-          labels: ${{ steps.wp_meta.outputs.labels }}
