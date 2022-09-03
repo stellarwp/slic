@@ -57,7 +57,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
 
       - name: Extract metadata for php7.4
-        id: meta
+        id: meta_74
         uses: docker/metadata-action@v4.0.1
         with:
           images: ghcr.io/${{ env.IMAGE_NAME_74 }}
@@ -74,11 +74,11 @@ jobs:
           file: containers/slic/Dockerfile
           push: true
           tags: |
-            ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+            ${{ steps.meta_74.outputs.tags }}
+          labels: ${{ steps.meta_74.outputs.labels }}
 
       - name: Extract metadata php8.0
-        id: meta
+        id: meta_80
         uses: docker/metadata-action@v4.0.1
         with:
           images: ghcr.io/${{ env.IMAGE_NAME_80 }}
@@ -89,7 +89,7 @@ jobs:
             type=semver,pattern={{raw}}
 
       - name: Change Dockerfile to be php8.0
-        run: sed -i 's/7.4.29/8.0.20/g' containers/slic/Dockerfile
+        run: "sed -i 's/7.4.29/8.0.20/g' containers/slic/Dockerfile"
 
       - name: Build and push slic-php80 image
         uses: docker/build-push-action@v3.1.1
@@ -98,11 +98,11 @@ jobs:
           file: containers/slic/Dockerfile
           push: true
           tags: |
-            ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+            ${{ steps.meta_80.outputs.tags }}
+          labels: ${{ steps.meta_80.outputs.labels }}
 
       - name: Extract metadata for php8.1
-        id: meta
+        id: meta_81
         uses: docker/metadata-action@v4.0.1
         with:
           images: ghcr.io/${{ env.IMAGE_NAME_81 }}
@@ -113,7 +113,7 @@ jobs:
             type=semver,pattern={{raw}}
 
       - name: Change Dockerfile to be php8.1
-        run: sed -i 's/8.0.20/8.1.10/g' containers/slic/Dockerfile
+        run: "sed -i 's/8.0.20/8.1.10/g' containers/slic/Dockerfile"
 
       - name: Build and push slic-php81 image
         uses: docker/build-push-action@v3.1.1
@@ -122,5 +122,5 @@ jobs:
           file: containers/slic/Dockerfile
           push: true
           tags: |
-            ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+            ${{ steps.meta_81.outputs.tags }}
+          labels: ${{ steps.meta_81.outputs.labels }}
