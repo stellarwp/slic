@@ -121,7 +121,7 @@ switch ( $available_configs_mask ) {
 		break;
 }
 // Add slic configuration file, if existing.
-$run_configuration = [
+$base_configuration = [
 	'exec',
 	'--user',
 	sprintf( '"%s:%s"', getenv( 'SLIC_UID' ), getenv( 'SLIC_GID' ) ),
@@ -141,15 +141,17 @@ if ( empty( $run_args ) ) {
 // Finally run the command.
 if ( empty( $run_suites ) ) {
 	// Run the command as per user input.
-	$command = array_merge( $base_command, $run_args );
-	$run_configuration[] = 'bash -c "' . implode( ' ', $command ) . '"';
-	$status = slic_realtime()( $run_configuration );
+	$command              = array_merge( $base_command, $run_args );
+	$base_configuration[] = 'bash -c "' . implode( ' ', $command ) . '"';
+	$status               = slic_realtime()( $base_configuration );
 } else {
 	// Run all the suites sequentially, stop at first error.
 	foreach ( $run_suites as $suite ) {
-		$command = array_merge( $base_command, (array) $suite );
+		$command             = array_merge( $base_command, (array) $suite );
+		$run_configuration   = $base_configuration;
 		$run_configuration[] = 'bash -c "' . implode( ' ', $command ) . '"';
-		$status = slic_realtime()( $run_configuration );
+		$status              = slic_realtime()( $run_configuration );
+
 		if ( $status !== 0 ) {
 			exit( $status );
 		}
