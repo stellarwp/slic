@@ -48,7 +48,6 @@ jobs:
 
       - name: Build and push slic image
         uses: docker/build-push-action@v3.1.1
-        continue-on-error: true
         with:
           context: containers/slic
           file: containers/slic/Dockerfile
@@ -70,7 +69,6 @@ jobs:
 
       - name: Build and push slic-php74 image
         uses: docker/build-push-action@v3.1.1
-        continue-on-error: true
         with:
           context: containers/slic
           file: containers/slic/Dockerfile
@@ -91,12 +89,10 @@ jobs:
             type=semver,pattern={{raw}}
 
       - name: Change Dockerfile to be php8.0
-        run: |
-          sed -i 's/7.4.29/8.0.20/g' containers/slic/Dockerfile
+        run: sed -i 's/7.4.29/8.0.20/g' containers/slic/Dockerfile
 
       - name: Build and push slic-php80 image
         uses: docker/build-push-action@v3.1.1
-        continue-on-error: true
         with:
           context: containers/slic
           file: containers/slic/Dockerfile
@@ -117,12 +113,10 @@ jobs:
             type=semver,pattern={{raw}}
 
       - name: Change Dockerfile to be php8.1
-        run: |
-          sed -i 's/8.0.20/8.1.10/g' containers/slic/Dockerfile
+        run: sed -i 's/8.0.20/8.1.10/g' containers/slic/Dockerfile
 
       - name: Build and push slic-php81 image
         uses: docker/build-push-action@v3.1.1
-        continue-on-error: true
         with:
           context: containers/slic
           file: containers/slic/Dockerfile
