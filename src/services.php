@@ -122,7 +122,7 @@ function ensure_service_ready( $service ) {
 			return static function ( $service ) {
 				propagate_ip_address_of_to(
 					[ 'wordpress' ],
-					[ $service ],
+					[ $service, 'slic' ],
 					[ 'wordpress' => 'wordpress.test' ]
 				);
 				propagate_ip_address_of_to(

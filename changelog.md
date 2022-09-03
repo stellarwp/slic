@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Allow `wordpress.test` to be resolvable during test execution by placing it in the `/etc/hosts` file of the `slic` container.
+- PHP 8.0+ compatibility fix for WordPress zip downloads.
+- Prevent looping over the same test suite when executing `slic run`. [#118]
 
 ## [1.0.5] - 2022-09-02
 
