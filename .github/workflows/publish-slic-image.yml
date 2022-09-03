@@ -7,6 +7,9 @@ on:
 
 env:
   IMAGE_NAME: ${{ github.repository }}
+  IMAGE_NAME_74: ${{ github.repository }}-php74
+  IMAGE_NAME_80: ${{ github.repository }}-php80
+  IMAGE_NAME_81: ${{ github.repository }}-php81
 
 jobs:
   publish-image:
@@ -44,6 +47,80 @@ jobs:
             type=semver,pattern={{raw}}
 
       - name: Build and push slic Docker image
+        uses: docker/build-push-action@v3.1.1
+        continue-on-error: true
+        with:
+          context: containers/slic
+          file: containers/slic/Dockerfile
+          push: true
+          tags: |
+            ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v4.0.1
+        with:
+          images: ghcr.io/${{ env.IMAGE_NAME_74 }}
+          tags: |
+            type=edge,branch=main
+            type=ref,event=branch
+            type=ref,event=tag
+            type=semver,pattern={{raw}}
+
+      - name: Build and push slic-php74 Docker image
+        uses: docker/build-push-action@v3.1.1
+        continue-on-error: true
+        with:
+          context: containers/slic
+          file: containers/slic/Dockerfile
+          push: true
+          tags: |
+            ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v4.0.1
+        with:
+          images: ghcr.io/${{ env.IMAGE_NAME_80 }}
+          tags: |
+            type=edge,branch=main
+            type=ref,event=branch
+            type=ref,event=tag
+            type=semver,pattern={{raw}}
+
+      - name: Change Dockerfile to be php 8.0
+        run: |
+          sed -i 's/7.4.29/8.0.20/g' containers/slic/Dockerfile
+
+      - name: Build and push slic-php80 Docker image
+        uses: docker/build-push-action@v3.1.1
+        continue-on-error: true
+        with:
+          context: containers/slic
+          file: containers/slic/Dockerfile
+          push: true
+          tags: |
+            ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v4.0.1
+        with:
+          images: ghcr.io/${{ env.IMAGE_NAME_81 }}
+          tags: |
+            type=edge,branch=main
+            type=ref,event=branch
+            type=ref,event=tag
+            type=semver,pattern={{raw}}
+
+      - name: Change Dockerfile to be php 8.1
+        run: |
+          sed -i 's/8.0.20/8.1.10/g' containers/slic/Dockerfile
+
+      - name: Build and push slic-php81 Docker image
         uses: docker/build-push-action@v3.1.1
         continue-on-error: true
         with:
