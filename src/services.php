@@ -125,6 +125,11 @@ function ensure_service_ready( $service ) {
 					[ $service ],
 					[ 'wordpress' => 'wordpress.test' ]
 				);
+				propagate_ip_address_of_to(
+					[ 'wordpress' ],
+					[ 'slic' ],
+					[ 'wordpress' => 'wordpress.test' ]
+				);
 			};
 		default:
 			return $noop;
