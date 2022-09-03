@@ -8,7 +8,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Prompt the user to stop containers before updating.
 
 ## [1.0.5] - 2022-09-02
 

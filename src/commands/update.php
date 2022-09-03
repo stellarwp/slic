@@ -17,11 +17,5 @@ if ( $is_help ) {
 	return;
 }
 
-$confirm = ask( 'Would you like to stop slic before updating?', 'yes' );
-
-if ( $confirm ) {
-	command_stop();
-}
-
 rebuild_stack();
 update_stack_images();
