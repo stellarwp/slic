@@ -35,7 +35,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata (tags, labels) for Docker
+      - name: Extract metadata for base image
         id: meta
         uses: docker/metadata-action@v4.0.1
         with:
@@ -46,7 +46,7 @@ jobs:
             type=ref,event=tag
             type=semver,pattern={{raw}}
 
-      - name: Build and push slic Docker image
+      - name: Build and push slic image
         uses: docker/build-push-action@v3.1.1
         continue-on-error: true
         with:
@@ -57,7 +57,7 @@ jobs:
             ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
-      - name: Extract metadata (tags, labels) for Docker
+      - name: Extract metadata for php7.4
         id: meta
         uses: docker/metadata-action@v4.0.1
         with:
@@ -68,7 +68,7 @@ jobs:
             type=ref,event=tag
             type=semver,pattern={{raw}}
 
-      - name: Build and push slic-php74 Docker image
+      - name: Build and push slic-php74 image
         uses: docker/build-push-action@v3.1.1
         continue-on-error: true
         with:
@@ -79,7 +79,7 @@ jobs:
             ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
-      - name: Extract metadata (tags, labels) for Docker
+      - name: Extract metadata php8.0
         id: meta
         uses: docker/metadata-action@v4.0.1
         with:
@@ -90,11 +90,11 @@ jobs:
             type=ref,event=tag
             type=semver,pattern={{raw}}
 
-      - name: Change Dockerfile to be php 8.0
+      - name: Change Dockerfile to be php8.0
         run: |
           sed -i 's/7.4.29/8.0.20/g' containers/slic/Dockerfile
 
-      - name: Build and push slic-php80 Docker image
+      - name: Build and push slic-php80 image
         uses: docker/build-push-action@v3.1.1
         continue-on-error: true
         with:
@@ -105,7 +105,7 @@ jobs:
             ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
-      - name: Extract metadata (tags, labels) for Docker
+      - name: Extract metadata for php8.1
         id: meta
         uses: docker/metadata-action@v4.0.1
         with:
@@ -116,11 +116,11 @@ jobs:
             type=ref,event=tag
             type=semver,pattern={{raw}}
 
-      - name: Change Dockerfile to be php 8.1
+      - name: Change Dockerfile to be php8.1
         run: |
           sed -i 's/8.0.20/8.1.10/g' containers/slic/Dockerfile
 
-      - name: Build and push slic-php81 Docker image
+      - name: Build and push slic-php81 image
         uses: docker/build-push-action@v3.1.1
         continue-on-error: true
         with:
