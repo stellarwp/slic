@@ -1,4 +1,4 @@
-name: Publish slic-php80 docker image
+name: Publish slic-php8.1 docker image
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
     types: [published]
 
 env:
-  IMAGE_NAME: ${{ github.repository }}-php80
+  IMAGE_NAME: ${{ github.repository }}-php8.1
 
 jobs:
   publish-image:
@@ -46,8 +46,8 @@ jobs:
             type=ref,event=tag
             type=semver,pattern={{raw}}
 
-      - name: Change Dockerfile to php8.0
-        run: "sed -i 's/7.4.29/8.0.20/g' containers/slic/Dockerfile"
+      - name: Change Dockerfile to php8.1
+        run: "sed -i 's/7.4.29/8.1.10/g' containers/slic/Dockerfile"
 
       - name: Build and push image
         uses: docker/build-push-action@v3.1.1

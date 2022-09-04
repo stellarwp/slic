@@ -25,7 +25,7 @@ if ( $is_help ) {
 }
 
 $default_version = '7.4';
-$current_version = getenv( 'SLIC_PHP_VERSION' ) ?? str_replace( '.', '', $default_version );
+$current_version = getenv( 'SLIC_PHP_VERSION' ) ?? $default_version;
 
 $command     = $args( '...' );
 $sub_command = $command[0] ?? null;
@@ -39,7 +39,7 @@ if ( in_array( $sub_command, [ 'set', 'reset' ] ) ) {
 				exit( 1 );
 			}
 			$run_settings_file = root( '/.env.slic.run' );
-			write_env_file( $run_settings_file, [ 'SLIC_PHP_VERSION' => (int) str_replace( '.', '', $version ) ], true );
+			write_env_file( $run_settings_file, [ 'SLIC_PHP_VERSION' => $version ], true );
 			echo colorize( "PHP version set to $version" . PHP_EOL );
 
 			$confirm = ask( "Do you want to restart the stack now? ", 'yes');
@@ -51,17 +51,12 @@ if ( in_array( $sub_command, [ 'set', 'reset' ] ) ) {
 
 			exit( 0 );
 		case 'reset':
-			$version = 74;
 			$run_settings_file = root( '/.env.slic.run' );
-			write_env_file( $run_settings_file, [ 'SLIC_PHP_VERSION' => (int) $version ], true );
+			write_env_file( $run_settings_file, [ 'SLIC_PHP_VERSION' => $default_version ], true );
 			echo colorize( "PHP version reset to default: $default_version" . PHP_EOL );
 
 			exit( 0 );
 	}
-}
-
-if ( strstr( $current_version, '.' ) === false ) {
-	$current_version = preg_replace( '/^(\d)/', '\1.', $current_version );
 }
 
 echo colorize( "PHP version currently set to <magenta>{$current_version}</magenta>" . PHP_EOL );

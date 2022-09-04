@@ -1,4 +1,4 @@
-name: Publish slic-wordpress-php74 Docker image
+name: Publish slic-php7.4 docker image
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
     types: [published]
 
 env:
-  IMAGE_NAME: ${{ github.repository }}-wordpress-php74
+  IMAGE_NAME: ${{ github.repository }}-php7.4
 
 jobs:
   publish-image:
@@ -35,7 +35,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata (tags, labels) for Docker
+      - name: Extract metadata for image
         id: meta
         uses: docker/metadata-action@v4.0.1
         with:
@@ -46,14 +46,12 @@ jobs:
             type=ref,event=tag
             type=semver,pattern={{raw}}
 
-      - name: Build and push slic-wordpress Docker image
+      - name: Build and push image
         uses: docker/build-push-action@v3.1.1
-        continue-on-error: true
         with:
-          context: containers/wordpress
-          file: containers/wordpress/Dockerfile
+          context: containers/slic
+          file: containers/slic/Dockerfile
           push: true
-          pull: true
           tags: |
             ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

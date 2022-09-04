@@ -1,4 +1,4 @@
-name: Publish slic-php81 docker image
+name: Publish slic-wordpress-php8.0 Docker image
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
     types: [published]
 
 env:
-  IMAGE_NAME: ${{ github.repository }}-php81
+  IMAGE_NAME: ${{ github.repository }}-wordpress-php8.0
 
 jobs:
   publish-image:
@@ -35,7 +35,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata for image
+      - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v4.0.1
         with:
@@ -46,15 +46,17 @@ jobs:
             type=ref,event=tag
             type=semver,pattern={{raw}}
 
-      - name: Change Dockerfile to php8.1
-        run: "sed -i 's/7.4.29/8.1.10/g' containers/slic/Dockerfile"
+      - name: Change Dockerfile to php8.0
+        run: "sed -i 's/7.4/8.0/g' containers/slic/Dockerfile"
 
-      - name: Build and push image
+      - name: Build and push slic-wordpress Docker image
         uses: docker/build-push-action@v3.1.1
+        continue-on-error: true
         with:
-          context: containers/slic
-          file: containers/slic/Dockerfile
+          context: containers/wordpress
+          file: containers/wordpress/Dockerfile
           push: true
+          pull: true
           tags: |
             ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

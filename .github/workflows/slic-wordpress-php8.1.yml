@@ -1,4 +1,4 @@
-name: Publish slic-wordpress-php80 Docker image
+name: Publish slic-wordpress-php8.1 Docker image
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
     types: [published]
 
 env:
-  IMAGE_NAME: ${{ github.repository }}-wordpress-php80
+  IMAGE_NAME: ${{ github.repository }}-wordpress-php8.1
 
 jobs:
   publish-image:
@@ -47,7 +47,7 @@ jobs:
             type=semver,pattern={{raw}}
 
       - name: Change Dockerfile to php8.0
-        run: "sed -i 's/7.4/8.0/g' containers/slic/Dockerfile"
+        run: "sed -i 's/7.4/8.1/g' containers/slic/Dockerfile"
 
       - name: Build and push slic-wordpress Docker image
         uses: docker/build-push-action@v3.1.1
