@@ -93,6 +93,7 @@ $help_advanced_message_template = <<< HELP
   <light_cyan>interactive</light_cyan>    Activates or deactivates interactivity of {$cli_name} commands.
   <light_cyan>mysql</light_cyan>          Opens a mysql shell in the database service.
   <light_cyan>ps</light_cyan>             Lists the containers part of {$cli_name} stack.
+  <light_cyan>php-version</light_cyan>    Sets or shows the PHP version of the stack.
   <light_cyan>reset</light_cyan>          Resets {$cli_name} to the initial state as configured by the env files.
   <light_cyan>restart</light_cyan>        Restarts a container part of the stack.
   <light_cyan>site-cli</light_cyan>       Waits for WordPress to be correctly set up to run a wp-cli command in the stack.
@@ -184,6 +185,7 @@ switch ( $subcommand ) {
 	case 'phpcbf':
 	case 'phpcs':
 	case 'ps':
+	case 'php-version':
 	case 'reset':
 	case 'start':
 	case 'stop':

@@ -1,4 +1,4 @@
-name: Publish slic Docker image
+name: Publish slic-wordpress-php7.4 Docker image
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
     types: [published]
 
 env:
-  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_NAME: ${{ github.repository }}-wordpress-php7.4
 
 jobs:
   publish-image:
@@ -43,13 +43,14 @@ jobs:
             type=ref,event=tag
             type=semver,pattern={{raw}}
 
-      - name: Build and push slic Docker image
+      - name: Build and push slic-wordpress Docker image
         uses: docker/build-push-action@v3.1.1
         continue-on-error: true
         with:
-          context: containers/slic
-          file: containers/slic/Dockerfile
+          context: containers/wordpress
+          file: containers/wordpress/Dockerfile
           push: true
+          pull: true
           tags: |
             ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
