@@ -569,8 +569,9 @@ function download_file( $source_url, $dest_file, $verify_host = true ) {
 
 	$curl_handle = curl_init();
 
-	if ( ! is_resource( $curl_handle ) ) {
+	if ( $curl_handle === false ) {
 		fclose( $file_handle );
+		unlink( $dest_file );
 
 		return false;
 	}
