@@ -2,10 +2,6 @@ name: Publish slic-php8.1 docker image
 
 on:
   push:
-    branches:
-      - main
-      - '*'
-      - '[0-9]+.[0-9]+.[0-9]+'
   release:
     types: [published]
 
