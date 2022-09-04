@@ -28,7 +28,7 @@ services:
       - "${SLIC_REDIS_LOCALHOST_PORT:-8379}:6379"
 
   wordpress:
-    image: ghcr.io/stellarwp/slic-wordpress:${SLIC_VERSION}
+    image: ghcr.io/stellarwp/slic-wordpress-php${SLIC_PHP_VERSION}:${SLIC_VERSION}
     networks:
       - slic
     depends_on:
@@ -91,7 +91,7 @@ services:
       - "wordpress.test:172.${SLIC_TEST_SUBNET:-28}.1.1"
 
   slic:
-    image: ghcr.io/stellarwp/slic-php${PHP_VERSION}:feature-create-multiple-slic-images
+    image: ghcr.io/stellarwp/slic-php${SLIC_PHP_VERSION}:feature-create-multiple-slic-images
     networks:
       - slic
     user: "${SLIC_UID:-}:${SLIC_GID:-}"
