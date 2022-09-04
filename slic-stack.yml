@@ -91,7 +91,7 @@ services:
       - "wordpress.test:172.${SLIC_TEST_SUBNET:-28}.1.1"
 
   slic:
-    image: ghcr.io/stellarwp/slic-php${SLIC_PHP_VERSION}:feature-create-multiple-slic-images
+    image: ghcr.io/stellarwp/slic-php${SLIC_PHP_VERSION}:${SLIC_VERSION}
     networks:
       - slic
     user: "${SLIC_UID:-}:${SLIC_GID:-}"
