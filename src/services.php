@@ -118,11 +118,12 @@ function ensure_service_ready( $service ) {
 	switch ( $service ) {
 		case 'wordpress':
 			ensure_wordpress_ready();
-			service_up_notify( $service );
-			return static function ( $service ) {
+			service_up_notify( 'wordpress' );
+
+			return static function () {
 				propagate_ip_address_of_to(
 					[ 'wordpress' ],
-					[ $service, 'slic' ],
+					[ 'wordpress', 'slic', 'chrome' ],
 					[ 'wordpress' => 'wordpress.test' ]
 				);
 			};
@@ -156,14 +157,24 @@ function ensure_service_dependencies( $service ) {
  *                 services are up to complete a service setup.
  */
 function ensure_services_running( array $services ) {
+	// Impose an order to make sure dependencies are optimized.
+	$order = [ 'db', 'redis', 'chrome', 'slic', 'wordpress' ];
+	usort( $services, static function ( $a, $b ) use ( $order ) {
+		$a_index = array_search( $a, $order, true );
+		$b_index = array_search( $b, $order, true );
+
+		return $a_index <=> $b_index;
+	} );
 	$on_up = [];
 	foreach ( $services as $service ) {
-		ensure_service_running( $service );
+		$service_on_up = [];
+		ensure_service_running( $service, [], $service_on_up );
+		$on_up = array_merge( $on_up, $service_on_up );
 	}
 
-	return static function ( $service ) use ( $on_up ) {
+	return static function () use ( $on_up ) {
 		foreach ( $on_up as $then ) {
-			$then( $service );
+			$then();
 		}
 	};
 }
@@ -172,12 +183,10 @@ function ensure_services_running( array $services ) {
  * Returns whether a service is running or not.
  *
  * @param string $service The service to check.
- * @param bool $set If set, this value will either add or remove the service from the list
- *                  of running services.
  *
  * @return bool Whether a service is running or not.
  */
-function service_running( $service, $set = null ) {
+function service_running( $service ) {
 	$ps = slic_process()( [ 'ps', '--services', '--filter', '"status=running"' ] );
 	$ps_status = $ps( 'status' );
 
@@ -328,14 +337,14 @@ function propagate_ip_address_of_to( array $of_services, array $to_services, arr
 	);
 
 	$hosts = array_merge( ...array_map( static function ( $service ) use ( $ip_addresses, $hostname_map ) {
-		$value = isset( $hostname_map[ $service ] ) ? $hostname_map[ $service ] : $service;
+		$value = $hostname_map[ $service ] ?? $service;
 		$key = $ip_addresses[ $service ];
 
 		return [ $key => $value ];
 	}, $of_services ) );
 
 	array_walk( $to_services_ids, static function ( $service_id ) use ( $hosts ) {
-		add_hosts_to_service( $service_id, $hosts );
+		$service_id && add_hosts_to_service( $service_id, $hosts );
 	}, $to_services_ids );
 }
 
@@ -344,20 +353,26 @@ function propagate_ip_address_of_to( array $of_services, array $to_services, arr
  * it depends on.
  *
  * @param string $service The name of the service to ensure running, e.g., `wordpress`.
+ * @param array<string> $dependencies The list of services that should be running.
+ * @param array<callable> $on_up If provided, the services and dependencies "on up" callbacks
+ *                               will not be immediately executed, but instead will be added to
+ *                               this list.
  *
  * @return int The exit status of the command that will ensure the service is running;
  *             following UNIX convention, a `0` indicates a success, any other value indicates a
  *             failure.
  */
-function ensure_service_running( $service, array $dependencies = null ) {
+function ensure_service_running( $service, array $dependencies = null, array &$on_up = null  ) {
 	if ( empty( $dependencies ) && service_running( $service ) ) {
 		service_up_notify( $service );
 		return 0;
 	}
 
-	$dependencies_on_up = $dependencies === null ?
-		ensure_service_dependencies( $service )
-		: ensure_services_running( $dependencies );
+	if ( empty( $dependencies ) ) {
+		$dependencies_on_up = ensure_service_dependencies( $service );
+	} else {
+		$dependencies_on_up = ensure_services_running( $dependencies );
+	}
 
 	if ( service_running( $service ) ) {
 		service_up_notify( $service );
@@ -367,14 +382,18 @@ function ensure_service_running( $service, array $dependencies = null ) {
 	$own_on_up = ensure_service_ready( $service );
 
 	$up_status = slic_realtime()( [ 'up', '-d', $service ] );
-	service_running( $service, true );
+	service_running( $service );
 
 	if ( $up_status !== 0 ) {
 		return $up_status;
 	}
 
-	$dependencies_on_up( $service );
-	$own_on_up( $service );
+	if ( is_array( $on_up ) ) {
+		array_push( $on_up, $dependencies_on_up, $own_on_up );
+	} else {
+		$dependencies_on_up();
+		$own_on_up();
+	}
 
 	service_up_notify( $service );
 
