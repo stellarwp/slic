@@ -122,12 +122,7 @@ function ensure_service_ready( $service ) {
 			return static function ( $service ) {
 				propagate_ip_address_of_to(
 					[ 'wordpress' ],
-					[ $service, 'slic' ],
-					[ 'wordpress' => 'wordpress.test' ]
-				);
-				propagate_ip_address_of_to(
-					[ 'wordpress' ],
-					[ 'slic' ],
+					[ 'wordpress', 'slic' ],
 					[ 'wordpress' => 'wordpress.test' ]
 				);
 			};
@@ -161,6 +156,14 @@ function ensure_service_dependencies( $service ) {
  *                 services are up to complete a service setup.
  */
 function ensure_services_running( array $services ) {
+	// Impose an order to make sure dependencies are optimized.
+	$order = [ 'db', 'redis', 'chrome', 'slic', 'wordpress' ];
+	usort( $services, static function ( $a, $b ) use ( $order ) {
+		$a_index = array_search( $a, $order, true );
+		$b_index = array_search( $b, $order, true );
+
+		return $a_index <=> $b_index;
+	} );
 	$on_up = [];
 	foreach ( $services as $service ) {
 		ensure_service_running( $service );
