@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Feature - Prompt the user to stop containers before updating.
 - Feature - Add the `slic php-version` command and allow for switching between PHP versioned containers.
 - Fix - PHP 8.0+ compatibility fix for WordPress zip downloads.
 - Fix - Prevent looping over the same test suite when executing `slic run`. [#118]
