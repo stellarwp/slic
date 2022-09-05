@@ -1,12 +1,15 @@
-name: Publish slic Docker image
+name: Publish slic-php7.3 docker image
 
 on:
   push:
+    branches:
+      - main
+      - '[0-9]+.[0-9]+.[0-9]+'
   release:
     types: [published]
 
 env:
-  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_NAME: ${{ github.repository }}-php7.3
 
 jobs:
   publish-image:
@@ -32,7 +35,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata (tags, labels) for Docker
+      - name: Extract metadata for image
         id: meta
         uses: docker/metadata-action@v4.0.1
         with:
@@ -43,9 +46,11 @@ jobs:
             type=ref,event=tag
             type=semver,pattern={{raw}}
 
-      - name: Build and push slic Docker image
+      - name: Change Dockerfile to php8.0
+        run: "sed -i 's/7.4.29/7.3.33/g' containers/slic/Dockerfile"
+
+      - name: Build and push image
         uses: docker/build-push-action@v3.1.1
-        continue-on-error: true
         with:
           context: containers/slic
           file: containers/slic/Dockerfile
