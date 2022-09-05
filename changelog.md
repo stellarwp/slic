@@ -4,15 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.1.0] - TBD
+## [1.1.0] - 2022-09-05
 
 ### Changed
 
 - Feature - Prompt the user to stop containers before updating.
 - Feature - Add the `slic php-version` command and allow for switching between PHP versioned containers.
-- Fix - Allow `wordpress.test` to be resolvable during test execution by placing it in the `/etc/hosts` file of the `slic` container.
+- Fix - Allow `wordpress.test` to be resolvable during test execution by placing it in the `/etc/hosts` file of the `slic` and `chrome` containers.
 - Fix - PHP 8.0+ compatibility fix for WordPress zip downloads.
 - Fix - Prevent looping over the same test suite when executing `slic run`. [#118]
+- Fix - Better handling of checking for services that are up.
 
 ## [1.0.5] - 2022-09-02
 
