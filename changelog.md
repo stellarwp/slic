@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Feature - Added the `slic exec` command that allows bash command execution within the stack. [#31]
+
 ## [1.1.0] - 2022-09-05
 
 ### Changed
