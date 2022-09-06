@@ -426,7 +426,7 @@ function restart_all_services() {
 function start_all_services() {
 	$services = get_services();
 	foreach ( $services as $service ) {
-		ensure_service_running( $service );
+		ensure_service_running_no_callbacks( $service );
 	}
 
 	run_service_callbacks();

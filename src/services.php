@@ -153,7 +153,22 @@ function ensure_service_ready( string $service ): void {
  * @return void
  */
 function ensure_service_dependencies( string $service ): void {
-	ensure_services_running( service_dependencies( $service ) );
+	ensure_services_running_no_callbacks( service_dependencies( $service ) );
+}
+
+/**
+ * Ensures a list of services is running and returns
+ * a Closure that should be called to finish setting them up.
+ *
+ * @param array<string> $services A list of services to ensure
+ *                                are running.
+ *
+ * @return void On-up callbacks will be registered on the global
+ *              callback stack.
+ */
+function ensure_services_running( array $services  ): void {
+	ensure_services_running_no_callbacks( $services );
+	run_service_callbacks();
 }
 
 /**
@@ -168,7 +183,7 @@ function ensure_service_dependencies( string $service ): void {
  * @return void On-up callbacks will be registered on the global
  *              callback stack.
  */
-function ensure_services_running( array $services, bool $call_on_up = false  ): void {
+function ensure_services_running_no_callbacks( array $services, bool $call_on_up = false  ): void {
 	// Impose an order to make sure dependencies are optimized.
 	$order = [ 'db', 'redis', 'chrome', 'slic', 'wordpress' ];
 	usort( $services, static function ( $a, $b ) use ( $order ) {
@@ -178,7 +193,7 @@ function ensure_services_running( array $services, bool $call_on_up = false  ): 
 		return $a_index <=> $b_index;
 	} );
 	foreach ( $services as $service ) {
-		ensure_service_running( $service );
+		ensure_service_running_no_callbacks( $service );
 	}
 }
 
@@ -357,19 +372,15 @@ function propagate_ip_address_of_to( array $of_services, array $to_services, arr
  *
  * @param string        $service      The name of the service to ensure running, e.g., `wordpress`.
  * @param array<string> $dependencies The list of services that should be running.
- * @param bool          $call_on_up   Whether to call the `on_up` function of the service(s) being
- *                                    started or not.
  *
  * @return int The exit status of the command that will ensure the service is running;
  *             following UNIX convention, a `0` indicates a success, any other value indicates a
  *             failure.
  */
-function ensure_service_running( string $service, array $dependencies = null, bool $call_on_up = false ): int {
+function ensure_service_running( string $service, array $dependencies = null ): int {
 	$status = ensure_service_running_no_callbacks( $service, $dependencies );
 
-	if ( $call_on_up ) {
-		run_service_callbacks();
-	}
+	run_service_callbacks();
 
 	return $status;
 }
@@ -393,7 +404,7 @@ function ensure_service_running_no_callbacks( string $service, array $dependenci
 	if ( empty( $dependencies ) ) {
 		ensure_service_dependencies( $service );
 	} else {
-		ensure_services_running( $dependencies );
+		ensure_services_running_no_callbacks( $dependencies );
 	}
 
 	if ( service_running( $service ) ) {

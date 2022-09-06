@@ -32,7 +32,7 @@ if ( $is_help ) {
 
 $using = slic_target_or_fail();
 
-ensure_service_running( 'slic', [], true );
+ensure_service_running( 'slic', [] );
 
 setup_id();
 $exec_args = $args( '...' );

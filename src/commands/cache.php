@@ -42,7 +42,7 @@ $cache_args = args( [ 'toggle' ], $args( '...' ), 0 );
 $toggle = $cache_args( 'toggle', 'status' );
 
 setup_id();
-ensure_services_running( [ 'wordpress', 'slic' ], true );
+ensure_services_running( [ 'wordpress', 'slic' ] );
 ensure_wordpress_ready();
 
 // Ensure the plugin is installed.

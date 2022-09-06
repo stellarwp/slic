@@ -38,7 +38,7 @@ echo light_cyan( "Using {$using}" . PHP_EOL );
 
 setup_id();
 $codeception_args = $args( '...' );
-ensure_service_running( 'slic', codeception_dependencies( $codeception_args ), true );
+ensure_service_running( 'slic', codeception_dependencies( $codeception_args ) );
 
 $codeception_config = '';
 if ( file_exists( get_project_local_path() . '/codeception.slic.yml' ) ) {

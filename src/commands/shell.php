@@ -33,7 +33,7 @@ $service = $service_args( 'service', 'slic' );
 $using = slic_target_or_fail();
 echo light_cyan( "Using {$using}" . PHP_EOL );
 
-ensure_services_running( [ 'wordpress', 'slic' ], true );
+ensure_services_running( [ 'wordpress', 'slic' ] );
 
 setup_id();
 
