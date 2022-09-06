@@ -4,6 +4,7 @@ require_once __DIR__ . '/src/utils.php';
 require_once __DIR__ . '/src/scaffold.php';
 require_once __DIR__ . '/src/slic.php';
 require_once __DIR__ . '/src/docker.php';
+require_once __DIR__ . '/src/notify.php';
 require_once __DIR__ . '/src/plugins.php';
 require_once __DIR__ . '/src/themes.php';
 require_once __DIR__ . '/src/scripts.php';

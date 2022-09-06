@@ -117,6 +117,11 @@ function service_requires( string $service, ...$dependencies ) {
  */
 function ensure_service_ready( string $service ): void {
 	$propagate_wordpress_address = static function () {
+		// If wordpress isn't running, there's no IP address to propagate.
+		if ( ! service_running( 'wordpress' ) ) {
+			return;
+		}
+
 		propagate_ip_address_of_to(
 			[ 'wordpress' ],
 			[ 'wordpress', 'slic', 'chrome' ],
@@ -127,8 +132,8 @@ function ensure_service_ready( string $service ): void {
 	switch ( $service ) {
 		case 'wordpress':
 			ensure_wordpress_ready();
-			service_up_notify( 'wordpress' );
 			services_callback_stack()->add( 'propagate_wp_address', $propagate_wordpress_address );
+			services_callback_stack()->add( 'wordpress_notify', '\StellarWP\Slic\service_wordpress_notify' );
 			break;
 		case 'slic':
 		case 'chrome':
@@ -360,9 +365,28 @@ function propagate_ip_address_of_to( array $of_services, array $to_services, arr
  *             failure.
  */
 function ensure_service_running( string $service, array $dependencies = null, bool $call_on_up = false ): int {
-	if ( empty( $dependencies ) && service_running( $service ) ) {
-		service_up_notify( $service );
+	$status = ensure_service_running_no_callbacks( $service, $dependencies );
 
+	if ( $call_on_up ) {
+		run_service_callbacks();
+	}
+
+	return $status;
+}
+
+/**
+ * Ensures a service is running by ensuring all its pre-conditions and services
+ * it depends on.
+ *
+ * @param string        $service      The name of the service to ensure running, e.g., `wordpress`.
+ * @param array<string> $dependencies The list of services that should be running.
+ *
+ * @return int The exit status of the command that will ensure the service is running;
+ *             following UNIX convention, a `0` indicates a success, any other value indicates a
+ *             failure.
+ */
+function ensure_service_running_no_callbacks( string $service, array $dependencies = null ): int {
+	if ( empty( $dependencies ) && service_running( $service ) ) {
 		return 0;
 	}
 
@@ -373,8 +397,6 @@ function ensure_service_running( string $service, array $dependencies = null, bo
 	}
 
 	if ( service_running( $service ) ) {
-		service_up_notify( $service );
-
 		return 0;
 	}
 
@@ -387,27 +409,14 @@ function ensure_service_running( string $service, array $dependencies = null, bo
 		return $up_status;
 	}
 
-	if ( $call_on_up ) {
-		services_callback_stack()->call();
-	}
-
-	service_up_notify( $service );
-
 	return 0;
 }
 
 /**
- * Notifies about the up status of a service.
- *
- * @param string $service
+ * Runs the service callback stack.
  */
-function service_up_notify( string $service ): void {
-	switch ( $service ) {
-		case 'wordpress':
-			echo colorize( PHP_EOL . "Your WordPress site is reachable at: <yellow>http://localhost:" . getenv( 'WORDPRESS_HTTP_PORT' ) . "</yellow>" . PHP_EOL );
-		default:
-			return;
-	}
+function run_service_callbacks() {
+	services_callback_stack()->call();
 }
 
 /**

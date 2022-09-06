@@ -2,9 +2,6 @@
 
 namespace StellarWP\Slic;
 
-use Closure;
-use ReflectionFunction;
-
 class Callback_Stack {
 	/**
 	 * A set of callbacks accumulated in the stack so far, by
@@ -15,8 +12,11 @@ class Callback_Stack {
 	private $callbacks = [];
 
 	public function call(): void {
-		foreach ( $this->callbacks as $callback ) {
+		foreach ( $this->callbacks as $callback_id => $callback ) {
 			$callback();
+
+			// Remove the callback from the stack after it has been called.
+			$this->remove( $callback_id );
 		}
 	}
 
@@ -30,5 +30,16 @@ class Callback_Stack {
 	 */
 	public function add( string $callback_id, callable $callback ): void {
 		$this->callbacks[ $callback_id ] = $callback;
+	}
+
+	/**
+	 * Remove a callback from the stack.
+	 *
+	 * @param string $callback_id The callback ID.
+	 *
+	 * @return void The callback is removed from the stack.
+	 */
+	private function remove( $callback_id ) {
+		unset( $this->callbacks[ $callback_id ] );
 	}
 }
