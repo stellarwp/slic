@@ -417,7 +417,7 @@ function restart_all_services() {
 		restart_service( $service );
 	}
 
-	run_service_callbacks();
+	services_callback_stack()->call();
 }
 
 /**
@@ -429,7 +429,7 @@ function start_all_services() {
 		ensure_service_running_no_callbacks( $service );
 	}
 
-	run_service_callbacks();
+	services_callback_stack()->call();
 }
 
 /**

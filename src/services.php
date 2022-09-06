@@ -168,7 +168,7 @@ function ensure_service_dependencies( string $service ): void {
  */
 function ensure_services_running( array $services  ): void {
 	ensure_services_running_no_callbacks( $services );
-	run_service_callbacks();
+	services_callback_stack()->call();
 }
 
 /**
@@ -378,7 +378,7 @@ function propagate_ip_address_of_to( array $of_services, array $to_services, arr
 function ensure_service_running( string $service, array $dependencies = [] ): int {
 	$status = ensure_service_running_no_callbacks( $service, $dependencies );
 
-	run_service_callbacks();
+	services_callback_stack()->call();
 
 	return $status;
 }
@@ -419,13 +419,6 @@ function ensure_service_running_no_callbacks( string $service, array $dependenci
 	}
 
 	return 0;
-}
-
-/**
- * Runs the service callback stack.
- */
-function run_service_callbacks() {
-	services_callback_stack()->call();
 }
 
 /**
