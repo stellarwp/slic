@@ -377,7 +377,7 @@ function propagate_ip_address_of_to( array $of_services, array $to_services, arr
  *             following UNIX convention, a `0` indicates a success, any other value indicates a
  *             failure.
  */
-function ensure_service_running( string $service, array $dependencies = null ): int {
+function ensure_service_running( string $service, array $dependencies = [] ): int {
 	$status = ensure_service_running_no_callbacks( $service, $dependencies );
 
 	run_service_callbacks();
@@ -396,7 +396,7 @@ function ensure_service_running( string $service, array $dependencies = null ): 
  *             following UNIX convention, a `0` indicates a success, any other value indicates a
  *             failure.
  */
-function ensure_service_running_no_callbacks( string $service, array $dependencies = null ): int {
+function ensure_service_running_no_callbacks( string $service, array $dependencies = [] ): int {
 	if ( empty( $dependencies ) && service_running( $service ) ) {
 		return 0;
 	}

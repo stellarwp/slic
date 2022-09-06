@@ -29,7 +29,7 @@ if ( $is_help ) {
 $using = slic_target_or_fail();
 echo light_cyan( "Using {$using}" . PHP_EOL );
 
-ensure_service_running( 'slic', [] );
+ensure_service_running( 'slic' );
 
 setup_id();
 $phpcbf_args = $args( '...' );

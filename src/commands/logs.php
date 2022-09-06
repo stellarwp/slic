@@ -24,6 +24,6 @@ if ( $is_help ) {
 	return;
 }
 
-ensure_service_running( 'slic', [] );
+ensure_service_running( 'slic' );
 
 slic_realtime()( [ 'logs', '--follow' ] );
