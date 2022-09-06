@@ -43,7 +43,7 @@ HTACCESS;
  *
  * @return bool
  */
-function dir_has_local_config( $dir ) {
+function dir_has_local_config( $dir ): bool {
 	return file_exists( "{$dir}/local-config.php" );
 }
 
@@ -54,7 +54,7 @@ function dir_has_local_config( $dir ) {
  *
  * @return bool
  */
-function dir_has_wp_config( $dir ) {
+function dir_has_wp_config( $dir ): bool {
 	return file_exists( "{$dir}/wp-config.php" );
 }
 
@@ -64,7 +64,7 @@ function dir_has_wp_config( $dir ) {
  * @return array<string,SplFileInfo> A map of each directory in the relevant plugins or themes directory to the
  *                                   corresponding file information.
  */
-function wp_content_dir_list( $content_type = 'plugins' ) {
+function wp_content_dir_list( $content_type = 'plugins' ): array {
 	$function = "\\StellarWP\\Slic\\slic_{$content_type}_dir";
 	$path     = $function();
 
@@ -101,7 +101,7 @@ function wp_content_dir_list( $content_type = 'plugins' ) {
  *
  * @return array<string> Allowed subdirectories for use.
  */
-function get_allowed_use_subdirectories() {
+function get_allowed_use_subdirectories(): array {
 	return [ 'common' ];
 }
 
@@ -116,7 +116,7 @@ function get_allowed_use_subdirectories() {
  *
  * @return bool Always `true` to indicate files are in place.
  */
-function ensure_wordpress_files( $version = null ) {
+function ensure_wordpress_files( $version = null ): bool {
 	// By default, download the latest WordPress version.
 	$source_url = 'https://wordpress.org/latest.zip';
 
@@ -210,7 +210,7 @@ function ensure_wordpress_files( $version = null ) {
  * @return bool Always `true` to indicate WordPress
  *              is set up correctly.
  */
-function ensure_wordpress_configured() {
+function ensure_wordpress_configured(): bool {
 	$wp_root_dir    = getenv( 'SLIC_WP_DIR' );
 	$wp_config_file = $wp_root_dir . '/wp-config.php';
 
@@ -301,7 +301,7 @@ CONFIG_EXTRAS;
  * @return bool Always `true` to indicate WordPress is
  *              correctly installed.
  */
-function ensure_wordpress_installed() {
+function ensure_wordpress_installed(): bool {
 	setup_slic_env( root() );
 
 	// Bring up the database.
@@ -393,7 +393,7 @@ function ensure_wordpress_installed() {
  * @return string The current latest version, or `1.0.0` if the information
  *                could not be retrieved.
  */
-function get_wordpress_latest_version() {
+function get_wordpress_latest_version(): string {
 	static $current_latest_version;
 
 	if ( $current_latest_version !== null ) {
@@ -446,7 +446,7 @@ function get_wordpress_latest_version() {
  *
  * @return bool Always `true` to indicate success.
  */
-function ensure_wordpress_ready( $version = null ) {
+function ensure_wordpress_ready( string $version = null ): bool {
 	ensure_wordpress_files( $version );
 	ensure_wordpress_configured();
 	ensure_wordpress_installed();

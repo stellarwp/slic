@@ -34,7 +34,7 @@ if ( $is_help ) {
 }
 
 setup_id();
-ensure_services_running( [ 'slic', 'db' ] );
+ensure_services_running( [ 'slic', 'db' ], true );
 ensure_wordpress_ready();
 
 // Runs a wp-cli command in the stack, using the `cli` service.

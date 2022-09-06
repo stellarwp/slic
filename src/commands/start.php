@@ -32,7 +32,7 @@ if ( ! $service ) {
 	exit;
 }
 
-$exit_status = ensure_service_running( $service );
+$exit_status = ensure_service_running( $service, [], true );
 
 if ( $exit_status !== 0 ) {
 	echo colorize( PHP_EOL . "❌ <red>{$service} failed to start.</red>" . PHP_EOL );

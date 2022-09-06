@@ -16,6 +16,8 @@ require_once __DIR__ . '/src/env.php';
 require_once __DIR__ . '/src/codeception.php';
 require_once __DIR__ . '/src/commands.php';
 
+require_once __DIR__ . '/src/classes/Callback_Stack.php';
+
 use function StellarWP\Slic\args;
 use function StellarWP\Slic\cli_header;
 use function StellarWP\Slic\colorize;

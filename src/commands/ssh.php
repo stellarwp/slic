@@ -40,7 +40,7 @@ if ( $is_help ) {
 $service_args = args( [ 'service', '...' ], $args( '...' ), 0 );
 $service = $service_args( 'service', 'slic' );
 
-ensure_service_running( $service );
+ensure_service_running( $service, [], true );
 
 $command = sprintf( 'docker exec -it --user "%d:%d" --workdir %s %s bash',
 	getenv( 'SLIC_UID' ),

@@ -24,7 +24,7 @@ if ( $is_help ) {
 	return;
 }
 
-ensure_service_running( 'db' );
+ensure_service_running( 'db', [], true );
 
 setup_id();
 
