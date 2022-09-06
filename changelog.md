@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fix - Set the Composer cache directory default location correctly.
+
 ## [1.1.0] - 2022-09-05
 
 ### Changed
