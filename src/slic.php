@@ -287,6 +287,7 @@ function setup_slic_env( $root_dir, $reset = false ) {
 	putenv( 'SLIC_CACHE=' . cache() );
 
 	if ( empty( getenv( 'COMPOSER_CACHE_DIR' ) ) ) {
+		ensure_dir( root( '.cache' ) );
 		putenv( 'COMPOSER_CACHE_DIR=' . cache( '/composer' ) );
 	}
 
@@ -667,6 +668,7 @@ function slic_info() {
 		'COMPOSER_CACHE_DIR',
 		'CONTINUOUS_INTEGRATION',
 		'GITHUB_ACTION',
+		'SLIC_PHP_VERSION',
 		'SLIC_CURRENT_PROJECT',
 		'SLIC_CURRENT_PROJECT_RELATIVE_PATH',
 		'SLIC_CURRENT_PROJECT_SUBDIR',
@@ -718,7 +720,8 @@ function slic_info() {
 
 	echo PHP_EOL;
 	echo colorize( "<yellow>Valid Targets:</yellow>" );
-	echo get_valid_targets( false );
+	$targets = get_valid_targets( true );
+	echo PHP_EOL . implode( ', ', $targets );
 }
 
 /**
