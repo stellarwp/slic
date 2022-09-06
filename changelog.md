@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2022-09-06
+
+### Changed
+
+- Feature - Added the `slic exec` command that allows bash command execution within the stack. [#31]
+- Fix - Set the Composer cache directory default location correctly. [#78]
+- Tweak - Add `SLIC_PHP_VERSION` to `slic info`.
+- Tweak - Make the `Valid Targets:` output a bit less readable during `slic info` in favor of keeping the env values visible.
+
 ## [1.1.0] - 2022-09-05
 
 ### Changed

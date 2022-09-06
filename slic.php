@@ -31,10 +31,10 @@ $args = args( [
 ] );
 
 $cli_name = 'slic';
-const CLI_VERSION = '1.1.0';
+const CLI_VERSION = '1.1.1';
 
 // If the run-time option `-q`, for "quiet", is specified, then do not print the header.
-if ( in_array( '-q', $argv, true ) ) {
+if ( in_array( '-q', $argv, true ) || ( in_array( 'exec', $argv, true ) && ! in_array( 'help', $argv, true ) ) ) {
     // Remove the `-q` flag from the global array of arguments to leave the rest of the commands unchanged.
 	unset( $argv[ array_search( '-q', $argv ) ] );
 	$argv = array_values( $argv );
@@ -88,6 +88,7 @@ $help_advanced_message_template = <<< HELP
   <light_cyan>config</light_cyan>         Prints the stack configuration as interpolated from the environment.
   <light_cyan>debug</light_cyan>          Activates or deactivates {$cli_name} debug output or returns the current debug status.
   <light_cyan>down</light_cyan>           Tears down the stack; alias of `stop`.
+  <light_cyan>exec</light_cyan>           Runs a bash command in the stack.
   <light_cyan>group</light_cyan>          Create or remove group of targets for the current plugins directory.
   <light_cyan>host-ip</light_cyan>        Returns the IP Address of the host machine from the container perspective.
   <light_cyan>init</light_cyan>           Initializes a plugin for use in slic.
@@ -174,6 +175,7 @@ switch ( $subcommand ) {
 	case 'config':
 	case 'debug':
 	case 'down':
+	case 'exec':
 	case 'here':
 	case 'host-ip':
 	case 'info':
