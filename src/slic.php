@@ -668,6 +668,7 @@ function slic_info() {
 		'COMPOSER_CACHE_DIR',
 		'CONTINUOUS_INTEGRATION',
 		'GITHUB_ACTION',
+		'SLIC_PHP_VERSION',
 		'SLIC_CURRENT_PROJECT',
 		'SLIC_CURRENT_PROJECT_RELATIVE_PATH',
 		'SLIC_CURRENT_PROJECT_SUBDIR',
@@ -719,7 +720,8 @@ function slic_info() {
 
 	echo PHP_EOL;
 	echo colorize( "<yellow>Valid Targets:</yellow>" );
-	echo get_valid_targets( false );
+	$targets = get_valid_targets( true );
+	echo PHP_EOL . implode( ', ', $targets );
 }
 
 /**

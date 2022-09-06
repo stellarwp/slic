@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Fix - Set the Composer cache directory default location correctly.
+- Tweak - Add `SLIC_PHP_VERSION` to `slic info`.
+- Tweak - Make the `Valid Targets:` output a bit less readable during `slic info` in favor of keeping the env values visible.
 
 ## [1.1.0] - 2022-09-05
 
