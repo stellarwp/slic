@@ -287,6 +287,7 @@ function setup_slic_env( $root_dir, $reset = false ) {
 	putenv( 'SLIC_CACHE=' . cache() );
 
 	if ( empty( getenv( 'COMPOSER_CACHE_DIR' ) ) ) {
+		ensure_dir( root( '.cache' ) );
 		putenv( 'COMPOSER_CACHE_DIR=' . cache( '/composer' ) );
 	}
 

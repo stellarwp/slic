@@ -47,7 +47,7 @@ services:
       # The port, in the container, is not the default `80` to allow non root users to bind (listen) to it.
       - "${WORDPRESS_HTTP_PORT:-8888}:80"
     environment:
-      COMPOSER_CACHE_DIR: ${COMPOSER_CACHE_DIR:-}
+      COMPOSER_CACHE_DIR: "/composer-cache"
       WORDPRESS_DB_USER: root
       WORDPRESS_DB_PASSWORD: password
       # This db is created by the db container at startup, no need to create it.
@@ -81,7 +81,7 @@ services:
       - ${SLIC_WP_DIR}:/var/www/html:cached
       - ${SLIC_PLUGINS_DIR}:/var/www/html/wp-content/plugins:cached
       - ${SLIC_THEMES_DIR}:/var/www/html/wp-content/themes:cached
-      - ${COMPOSER_CACHE_DIR}:${COMPOSER_CACHE_DIR}:cached
+      - ${COMPOSER_CACHE_DIR:-./.cache}:/composer-cache:cached
 
   chrome:
     image: ${SLIC_CHROME_CONTAINER:-selenium/standalone-chrome:3.141.59-oxygen}
@@ -96,7 +96,7 @@ services:
       - slic
     user: "${SLIC_UID:-}:${SLIC_GID:-}"
     environment:
-      COMPOSER_CACHE_DIR: ${COMPOSER_CACHE_DIR:-}
+      COMPOSER_CACHE_DIR: "/composer-cache"
       # Set these values to allow the container to look wordpress up.
       WORDPRESS_DB_USER: root
       WORDPRESS_DB_PASSWORD: password
@@ -141,7 +141,7 @@ services:
       # filesystem would be a worse cure than the disease.
       # The volume is bound to the `a+rwx` directory the `slic` image provides to avoid file mode issues.
       - function-mocker-cache:/cache
-      - ${COMPOSER_CACHE_DIR}:${COMPOSER_CACHE_DIR}
+      - ${COMPOSER_CACHE_DIR:-./.cache}:/composer-cache
       # Scripts volume
       - ${SLIC_SCRIPTS}:/slic-scripts:cached
 
