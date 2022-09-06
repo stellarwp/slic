@@ -177,13 +177,11 @@ function ensure_services_running( array $services  ): void {
  *
  * @param array<string> $services A list of services to ensure
  *                                are running.
- * @param bool $call_on_up Whether to call the `on_up` callbacks for the
- *                         started services or not.
  *
  * @return void On-up callbacks will be registered on the global
  *              callback stack.
  */
-function ensure_services_running_no_callbacks( array $services, bool $call_on_up = false  ): void {
+function ensure_services_running_no_callbacks( array $services  ): void {
 	// Impose an order to make sure dependencies are optimized.
 	$order = [ 'db', 'redis', 'chrome', 'slic', 'wordpress' ];
 	usort( $services, static function ( $a, $b ) use ( $order ) {
