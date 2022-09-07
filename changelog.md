@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+* Fix - Ensure actions that need to execute after containers start actually wait until those containers start.
+
 ## [1.1.1] - 2022-09-06
 
 ### Changed
