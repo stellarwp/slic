@@ -178,8 +178,7 @@ function ensure_services_running( array $services  ): void {
  * @param array<string> $services A list of services to ensure
  *                                are running.
  *
- * @return void On-up callbacks will be registered on the global
- *              callback stack.
+ * @return void
  */
 function ensure_services_running_no_callbacks( array $services  ): void {
 	// Impose an order to make sure dependencies are optimized.
