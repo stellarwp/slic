@@ -416,6 +416,8 @@ function restart_all_services() {
 	foreach ( $services as $service ) {
 		restart_service( $service );
 	}
+
+	services_callback_stack()->call();
 }
 
 /**
@@ -424,8 +426,10 @@ function restart_all_services() {
 function start_all_services() {
 	$services = get_services();
 	foreach ( $services as $service ) {
-		ensure_service_running( $service );
+		ensure_service_running_no_callbacks( $service );
 	}
+
+	services_callback_stack()->call();
 }
 
 /**

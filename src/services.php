@@ -24,7 +24,7 @@ function stack_schema() {
 	require_once __DIR__ . '/../includes/Spyc/Spyc.php';
 
 	$schemas = [];
-	$stack   = slic_stack_array( true );
+	$stack = slic_stack_array( true );
 	foreach ( $stack as $file ) {
 		if ( ! is_readable( $file ) ) {
 			echo magenta( "File $file cannot be found or is not readable." );
@@ -65,6 +65,7 @@ function get_services() {
 	$services = services_schema();
 	$services = array_keys( $services );
 	sort( $services );
+
 	return $services;
 }
 
@@ -79,7 +80,7 @@ function get_services() {
  * @return array<string> A list of the service dependencies; empty if the service has no
  *                       dependencies.
  */
-function service_dependencies( $service ) {
+function service_dependencies( string $service ) {
 	$services_schema = services_schema();
 	$service_links = isset( $services_schema[ $service ]['links'] ) ? $services_schema[ $service ]['links'] : [];
 	$service_dependencies = isset( $services_schema[ $service ]['depends_on'] ) ? $services_schema[ $service ]['depends_on'] : [];
@@ -96,7 +97,7 @@ function service_dependencies( $service ) {
  *
  * @return false Whether the specified service requires at least one of the dependencies or not.
  */
-function service_requires( $service, ...$dependencies ) {
+function service_requires( string $service, ...$dependencies ) {
 	if ( empty( $dependencies ) ) {
 		return false;
 	}
@@ -109,26 +110,37 @@ function service_requires( $service, ...$dependencies ) {
  *
  * @param string $service The service to check.
  *
- * @return Closure A closure that should be called after the service is
- *                 up and running, to finish setting it up.
+ * @return void The service readiness is ensured; if required
+ *              by the service, a callback that should be called
+ *              after the service is ready is registered in the
+ *              Services callback stack.
  */
-function ensure_service_ready( $service ) {
-	$noop = static function(){};
+function ensure_service_ready( string $service ): void {
+	$propagate_wordpress_address = static function () {
+		// If wordpress isn't running, there's no IP address to propagate.
+		if ( ! service_running( 'wordpress' ) ) {
+			return;
+		}
+
+		propagate_ip_address_of_to(
+			[ 'wordpress' ],
+			[ 'wordpress', 'slic', 'chrome' ],
+			[ 'wordpress' => 'wordpress.test' ]
+		);
+	};
 
 	switch ( $service ) {
 		case 'wordpress':
 			ensure_wordpress_ready();
-			service_up_notify( 'wordpress' );
-
-			return static function () {
-				propagate_ip_address_of_to(
-					[ 'wordpress' ],
-					[ 'wordpress', 'slic', 'chrome' ],
-					[ 'wordpress' => 'wordpress.test' ]
-				);
-			};
+			services_callback_stack()->add( 'propagate_wp_address', $propagate_wordpress_address );
+			services_callback_stack()->add( 'wordpress_notify', '\StellarWP\Slic\service_wordpress_notify' );
+			break;
+		case 'slic':
+		case 'chrome':
+			services_callback_stack()->add( 'propagate_wp_address', $propagate_wordpress_address );
+			break;
 		default:
-			return $noop;
+			break;
 	}
 }
 
@@ -138,12 +150,10 @@ function ensure_service_ready( $service ) {
  *
  * @param string $service The service to ensure the dependencies for.
  *
- * @return Closure A closure that should be called after the service is
- *                 up and running to finish setting it up in respect to
- *                 its dependencies.
+ * @return void
  */
-function ensure_service_dependencies( $service ) {
-	return ensure_services_running( service_dependencies( $service ) );
+function ensure_service_dependencies( string $service ): void {
+	ensure_services_running_no_callbacks( service_dependencies( $service ) );
 }
 
 /**
@@ -153,10 +163,24 @@ function ensure_service_dependencies( $service ) {
  * @param array<string> $services A list of services to ensure
  *                                are running.
  *
- * @return Closure A closure that should be called after all
- *                 services are up to complete a service setup.
+ * @return void On-up callbacks will be registered on the global
+ *              callback stack.
  */
-function ensure_services_running( array $services ) {
+function ensure_services_running( array $services  ): void {
+	ensure_services_running_no_callbacks( $services );
+	services_callback_stack()->call();
+}
+
+/**
+ * Ensures a list of services is running and returns
+ * a Closure that should be called to finish setting them up.
+ *
+ * @param array<string> $services A list of services to ensure
+ *                                are running.
+ *
+ * @return void
+ */
+function ensure_services_running_no_callbacks( array $services  ): void {
 	// Impose an order to make sure dependencies are optimized.
 	$order = [ 'db', 'redis', 'chrome', 'slic', 'wordpress' ];
 	usort( $services, static function ( $a, $b ) use ( $order ) {
@@ -165,18 +189,9 @@ function ensure_services_running( array $services ) {
 
 		return $a_index <=> $b_index;
 	} );
-	$on_up = [];
 	foreach ( $services as $service ) {
-		$service_on_up = [];
-		ensure_service_running( $service, [], $service_on_up );
-		$on_up = array_merge( $on_up, $service_on_up );
+		ensure_service_running_no_callbacks( $service );
 	}
-
-	return static function () use ( $on_up ) {
-		foreach ( $on_up as $then ) {
-			$then();
-		}
-	};
 }
 
 /**
@@ -186,7 +201,7 @@ function ensure_services_running( array $services ) {
  *
  * @return bool Whether a service is running or not.
  */
-function service_running( $service ) {
+function service_running( string $service ) {
 	$ps = slic_process()( [ 'ps', '--services', '--filter', '"status=running"' ] );
 	$ps_status = $ps( 'status' );
 
@@ -220,8 +235,8 @@ function quietly_tear_down_stack() {
  *
  * @return string|null The service container ID if found, `null` otherwise.
  */
-function get_service_id( $service ) {
-	$root    = root();
+function get_service_id( string $service ) {
+	$root = root();
 	$command = "docker ps -f label=com.docker.compose.project.working_dir='$root' " .
 	           "-f label=com.docker.compose.service=$service --format '{{.ID}}'";
 	debug( "Executing command: $command" . PHP_EOL );
@@ -238,7 +253,7 @@ function get_service_id( $service ) {
  * @return string|null The service IP address if the service is up and the IP address
  *                     could be found, `null` otherwise.
  */
-function get_service_ip_address( $service_id ) {
+function get_service_ip_address( string $service_id ) {
 	$command = "docker inspect --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $service_id";
 	debug( "Executing command: $command" . PHP_EOL );
 	exec( $command, $output, $status );
@@ -263,7 +278,7 @@ function get_service_ip_address( $service_id ) {
  * @return true To indicate the operation was completed correctly, the function
  *              will `exit` with an error, otherwise.
  */
-function add_hosts_to_service( $service_id, array $hosts ) {
+function add_hosts_to_service( string $service_id, array $hosts ) {
 	// Read the current contents of the `/etc/hosts` file.
 	$read_command = "docker exec -u '0:0' $service_id bash -c 'cat /etc/hosts'";
 	debug( "Executing command: $read_command" . PHP_EOL );
@@ -306,10 +321,10 @@ function add_hosts_to_service( $service_id, array $hosts ) {
  * Updates the `/etc/hosts` file of a list of services to include the IP address of another set of
  * services.
  *
- * @param array<string> $of_services The list of services whose IP address should be propagated.
- * @param array<string> $to_services The list of services whose `/etc/hosts` file should be updated
- *                                   to include the IP addresses to hastname mappings of the previous
- *                                   list.
+ * @param array<string>        $of_services  The list of services whose IP address should be propagated.
+ * @param array<string>        $to_services  The list of services whose `/etc/hosts` file should be updated
+ *                                           to include the IP addresses to hastname mappings of the previous
+ *                                           list.
  * @param array<string,string> $hostname_map A map from service names to the hostnames they should be
  *                                           mapped to.
  *
@@ -352,34 +367,48 @@ function propagate_ip_address_of_to( array $of_services, array $to_services, arr
  * Ensures a service is running by ensuring all its pre-conditions and services
  * it depends on.
  *
- * @param string $service The name of the service to ensure running, e.g., `wordpress`.
+ * @param string        $service      The name of the service to ensure running, e.g., `wordpress`.
  * @param array<string> $dependencies The list of services that should be running.
- * @param array<callable> $on_up If provided, the services and dependencies "on up" callbacks
- *                               will not be immediately executed, but instead will be added to
- *                               this list.
  *
  * @return int The exit status of the command that will ensure the service is running;
  *             following UNIX convention, a `0` indicates a success, any other value indicates a
  *             failure.
  */
-function ensure_service_running( $service, array $dependencies = null, array &$on_up = null  ) {
+function ensure_service_running( string $service, array $dependencies = [] ): int {
+	$status = ensure_service_running_no_callbacks( $service, $dependencies );
+
+	services_callback_stack()->call();
+
+	return $status;
+}
+
+/**
+ * Ensures a service is running by ensuring all its pre-conditions and services
+ * it depends on.
+ *
+ * @param string        $service      The name of the service to ensure running, e.g., `wordpress`.
+ * @param array<string> $dependencies The list of services that should be running.
+ *
+ * @return int The exit status of the command that will ensure the service is running;
+ *             following UNIX convention, a `0` indicates a success, any other value indicates a
+ *             failure.
+ */
+function ensure_service_running_no_callbacks( string $service, array $dependencies = [] ): int {
 	if ( empty( $dependencies ) && service_running( $service ) ) {
-		service_up_notify( $service );
 		return 0;
 	}
 
 	if ( empty( $dependencies ) ) {
-		$dependencies_on_up = ensure_service_dependencies( $service );
+		ensure_service_dependencies( $service );
 	} else {
-		$dependencies_on_up = ensure_services_running( $dependencies );
+		ensure_services_running_no_callbacks( $dependencies );
 	}
 
 	if ( service_running( $service ) ) {
-		service_up_notify( $service );
 		return 0;
 	}
 
-	$own_on_up = ensure_service_ready( $service );
+	ensure_service_ready( $service );
 
 	$up_status = slic_realtime()( [ 'up', '-d', $service ] );
 	service_running( $service );
@@ -388,28 +417,20 @@ function ensure_service_running( $service, array $dependencies = null, array &$o
 		return $up_status;
 	}
 
-	if ( is_array( $on_up ) ) {
-		array_push( $on_up, $dependencies_on_up, $own_on_up );
-	} else {
-		$dependencies_on_up();
-		$own_on_up();
-	}
-
-	service_up_notify( $service );
-
 	return 0;
 }
 
 /**
- * Notifies about the up status of a service.
+ * Returns the singleton instance of the Services callback stack.
  *
- * @param string $service
+ * @return Callback_Stack The singleton instance of the Services callback stack.
  */
-function service_up_notify( string $service ) : void {
-	switch ( $service ) {
-		case 'wordpress':
-			echo colorize( PHP_EOL . "Your WordPress site is reachable at: <yellow>http://localhost:" . getenv( 'WORDPRESS_HTTP_PORT' ) . "</yellow>" . PHP_EOL );
-		default:
-			return;
+function services_callback_stack(): Callback_Stack {
+	static $callback_stack;
+
+	if ( ! $callback_stack instanceof Callback_Stack ) {
+		$callback_stack = new Callback_Stack();
 	}
+
+	return $callback_stack;
 }
