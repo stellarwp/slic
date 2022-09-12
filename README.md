@@ -17,6 +17,7 @@ The slic (**S**tellarWP **L**ocal **I**nteractive **C**ontainers) CLI command pr
 	* [Running tests](#running-tests)
 * [Advanced topics](#advanced-topics)
 	* [Making composer installs faster](#making-composer-installs-faster)
+	* [Changing your composer version](#changing-your-composer-version)
 	* [Customizing `slic`'s `.env` file](#customizing-slics-env-file)
 	* [Xdebug and `slic`](#xdebug-and-slic)
 
@@ -216,6 +217,20 @@ slic composer-cache set $HOME/.cache/composer
 For more information on this topic, type `slic help composer-cache`.
 
 ![slic composer-cache](docs/images/slic-composer-cache.gif)
+
+### Changing your composer version
+
+By default, `slic` uses composer v1 but you may also choose to use v2 by running the following command:
+
+`slic composer set-version 2`
+
+If you need to go back, just set the version back to 1:
+
+`slic composer set-version 1`
+
+If you want to know which version `slic` is pointed at, you can always call:
+
+`slic composer get-version`
 
 ### Customizing `slic`'s `.env` file
 
