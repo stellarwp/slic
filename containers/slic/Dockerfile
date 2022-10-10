@@ -12,7 +12,7 @@ RUN chmod a+rx /usr/local/bin/wp
 # The mlocati/docker-php-extension-installer will install PHP extensions setting up requirements correctly and cleaning up after.
 ADD https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
 RUN chmod a+x /usr/local/bin/install-php-extensions && \
-    install-php-extensions gd xdebug pdo pdo_mysql mysqli zip uopz pcntl sockets
+    install-php-extensions gd xdebug pdo pdo_mysql mysqli zip uopz pcntl sockets intl
 
 # Install some more packages required by wp-cli and Composer.
 RUN apt-get update && apt-get install -y \
