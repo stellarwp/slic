@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.4] - 2022-10-27
+
+* Fix - Simplify the `restart_all_services()` code so that containers are all shut down and _then_ all started.
+
 ## [1.1.3] - 2022-10-10
 
 * Fix - Add the `intl` PHP module to the container.

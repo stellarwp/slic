@@ -34,7 +34,7 @@ $args = args( [
 ] );
 
 $cli_name = 'slic';
-const CLI_VERSION = '1.1.3';
+const CLI_VERSION = '1.1.4';
 
 // If the run-time option `-q`, for "quiet", is specified, then do not print the header.
 if ( in_array( '-q', $argv, true ) || ( in_array( 'exec', $argv, true ) && ! in_array( 'help', $argv, true ) ) ) {
@@ -66,6 +66,7 @@ Available commands:
   <light_cyan>npm</light_cyan>            Runs an npm command in the stack using the version of node specified by .nvmrc.
   <light_cyan>phpcbf</light_cyan>         Runs PHP Code Beautifier and Fixer within the current <light_cyan>use</light_cyan> target.
   <light_cyan>phpcs</light_cyan>          Runs PHP_CodeSniffer within the current <light_cyan>use</light_cyan> target.
+  <light_cyan>restart</light_cyan>        Restarts containers in the stack.
   <light_cyan>run</light_cyan>            Runs a Codeception test in the stack, the equivalent to <light_cyan>'codecept run ...'</light_cyan>.
   <light_cyan>shell</light_cyan>          Opens a shell in the `slic` container.
   <light_cyan>start</light_cyan>          Starts containers in the stack.
@@ -100,7 +101,6 @@ $help_advanced_message_template = <<< HELP
   <light_cyan>ps</light_cyan>             Lists the containers part of {$cli_name} stack.
   <light_cyan>php-version</light_cyan>    Sets or shows the PHP version of the stack.
   <light_cyan>reset</light_cyan>          Resets {$cli_name} to the initial state as configured by the env files.
-  <light_cyan>restart</light_cyan>        Restarts a container part of the stack.
   <light_cyan>site-cli</light_cyan>       Waits for WordPress to be correctly set up to run a wp-cli command in the stack.
   <light_cyan>ssh</light_cyan>            Opens a shell in the `slic` container; alias of `shell`.
   <light_cyan>target</light_cyan>         Runs a set of commands on a set of targets.
