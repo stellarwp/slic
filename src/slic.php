@@ -412,12 +412,8 @@ function restart_service( $service, $pretty_name = null, $hard = false ) {
  * Restarts all services in the stack.
  */
 function restart_all_services() {
-	$services = get_services();
-	foreach ( $services as $service ) {
-		restart_service( $service );
-	}
-
-	services_callback_stack()->call();
+	command_stop();
+	start_all_services();
 }
 
 /**
