@@ -359,6 +359,7 @@ function ensure_wordpress_installed(): bool {
 	        '$_POST["admin_password2"] = "password"; ' .
 	        '$_POST["admin_email"] = "admin@wordpress.test"; ' .
 	        '$_POST["blog_public"] = 1; ' .
+	        'function wp_mail(){ return true; } ' . // It's pluggable, this will mute it.
 	        'include "' . $install_file . '";';
 
 	$command = escapeshellarg( PHP_BINARY ) . ' -r \'' . $code . '\'';
