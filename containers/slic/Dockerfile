@@ -33,7 +33,8 @@ RUN chmod a+x /usr/local/bin/xdebug-on && \
 
 # Make the PHP configuration directory recursively readable and writable to allow all users to activate and deactivate XDebug.
 RUN chmod -R a+rwx /usr/local/etc/php/conf.d
-RUN echo "xdebug.mode=develop,debug" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini#A command that will keep the container running and alive.
+RUN echo "xdebug.mode=develop,debug" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini && \
+    echo "xdebug.start_with_request=yes" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
 RUN xdebug-off
 
 # Install Composer 1 and 2 from the respective images and make them world-executable.
