@@ -3,7 +3,7 @@ FROM composer:1 AS composer1
 FROM composer:2 AS composer2
 
 # Use a fixed PHP version as base!
-FROM php:7.4.29
+FROM php:7.4.33
 
 # Install and make wp-cli binary available and executable by all users.
 ADD https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar /usr/local/bin/wp
