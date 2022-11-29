@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.1.5] - 2022-11-14
 
 * Fix - Enable and disable XDebug correctly in WorPress and slic container removing restart requirement.
+* Fix - Avoid issues with missing `/usr/sbin/sendmail` during WordPress installation. [#134]
 
 ## [1.1.4] - 2022-10-27
 
