@@ -46,8 +46,8 @@ jobs:
             type=ref,event=tag
             type=semver,pattern={{raw}}
 
-      - name: Change Dockerfile to php8.0
-        run: "sed -i 's/7.4/8.1/g' containers/slic/Dockerfile"
+      - name: Change Dockerfile to php8.1
+        run: "sed -i 's/7.4/8.1/g' containers/wordpress/Dockerfile"
 
       - name: Build and push slic-wordpress Docker image
         uses: docker/build-push-action@v3.1.1

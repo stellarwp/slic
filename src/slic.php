@@ -959,31 +959,29 @@ function slic_handle_xdebug( callable $args ) {
 	}
 
 	$value = 'on' === $toggle ? 1 : 0;
-	echo 'XDebug status: ' . ( $value ? light_cyan( 'on' ) : magenta( 'off' ) );
+	echo 'XDebug status: ' . ( $value ? light_cyan( 'on' ) : magenta( 'off' ) ) . PHP_EOL;
 
-	if ( $value === (int) getenv( 'XDE' ) ) {
-		return;
+	if ( $value !== (int) getenv( 'XDE' ) ) {
+		$xdebug_env_vars = [ 'XDE' => $value, 'XDEBUG_DISABLE' => 1 === $value ? 0 : 1 ];
+		write_env_file( $run_settings_file, $xdebug_env_vars, true );
 	}
 
-	$xdebug_env_vars = [ 'XDE' => $value, 'XDEBUG_DISABLE' => 1 === $value ? 0 : 1 ];
-	write_env_file( $run_settings_file, $xdebug_env_vars, true );
-
-	echo PHP_EOL . PHP_EOL;
-
-	$restart_services = ask(
-		'Would you like to restart the WordPress (NOT the database) services now?',
-		'yes'
-	);
-	if ( $restart_services ) {
-		foreach ( $xdebug_env_vars as $key => $value ) {
-			putenv( "{$key}={$value}" );
+	foreach ( [ 'slic', 'wordpress' ] as $service ) {
+		if ( ! service_running( $service ) ) {
+			continue;
 		}
-		// Call for a hard restart to make sure the web-server will restart its php-fpm connection.
-		restart_php_services( true );
-	} else {
-		echo colorize(
-			PHP_EOL . PHP_EOL . "Tear down the stack with <light_cyan>down</light_cyan> and restar it to apply the new settings!" . PHP_EOL
-		);
+
+		echo PHP_EOL;
+
+		if ( $value === 1 ) {
+			// Enable XDebug in the service.
+			echo colorize( "Enabling XDebug in <light_cyan>{$service}</light_cyan>..." );
+			slic_realtime()( [ 'exec', $service, 'xdebug-on' ] );
+		} else {
+			echo colorize( "Disabling XDebug in <light_cyan>{$service}</light_cyan>..." );
+			// Disable XDebug in the service.
+			slic_realtime()( [ 'exec', $service, 'xdebug-off' ] );
+		}
 	}
 }
 
