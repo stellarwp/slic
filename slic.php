@@ -1,23 +1,6 @@
 <?php
 // Requires the function files we might need.
-require_once __DIR__ . '/src/utils.php';
-require_once __DIR__ . '/src/scaffold.php';
-require_once __DIR__ . '/src/slic.php';
-require_once __DIR__ . '/src/docker.php';
-require_once __DIR__ . '/src/notify.php';
-require_once __DIR__ . '/src/plugins.php';
-require_once __DIR__ . '/src/themes.php';
-require_once __DIR__ . '/src/scripts.php';
-require_once __DIR__ . '/src/shell.php';
-require_once __DIR__ . '/src/wordpress.php';
-require_once __DIR__ . '/src/services.php';
-require_once __DIR__ . '/src/database.php';
-require_once __DIR__ . '/src/project.php';
-require_once __DIR__ . '/src/env.php';
-require_once __DIR__ . '/src/codeception.php';
-require_once __DIR__ . '/src/commands.php';
-
-require_once __DIR__ . '/src/classes/Callback_Stack.php';
+require_once __DIR__ .'/src/load.php';
 
 use function StellarWP\Slic\args;
 use function StellarWP\Slic\cli_header;
@@ -153,26 +136,13 @@ switch ( $subcommand ) {
 		maybe_prompt_for_repo_update();
 		maybe_prompt_for_stack_update();
 		break;
-	case 'cc':
-	case 'restart':
-	case 'run':
-	case 'serve':
-	case 'shell':
-	case 'site-cli':
-	case 'ssh':
-	case 'up':
-        // ensure_wordpress_files();
-        // ensure_wordpress_configured();
-		// Do not break, let the command be loaded then.
 	case 'airplane-mode':
-	case 'cache':
-	case 'cli':
-	case 'wp': // Alias of the `cli` command.
-        // ensure_wordpress_installed();
-		// Do not break, let the command be loaded then.
 	case 'build-prompt':
 	case 'build-stack':
 	case 'build-subdir':
+	case 'cache':
+	case 'cc':
+	case 'cli':
 	case 'composer':
 	case 'composer-cache':
 	case 'config':
@@ -188,18 +158,27 @@ switch ( $subcommand ) {
 	case 'mysql':
 	case 'npm':
 	case 'npm_lts':
+	case 'object-cache-dropin';
+	case 'php-version':
 	case 'phpcbf':
 	case 'phpcs':
 	case 'ps':
-	case 'php-version':
 	case 'reset':
+	case 'restart':
+	case 'run':
+	case 'serve':
+	case 'shell':
+	case 'site-cli':
+	case 'ssh':
 	case 'start':
 	case 'stop':
 	case 'target':
+	case 'up':
 	case 'update':
 	case 'upgrade':
 	case 'use':
 	case 'using':
+	case 'wp': // Alias of the `cli` command.
 	case 'xdebug':
         if ( isset( $aliases[ $subcommand ] ) ) {
             $subcommand = $aliases[ $subcommand ];

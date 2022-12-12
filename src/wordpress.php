@@ -454,3 +454,12 @@ function ensure_wordpress_ready( string $version = null ): bool {
 
 	return true;
 }
+
+/**
+ * Returns the path to the WordPress content directory.
+ *
+ * @return string The path to the WordPress content directory.
+ */
+function wordpress_content_dir(): string {
+	return getenv( 'SLIC_WP_DIR' ) . '/wp-content';
+}

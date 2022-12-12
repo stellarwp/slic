@@ -1,0 +1,36 @@
+{
+  "name": "the-events-calendar/slic",
+  "description": "A containerized and consistent environment for running automated tests.",
+  "type": "library",
+  "license": "GPL-3.0+",
+  "config": {
+    "platform": {
+      "php": "7.4.33"
+    }
+  },
+  "autoload": {
+    "psr-4": {
+      "TEC\\Slic\\": "src/"
+    }
+  },
+  "authors": [
+    {
+      "name": "The Events Calendar Team",
+      "email": "info@theeventscalendar.com"
+    }
+  ],
+  "minimum-stability": "stable",
+  "require-dev": {
+    "phpunit/phpunit": "^9.5",
+    "spatie/phpunit-snapshot-assertions": "^4.2"
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "StellarWP\\Slic\\": "src/classes",
+      "StellarWP\\Slic\\Tests\\": "tests/_support"
+    },
+    "files": [
+      "src/load.php"
+    ]
+  }
+}

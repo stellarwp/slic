@@ -15,6 +15,18 @@ Wooo! There aren't any! We do suggest adding `slic` to your `$PATH`, though. To 
 export PATH=$PATH:path/to/slic
 ```
 
+## Testing
+
+We use [PHPUnit](https://phpunit.de/) for testing, but require [the `uopz` extension]() to run the tests.  
+The testing environment for slic is Docker-based, so you'll need to have Docker installed and running.
+Furthermore, `slic` tests use [PhpUnit](https://phpunit.de/ "PHPUnit – The PHP Testing Framework") and [Composer](https://getcomposer.org/).
+
+Build the testing environment locally using the `make build` command.
+
+Run the tests using the `make test` command.
+
+```bash
+
 ## Releases
 
 When we prep a release, we follow these steps:
