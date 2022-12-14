@@ -125,7 +125,7 @@ class Object_Cache {
 	}
 
 	private function put_dropin(): void {
-		if ( ! copy( __DIR__ . '/__dropins__/object-cache.php', $this->content_dir . '/object-cache.php' ) ) {
+		if ( ! copy( __DIR__ . '/dropins/object-cache.php', $this->content_dir . '/object-cache.php' ) ) {
 			throw new \RuntimeException( "Could not copy the object-cache.php drop-in to the $this->content_dir directory.", self::FAILED_COPY );
 		}
 	}
