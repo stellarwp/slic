@@ -6,6 +6,10 @@
  */
 
 class Slic_Object_Cache {
+	public const INVALID_KEY = 'invalid-key';
+
+	private array $violations = [];
+
 	/*
 	 * Backwards compatibility to allow reading the cache properties.
 	 */
@@ -57,7 +61,9 @@ class Slic_Object_Cache {
 		}
 
 		if ( ! $this->is_valid_cache_key( $key ) ) {
-			$this->log_violation( 'invalid-key', $key, $this->trace() );
+			$this->log_violation( self::INVALID_KEY, $key, $this->trace() );
+
+			return false;
 		}
 	}
 
@@ -112,6 +118,20 @@ class Slic_Object_Cache {
 	private function is_valid_cache_key( $key ): bool {
 		return ! empty( $key )
 		       && ( is_int( $key ) || is_string( $key ) );
+	}
+
+	private function log_violation( string $type, $data, array $trace ): void {
+		$this->violations[] = [
+			'type'  => $type,
+			'data'  => $data,
+			'trace' => $trace,
+		];
+	}
+
+	public function get_violations( string $type = null ): array {
+		return $type === null ?
+			$this->violations
+			: array_filter( $this->violations, static fn( $violation ) => $violation['type'] === $type );
 	}
 }
 
