@@ -236,16 +236,13 @@ function check_status_or( callable $process, callable $else = null ) {
  */
 function parallel_process( $pool ) {
 	$process_children = [];
-	// Start on the upper end of hte subnets to try and avoid overlapping pool issues.
-	$subnet_pool      = array_rand( array_flip( range( 220, 255 ) ), count( $pool ) );
-	$pool_with_subnet = array_combine( $subnet_pool, $pool );
 
 	/*
 	 * Disable parallel processing temporarily to avoid some overlapping pool issues.
 	 */
 	if ( function_exists( 'pcntl_fork' ) ) {
 		// If we're on a OS that does support process control, then fork.
-		foreach ( $pool_with_subnet as $subnet => $item ) {
+		foreach ( $pool as $item ) {
 			$pid = pcntl_fork();
 			if ( $pid === - 1 ) {
 				echo magenta( "Unable to fork processes." . PHP_EOL );
@@ -253,7 +250,7 @@ function parallel_process( $pool ) {
 			}
 
 			if ( 0 === $pid ) {
-				$item['process']( $item['target'], $subnet );
+				$item['process']( $item['target'] );
 			} else {
 				$process_children[] = $pid;
 			}
