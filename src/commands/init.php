@@ -44,6 +44,11 @@ if ( empty( $plugin ) ) {
 
 clone_plugin( $plugin, $branch );
 
+if ( strpos( $plugin, '/' ) !== false ) {
+	// Normalize the plugin name to take into account the fact it might have been supplied using the `org/repo` format.
+	$plugin = explode( '/', $plugin, 2 )[1];
+}
+
 // Since the `init` command is also the one that will rebuild assets, we need to switch branch if required.
 if ( null !== $branch ) {
 	switch_plugin_branch( $branch, $plugin );
@@ -59,7 +64,7 @@ if ( getenv( 'SLIC_BUILD_PROMPT' ) ) {
 		slic_switch_target( $plugin );
 	}
 
-	$command_pool = maybe_build_install_command_pool( 'composer', $plugin, [ 'common' ] );
+	$command_pool = maybe_build_install_command_pool( composer_bin(), $plugin, [ 'common' ] );
 	$command_pool = array_merge( $command_pool, maybe_build_install_command_pool( 'npm', $plugin, [ 'common' ] ) );
 	execute_command_pool( $command_pool );
 
