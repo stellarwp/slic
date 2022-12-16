@@ -129,6 +129,8 @@ services:
       COLUMNS: "${COLUMNS:-80}"
       # Explicitly set the env var that will define the Function Mocker cache path: it will be picked up by the config file.
       FUNCTION_MOCKER_CACHE_PATH: "/cache"
+      # Share the SSH auth socket  with the container so that we can use the host machine's SSH keys.
+      SSH_AUTH_SOCK: "${DOCKER_RUN_SSH_AUTH_SOCK}"
     volumes:
       # Paths are relative to the directory that contains this file, NOT the current working directory.
       # Share the WordPress core installation files in the `_wordpress` directory.
