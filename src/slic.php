@@ -515,7 +515,13 @@ function clone_plugin( $plugin, $branch = null ) {
 
 	echo "Cloning {$plugin}..." . PHP_EOL;
 
-	$repository = git_handle() . '/' . escapeshellcmd( $plugin );
+	if ( strpos( $plugin, '/' ) === false ) {
+		// The repository was specified as just a name, e.g. `the-events-calendar`.
+		$repository = git_handle() . '/' . escapeshellcmd( $plugin );
+	} else {
+		// The repository was specified to include the organization, e.g. `the-events-calendar/the-events-calendar`.
+		$repository = escapeshellcmd( $plugin );
+	}
 
 	$clone_command = sprintf(
 		'git clone %s --recursive git@%s:%s.git %s',
