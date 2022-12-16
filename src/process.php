@@ -229,12 +229,11 @@ function check_status_or( callable $process, callable $else = null ) {
  * If not the processes will be executed serially and the first failure will stop the serial execution of the
  * processes.
  *
- * @param array $items Values with which to loop over to indicate process distinction.
- * @param \Closure $command_process The closure to execute as a distinct process.
+ * @param array $pool Values with which to loop over to indicate process distinction.
  *
  * @return int The combined process status value of all child processes.
  */
-function parallel_process( $pool ) {
+function parallel_process( array $pool ): int {
 	$process_children = [];
 
 	/*
@@ -250,8 +249,10 @@ function parallel_process( $pool ) {
 			}
 
 			if ( 0 === $pid ) {
+				// Child process.
 				$item['process']( $item['target'] );
 			} else {
+				// Parent process.
 				$process_children[] = $pid;
 			}
 		}

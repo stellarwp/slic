@@ -1109,7 +1109,7 @@ function build_command_pool( $base_command, array $command, array $sub_directori
 	}
 
 	// Build the command process.
-	$command_process = static function ( $target, $subnet = '' ) use ( $using, $using_alias, $base_command, $command, $sub_directories ) {
+	$command_process = static function ( $target ) use ( $using, $using_alias, $base_command, $command, $sub_directories ) {
 		$target_name = $using_alias ?: $target;
 
 		// If the command is wrapped in a bash -c "", then let's not spit out the bash -c "" part.
@@ -1134,9 +1134,6 @@ function build_command_pool( $base_command, array $command, array $sub_directori
 			$prefix          = "{$friendly_base_command}:" . yellow( $sub_target_name );
 		}
 
-		putenv( "SLIC_TEST_SUBNET={$subnet}" );
-
-		$network_name = "slic{$subnet}";
 		$status       = slic_passive()( array_merge( [
 			'exec',
 			'-T',
@@ -1144,22 +1141,9 @@ function build_command_pool( $base_command, array $command, array $sub_directori
 			sprintf( '"%s:%s"', getenv( 'SLIC_UID' ), getenv( 'SLIC_GID' ) ),
 			'--workdir',
 			escapeshellarg( get_project_container_path() ),
-			$network_name,
+			'slic',
 			$base_command
 		], $command ), $prefix );
-
-		if ( ! empty( $subnet ) ) {
-			do {
-				/*
-				 * Some containers might take time to terminate after yielding control back to the Docker daemon (zombies).
-				 * If we try to remote the network when zombie containers are attached to it, we'll get the following error:
-				 * "error while removing network: network <network_name> id <id> has active endpoints".
-				 * When this happens, the return status of the command will be a `1`.
-				 * We iterate until the status is a `0`.
-				 */
-				$network_rm_status = (int) process( "docker network rm {$network_name}_slic {$network_name}_default" )( 'status' );
-			} while ( $network_rm_status !== 0 );
-		}
 
 		if ( 'target' !== $target ) {
 			slic_switch_target( $using );
