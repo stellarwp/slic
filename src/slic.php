@@ -496,9 +496,8 @@ function slic_content_type_dir( $content_type = 'plugins', $path = '' ) {
  * @param string $branch The specific branch to clone. If not specified, then the default plugin repository branch
  *                       will be cloned.
  */
-function clone_plugin( $plugin, $branch = null ) {
+function clone_plugin( $plugin, $branch = null ){
 	$plugin_dir  = slic_plugins_dir();
-	$plugin_path = slic_plugins_dir( $plugin );
 
 	if ( ! file_exists( $plugin_dir ) ) {
 		echo "Creating the plugins directory..." . PHP_EOL;
@@ -508,13 +507,6 @@ function clone_plugin( $plugin, $branch = null ) {
 		}
 	}
 
-	// If the plugin path already exists, don't bother cloning.
-	if ( file_exists( $plugin_path ) ) {
-		return;
-	}
-
-	echo "Cloning {$plugin}..." . PHP_EOL;
-
 	if ( strpos( $plugin, '/' ) === false ) {
 		// The repository was specified as just a name, e.g. `the-events-calendar`.
 		$repository = git_handle() . '/' . escapeshellcmd( $plugin );
@@ -522,6 +514,17 @@ function clone_plugin( $plugin, $branch = null ) {
 		// The repository was specified to include the organization, e.g. `the-events-calendar/the-events-calendar`.
 		$repository = escapeshellcmd( $plugin );
 	}
+
+	// The plugin path should not include the org name, just the repo name.
+	$plugin_name = explode( '/', $repository, 2 )[1];
+	$plugin_path = slic_plugins_dir( $plugin_name );
+
+	// If the plugin path already exists, don't bother cloning.
+	if ( file_exists( $plugin_path ) ) {
+		return;
+	}
+
+	echo "Cloning {$plugin}..." . PHP_EOL;
 
 	$clone_command = sprintf(
 		'git clone %s --recursive git@%s:%s.git %s',
@@ -1632,4 +1635,18 @@ function cache( $path = '/', $create = true ) {
 	}
 
 	return $full_path;
+}
+
+/**
+ * Depending on the current Composer version, returns the name of the Composer binary.
+ *
+ * @since TBD
+ *
+ * @return string The name of the Composer binary.
+ */
+function composer_bin(): string {
+	$default_version = 1;
+	$current_version = getenv( 'SLIC_COMPOSER_VERSION' ) ?? $default_version;
+
+	return (int) $current_version === 1 ? 'composer1' : 'composer';
 }
