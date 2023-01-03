@@ -70,7 +70,7 @@ function load_env_file( $env_file ) {
 	$env_lines = read_env_file( $env_file );
 
 	foreach ( $env_lines as $key => $value ) {
-		putenv( "${key}={$value}" );
+		putenv( "{$key}={$value}" );
 	}
 }
 
@@ -83,7 +83,7 @@ function load_env_file( $env_file ) {
  */
 function read_env_file( $env_file ) {
 	if ( ! file_exists( $env_file ) ) {
-		echo PHP_EOL . "env file ${env_file} does not exist.";
+		echo PHP_EOL . "env file {$env_file} does not exist.";
 		exit( 1 );
 	}
 
