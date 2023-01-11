@@ -178,7 +178,7 @@ function ensure_valid_target( $target, $exit = true ) {
 		$target = get_cwd_dir_name();
 
 		if ( ! in_array( $target, $targets, true ) ) {
-			echo magenta( "Detecting the current directory of '{$target}' as the target was not valid." . PHP_EOL . "Available targets are: " . PHP_EOL . "${targets_str}" . PHP_EOL );
+			echo magenta( "Detecting the current directory of '{$target}' as the target was not valid." . PHP_EOL . "Available targets are: " . PHP_EOL . "{$targets_str}" . PHP_EOL );
 			if ( $exit ) {
 				exit( 1 );
 			}
@@ -188,7 +188,7 @@ function ensure_valid_target( $target, $exit = true ) {
 	}
 
 	if ( ! in_array( $target, $targets, true ) ) {
-		echo magenta( "'{$target}' is not a valid target; available targets are:" . PHP_EOL . "${targets_str}" . PHP_EOL );
+		echo magenta( "'{$target}' is not a valid target; available targets are:" . PHP_EOL . "{$targets_str}" . PHP_EOL );
 		if ( $exit ) {
 			exit( 1 );
 		}
