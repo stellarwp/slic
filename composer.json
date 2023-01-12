@@ -30,7 +30,8 @@
       "StellarWP\\Slic\\Tests\\": "tests/_support"
     },
     "files": [
-      "src/load.php"
+      "src/load.php",
+      "tests/_bootstrap.php"
     ]
   }
 }
