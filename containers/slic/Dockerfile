@@ -46,7 +46,7 @@ RUN chmod a+x /usr/local/bin/composer1 && chmod a+x /usr/local/bin/composer
 
 # Install nvm.
 ENV NODE_VERSION=${NODE_VERSION}
-ENV NVM_VER=${NODE_VERSION}
+ENV NVM_VER=${NVM_VERSION}
 ENV NVM_DIR=/usr/local/bin/.nvm
 RUN mkdir /usr/local/bin/.nvm
 RUN curl -o- "https://raw.githubusercontent.com/nvm-sh/nvm/${NVM_VER}/install.sh" | bash
