@@ -2,8 +2,10 @@
 FROM composer:1 AS composer1
 FROM composer:2 AS composer2
 
-# Use a fixed PHP version as base!
-FROM php:7.4.33
+ARG NODE_VERSION=16.6.1
+ARG NVM_VERSION=v0.39.3
+ARG PHP_VERSION=7.4.33
+FROM php:${PHP_VERSION}
 
 # Install and make wp-cli binary available and executable by all users.
 ADD https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar /usr/local/bin/wp
@@ -43,10 +45,11 @@ COPY --from=composer2 /usr/bin/composer /usr/local/bin/composer
 RUN chmod a+x /usr/local/bin/composer1 && chmod a+x /usr/local/bin/composer
 
 # Install nvm.
-ENV NODE_VERSION=16.6.1
+ENV NODE_VERSION=${NODE_VERSION}
+ENV NVM_VER=${NODE_VERSION}
 ENV NVM_DIR=/usr/local/bin/.nvm
 RUN mkdir /usr/local/bin/.nvm
-RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
+RUN curl -o- "https://raw.githubusercontent.com/nvm-sh/nvm/${NVM_VER}/install.sh" | bash
 RUN bash -c '. $NVM_DIR/nvm.sh && nvm install $NODE_VERSION'
 RUN bash -c '. $NVM_DIR/nvm.sh && nvm alias default $NODE_VERSION'
 RUN bash -c '. $NVM_DIR/nvm.sh && nvm use default'
