@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.7] - 2023-02-20
 
+* Change - The WordPress PHP7.3 image is only available in for WordPress 5.9.x.
 * Change - Convert docker image builds into single matrix GitHub workflows.
 * Added  - Add a PHP 8.2 slic/WordPress docker image build.
 * Change - Use docker build arguments when publishing docker containers.
