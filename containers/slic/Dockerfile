@@ -1,11 +1,15 @@
+ARG PHP_VERSION=7.4.33
+
 # Source Composer 1 and 2 from the respective images, multi-layer builds.
 FROM composer:1 AS composer1
 FROM composer:2 AS composer2
 
+FROM php:${PHP_VERSION}
+
 ARG NODE_VERSION=16.6.1
 ARG NVM_VERSION=v0.39.3
-ARG PHP_VERSION=7.4.33
-FROM php:${PHP_VERSION}
+
+SHELL ["/bin/bash", "-eou", "pipefail", "-c"]
 
 # Install and make wp-cli binary available and executable by all users.
 ADD https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar /usr/local/bin/wp
@@ -17,7 +21,7 @@ RUN chmod a+x /usr/local/bin/install-php-extensions && \
     install-php-extensions gd xdebug pdo pdo_mysql mysqli zip uopz pcntl sockets intl
 
 # Install some more packages required by wp-cli and Composer.
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get upgrade -yqq && apt-get install -yqq --no-install-recommends --show-progress \
     default-mysql-client curl git zip unzip iproute2 \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
@@ -39,23 +43,23 @@ RUN echo "xdebug.mode=develop,debug" >> /usr/local/etc/php/conf.d/docker-php-ext
     echo "xdebug.start_with_request=yes" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
 RUN xdebug-off
 
-# Install Composer 1 and 2 from the respective images and make them world-executable.
-COPY --from=composer1 /usr/bin/composer /usr/local/bin/composer1
-COPY --from=composer2 /usr/bin/composer /usr/local/bin/composer
-RUN chmod a+x /usr/local/bin/composer1 && chmod a+x /usr/local/bin/composer
-
 # Install nvm.
 ENV NODE_VERSION=${NODE_VERSION}
-ENV NVM_VER=${NVM_VERSION}
+ENV NVM_VERSION=${NVM_VERSION}
 ENV NVM_DIR=/usr/local/bin/.nvm
 RUN mkdir /usr/local/bin/.nvm
-RUN curl -o- "https://raw.githubusercontent.com/nvm-sh/nvm/${NVM_VER}/install.sh" | bash
+RUN curl https://raw.githubusercontent.com/nvm-sh/nvm/${NVM_VERSION}/install.sh | bash
 RUN bash -c '. $NVM_DIR/nvm.sh && nvm install $NODE_VERSION'
 RUN bash -c '. $NVM_DIR/nvm.sh && nvm alias default $NODE_VERSION'
 RUN bash -c '. $NVM_DIR/nvm.sh && nvm use default'
 
 ENV PATH $NVM_DIR/versions/node/v$NODE_VERSION/bin:$NVM_DIR:$PATH
 RUN chmod a+x $NVM_DIR/nvm.sh
+
+# Install Composer 1 and 2 from the respective images and make them world-executable.
+COPY --from=composer1 /usr/bin/composer /usr/local/bin/composer1
+COPY --from=composer2 /usr/bin/composer /usr/local/bin/composer
+RUN chmod a+x /usr/local/bin/composer1 && chmod a+x /usr/local/bin/composer
 
 # Create a `slic` user and group fixuid will use.
 RUN [ $(getent group 1000) ] || addgroup --gid 1000 slic && \
