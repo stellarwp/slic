@@ -58,6 +58,6 @@ jobs:
           tags: |
             ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args:
-            - PHP_VERSION=${{ matrix.php_version }}
-            - WP_VERSION=${{ matrix.wp_version }}
+          build-args: |
+            PHP_VERSION=${{ matrix.php_version }}
+            WP_VERSION=${{ matrix.wp_version }}
