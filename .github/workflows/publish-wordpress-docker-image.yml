@@ -9,7 +9,7 @@ on:
     types: [published]
 
 jobs:
-  publish-image:
+  publish-wordpress-image:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -54,7 +54,7 @@ jobs:
             type=ref,event=tag
             type=semver,pattern={{raw}}
 
-      - name: Build and push slic-wordpress Docker image
+      - name: Build and push Docker image
         uses: docker/build-push-action@v3.3.1
         continue-on-error: true
         with:
