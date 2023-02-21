@@ -67,3 +67,5 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args:
             - PHP_VERSION=${{ matrix.php_version }}
+            - NODE_VERSION=16.6.1
+            - NVM_VERSION=v0.39.3
