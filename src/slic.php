@@ -14,7 +14,7 @@ use function StellarWP\Slic\Env\env_var_backup;
  * @param string $cli_name CLI command name.
  * @param boolean $full Should the full heading be returned?
  * @param string|null $extra Extra message to add to the header.
- * @return void
+ * @return string
  */
 function cli_header( $cli_name, $full = false, $extra = null ) {
 	$header_parts = [
