@@ -1,4 +1,4 @@
-name: Publish slic-wordpress-php8.1 Docker image
+name: Publish slic-php docker image
 
 on:
   push:
@@ -8,15 +8,25 @@ on:
   release:
     types: [published]
 
-env:
-  IMAGE_NAME: ${{ github.repository }}-wordpress-php8.1
-
 jobs:
   publish-image:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
+    strategy:
+      matrix:
+        include:
+          - image_suffix: '7.3'
+            php_version: '7.3.33'
+          - image_suffix: '7.4'
+            php_version: '7.4.33'
+          - image_suffix: '8.0'
+            php_version: '8.0.28'
+          - image_suffix: '8.1'
+            php_version: '8.1.16'
+          - image_suffix: '8.2'
+            php_version: '8.2.3'
 
     steps:
       - name: Checkout repository
@@ -35,28 +45,27 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata (tags, labels) for Docker
+      - name: Extract metadata for image
         id: meta
-        uses: docker/metadata-action@v4.0.1
+        uses: docker/metadata-action@v4.3.0
         with:
-          images: ghcr.io/${{ env.IMAGE_NAME }}
+          images: ghcr.io/${{ github.repository }}-php${{ matrix.image_suffix }}
           tags: |
             type=edge,branch=main
             type=ref,event=branch
             type=ref,event=tag
             type=semver,pattern={{raw}}
 
-      - name: Change Dockerfile to php8.1
-        run: "sed -i 's/7.4/8.1/g' containers/wordpress/Dockerfile"
-
-      - name: Build and push slic-wordpress Docker image
-        uses: docker/build-push-action@v3.1.1
-        continue-on-error: true
+      - name: Build and push image
+        uses: docker/build-push-action@v3.3.1
         with:
-          context: containers/wordpress
-          file: containers/wordpress/Dockerfile
+          context: containers/slic
+          file: containers/slic/Dockerfile
           push: true
-          pull: true
           tags: |
             ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args:
+            - PHP_VERSION=${{ matrix.php_version }}
+            - NODE_VERSION=16.6.1
+            - NVM_VERSION=v0.39.3

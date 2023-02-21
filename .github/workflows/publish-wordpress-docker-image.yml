@@ -1,4 +1,4 @@
-name: Publish slic-php7.3 docker image
+name: Publish slic-wordpress-php Docker image
 
 on:
   push:
@@ -8,15 +8,16 @@ on:
   release:
     types: [published]
 
-env:
-  IMAGE_NAME: ${{ github.repository }}-php7.3
-
 jobs:
   publish-image:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
+    strategy:
+      matrix:
+        wp_version: [ '6.0.2' ]
+        php_version: [ '7.3', '7.4', '8.0', '8.1', '8.2' ]
 
     steps:
       - name: Checkout repository
@@ -35,26 +36,28 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata for image
+      - name: Extract metadata (tags, labels) for Docker
         id: meta
-        uses: docker/metadata-action@v4.0.1
+        uses: docker/metadata-action@v4.3.0
         with:
-          images: ghcr.io/${{ env.IMAGE_NAME }}
+          images: ghcr.io/${{ github.repository }}-wordpress-php${{ matrix.php_version }}
           tags: |
             type=edge,branch=main
             type=ref,event=branch
             type=ref,event=tag
             type=semver,pattern={{raw}}
 
-      - name: Change Dockerfile to php8.0
-        run: "sed -i 's/7.4.29/7.3.33/g' containers/slic/Dockerfile"
-
-      - name: Build and push image
-        uses: docker/build-push-action@v3.1.1
+      - name: Build and push slic-wordpress Docker image
+        uses: docker/build-push-action@v3.3.1
+        continue-on-error: true
         with:
-          context: containers/slic
-          file: containers/slic/Dockerfile
+          context: containers/wordpress
+          file: containers/wordpress/Dockerfile
           push: true
+          pull: true
           tags: |
             ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args:
+            - PHP_VERSION=${{ matrix.php_version }}
+            - WP_VERSION=${{ matrix.wp_version }}
