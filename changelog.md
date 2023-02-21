@@ -4,11 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.1.7] - 2023-02-20
+## [1.1.7] - 2023-02-21
 
 * Change - The WordPress PHP7.3 image is only available in for WordPress 5.9.x.
 * Change - Convert docker image builds into single matrix GitHub workflows.
-* Added  - Add a PHP 8.2 slic/WordPress docker image build.
+* Added  - Add a PHP 8.2 slic/WordPress docker image build. **PHP8.2 is using WordPress version 6.1.1**.
 * Change - Use docker build arguments when publishing docker containers.
 * Change - Bump action docker/build-push-action@v3.1.1 to docker/build-push-action@v3.3.1
 * Change - Bump action docker/metadata-action@v4.0.1 to docker/metadata-action@v4.3.0
