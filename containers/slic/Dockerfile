@@ -48,7 +48,7 @@ ENV NODE_VERSION=${NODE_VERSION}
 ENV NVM_VERSION=${NVM_VERSION}
 ENV NVM_DIR=/usr/local/bin/.nvm
 RUN mkdir /usr/local/bin/.nvm
-RUN curl https://raw.githubusercontent.com/nvm-sh/nvm/${NVM_VERSION}/install.sh | bash
+RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/${NVM_VERSION}/install.sh | bash
 RUN bash -c '. $NVM_DIR/nvm.sh && nvm install $NODE_VERSION'
 RUN bash -c '. $NVM_DIR/nvm.sh && nvm alias default $NODE_VERSION'
 RUN bash -c '. $NVM_DIR/nvm.sh && nvm use default'
