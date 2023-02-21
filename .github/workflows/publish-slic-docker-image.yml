@@ -16,6 +16,7 @@ jobs:
       packages: write
     strategy:
       matrix:
+        # The php_version is the docker tag from https://hub.docker.com/_/php/tags
         include:
           - image_suffix: '7.3'
             php_version: '7.3.33'
