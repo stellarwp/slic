@@ -54,6 +54,8 @@ jobs:
             type=ref,event=tag
             type=semver,pattern={{raw}}
 
+      - uses: docker/setup-buildx-action@v2
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v3.3.1
         continue-on-error: true
