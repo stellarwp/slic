@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.2.0] - 2023-02-22
 
+* Change - Display composer version in `slic info`.
 * Added - The `--skip-rebuild` option to the `slic php-version set` command to allow setting the PHP version without rebuilding the stack in order to speed up CI runs. Example: `slic php-version set 8.1 --skip-rebuild`
 * Fix - `slic php-version help` will now properly show command help text.
 * Fix - `slic php-version` will now properly use the default PHP version if the `SLIC_PHP_VERSION` env var is not set.
