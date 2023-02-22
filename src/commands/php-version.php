@@ -2,6 +2,11 @@
 
 namespace StellarWP\Slic;
 
+/**
+ * @var \Closure $args
+ * @var bool     $is_help  Whether we're handling an `help` request on this command or not.
+ * @var string   $cli_name The current name of the main CLI command, e.g. `slic`.
+ */
 if ( $is_help ) {
 	$help = <<< HELP
 	SUMMARY:
@@ -12,23 +17,30 @@ if ( $is_help ) {
 
 	USAGE:
 
-		<yellow>{$cli_name} php-version [set <version>|reset]</yellow>
+		<yellow>$cli_name php-version [set <version>|reset] [--skip-rebuild]</yellow>
 
 	EXAMPLES:
 
-		<light_cyan>{$cli_name} php-version</light_cyan>
+		<light_cyan>$cli_name php-version</light_cyan>
 		Displays the current PHP version in use.
 
-		<light_cyan>{$cli_name} php-version set 8.1</light_cyan>
+		<light_cyan>$cli_name php-version set 8.1</light_cyan>
 		Sets the PHP version to 8.1.
+
+		<light_cyan>$cli_name php-version set 8.1 --skip-rebuild</light_cyan>
+		Sets the PHP version to 8.1 and doesn't ask to rebuild the stack.
 	HELP;
+
+    echo colorize( $help );
+    return;
 }
 
 $default_version = '7.4';
-$current_version = getenv( 'SLIC_PHP_VERSION' ) ?? $default_version;
+$current_version = getenv( 'SLIC_PHP_VERSION' ) ?: $default_version;
 
-$command     = $args( '...' );
-$sub_command = $command[0] ?? null;
+$command      = $args( '...' );
+$sub_command  = $command[0] ?? null;
+$skip_rebuild = in_array( '--skip-rebuild', $command, true );
 
 if ( in_array( $sub_command, [ 'set', 'reset' ] ) ) {
 	switch ( $sub_command ) {
@@ -42,12 +54,14 @@ if ( in_array( $sub_command, [ 'set', 'reset' ] ) ) {
 			write_env_file( $run_settings_file, [ 'SLIC_PHP_VERSION' => $version ], true );
 			echo colorize( "PHP version set to $version" . PHP_EOL );
 
-			$confirm = ask( "Do you want to restart the stack now? ", 'yes');
+            if ( ! $skip_rebuild ) {
+                $confirm = ask("Do you want to restart the stack now? ", 'yes');
 
-			if ( $confirm ) {
-				rebuild_stack();
-				update_stack_images();
-			}
+                if ( $confirm ) {
+                    rebuild_stack();
+                    update_stack_images();
+                }
+            }
 
 			exit( 0 );
 		case 'reset':
@@ -59,6 +73,6 @@ if ( in_array( $sub_command, [ 'set', 'reset' ] ) ) {
 	}
 }
 
-echo colorize( "PHP version currently set to <magenta>{$current_version}</magenta>" . PHP_EOL );
+echo colorize( "PHP version currently set to <magenta>$current_version</magenta>" . PHP_EOL );
 
 exit( 0 );
