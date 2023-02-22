@@ -67,8 +67,9 @@ jobs:
           tags: |
             ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          outputs: type=cacheonly
+          cache-from: type=gha,scope=${{ matrix.wp_version }}-${{ matrix.php_version }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.wp_version }}-${{ matrix.php_version }}
           build-args: |
             PHP_VERSION=${{ matrix.php_version }}
             WP_VERSION=${{ matrix.wp_version }}
