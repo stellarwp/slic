@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.2.0] - 2023-02-22
+## [1.2.0] - 2023-02-21
 
 * Change - Display composer version in `slic info`.
 * Added - The `--skip-rebuild` option to the `slic php-version set` command to allow setting the PHP version without rebuilding the stack in order to speed up CI runs. Example: `slic php-version set 8.1 --skip-rebuild`
