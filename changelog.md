@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.2] - 2023-02-24
+
+* Change - use [`tmpfs`](https://docs.docker.com/storage/tmpfs/) for the `db` and `redis` services data directories to improve performance on Linux machines.
+
 ## [1.2.1] - 2023-02-22
 
 * Changed - Add docker build caching using the [GitHub Cache Backend](https://docs.docker.com/build/ci/github-actions/examples/#github-cache) when publishing docker images via GitHub actions.

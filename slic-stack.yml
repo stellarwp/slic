@@ -19,6 +19,8 @@ services:
     environment:
       MYSQL_DATABASE: test
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+    tmpfs:
+      - /var/lib/mysql
 
   redis:
     image: redis
@@ -26,6 +28,8 @@ services:
       slic:
     ports:
       - "${SLIC_REDIS_LOCALHOST_PORT:-8379}:6379"
+    tmpfs:
+      - /data
 
   wordpress:
     image: ghcr.io/stellarwp/slic-wordpress-php${SLIC_PHP_VERSION}:${SLIC_VERSION}
