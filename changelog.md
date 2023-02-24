@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.2.2] - 2023-02-24
 
+* Change - No longer build gd in the slick docker container with AVIF, fixing external dependency on the currently down code.videolan.org, and speeding up builds - [more info](https://github.com/mlocati/docker-php-extension-installer#configuration).
 * Change - use [`tmpfs`](https://docs.docker.com/storage/tmpfs/) for the `db` and `redis` services data directories to improve performance on Linux machines.
 
 ## [1.2.1] - 2023-02-22
