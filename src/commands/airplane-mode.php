@@ -40,7 +40,6 @@ $toggle = args( [ 'toggle' ], $args( '...' ), 0 )( 'toggle', 'on' );
 $activate = $toggle === 'on';
 
 setup_id();
-ensure_service_running( 'slic' );
 ensure_wordpress_ready();
 
 $ensure_airplane_mode_plugin = static function () {

@@ -21,7 +21,7 @@ function ensure_db_service_running() {
 	}
 
 	// Start the service is not already started.
-	$status = slic_passive()( [ 'up', '--detach', 'db' ] );
+	$status = slic_passive()( [ 'up', '--wait', 'db' ] );
 
 	if ( $status !== 0 ) {
 		echo magenta( 'Failed to start or restart the database service; check the output for errors.' );
@@ -134,34 +134,4 @@ function get_db_user() {
  */
 function get_db_password() {
 	return 'password';
-}
-
-/**
- * Starts the stack database service, if required.
- *
- * @return bool Always `true` to indicate the database service was correctly started.
- */
-function ensure_db_service_ready() {
-	setup_slic_env( root() );
-	ensure_db_service_running();
-
-	$attempts = 0;
-	while ( $attempts ++ < 30 ) {
-		debug( "Waiting for database to be ready ..." . PHP_EOL );
-
-		try {
-			$mysqli = get_localhost_db_handle();
-			if ( $mysqli instanceof mysqli ) {
-				debug( "Database ready." . PHP_EOL );
-
-				return true;
-			}
-		} catch ( Exception $e ) {
-			// No-op, just wait.
-		}
-		sleep( 1 );
-	}
-
-	echo magenta( "Database never became available." . PHP_EOL );
-	exit( 1 );
 }

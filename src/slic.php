@@ -422,10 +422,8 @@ function restart_all_services() {
 function start_all_services() {
 	$services = get_services();
 	foreach ( $services as $service ) {
-		ensure_service_running_no_callbacks( $service );
+		ensure_service_running( $service );
 	}
-
-	services_callback_stack()->call();
 }
 
 /**
@@ -1219,7 +1217,6 @@ function execute_command_pool( $pool ) {
  */
 function cli_command( array $command = [], $requirements = false ) {
 	if ( $requirements ) {
-		ensure_service_running( 'slic' );
 		ensure_wordpress_ready();
 	}
 

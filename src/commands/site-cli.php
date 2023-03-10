@@ -30,8 +30,6 @@ if ( $is_help ) {
 }
 
 setup_id();
-
-ensure_services_running( [ 'wordpress', 'slic' ] );
 ensure_wordpress_ready();
 
 $command = $args( '...' );

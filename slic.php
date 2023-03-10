@@ -1,5 +1,7 @@
 <?php
 // Requires the function files we might need.
+require_once __DIR__ . '/src/classes/Cache.php';
+require_once __DIR__ . '/src/cache.php';
 require_once __DIR__ . '/src/utils.php';
 require_once __DIR__ . '/src/scaffold.php';
 require_once __DIR__ . '/src/slic.php';
@@ -14,11 +16,9 @@ require_once __DIR__ . '/src/services.php';
 require_once __DIR__ . '/src/database.php';
 require_once __DIR__ . '/src/project.php';
 require_once __DIR__ . '/src/env.php';
-require_once __DIR__ . '/src/codeception.php';
 require_once __DIR__ . '/src/commands.php';
 
-require_once __DIR__ . '/src/classes/Callback_Stack.php';
-
+use StellarWP\Slic\Cache;
 use function StellarWP\Slic\args;
 use function StellarWP\Slic\cli_header;
 use function StellarWP\Slic\colorize;
@@ -26,7 +26,6 @@ use function StellarWP\Slic\maybe_prompt_for_repo_update;
 use function StellarWP\Slic\maybe_prompt_for_stack_update;
 use function StellarWP\Slic\root;
 use function StellarWP\Slic\setup_slic_env;
-
 // Set up the argument parsing function.
 $args = args( [
 	'subcommand',
@@ -34,11 +33,11 @@ $args = args( [
 ] );
 
 $cli_name = 'slic';
-const CLI_VERSION = '1.2.2';
+const CLI_VERSION = '1.3.0';
 
 // If the run-time option `-q`, for "quiet", is specified, then do not print the header.
 if ( in_array( '-q', $argv, true ) || ( in_array( 'exec', $argv, true ) && ! in_array( 'help', $argv, true ) ) ) {
-    // Remove the `-q` flag from the global array of arguments to leave the rest of the commands unchanged.
+	// Remove the `-q` flag from the global array of arguments to leave the rest of the commands unchanged.
 	unset( $argv[ array_search( '-q', $argv ) ] );
 	$argv = array_values( $argv );
 	$argc = count( $argv );
@@ -51,6 +50,11 @@ if ( in_array( '-q', $argv, true ) || ( in_array( 'exec', $argv, true ) && ! in_
 define( 'SLIC_ROOT_DIR', __DIR__ );
 
 setup_slic_env( SLIC_ROOT_DIR );
+
+// Start the cache.
+global $slic_cache;
+$slic_cache = new Cache();
+
 
 $help_message_template = <<< HELP
 » Learn how to use <light_cyan>slic</light_cyan> at <yellow>https://github.com/stellarwp/slic</yellow>
@@ -92,6 +96,7 @@ $help_advanced_message_template = <<< HELP
   <light_cyan>config</light_cyan>         Prints the stack configuration as interpolated from the environment.
   <light_cyan>debug</light_cyan>          Activates or deactivates {$cli_name} debug output or returns the current debug status.
   <light_cyan>down</light_cyan>           Tears down the stack; alias of `stop`.
+  <light_cyan>dc</light_cyan>             Runs a docker compose command in the stack.
   <light_cyan>exec</light_cyan>           Runs a bash command in the stack.
   <light_cyan>group</light_cyan>          Create or remove group of targets for the current plugins directory.
   <light_cyan>host-ip</light_cyan>        Returns the IP Address of the host machine from the container perspective.
@@ -114,12 +119,13 @@ $help_advanced_message = colorize( $help_advanced_message_template );
 
 $is_help = args( [ 'help' ], $args( '...' ), 0 )( 'help', false ) === 'help';
 
-$run_settings_file = root( '/.env.slic.run' );
 
 $original_subcommand = $args( 'subcommand' );
 $subcommand          = $args( 'subcommand', 'help' );
 
-$cli_name = basename( $argv[0] );
+// Both these variables will be used by commands.
+$run_settings_file = root( '/.env.slic.run' );
+$cli_name          = basename( $argv[0] );
 
 if ( 'help' !== $subcommand ) {
 	maybe_prompt_for_repo_update();
@@ -132,82 +138,45 @@ if ( 'help' !== $subcommand ) {
 	}
 }
 
-if ( ! in_array( $subcommand, [ 'help', 'update'] ) ) {
+if ( ! in_array( $subcommand, [ 'help', 'update' ] ) ) {
 	maybe_prompt_for_stack_update();
 }
 
-// A map from the user-facing alias to the command that will be actually called.
+if ( empty( $subcommand ) || $subcommand === 'help' ) {
+	echo $help_message . PHP_EOL;
+	if ( $original_subcommand ) {
+		echo PHP_EOL . $help_advanced_message;
+	} else {
+		echo colorize( PHP_EOL . "There are a lot more commands. Use <light_cyan>slic help</light_cyan> to see them all!" . PHP_EOL );
+	}
+	maybe_prompt_for_repo_update();
+	maybe_prompt_for_stack_update();
+	echo PHP_EOL;
+	exit( 0 );
+}
+
+/*
+ * Resolve command aliases.
+ * A map from the user-facing alias to the command that will be actually called.
+ */
 $aliases = [
 	'wp' => 'cli',
 ];
+if ( isset( $aliases[ $subcommand ] ) ) {
+	$subcommand = $aliases[ $subcommand ];
+}
 
-switch ( $subcommand ) {
-	default:
-	case 'help':
-		echo $help_message . PHP_EOL;
-		if ( $original_subcommand ) {
-			echo PHP_EOL . $help_advanced_message;
-		} else {
-			echo colorize( PHP_EOL . "There are a lot more commands. Use <light_cyan>slic help</light_cyan> to see them all!" . PHP_EOL );
-		}
-		maybe_prompt_for_repo_update();
-		maybe_prompt_for_stack_update();
-		break;
-	case 'cc':
-	case 'restart':
-	case 'run':
-	case 'serve':
-	case 'shell':
-	case 'site-cli':
-	case 'ssh':
-	case 'up':
-        // ensure_wordpress_files();
-        // ensure_wordpress_configured();
-		// Do not break, let the command be loaded then.
-	case 'airplane-mode':
-	case 'cache':
-	case 'cli':
-	case 'wp': // Alias of the `cli` command.
-        // ensure_wordpress_installed();
-		// Do not break, let the command be loaded then.
-	case 'build-prompt':
-	case 'build-stack':
-	case 'build-subdir':
-	case 'composer':
-	case 'composer-cache':
-	case 'config':
-	case 'debug':
-	case 'down':
-	case 'exec':
-	case 'here':
-	case 'host-ip':
-	case 'info':
-	case 'init':
-	case 'interactive':
-	case 'logs':
-	case 'mysql':
-	case 'npm':
-	case 'npm_lts':
-	case 'phpcbf':
-	case 'phpcs':
-	case 'ps':
-	case 'php-version':
-	case 'reset':
-	case 'start':
-	case 'stop':
-	case 'target':
-	case 'update':
-	case 'upgrade':
-	case 'use':
-	case 'using':
-	case 'xdebug':
-        if ( isset( $aliases[ $subcommand ] ) ) {
-            $subcommand = $aliases[ $subcommand ];
-        }
-		include_once __DIR__ . '/src/commands/' . $subcommand . '.php';
-		break;
+$subcommand_file = __DIR__ . '/src/commands/' . $subcommand . '.php';
+if ( file_exists( $subcommand_file ) ) {
+	include_once $subcommand_file;
+} else {
+	echo colorize( "<magenta>Unknown command: {$subcommand}</magenta>" . PHP_EOL . PHP_EOL );
+	echo $help_message . PHP_EOL;
+	maybe_prompt_for_repo_update();
+	maybe_prompt_for_stack_update();
+	echo PHP_EOL;
+	exit( 1 );
 }
 
 // Add a break line at the end of each command to avoid dirty terminal issues.
 echo PHP_EOL;
-
