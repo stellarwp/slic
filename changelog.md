@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * Change - Leverage Docker Compose syntax to manage network aliases and service dependencies. Clean up a remove code.
 * Add the `dc` command to run Docker Compose commands in the stack.
+* Support the `SLIC_DOCKER_COMPOSE_BIN` environment variable to allow for the use a different Docker Compose binary, the `docker compose` one is used by default.
 
 ## [1.2.2] - 2023-02-24
 

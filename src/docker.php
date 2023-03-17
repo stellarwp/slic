@@ -49,8 +49,16 @@ function docker_compose( array $options = [] ) {
 		$host_ip = host_ip( 'Linux' );
 	}
 
-	return static function ( array $command = [] ) use ( $options, $host_ip, $is_ci ) {
-		$command = 'docker-compose ' . implode( ' ', $options ) . ' ' . implode( ' ', $command );
+	/*
+	 * Newer versions of Docker include the `docker compose` command instead of a separate `docker-compose`.
+	 * Most CIs have the newer version of Docker that includes the `docker compose` command, but will also include the
+	 * outdated `docker-compose` command for back-compatibility.
+	 * Unless the `SLIC_DOCKER_COMPOSE_BIN` environment variable is set, we'll use the newer `docker compose` command.
+	 */
+	$dc_bin = getenv( 'SLIC_DOCKER_COMPOSE_BIN' ) ?: 'docker compose';
+
+	return static function ( array $command = [] ) use ( $dc_bin, $options, $host_ip, $is_ci ) {
+		$command = $dc_bin . ' ' . implode( ' ', $options ) . ' ' . implode( ' ', $command );
 
 		if ( ! empty( $host_ip ) ) {
 			// Set the host IP address on Linux machines.
