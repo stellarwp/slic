@@ -7,7 +7,7 @@ The entrypoint to anything you will need to do will be the `slic` binary, locate
 
 ## Requirements
 
-The stack runs based on [Docker](https://www.docker.com/) and [docker-compose](https://docs.docker.com/compose/): you will need both installed and available to be able to use the local testing environment.
+The stack runs based on [Docker](https://www.docker.com/) and [docker compose](https://docs.docker.com/compose/): you will need both installed and available to be able to use the local testing environment.
 If your Docker installation requires root access, please follow [this guide](https://docs.docker.com/install/linux/linux-postinstall/) to make sure root access is not required to run `docker` commands.
 
 You should be able to run the following command without issues and without requiring root access:
@@ -16,7 +16,7 @@ You should be able to run the following command without issues and without requi
 docker run hello-world
 ```
 
-If this is not the case, please take the time to read Docker and docker-compose documentation and fix the issues you encounter.
+If this is not the case, please take the time to read Docker and docker compose documentation and fix the issues you encounter.
 
 ## Where to get help
 
@@ -178,7 +178,7 @@ slic cli db export /plugins/the-events/calendar/tests/_data/dump.sql
 ## How the stack works, an overview
 
 The stack services are defined by the `slic-stack.yml` file.
-This is a YAML format docker-compose configuration file the `slic` binary will use to run the `docker-compose` command.
+This is a YAML format docker compose configuration file the `slic` binary will use to run the `docker compose` command.
 The main services defined there are:
 
 * `wordpress` - this uses the `wordpress:latest` image, the official Docker image for WordPress. When running the container will fill the `_wordpress` directory with the contents of the WordPress installation that is currently serving the container. Furthermore the WordPress container is configured to look for plugins in the `/plugins` directory, that directory is a shared volume that you can find in the `dev/test/plugins` directory.

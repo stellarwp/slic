@@ -365,7 +365,7 @@ function php_services() {
 /**
  * Restart the stack PHP services.
  *
- * @param bool $hard Whether to restart the PHP services using the `docker-compose restart` command or by using a
+ * @param bool $hard Whether to restart the PHP services using the `docker compose restart` command or by using a
  *                   tear-down and up again cycle.
  */
 function restart_php_services( $hard = false ) {
@@ -379,7 +379,7 @@ function restart_php_services( $hard = false ) {
  *
  * @param string $service The name of the service to restart, e.g. `wordpress`.
  * @param string|null $pretty_name The pretty name to use for the service, or `null` to use the service name.
- * @param bool $hard Whether to restart the service using the `docker-compose restart` command or to use full tear-down
+ * @param bool $hard Whether to restart the service using the `docker compose restart` command or to use full tear-down
  *                   and up again cycle.
  */
 function restart_service( $service, $pretty_name = null, $hard = false ) {

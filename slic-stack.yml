@@ -1,4 +1,4 @@
-# docker-compose configuration file used to run cross-activation tests.
+# docker compose configuration file used to run cross-activation tests.
 
 version: "3.9"
 
@@ -98,7 +98,7 @@ services:
       # The `remote_host` is set to `host.docker.internal` that will resolve to the host machine IP address, from
       # within the container, on macOS and Windows.
       # On Linux set the host machine IP address before calling the stack:
-      # XDH=$(ip route | grep docker0 | awk '{print $9}') docker-compose ...
+      # XDH=$(ip route | grep docker0 | awk '{print $9}') docker compose ...
       XDEBUG_CONFIG: "idekey=${XDK:-slic} remote_enable=${XDE:-1} remote_host=${XDH:-host.docker.internal} remote_port=${XDP:-9001} client_host=${XDH:-host.docker.internal} client_port=${XDP:-9001}"
       # Whether to disable the XDebug extension in the Codeception container completely or not.
       XDEBUG_DISABLE: "${XDEBUG_DISABLE:-0}"
@@ -156,7 +156,7 @@ services:
       # The `remote_host` is set to `host.docker.internal` that will resolve to the host machine IP address, from
       # within the container, on macOS and Windows.
       # On Linux set the host machine IP address before calling the stack:
-      # XDH=$(ip route | grep docker0 | awk '{print $9}') docker-compose ...
+      # XDH=$(ip route | grep docker0 | awk '{print $9}') docker compose ...
       XDEBUG_CONFIG: "idekey=${XDK:-slic} remote_enable=${XDE:-1} remote_host=${XDH:-host.docker.internal} remote_port=${XDP:-9001} client_host=${XDH:-host.docker.internal} client_port=${XDP:-9001}"
       # Move to the target directory before running the command from the plugins directory.
       CODECEPTION_PROJECT_DIR: /var/www/html/wp-content/plugins/${SLIC_CURRENT_PROJECT:-test}/${SLIC_CURRENT_PROJECT_SUBDIR:-}

@@ -1,4 +1,4 @@
-# docker-compose configuration file used to run cross-activation tests.
+# docker compose configuration file used to run cross-activation tests.
 
 version: "3"
 

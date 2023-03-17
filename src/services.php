@@ -9,10 +9,10 @@ use Closure;
 use Exception;
 
 /**
- * Returns the `docker-compose` schema parsed from the `slic` files loaded in the current
+ * Returns the `docker compose` schema parsed from the `slic` files loaded in the current
  * request.
  *
- * @return array<string,array> The loaded `docker-compose` format files, merged in array format.
+ * @return array<string,array> The loaded `docker compose` format files, merged in array format.
  */
 function stack_schema() {
 	static $schema;
@@ -45,10 +45,10 @@ function stack_schema() {
 }
 
 /**
- * Returns the `service` section of the `docker-compose` format stack files loaded in the request
+ * Returns the `service` section of the `docker compose` format stack files loaded in the request
  * for `slic`.
  *
- * @return array<string,array> The `services` section of the loaded `docker-compose` format files.
+ * @return array<string,array> The `services` section of the loaded `docker compose` format files.
  */
 function services_schema() {
 	$stack_schema = stack_schema();
