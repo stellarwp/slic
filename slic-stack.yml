@@ -100,6 +100,7 @@ services:
       - slic
     user: "${SLIC_UID:-}:${SLIC_GID:-}"
     environment:
+      COMPOSER_AUTH: "${COMPOSER_AUTH:-}"
       COMPOSER_CACHE_DIR: "/composer-cache"
       # Set these values to allow the container to look wordpress up.
       WORDPRESS_DB_USER: root

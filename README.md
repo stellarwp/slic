@@ -233,6 +233,33 @@ If you want to know which version `slic` is pointed at, you can always call:
 
 `slic composer get-version`
 
+### Installing private packages with composer
+
+If you need to install a private composer package, configure the [COMPOSER_AUTH](https://getcomposer.org/doc/03-cli.md#composer-auth) environment variable. For example, to install a package from a private GitHub repository:
+
+> Note: You may need to create a [Personal Access Token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token).
+
+```shell
+export COMPOSER_AUTH='{"github-oauth": {"github.com": "YOUR_TOKEN_HERE"}}'
+```
+
+Then, restart slic and try again:
+
+```shell
+slic restart; slic composer update
+```
+
+Or, in a GitHub Action, for example:
+
+```yaml
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    env:
+      COMPOSER_AUTH: '{"github-oauth": {"github.com": "${{ secrets.GH_BOT_TOKEN }}"}}'
+```
+
 ### Customizing `slic`'s `.env` file
 
 The `slic` CLI command leverages `.env.*` files to dictate its inner workings. It loads `.env.*` files in the following order, the later files overriding the earlier ones:
