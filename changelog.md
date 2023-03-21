@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.4] - 2023-03-21
+
+* Fix - [issue 142](https://github.com/stellarwp/slic/issues/142) ensure the hosts file in the docker container contains a tab character before trying to explode it.
+
 ## [1.2.3] - 2023-03-21
 
 * Added - Pass through the [COMPOSER_AUTH](https://getcomposer.org/doc/03-cli.md#composer-auth) environment variable to the slic docker container to allow composer installs for private or otherwise protected dependencies. Especially useful when running in GitHub Actions.
