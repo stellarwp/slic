@@ -116,7 +116,7 @@ services:
       retries: 30
 
   chrome:
-    image: ${SLIC_CHROME_CONTAINER:-selenium/standalone-chrome:3.141.59-oxygen}
+    image: ${SLIC_CHROME_CONTAINER:-selenium/standalone-chrome:3.141.59}
     networks:
       - slic
     depends_on:

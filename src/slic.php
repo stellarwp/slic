@@ -1582,7 +1582,7 @@ function setup_architecture_env() {
 		putenv( 'SLIC_CHROME_CONTAINER=seleniarm/standalone-chromium:4.1.2-20220227' );
 	} else {
 		putenv( 'SLIC_ARCHITECTURE=x86' );
-		putenv( 'SLIC_CHROME_CONTAINER=selenium/standalone-chrome:3.141.59-oxygen' );
+		putenv( 'SLIC_CHROME_CONTAINER=selenium/standalone-chrome:3.141.59' );
 	}
 }
 
