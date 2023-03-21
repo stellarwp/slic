@@ -20,7 +20,7 @@ RUN chmod a+rx /usr/local/bin/wp
 # The mlocati/docker-php-extension-installer will install PHP extensions setting up requirements correctly and cleaning up after.
 ADD https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
 RUN chmod a+x /usr/local/bin/install-php-extensions && \
-    install-php-extensions xdebug pdo pdo_mysql mysqli zip uopz pcntl sockets intl
+    install-php-extensions xdebug pdo pdo_mysql mysqli zip uopz pcntl sockets intl exif
 
 RUN if [ ${IPE_GD_WITHOUTAVIF} = true ]; then \
       IPE_GD_WITHOUTAVIF=1 install-php-extensions gd; \
