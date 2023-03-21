@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Add the `dc` command to run Docker Compose commands in the stack.
 * Support the `SLIC_DOCKER_COMPOSE_BIN` environment variable to allow for the use a different Docker Compose binary, the `docker compose` one is used by default.
 
+## [1.2.3] - 2023-03-21
+
+* Added - Pass through the [COMPOSER_AUTH](https://getcomposer.org/doc/03-cli.md#composer-auth) environment variable to the slic docker container to allow composer installs for private or otherwise protected dependencies. Especially useful when running in GitHub Actions.
+* Added - The PHP exif extension to the slic container to allow `slic composer install` commands to succeed when this extension is required.
+
 ## [1.2.2] - 2023-02-24
 
 * Change - No longer build gd in the slick docker container with AVIF, fixing external dependency on the currently down code.videolan.org, and speeding up builds - [more info](https://github.com/mlocati/docker-php-extension-installer#configuration).
