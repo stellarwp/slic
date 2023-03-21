@@ -400,7 +400,7 @@ function restart_service( $service, $pretty_name = null, $hard = false ) {
 	} else {
 		echo colorize( PHP_EOL . "{$pretty_name} service was not running. Starting it." . PHP_EOL );
 		$exit_status = ensure_service_running( $service );
-		if ( $exit_status !== 0 ) {
+		if ( $exit_status === 0 ) {
 			echo colorize( "✅ <light_cyan>{$pretty_name} service started.</light_cyan>" . PHP_EOL );
 		} else {
 			echo colorize( "❌ <red>{$pretty_name} service could not be started.</red>" . PHP_EOL );

@@ -5,7 +5,6 @@
 
 namespace StellarWP\Slic;
 
-use Closure;
 use Exception;
 
 /**
