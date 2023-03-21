@@ -104,10 +104,10 @@ services:
       XDEBUG_DISABLE: "${XDEBUG_DISABLE:-0}"
     volumes:
       # Paths are relative to the directory that contains this file, NOT the current working directory.
-      - ${SLIC_WP_DIR}:/var/www/html:cached
-      - ${SLIC_PLUGINS_DIR}:/var/www/html/wp-content/plugins:cached
-      - ${SLIC_THEMES_DIR}:/var/www/html/wp-content/themes:cached
-      - ${COMPOSER_CACHE_DIR:-./.cache}:/composer-cache:cached
+      - ${SLIC_WP_DIR}:/var/www/html
+      - ${SLIC_PLUGINS_DIR}:/var/www/html/wp-content/plugins
+      - ${SLIC_THEMES_DIR}:/var/www/html/wp-content/themes
+      - ${COMPOSER_CACHE_DIR:-./.cache}:/composer-cache
     healthcheck: # Apache service should be running correctly.
       test: service apache2 status
       start_period: 5s
@@ -179,10 +179,10 @@ services:
     volumes:
       # Paths are relative to the directory that contains this file, NOT the current working directory.
       # Share the WordPress core installation files in the `_wordpress` directory.
-      - ${SLIC_WP_DIR}:/var/www/html:cached
+      - ${SLIC_WP_DIR}:/var/www/html
       # Share the plugins in the `/var/www/hmtl/wp-content/plugins` directory.
-      - ${SLIC_PLUGINS_DIR}:/var/www/html/wp-content/plugins:cached
-      - ${SLIC_THEMES_DIR}:/var/www/html/wp-content/themes:cached
+      - ${SLIC_PLUGINS_DIR}:/var/www/html/wp-content/plugins
+      - ${SLIC_THEMES_DIR}:/var/www/html/wp-content/themes
       # In some plugins we use function-mocker and set it up to cache in `/tmp/function-mocker`.
       # To avoid a long re-caching on each run, let's cache in a docker volume, caching on the host
       # filesystem would be a worse cure than the disease.
@@ -190,4 +190,4 @@ services:
       - function-mocker-cache:/cache
       - ${COMPOSER_CACHE_DIR:-./.cache}:/composer-cache
       # Scripts volume
-      - ${SLIC_SCRIPTS}:/slic-scripts:cached
+      - ${SLIC_SCRIPTS}:/slic-scripts
