@@ -291,6 +291,10 @@ function add_hosts_to_service( string $service_id, array $hosts ) {
 
 	// If a line is already present in the file, do not re-add it.
 	$new_lines = array_filter( $output, static function ( $line ) use ( $hosts ) {
+		if ( strpos( $line, "\t" ) === false ) {
+			return true;
+		}
+
 		list( $ip, $hostname ) = explode( "\t", $line, 2 );
 
 		return ! in_array( $hostname, $hosts, true );
