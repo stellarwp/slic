@@ -64,7 +64,7 @@ if ( in_array( $sub_command, [ 'set-version', 'get-version', 'reset-version' ] )
 
 			exit( 0 );
 		case 'get-version':
-			$composer_bin = (int) $current_version === 2 ? 'composer' : 'composer1';
+			$composer_bin = (int) $current_version === 1 ? 'composer1' : 'composer';
 
 			exit( slic_realtime()( [ 'exec', 'slic', $composer_bin, '--version' ] ) );
 		case 'reset-version':
@@ -77,7 +77,7 @@ if ( in_array( $sub_command, [ 'set-version', 'get-version', 'reset-version' ] )
 	}
 }
 
-$composer_bin = (int) $current_version === 2 ? 'composer' : 'composer1';
+$composer_bin = (int) $current_version === 1 ? 'composer1' : 'composer';
 $pool = build_command_pool( $composer_bin, $command, [ 'common' ] );
 $status = execute_command_pool( $pool );
 
