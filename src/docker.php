@@ -1,6 +1,6 @@
 <?php
 /**
- * docker-compose wrapper functions.
+ * docker compose wrapper functions.
  */
 
 namespace StellarWP\Slic;
@@ -28,11 +28,11 @@ function os() {
 }
 
 /**
- * Curried docker-compose wrapper.
+ * Curried docker compose wrapper.
  *
  * @param array<string> $options A list of options to initialize the wrapper.
  *
- * @return \Closure A closure to actually call docker-compose with more arguments.
+ * @return \Closure A closure to actually call docker compose with more arguments.
  */
 function docker_compose( array $options = [] ) {
 	setup_id();
@@ -49,8 +49,10 @@ function docker_compose( array $options = [] ) {
 		$host_ip = host_ip( 'Linux' );
 	}
 
-	return static function ( array $command = [] ) use ( $options, $host_ip, $is_ci ) {
-		$command = 'docker-compose ' . implode( ' ', $options ) . ' ' . implode( ' ', $command );
+	$dc_bin = docker_compose_bin();
+
+	return static function ( array $command = [] ) use ( $dc_bin, $options, $host_ip, $is_ci ) {
+		$command = $dc_bin . ' ' . implode( ' ', $options ) . ' ' . implode( ' ', $command );
 
 		if ( ! empty( $host_ip ) ) {
 			// Set the host IP address on Linux machines.
@@ -122,7 +124,7 @@ function wordpress_url() {
  * @param string $postfix      A postfix to use for the stack file, it will be inserted between the file base name and
  *                             the `.yml` file extension.
  *
- * @return string The path to the docker-compose stack file to run, depending on the run context.
+ * @return string The path to the docker compose stack file to run, depending on the run context.
  */
 function stack( $postfix = '' ) {
 	$root_dir     = dirname( __DIR__ );
@@ -143,13 +145,13 @@ function stack( $postfix = '' ) {
 }
 
 /**
- * Builds a collection of docker-compose yaml files for spinning up a stack.
+ * Builds a collection of docker compose yaml files for spinning up a stack.
  *
  * Typically, this would be slic-stack.yml for plugin-only setups, but if running in site mode, it adds slic-stack.site.yml.
  *
  * @param bool $filenames_only Return only the files part of the stack, without including option flags.
  *
- * @return string[] Array of docker-compose arguments indicating the files that should be used to initialize the stack.
+ * @return string[] Array of docker compose arguments indicating the files that should be used to initialize the stack.
  */
 function slic_stack_array( $filenames_only = false ) {
 	$file_prefix = $filenames_only ? '' : '-f';
@@ -166,7 +168,7 @@ function slic_stack_array( $filenames_only = false ) {
 }
 
 /**
- * Executes a docker-compose command in real time, printing the output as produced by the command.
+ * Executes a docker compose command in real time, printing the output as produced by the command.
  *
  * @param array<string> $options A list of options to initialize the wrapper.
  * @param bool $is_realtime Whether the command should be run in real time (true) or passively (false).
@@ -204,7 +206,7 @@ function docker_compose_process( array $options = [], $is_realtime = true ) {
 			$command = array_unique( array_merge( [ $subcommand ], $var, $command ) );
 		}
 
-		$command = 'docker-compose ' . implode( ' ', $options ) . ' ' . implode( ' ', $command );
+		$command = docker_compose_bin() . ' ' . implode( ' ', $options ) . ' ' . implode( ' ', $command );
 
 		if ( ! empty( $host_ip ) ) {
 			// Set the host IP address on Linux machines.
@@ -222,7 +224,7 @@ function docker_compose_process( array $options = [], $is_realtime = true ) {
 }
 
 /**
- * Executes a docker-compose command in passive mode, printing the output as produced by the command.
+ * Executes a docker compose command in passive mode, printing the output as produced by the command.
  *
  * This approach is used for commands that can be run in a parallel or forked process without interactivity.
  *
@@ -235,7 +237,7 @@ function docker_compose_passive( array $options = [] ) {
 }
 
 /**
- * Executes a docker-compose command in real time, printing the output as produced by the command.
+ * Executes a docker compose command in real time, printing the output as produced by the command.
  *
  * @param array<string> $options A list of options to initialize the wrapper.
  *
@@ -244,3 +246,18 @@ function docker_compose_passive( array $options = [] ) {
 function docker_compose_realtime( array $options = [] ) {
 	return docker_compose_process( $options, true );
 }
+
+/**
+ * Returns the path to the docker compose binary.
+ *
+ * Newer versions of Docker include the `docker compose` command instead of a separate `docker-compose`.
+ * Most CIs have the newer version of Docker that includes the `docker compose` command, but will also include the
+ * outdated `docker-compose` command for back-compatibility.
+ * Unless the `SLIC_DOCKER_COMPOSE_BIN` environment variable is set, we'll use the newer `docker compose` command.
+ *
+ * @return string
+ */
+function docker_compose_bin(): string {
+	return (string) getenv( 'SLIC_DOCKER_COMPOSE_BIN' ) ?: 'docker compose';
+}
+

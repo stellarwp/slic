@@ -20,5 +20,7 @@ function command_stop() : int {
 		echo colorize( PHP_EOL . "❌ <red>Some containers failed to stop.</red> Use <light_cyan>slic ps</light_cyan> to see what is still running." . PHP_EOL );
 	}
 
+	slic_cache_flush();
+
 	return $status;
 }

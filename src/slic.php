@@ -365,7 +365,7 @@ function php_services() {
 /**
  * Restart the stack PHP services.
  *
- * @param bool $hard Whether to restart the PHP services using the `docker-compose restart` command or by using a
+ * @param bool $hard Whether to restart the PHP services using the `docker compose restart` command or by using a
  *                   tear-down and up again cycle.
  */
 function restart_php_services( $hard = false ) {
@@ -379,7 +379,7 @@ function restart_php_services( $hard = false ) {
  *
  * @param string $service The name of the service to restart, e.g. `wordpress`.
  * @param string|null $pretty_name The pretty name to use for the service, or `null` to use the service name.
- * @param bool $hard Whether to restart the service using the `docker-compose restart` command or to use full tear-down
+ * @param bool $hard Whether to restart the service using the `docker compose restart` command or to use full tear-down
  *                   and up again cycle.
  */
 function restart_service( $service, $pretty_name = null, $hard = false ) {
@@ -400,7 +400,7 @@ function restart_service( $service, $pretty_name = null, $hard = false ) {
 	} else {
 		echo colorize( PHP_EOL . "{$pretty_name} service was not running. Starting it." . PHP_EOL );
 		$exit_status = ensure_service_running( $service );
-		if ( $exit_status !== 0 ) {
+		if ( $exit_status === 0 ) {
 			echo colorize( "✅ <light_cyan>{$pretty_name} service started.</light_cyan>" . PHP_EOL );
 		} else {
 			echo colorize( "❌ <red>{$pretty_name} service could not be started.</red>" . PHP_EOL );
@@ -422,10 +422,8 @@ function restart_all_services() {
 function start_all_services() {
 	$services = get_services();
 	foreach ( $services as $service ) {
-		ensure_service_running_no_callbacks( $service );
+		ensure_service_running( $service );
 	}
-
-	services_callback_stack()->call();
 }
 
 /**
@@ -1219,7 +1217,6 @@ function execute_command_pool( $pool ) {
  */
 function cli_command( array $command = [], $requirements = false ) {
 	if ( $requirements ) {
-		ensure_service_running( 'slic' );
 		ensure_wordpress_ready();
 	}
 
@@ -1585,7 +1582,7 @@ function setup_architecture_env() {
 		putenv( 'SLIC_CHROME_CONTAINER=seleniarm/standalone-chromium:4.1.2-20220227' );
 	} else {
 		putenv( 'SLIC_ARCHITECTURE=x86' );
-		putenv( 'SLIC_CHROME_CONTAINER=selenium/standalone-chrome:3.141.59-oxygen' );
+		putenv( 'SLIC_CHROME_CONTAINER=selenium/standalone-chrome:3.141.59' );
 	}
 }
 

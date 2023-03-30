@@ -1,4 +1,4 @@
-# docker-compose configuration file used to run cross-activation tests.
+# docker compose configuration file used to run cross-activation tests.
 
 version: "3"
 
@@ -8,13 +8,13 @@ services:
     volumes:
       # Paths are relative to the directory that contains this file, NOT the current working directory.
       # Share the WordPress core installation files in the `_wordpress` directory.
-      - ${SLIC_WP_DIR}:/var/www/html:cached
+      - ${SLIC_WP_DIR}:/var/www/html
 
   cli:
     volumes:
       # Paths are relative to the directory that contains this file, NOT the current working directory.
       # Share the WordPress core installation files in the `_wordpress` directory.
-      - ${SLIC_WP_DIR}:/var/www/html:cached
+      - ${SLIC_WP_DIR}:/var/www/html
 
   codeception:
     environment:
@@ -22,18 +22,18 @@ services:
       CODECEPTION_PROJECT_DIR: /var/www/html/${SLIC_CURRENT_PROJECT_RELATIVE_PATH}
     volumes:
       # Set the current site as project.
-      - ${SLIC_HERE_DIR}/${SLIC_CURRENT_PROJECT_RELATIVE_PATH}:/project:cached
+      - ${SLIC_HERE_DIR}/${SLIC_CURRENT_PROJECT_RELATIVE_PATH}:/project
       # Paths are relative to the directory that contains this file, NOT the current working directory.
       # Share the WordPress core installation files in the `_wordpress` directory.
-      - ${SLIC_WP_DIR}:/var/www/html:cached
+      - ${SLIC_WP_DIR}:/var/www/html
 
   composer:
     volumes:
       # Set the current target as project.
-      - ${SLIC_HERE_DIR}/${SLIC_CURRENT_PROJECT_RELATIVE_PATH}:/project:cached
-      - ${COMPOSER_CACHE_DIR}:${COMPOSER_CACHE_DIR}:cached
+      - ${SLIC_HERE_DIR}/${SLIC_CURRENT_PROJECT_RELATIVE_PATH}:/project
+      - ${COMPOSER_CACHE_DIR}:${COMPOSER_CACHE_DIR}
 
   npm:
     volumes:
       # Set the current plugin as project.
-      - ${SLIC_HERE_DIR}/${SLIC_CURRENT_PROJECT_RELATIVE_PATH}:/project:cached
+      - ${SLIC_HERE_DIR}/${SLIC_CURRENT_PROJECT_RELATIVE_PATH}:/project

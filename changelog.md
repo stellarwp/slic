@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2023-03-30
+
+* Change - Leverage Docker Compose syntax to manage network aliases and service dependencies. Clean up a remove code.
+* Add the `dc` command to run Docker Compose commands in the stack.
+* Support the `SLIC_DOCKER_COMPOSE_BIN` environment variable to allow for the use a different Docker Compose binary, the `docker compose` one is used by default.
+
 ## [1.2.4] - 2023-03-21
 
 * Fix - [issue 142](https://github.com/stellarwp/slic/issues/142) ensure the hosts file in the docker container contains a tab character before trying to explode it.

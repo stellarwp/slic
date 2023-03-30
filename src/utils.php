@@ -200,7 +200,7 @@ function gid() {
  *
  * On OSes that will handle user ID and group ID mapping at the Docker daemon level, macOS and Windows, the
  * `SLIC_UID` and `SLIC_GID` env variables will be set to empty strings.
- * This, in turn, will fill the `user` parameter of the stack services to `user: ":"` that will prompt docker-compose
+ * This, in turn, will fill the `user` parameter of the stack services to `user: ":"` that will prompt docker compose
  * to not set the user at all, the wanted behavior on such OSes.
  *
  * @param bool $reset Whether to re-fetch and reset the user id and group or not.

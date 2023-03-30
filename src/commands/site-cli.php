@@ -30,8 +30,6 @@ if ( $is_help ) {
 }
 
 setup_id();
-
-ensure_services_running( [ 'wordpress', 'slic' ] );
 ensure_wordpress_ready();
 
 $command = $args( '...' );
@@ -75,7 +73,7 @@ if ( ! $open_bash_shell ) {
 	array_unshift( $command, 'wp', '--allow-root' );
 
 	/*
-	 * Due to how docker-compose works, the default `CMD` for the `wordpress:cli` image will be overridden as a
+	 * Due to how docker compose works, the default `CMD` for the `wordpress:cli` image will be overridden as a
 	 * consequence of overriding the `entrypoint` configuration parameter of the service.
 	 * We cannot, thus, pass the user command directly, we use an env var, `SLIC_SITE_CLI_COMMAND`, to embed the
 	 * command we're running into the entrypoint call arguments.

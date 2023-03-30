@@ -1,6 +1,6 @@
-# docker-compose configuration file used to run cross-activation tests.
+# docker compose configuration file used to run cross-activation tests.
 
-version: "3"
+version: "3.9"
 
 networks:
   slic:
@@ -11,7 +11,7 @@ volumes:
 services:
 
   db:
-    image: mariadb:10.7.3
+    image: mariadb:10.7.8
     networks:
       - slic
     ports:
@@ -19,25 +19,45 @@ services:
     environment:
       MYSQL_DATABASE: test
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+    healthcheck: # The `test` db should exist.
+      test: mysqlshow -u root -p${MYSQL_ROOT_PASSWORD:-root} test
+      start_period: 5s
+      interval: 1s
+      timeout: 3s
+      retries: 30
     tmpfs:
       - /var/lib/mysql
 
   redis:
-    image: redis
+    image: redis:7.0.10
     networks:
-      slic:
+      - slic
     ports:
       - "${SLIC_REDIS_LOCALHOST_PORT:-8379}:6379"
+    healthcheck: # It should reply PONG to PING
+      test: redis-cli ping | grep PONG
+      start_period: 2s
+      interval: 1s
+      timeout: 3s
+      retries: 30
     tmpfs:
       - /data
 
   wordpress:
     image: ghcr.io/stellarwp/slic-wordpress-php${SLIC_PHP_VERSION}:${SLIC_VERSION}
     networks:
-      - slic
+      slic:
+        aliases: # Allow reaching the site at `http://wordpress.test` and other domains that might be used in testing.
+          - wordpress.test
+          - www.wordpress.test
+          - test1.wordpress.test
+          - test2.wordpress.test
+          - test3.wordpress.test
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     # Run the container as the host user and group.
     # Apache will run as the same user and permission issues with WordPress generated files should not arise.
     user: "${SLIC_UID:-}:${SLIC_GID:-}"
@@ -69,6 +89,8 @@ services:
         define( 'TRIBE_NO_FREEMIUS', true );
         define( 'WP_DEBUG_DISPLAY', true );
         define( 'WP_DEBUG_LOG', true );
+        define( 'DISABLE_WP_CRON', true );
+        define( 'WP_HTTP_BLOCK_EXTERNAL', true );
       # Configure this to debug the tests with XDebug.
       # Map the `_wordpress` directory to `/var/www/html' directory in your IDE of choice.
       # Map the `_plugins` directory to `/plugins` directory in your IDE of choice.
@@ -76,29 +98,49 @@ services:
       # The `remote_host` is set to `host.docker.internal` that will resolve to the host machine IP address, from
       # within the container, on macOS and Windows.
       # On Linux set the host machine IP address before calling the stack:
-      # XDH=$(ip route | grep docker0 | awk '{print $9}') docker-compose ...
+      # XDH=$(ip route | grep docker0 | awk '{print $9}') docker compose ...
       XDEBUG_CONFIG: "idekey=${XDK:-slic} remote_enable=${XDE:-1} remote_host=${XDH:-host.docker.internal} remote_port=${XDP:-9001} client_host=${XDH:-host.docker.internal} client_port=${XDP:-9001}"
       # Whether to disable the XDebug extension in the Codeception container completely or not.
       XDEBUG_DISABLE: "${XDEBUG_DISABLE:-0}"
     volumes:
       # Paths are relative to the directory that contains this file, NOT the current working directory.
-      - ${SLIC_WP_DIR}:/var/www/html:cached
-      - ${SLIC_PLUGINS_DIR}:/var/www/html/wp-content/plugins:cached
-      - ${SLIC_THEMES_DIR}:/var/www/html/wp-content/themes:cached
-      - ${COMPOSER_CACHE_DIR:-./.cache}:/composer-cache:cached
+      - ${SLIC_WP_DIR}:/var/www/html
+      - ${SLIC_PLUGINS_DIR}:/var/www/html/wp-content/plugins
+      - ${SLIC_THEMES_DIR}:/var/www/html/wp-content/themes
+      - ${COMPOSER_CACHE_DIR:-./.cache}:/composer-cache
+    healthcheck: # Apache service should be running correctly.
+      test: service apache2 status
+      start_period: 5s
+      interval: 1s
+      timeout: 3s
+      retries: 30
 
   chrome:
-    image: ${SLIC_CHROME_CONTAINER:-selenium/standalone-chrome:3.141.59-oxygen}
+    image: ${SLIC_CHROME_CONTAINER:-selenium/standalone-chrome:3.141.59}
     networks:
       - slic
-    extra_hosts:
-      - "wordpress.test:172.${SLIC_TEST_SUBNET:-28}.1.1"
+    depends_on:
+      wordpress:
+        condition: service_healthy
+    healthcheck: # It should reply with a 200 status code to a request to the status endpoint.
+      test: curl -f http://localhost:4444/wd/hub/status
+      start_period: 5s
+      interval: 1s
+      timeout: 3s
+      retries: 30
 
   slic:
     image: ghcr.io/stellarwp/slic-php${SLIC_PHP_VERSION}:${SLIC_VERSION}
     networks:
       - slic
     user: "${SLIC_UID:-}:${SLIC_GID:-}"
+    depends_on:
+      db:
+        condition: service_healthy
+      chrome:
+        condition: service_healthy
+      wordpress:
+        condition: service_healthy
     environment:
       COMPOSER_AUTH: "${COMPOSER_AUTH:-}"
       COMPOSER_CACHE_DIR: "/composer-cache"
@@ -115,7 +157,7 @@ services:
       # The `remote_host` is set to `host.docker.internal` that will resolve to the host machine IP address, from
       # within the container, on macOS and Windows.
       # On Linux set the host machine IP address before calling the stack:
-      # XDH=$(ip route | grep docker0 | awk '{print $9}') docker-compose ...
+      # XDH=$(ip route | grep docker0 | awk '{print $9}') docker compose ...
       XDEBUG_CONFIG: "idekey=${XDK:-slic} remote_enable=${XDE:-1} remote_host=${XDH:-host.docker.internal} remote_port=${XDP:-9001} client_host=${XDH:-host.docker.internal} client_port=${XDP:-9001}"
       # Move to the target directory before running the command from the plugins directory.
       CODECEPTION_PROJECT_DIR: /var/www/html/wp-content/plugins/${SLIC_CURRENT_PROJECT:-test}/${SLIC_CURRENT_PROJECT_SUBDIR:-}
@@ -137,10 +179,10 @@ services:
     volumes:
       # Paths are relative to the directory that contains this file, NOT the current working directory.
       # Share the WordPress core installation files in the `_wordpress` directory.
-      - ${SLIC_WP_DIR}:/var/www/html:cached
+      - ${SLIC_WP_DIR}:/var/www/html
       # Share the plugins in the `/var/www/hmtl/wp-content/plugins` directory.
-      - ${SLIC_PLUGINS_DIR}:/var/www/html/wp-content/plugins:cached
-      - ${SLIC_THEMES_DIR}:/var/www/html/wp-content/themes:cached
+      - ${SLIC_PLUGINS_DIR}:/var/www/html/wp-content/plugins
+      - ${SLIC_THEMES_DIR}:/var/www/html/wp-content/themes
       # In some plugins we use function-mocker and set it up to cache in `/tmp/function-mocker`.
       # To avoid a long re-caching on each run, let's cache in a docker volume, caching on the host
       # filesystem would be a worse cure than the disease.
@@ -148,32 +190,4 @@ services:
       - function-mocker-cache:/cache
       - ${COMPOSER_CACHE_DIR:-./.cache}:/composer-cache
       # Scripts volume
-      - ${SLIC_SCRIPTS}:/slic-scripts:cached
-
-#  adminer:
-#    image: adminer
-#    networks:
-#      - slic
-#    environment:
-#      ADMINER_DEFAULT_SERVER: db
-#    ports:
-#      - "9080:8080"
-#
-#
-#  redis-cli:
-#    image: redis
-#    networks:
-#      slic:
-#    depends_on:
-#      - redis
-#    entrypoint: ["redis-cli","-h redis","-p 6379"]
-#    command: ["--version"]
-#
-#  mailcatcher:
-#    image: dockage/mailcatcher
-#    networks:
-#      slic:
-#    ports:
-#      # Expose MailCatcher ports on localhost.
-#      - "1025:1025"
-#      - "1080:1080"
+      - ${SLIC_SCRIPTS}:/slic-scripts
