@@ -1079,7 +1079,8 @@ function build_command_pool( $base_command, array $command, array $sub_directori
 	$targets     = [];
 
 	// If applicable, include target plugin before subdirectory plugins.
-	if ( dir_has_req_build_file( $base_command, slic_plugins_dir( slic_target() ) ) ) {
+	$path = $using === 'site' ? slic_wp_dir() : slic_plugins_dir( slic_target() );
+	if ( dir_has_req_build_file( $base_command, $path ) ) {
 		$targets[] = 'target';
 	}
 
