@@ -37,18 +37,18 @@ function process( $command ) {
  * Realtime processes are done without forking, have no need of prefixes, and support interactivity.
  *
  * @param string $command The command to run.
- * @param string|null $prefix The prefix to place before all output.
  *
  * @return int The process exit status, `0` means ok.
  */
 function process_realtime( $command ) {
-	debug( "Executing command: {$command}" );
-
 	echo PHP_EOL;
 
 	setup_terminal();
 
-	$clean_command = escapeshellcmd( $command );
+	// Fix broken line break output for docker compose v2.2.x: https://github.com/docker/compose/issues/8833#issuecomment-953023240
+	$clean_command = escapeshellcmd( $command ) . ' </dev/null';
+
+	debug( "Executing command: $clean_command" );
 
 	passthru( $clean_command, $status );
 
