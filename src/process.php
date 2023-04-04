@@ -32,23 +32,46 @@ function process( $command ) {
 }
 
 /**
+ * Returns whether TTY is supported on the current operating system.
+ *
+ * @return bool
+ */
+function is_tty_supported(): bool {
+	return ( '/' === \DIRECTORY_SEPARATOR && stream_isatty( \STDOUT ) );
+}
+
+/**
+ * Returns whether we're attempting to run a "docker compose" or "docker-compose"
+ * command.
+ *
+ * @param string $command The command to run.
+ *
+ * @return bool
+ */
+function is_dc_exec_command( string $command ): bool {
+	return strpos( $command, docker_compose_bin() ) !== false && strpos( $command, ' exec ' ) !== false;
+}
+
+/**
  * Runs a process in realtime, displaying its output.
  *
  * Realtime processes are done without forking, have no need of prefixes, and support interactivity.
  *
  * @param string $command The command to run.
- * @param string|null $prefix The prefix to place before all output.
  *
  * @return int The process exit status, `0` means ok.
  */
 function process_realtime( $command ) {
-	debug( "Executing command: {$command}" );
-
-	echo PHP_EOL;
-
 	setup_terminal();
 
-	$clean_command = escapeshellcmd( $command );
+	// Fix broken line break output for docker compose v2.2.x: https://github.com/docker/compose/issues/8833#issuecomment-953023240
+	$dc_issue_8833_fix_postfix = ( is_dc_exec_command( $command ) && is_tty_supported() ) ? ' </dev/null' : '';
+
+	$clean_command = escapeshellcmd( $command ) . $dc_issue_8833_fix_postfix;
+
+	debug( "Executing command: $clean_command" );
+
+	echo PHP_EOL;
 
 	passthru( $clean_command, $status );
 
