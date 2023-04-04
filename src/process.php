@@ -48,8 +48,8 @@ function is_tty_supported(): bool {
  *
  * @return bool
  */
-function is_docker_compose_command( string $command ): bool {
-	return strpos( $command, docker_compose_bin() ) !== false;
+function is_dc_exec_command( string $command ): bool {
+	return strpos( $command, docker_compose_bin() ) !== false && strpos( $command, ' exec ' );
 }
 
 /**
@@ -62,16 +62,16 @@ function is_docker_compose_command( string $command ): bool {
  * @return int The process exit status, `0` means ok.
  */
 function process_realtime( $command ) {
-	echo PHP_EOL;
-
 	setup_terminal();
 
 	// Fix broken line break output for docker compose v2.2.x: https://github.com/docker/compose/issues/8833#issuecomment-953023240
-	$dc_issue_8833_fix_postfix = ( is_docker_compose_command( $command ) && is_tty_supported() ) ? ' </dev/null' : '';
+	$dc_issue_8833_fix_postfix = ( is_dc_exec_command( $command ) && is_tty_supported() ) ? ' </dev/null' : '';
 
 	$clean_command = escapeshellcmd( $command ) . $dc_issue_8833_fix_postfix;
 
 	debug( "Executing command: $clean_command" );
+
+	echo PHP_EOL;
 
 	passthru( $clean_command, $status );
 
