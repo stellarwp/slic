@@ -49,7 +49,7 @@ function is_tty_supported(): bool {
  * @return bool
  */
 function is_dc_exec_command( string $command ): bool {
-	return strpos( $command, docker_compose_bin() ) !== false && strpos( $command, ' exec ' );
+	return strpos( $command, docker_compose_bin() ) !== false && strpos( $command, ' exec ' ) !== false;
 }
 
 /**
