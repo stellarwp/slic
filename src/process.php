@@ -31,6 +31,14 @@ function process( $command ) {
 	};
 }
 
+function is_tty_supported(): bool {
+	return ( '/' === \DIRECTORY_SEPARATOR && stream_isatty( \STDOUT ) );
+}
+
+function is_docker_composer_command( string $command ): bool {
+	return strpos( $command, docker_compose_bin() ) !== false;
+}
+
 /**
  * Runs a process in realtime, displaying its output.
  *
@@ -45,12 +53,10 @@ function process_realtime( $command ) {
 
 	setup_terminal();
 
-	$is_windows                = DIRECTORY_SEPARATOR === '\\';
-	$is_docker_compose_cmd = strpos( $command, docker_compose_bin() ) === 0;
-
 	// Fix broken line break output for docker compose v2.2.x: https://github.com/docker/compose/issues/8833#issuecomment-953023240
-	$dc_issue_8833_fix_postfix = $is_windows || ! $is_docker_compose_cmd ? '' : ' </dev/null';
-	$clean_command             = escapeshellcmd( $command ) . $dc_issue_8833_fix_postfix;
+	$dc_issue_8833_fix_postfix = ( is_docker_composer_command( $command ) && is_tty_supported() ) ? ' </dev/null' : '';
+
+	$clean_command = escapeshellcmd( $command ) . $dc_issue_8833_fix_postfix;
 
 	debug( "Executing command: $clean_command" );
 
