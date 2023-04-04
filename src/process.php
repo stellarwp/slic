@@ -31,10 +31,23 @@ function process( $command ) {
 	};
 }
 
+/**
+ * Returns whether TTY is supported on the current operating system.
+ *
+ * @return bool
+ */
 function is_tty_supported(): bool {
 	return ( '/' === \DIRECTORY_SEPARATOR && stream_isatty( \STDOUT ) );
 }
 
+/**
+ * Returns whether we're attempting to run a "docker compose" or "docker-compose"
+ * command.
+ *
+ * @param string $command The command to run.
+ *
+ * @return bool
+ */
 function is_docker_compose_command( string $command ): bool {
 	return strpos( $command, docker_compose_bin() ) !== false;
 }
