@@ -45,8 +45,12 @@ function process_realtime( $command ) {
 
 	setup_terminal();
 
+	$is_windows                = DIRECTORY_SEPARATOR === '\\';
+	$is_docker_compose_cmd = strpos( $command, docker_compose_bin() ) === 0;
+
 	// Fix broken line break output for docker compose v2.2.x: https://github.com/docker/compose/issues/8833#issuecomment-953023240
-	$clean_command = escapeshellcmd( $command ) . ' </dev/null';
+	$dc_issue_8833_fix_postfix = $is_windows || ! $is_docker_compose_cmd ? '' : ' </dev/null';
+	$clean_command             = escapeshellcmd( $command ) . $dc_issue_8833_fix_postfix;
 
 	debug( "Executing command: $clean_command" );
 
