@@ -1,6 +1,6 @@
 ARG WORDPRESS_IMAGE_VERSION=wordpress/apache
 ARG PHP_VERSION=7.4
-ARG WP_VERSION=6.0.2
+ARG WP_VERSION=6.2.2
 
 FROM wordpress:${WP_VERSION}-php${PHP_VERSION}-apache
 ADD https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
