@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.4.0] - 2023-06-21
 
-* Change - Update WordPress version to 6.2.2.
+* Change - Update WordPress version to 6.1 (the last WP version with a PHP 7.4 image).
 
 ## [1.3.3] - 2023-04-04
 
