@@ -16,7 +16,7 @@ jobs:
       packages: write
     strategy:
       matrix:
-        wp_version: [ '6.0.2' ]
+        wp_version: [ '6.1' ]
         php_version: [ '7.4', '8.0', '8.1' ]
         include:
           # WordPress did not publish any 6.x images for PHP 7.3, use the latest 5.9 patch.
