@@ -47,8 +47,6 @@ RUN chmod a+x /usr/local/bin/xdebug-on && \
 
 # Make the PHP configuration directory recursively readable and writable to allow all users to activate and deactivate XDebug.
 RUN chmod -R a+rwx /usr/local/etc/php/conf.d
-RUN echo "xdebug.mode=develop,debug,coverage" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini && \
-    echo "xdebug.start_with_request=yes" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
 RUN xdebug-off
 
 # Install nvm.

@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [1.4.3] - 2023-08-03
+
+* Change - Configure `slic` and `wordpress` containers consistently with `php.ini` configuration file.
+* Change - Set `xdebug.log_level=0` in `slic` and `wordpress` containers to avoid nags in separate process running.
+
 ## [1.4.2] - 2023-07-02
 
 * Change - Enable xdebug coverage mode in all PHP based docker containers when xdebug is enabled via: `xdebug.mode=develop,debug,coverage`.
