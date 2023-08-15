@@ -18,8 +18,9 @@ COPY ./php.ini /usr/local/etc/php/conf.d/999-slic.ini
 ADD https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar /usr/local/bin/wp
 RUN chmod a+rx /usr/local/bin/wp
 
-# If PHP_VERSION is 7.4, the use wp-cli to update wordpress to version 6.2.
-# No image is available for wordpress 6.2 with PHP 7.4: this works around the issue.
-RUN if [ "${PHP_VERSION}" = "7.4" ]; then \
-    wp core update --version=6.2 --force; \
+# No image for WordPress 6.2+ is available for PHP 7.4.
+# If PHP_VERSION is 7.4, update WordPress to 6.2 using wp-cli.
+# Weird syntax? POSIX compliant sh.
+RUN if echo "${PHP_VERSION}" | grep -q '^7.4'; then \
+    wp --allow-root --path=/var/www/html core download --version=6.2 --force; \
     fi
