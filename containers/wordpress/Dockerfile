@@ -22,5 +22,5 @@ RUN chmod a+rx /usr/local/bin/wp
 # If PHP_VERSION is 7.4, update WordPress to 6.2 using wp-cli.
 # Weird syntax? POSIX compliant sh.
 RUN if echo "${PHP_VERSION}" | grep -q '^7.4'; then \
-    wp --allow-root --path=/var/www/html core download --version=6.2 --force; \
+    wp --allow-root --path=/usr/src/wordpress core download --version=6.2 --force; \
     fi
