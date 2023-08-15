@@ -16,15 +16,17 @@ jobs:
       packages: write
     strategy:
       matrix:
-        wp_version: [ '6.1' ]
-        php_version: [ '7.4', '8.0', '8.1' ]
+        wp_version: [ '6.2' ]
+        php_version: [ '8.0', '8.1', '8.2' ]
         include:
-          # WordPress did not publish any 6.x images for PHP 7.3, use the latest 5.9 patch.
+          # No WordPress image for version 6.2+ and PHP 7.3: use the latest 5.9 version.
+          # This version is NOT udpated in the containers/wordpress/Dockerfile for back-compatibility.
           - wp_version: '5.9'
             php_version: '7.3'
-          # WordPress did not publish earlier versions of WP for PHP8.2.
+          # No WordPress image for version 6.2+ and PHP 7.4: use the latest 6.1.1 version.
+          # See containers/wordpress/Dockerfile for the wp-cli update to version 6.2.
           - wp_version: '6.1.1'
-            php_version: '8.2'
+            php_version: '7.4'
 
     steps:
       - name: Checkout repository

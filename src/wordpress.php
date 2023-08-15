@@ -145,60 +145,6 @@ function ensure_wordpress_installed(): bool {
 }
 
 /**
- * Fetch and return WordPress current latest version string.
- *
- * The result is cached in file for a day.
- *
- * @return string The current latest version, or `1.0.0` if the information
- *                could not be retrieved.
- */
-function get_wordpress_latest_version(): string {
-	static $current_latest_version;
-
-	if ( $current_latest_version !== null ) {
-		return $current_latest_version;
-	}
-
-	$cache_file = cache( 'wp_latest_version.txt' );
-
-	// Invalidate after a day.
-	if ( is_readable( $cache_file ) && ( time() - (int) filectime( $cache_file ) ) < 86400 ) {
-		debug( "Reading latest version string from cache file $cache_file." . PHP_EOL );
-
-		$current_latest_version = file_get_contents( $cache_file );
-
-		return $current_latest_version;
-	}
-
-	debug( "Fetching latest WordPress version string ..." . PHP_EOL );
-	$json = file_get_contents( 'https://api.wordpress.org/core/version-check/1.7/' );
-
-	if ( $json === false ) {
-		debug( 'Fetching of WordPress latest version string failed, falling back to 1.0.0.' );
-
-		// We could not tell, return something that will trigger a refresh.
-		return '1.0.0';
-	}
-
-	$decoded = json_decode( $json, true );
-
-	if ( $decoded !== false && isset( $decoded['offers'][0]['current'] ) ) {
-		$current_latest_version = $decoded['offers'][0]['current'];
-
-		debug( "Fetched WordPress latest version: $current_latest_version" . PHP_EOL );
-
-		file_put_contents( $cache_file, $current_latest_version );
-
-		return $current_latest_version;
-	}
-
-	debug( "Fetched latest version response malformed, falling back to 1.0.0" . PHP_EOL );
-
-	// We could not tell, return something that will trigger a refresh.
-	return '1.0.0';
-}
-
-/**
  * Ensure, failing if not possible, that WordPress is correctly set up, configured and installed.
  *
  * @param string|null $version The WordPress version to ensure the readiness of, `latest` if null.
