@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 # [1.4.4] - 2023-08-15
 * Change - Update base WordPress container from 6.1 to 6.2.
+* Change - Add WP CLI to the `wordpress` container as `wp`.
 
 # [1.4.3] - 2023-08-03
 
