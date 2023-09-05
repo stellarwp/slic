@@ -114,6 +114,9 @@ services:
       interval: 1s
       timeout: 3s
       retries: 30
+    extra_hosts:
+      # set as host=host.docker.internal in src/slic.php on Linux for xdebug
+      - "${host:-host}:host-gateway"
 
   chrome:
     image: ${SLIC_CHROME_CONTAINER:-selenium/standalone-chrome:3.141.59}
@@ -191,3 +194,6 @@ services:
       - ${COMPOSER_CACHE_DIR:-./.cache}:/composer-cache
       # Scripts volume
       - ${SLIC_SCRIPTS}:/slic-scripts
+    extra_hosts:
+      # set as host=host.docker.internal in src/slic.php on Linux for xdebug
+      - "${host:-host}:host-gateway"
