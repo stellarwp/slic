@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [1.5.0] - 2023-09-06
+* Fix - Added `extra_hosts:"${host:-host}:host-gateway"` to slick-stack.yml for Linux compatibility, enabling Xdebug without modifying the XDH environment variable. [Ref](https://github.com/docker/for-linux/issues/264#issuecomment-785247571).
+
 # [1.4.4] - 2023-08-15
 * Change - Update base WordPress container from 6.1 to 6.2.
 * Change - Add WP CLI to the `wordpress` container as `wp`.

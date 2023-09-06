@@ -267,6 +267,15 @@ function setup_slic_env( $root_dir, $reset = false ) {
 		load_env_file( $root_dir . '/.env.slic.run' );
 	}
 
+	/*
+	 * Set the host env var to make xdebug work on Linux with host.docker.internal.
+	 * This will already be set on Mac/Windows, and overriding it would break things.
+	 * See extra_hosts: in slick-stack.yml.
+	 */
+	if ( PHP_OS === 'Linux' ) {
+		putenv( sprintf( 'host=%s', getenv( 'XDH' ) ?: 'host.docker.internal' ) );
+	}
+
 	$default_wp_dir = root( '/_wordpress' );
 	$wp_dir         = getenv( 'SLIC_WP_DIR' );
 
