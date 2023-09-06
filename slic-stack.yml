@@ -115,7 +115,7 @@ services:
       timeout: 3s
       retries: 30
     extra_hosts:
-      # set as host=host.docker.internal in src/slic.php on Linux for xdebug
+      # Set as host=host.docker.internal in src/slic.php on Linux for XDebug.
       - "${host:-host}:host-gateway"
 
   chrome:
@@ -195,5 +195,5 @@ services:
       # Scripts volume
       - ${SLIC_SCRIPTS}:/slic-scripts
     extra_hosts:
-      # set as host=host.docker.internal in src/slic.php on Linux for xdebug
+      # Set as host=host.docker.internal in src/slic.php on Linux for XDebug.
       - "${host:-host}:host-gateway"
