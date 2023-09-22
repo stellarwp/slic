@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [TBD] - TBD
+* Change - Added check on Linux for User ID 100999 and Group 100999 issue that occurs with [Docker](https://github.com/docker/desktop-linux/issues/31).
+
 # [1.5.0] - 2023-09-06
 * Fix - Added `extra_hosts:"${host:-host}:host-gateway"` to slick-stack.yml for Linux compatibility, enabling Xdebug without modifying the XDH environment variable. [Ref](https://github.com/docker/for-linux/issues/264#issuecomment-785247571).
 

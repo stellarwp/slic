@@ -645,3 +645,87 @@ function ensure_dir( $dir ) {
 
 	return realpath( $dir );
 }
+
+/**
+ * Recursively check permissions in a directory and confirm the UID/GID is properly set.
+ *
+ * @param string $dir The directory path to check.
+ *
+ * @return string|bool Error message or true if all checks pass.
+ */
+function check_permissions_in_directory_recursively( string $dir ) {
+	// Open the directory.
+	if ( $handle = opendir( $dir ) ) {
+		// Loop through each entry in the directory.
+		while ( false !== ( $entry = readdir( $handle ) ) ) {
+			// Skip '.' and '..' directories.
+			if ( $entry === '.' || $entry === '..' ) {
+				continue;
+			}
+
+			// Construct the full file path.
+			$file_path = $dir . '/' . $entry;
+
+			// Define the invalid ID and the error message.
+			$invalid_id = 100999;
+			$message    = "Slic has identified that the file located at ${file_path} is assigned a UID/GID of ${invalid_id}. This is likely a result of a documented Docker bug (refer to: https://github.com/docker/desktop-linux/issues/31). To address this issue, execute the following command: `sudo chown -R user_id:group_id ${file_path}`. Make sure to substitute 'user_id' and 'group_id' with the appropriate values.";
+
+			// Check if the file is readable.
+			if ( ! is_readable( $file_path ) ) {
+				return $message;
+			}
+
+			// Get the file owner and group IDs.
+			$file_owner = fileowner( $file_path );
+			$file_group = filegroup( $file_path );
+
+			// Check if the file owner or group ID is invalid.
+			if ( $file_owner === $invalid_id || $file_group === $invalid_id ) {
+				return $message;  // Early exit.
+			}
+
+			// If it's a directory, traverse it.
+			if ( is_dir( $file_path ) ) {
+				$result = check_permissions_in_directory_recursively( $file_path );
+				if ( $result !== true ) {
+					return $result;  // Early exit.
+				}
+			}
+		}
+		// Close the directory handle.
+		closedir( $handle );
+	} else {
+		// Return an error if the directory cannot be opened.
+		return "Error: Unable to open directory {$dir}.";
+	}
+
+	// Return true if all checks pass.
+	return true;
+}
+
+/**
+ * Confirm that all given paths have correct file permissions on Linux.
+ *
+ * @param array $paths The paths to start checking from.
+ *
+ * @return string|bool Error message or true if all checks pass.
+ */
+function confirm_linux_has_file_permissions( array $paths ) {
+	// This check is only valid for Linux, if you are any other OS return True to continue.
+	if ( 'Linux' !== os() ) {
+		return true;
+	}
+
+	foreach ( $paths as $path ) {
+		if ( ! file_exists( $path ) || ! is_readable( $path ) ) {
+			return "Error: The path {$path} does not exist or is not readable.";
+		}
+
+		$result = check_permissions_in_directory_recursively( $path );
+		if ( $result !== true ) {
+			return $result;
+		}
+	}
+
+	return true;
+}
