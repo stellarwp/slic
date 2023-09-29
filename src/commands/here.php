@@ -49,6 +49,9 @@ if ( empty( $reset ) ) {
 	$here_dir = $plugins_dir;
 }
 
+// Due to a Docker bug, confirm Linux has proper permissions, otherwise output an error.
+ confirm_linux_has_file_permissions( [ $here_dir, $wp_dir, $themes_dir ] );
+
 $has_wp_config = dir_has_wp_config( $here_dir );
 $env_values    = [];
 

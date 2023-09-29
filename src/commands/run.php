@@ -49,6 +49,9 @@ echo light_cyan( "Using {$using}" . PHP_EOL );
 $codeception_args = array_merge( [ 'run' ], $args( '...' ) );
 ensure_service_running( 'slic' );
 
+// Due to a Docker bug, confirm Linux has proper permissions, otherwise output an error.
+confirm_linux_has_file_permissions( [ slic_wp_dir(), slic_plugins_dir( slic_target( true ) ) ] );
+
 setup_id();
 
 maybe_generate_htaccess();

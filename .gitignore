@@ -39,3 +39,6 @@ _plugins
 
 # slic own cache directory
 .cache
+
+# slic lastruntime
+.lastruntime
