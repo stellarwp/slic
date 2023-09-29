@@ -38,6 +38,13 @@ $targets = $args( '...' );
 
 quietly_tear_down_stack();
 
+$lastruntime = root( '/.lastruntime' );
+echo "Removing {$lastruntime} ... ";
+echo ( ! file_exists( $lastruntime ) || unlink( $lastruntime ) ) ?
+	light_cyan( 'done' )
+	: magenta( 'fail, remove it manually' );
+echo PHP_EOL;
+
 $run_settings_file = root( '/.env.slic.run' );
 echo "Removing {$run_settings_file} ... ";
 echo ( ! file_exists( $run_settings_file ) || unlink( $run_settings_file ) ) ?

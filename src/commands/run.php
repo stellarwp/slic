@@ -50,11 +50,7 @@ $codeception_args = array_merge( [ 'run' ], $args( '...' ) );
 ensure_service_running( 'slic' );
 
 // Due to a Docker bug, confirm Linux has proper permissions, otherwise output an error.
-$check_permissions = confirm_linux_has_file_permissions( [ slic_wp_dir(), slic_plugins_dir( slic_target( true ) ) ] );
-
-if ( $check_permissions !== true ) {
-	echo red( $check_permissions );
-}
+confirm_linux_has_file_permissions( [ slic_wp_dir(), slic_plugins_dir( slic_target( true ) ) ] );
 
 setup_id();
 

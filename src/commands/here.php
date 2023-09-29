@@ -50,11 +50,7 @@ if ( empty( $reset ) ) {
 }
 
 // Due to a Docker bug, confirm Linux has proper permissions, otherwise output an error.
-$check_permissions = confirm_linux_has_file_permissions( [ $here_dir, $wp_dir, $themes_dir ] );
-
-if ( $check_permissions !== true ) {
-	echo red( $check_permissions );
-}
+ confirm_linux_has_file_permissions( [ $here_dir, $wp_dir, $themes_dir ] );
 
 $has_wp_config = dir_has_wp_config( $here_dir );
 $env_values    = [];

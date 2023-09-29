@@ -5,6 +5,10 @@
 
 namespace StellarWP\Slic;
 
+use FilesystemIterator;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+
 require_once __DIR__ . '/process.php';
 require_once __DIR__ . '/colors.php';
 
@@ -647,85 +651,131 @@ function ensure_dir( $dir ) {
 }
 
 /**
- * Recursively check permissions in a directory and confirm the UID/GID is properly set.
+ * Create a file named ".lastruntime" in the root directory and write the current Unix time to it.
+ *
+ * @return bool True if the file was successfully written, false otherwise.
+ */
+function write_last_runtime_to_file(): bool {
+	$filename = '.lastruntime';
+	// Get the current Unix time.
+	$current_unix_time = time();
+
+	// Define the path to the .lastruntime file in the root directory.
+	$file_path = root( "/{$filename}" );
+
+	// Write the current Unix time to the .lastruntime file.
+	$result = file_put_contents( $file_path, $current_unix_time );
+
+	// Check if the file was successfully written.
+	return $result !== false;
+}
+
+/**
+ * Check if the mtime of a directory has changed since the last check.
  *
  * @param string $dir The directory path to check.
  *
- * @return string|bool Error message or true if all checks pass.
+ * @return bool True if the mtime has changed, false otherwise.
  */
-function check_permissions_in_directory_recursively( string $dir ) {
-	// Open the directory.
-	if ( $handle = opendir( $dir ) ) {
-		// Loop through each entry in the directory.
-		while ( false !== ( $entry = readdir( $handle ) ) ) {
-			// Skip '.' and '..' directories.
-			if ( $entry === '.' || $entry === '..' ) {
-				continue;
-			}
+function should_skip_check_based_on_mtime( string $dir ): bool {
+	$lastruntime_file = root( '/.lastruntime' );
 
-			// Construct the full file path.
-			$file_path = $dir . '/' . $entry;
+	if ( file_exists( $lastruntime_file ) ) {
+		$last_runtime  = (int) file_get_contents( $lastruntime_file );
+		$current_mtime = filemtime( $dir );
 
-			// Define the invalid ID and the error message.
-			$invalid_id = 100999;
-			$message    = "Slic has identified that the file located at ${file_path} is assigned a UID/GID of ${invalid_id}. This is likely a result of a documented Docker bug (refer to: https://github.com/docker/desktop-linux/issues/31). To address this issue, execute the following command: `sudo chown -R user_id:group_id ${file_path}`. Make sure to substitute 'user_id' and 'group_id' with the appropriate values.";
-
-			// Check if the file is readable.
-			if ( ! is_readable( $file_path ) ) {
-				return $message;
-			}
-
-			// Get the file owner and group IDs.
-			$file_owner = fileowner( $file_path );
-			$file_group = filegroup( $file_path );
-
-			// Check if the file owner or group ID is invalid.
-			if ( $file_owner === $invalid_id || $file_group === $invalid_id ) {
-				return $message;  // Early exit.
-			}
-
-			// If it's a directory, traverse it.
-			if ( is_dir( $file_path ) ) {
-				$result = check_permissions_in_directory_recursively( $file_path );
-				if ( $result !== true ) {
-					return $result;  // Early exit.
-				}
-			}
+		if ( $current_mtime <= $last_runtime ) {
+			return true;  // Skip the check.
 		}
-		// Close the directory handle.
-		closedir( $handle );
-	} else {
-		// Return an error if the directory cannot be opened.
-		return "Error: Unable to open directory {$dir}.";
 	}
 
-	// Return true if all checks pass.
+	return false;
+}
+
+/**
+ * Check the ownership and ID of a given file.
+ *
+ * @param string $file_path   The file path to check.
+ * @param int    $current_uid The current user ID.
+ * @param int    $current_gid The current group ID.
+ * @param int    $invalid_id  The invalid ID to check against.
+ *
+ * @return string|bool Error message or true if all checks pass.
+ */
+function check_file_ownership_and_id( $file_path, $current_uid, $current_gid, $invalid_id ) {
+	$file_owner = fileowner( $file_path );
+	$file_group = filegroup( $file_path );
+
+	// Using indexed placeholders for sprintf.
+	$message_template = "<red>Slic has identified that the file located at %1\$s is assigned a UID/GID of %2\$d.</red>" . PHP_EOL . PHP_EOL . "This is likely a result of a documented Docker bug (refer to: https://github.com/docker/desktop-linux/issues/31)." . PHP_EOL . PHP_EOL . "To address this issue, execute the following command:" . PHP_EOL . "<light_cyan>sudo chown -R {$current_uid}:{$current_gid} %1\$s</light_cyan>" . PHP_EOL;
+
+	// Check if the file owner or group ID is invalid.
+	if ( $file_owner === $invalid_id || $file_group === $invalid_id ) {
+		return colorize( sprintf( $message_template, $file_path, $invalid_id ) );
+	}
+
 	return true;
+}
+
+/**
+ * Recursively check permissions in a directory for UID 10099.
+ *
+ * @ref https://github.com/docker/desktop-linux/issues/31
+ *
+ * @param string $dir The directory path to check.
+ */
+function check_permissions_in_directory_recursively( string $dir ) {
+
+	if ( 'Linux' !== os() ) {
+		return;
+	}
+
+	$current_uid = getmyuid();
+	$current_gid = getmygid();
+	$invalid_id  = 100999;
+
+	try {
+		$directory_iterator = new RecursiveDirectoryIterator( $dir, FilesystemIterator::SKIP_DOTS );
+		$iterator           = new RecursiveIteratorIterator( $directory_iterator,
+		                                                     RecursiveIteratorIterator::SELF_FIRST );
+
+		foreach ( $iterator as $file_info ) {
+			$file_path = $file_info->getPathname();
+
+			$result = check_file_ownership_and_id( $file_path, $current_uid, $current_gid, $invalid_id );
+			if ( $result !== true ) {
+				exit( $result );  // Early exit.
+			}
+		}
+	} catch ( Exception $e ) {
+		exit( "Error: Unable to open directory {$dir}." );  // Early exit.
+	}
 }
 
 /**
  * Confirm that all given paths have correct file permissions on Linux.
  *
  * @param array $paths The paths to start checking from.
- *
- * @return string|bool Error message or true if all checks pass.
  */
 function confirm_linux_has_file_permissions( array $paths ) {
-	// This check is only valid for Linux, if you are any other OS return True to continue.
 	if ( 'Linux' !== os() ) {
-		return true;
+		return;
 	}
 
 	foreach ( $paths as $path ) {
-		if ( ! file_exists( $path ) || ! is_readable( $path ) ) {
-			return "Error: The path {$path} does not exist or is not readable.";
+		if ( ! file_exists( $path ) ) {
+			continue;
 		}
 
-		$result = check_permissions_in_directory_recursively( $path );
-		if ( $result !== true ) {
-			return $result;
+		// Check if mtime has changed since the last check.
+		if ( should_skip_check_based_on_mtime( $path ) ) {
+			echo "Skipping the path";
+			continue;  // Skip this path.
 		}
+
+		// Update the last runtime file.
+		write_last_runtime_to_file();
+
+		check_permissions_in_directory_recursively( $path );
 	}
-
-	return true;
 }
