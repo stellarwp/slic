@@ -89,7 +89,7 @@ services:
         define( 'TRIBE_NO_FREEMIUS', true );
         define( 'WP_DEBUG_DISPLAY', true );
         define( 'WP_DEBUG_LOG', true );
-        define( 'DISABLE_WP_CRON', true );
+        define( 'DISABLE_WP_CRON', ${SLIC_DISABLE_WP_CRON:-true} );
         define( 'WP_HTTP_BLOCK_EXTERNAL', ${SLIC_WP_HTTP_BLOCK_EXTERNAL:-true} );
       # Configure this to debug the tests with XDebug.
       # Map the `_wordpress` directory to `/var/www/html' directory in your IDE of choice.
