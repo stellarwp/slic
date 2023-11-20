@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [1.5.1] - 2023-11-20
+* Change - Allow controlling the value of the `WP_HTTP_BLOCK_EXTERNAL` constant using the `SLIC_WP_HTTP_BLOCK_EXTERNAL` environment variable defined in the `.env.slic.run` configuration file; set to `false` by default to block all outgoing HTTP requests from WordPress.
+* Change - Allow controlling  the value of the `DISABLE_WP_CRON` constant using the `SLIC_DISABLE_WP_CRON` environment variable defined in the `.env.slic.run` configuration file; set to `true` by default to disable the WordPress cron system.
+
 # [1.5.0] - 2023-09-06
 * Fix - Added `extra_hosts:"${host:-host}:host-gateway"` to slick-stack.yml for Linux compatibility, enabling Xdebug without modifying the XDH environment variable. [Ref](https://github.com/docker/for-linux/issues/264#issuecomment-785247571).
 
