@@ -6,8 +6,8 @@ FROM composer:2 AS composer2
 
 FROM php:${PHP_VERSION}
 
-ARG NODE_VERSION=16.6.1
-ARG NVM_VERSION=v0.39.3
+ARG NODE_VERSION=18.13.0
+ARG NVM_VERSION=v0.39.7
 # Disable AVIF for GD https://github.com/mlocati/docker-php-extension-installer#configuration
 ARG IPE_GD_WITHOUTAVIF=true
 
@@ -28,9 +28,13 @@ RUN if [ ${IPE_GD_WITHOUTAVIF} = true ]; then \
       install-php-extensions gd; \
     fi
 
-# Install some more packages required by wp-cli and Composer.
+# Install some more packages required by wp-cli, Composer and Playwright.
 RUN apt-get update && apt-get upgrade -yqq && apt-get install -yqq --no-install-recommends --show-progress \
     default-mysql-client curl git zip unzip iproute2 \
+    libnss3 libnspr4 libdbus-1-3 libatk1.0-0 libatk-bridge2.0-0 \
+    libcups2 libdrm2 libxkbcommon0 libatspi2.0-0 libxcomposite1 \
+    libxdamage1 libxext6 libxfixes3 libxrandr2 libgbm1 \
+    libpango-1.0-0 libcairo2 libasound2 \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Configure the uopz extension.
@@ -53,14 +57,14 @@ RUN xdebug-off
 ENV NODE_VERSION=${NODE_VERSION}
 ENV NVM_VERSION=${NVM_VERSION}
 ENV NVM_DIR=/usr/local/bin/.nvm
-RUN mkdir /usr/local/bin/.nvm
+RUN mkdir /usr/local/bin/.nvm && mkdir /usr/local/bin/.nvm/cache
 RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/${NVM_VERSION}/install.sh | bash
 RUN bash -c '. $NVM_DIR/nvm.sh && nvm install $NODE_VERSION'
 RUN bash -c '. $NVM_DIR/nvm.sh && nvm alias default $NODE_VERSION'
 RUN bash -c '. $NVM_DIR/nvm.sh && nvm use default'
 
 ENV PATH $NVM_DIR/versions/node/v$NODE_VERSION/bin:$NVM_DIR:$PATH
-RUN chmod a+x $NVM_DIR/nvm.sh
+RUN chmod a+x $NVM_DIR/nvm.sh && chmod a+rwx $NVM_DIR/cache
 
 # Install Composer 1 and 2 from the respective images and make them world-executable.
 COPY --from=composer1 /usr/bin/composer /usr/local/bin/composer1

@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [1.5.1] - 2024-01-05
+* Change - Update the `npm` version to `18.13.0`
+* Change - Update the `nvm` version to `v0.39.7`
+* Fixed - Ensure `nvm` cache directory is world-accessible to allow use of `nvm install`
+
 # [1.5.1] - 2023-11-20
 * Change - Allow controlling the value of the `WP_HTTP_BLOCK_EXTERNAL` constant using the `SLIC_WP_HTTP_BLOCK_EXTERNAL` environment variable defined in the `.env.slic.run` configuration file; set to `true` by default to block all outgoing HTTP requests from WordPress.
 * Change - Allow controlling  the value of the `DISABLE_WP_CRON` constant using the `SLIC_DISABLE_WP_CRON` environment variable defined in the `.env.slic.run` configuration file; set to `true` by default to disable the WordPress cron system.
