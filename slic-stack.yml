@@ -1,7 +1,5 @@
 # docker compose configuration file used to run cross-activation tests.
 
-version: "3.9"
-
 networks:
   slic:
 
