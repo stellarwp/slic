@@ -74,3 +74,4 @@ jobs:
             PHP_VERSION=${{ matrix.php_version }}
             NODE_VERSION=18.13.0
             NVM_VERSION=v0.39.7
+          platforms: linux/amd64,linux/arm64
