@@ -85,7 +85,7 @@ if ( ! in_array( '--yes', $command, true ) ) {
 		'Are you sure you want to install WordPress "%s", wipe the tests database and overwrite %s?',
 		$version,
 		$file,
-	), 'yes' );
+	), 'no' );
 
 	if ( ! $confirm ) {
 		echo yellow( 'Aborted.' );
