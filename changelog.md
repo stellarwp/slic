@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [1.5.4] - 2024-04-08
+* Change - Disable WordPress's automatic updating in slic containers via docker compose `WORDPRESS_CONFIG_EXTRA` defines. See comments in `.env.slic` to customize this behavior.
+
 # [1.5.3] - 2024-04-05
 * Change - Build `linux/arm64` images for the `slic` and `wordpress` containers to avoid issues when running `slic` on ARM machines.
 
