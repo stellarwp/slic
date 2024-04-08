@@ -139,6 +139,8 @@ foreach ( $commands as $arguments ) {
 	exit ( 1 );
 }
 
+ensure_wordpress_installed();
+
 echo green( sprintf( "Success: Exported to host path '%s'.", $file ) );
 
 exit( 0 );
