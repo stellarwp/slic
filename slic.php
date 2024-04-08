@@ -1,5 +1,6 @@
 <?php
 // Requires the function files we might need.
+require_once __DIR__ . '/includes/polyfills.php';
 require_once __DIR__ . '/src/classes/Cache.php';
 require_once __DIR__ . '/src/cache.php';
 require_once __DIR__ . '/src/utils.php';
@@ -112,6 +113,7 @@ $help_advanced_message_template = <<< HELP
   <light_cyan>up</light_cyan>             Starts containers in the stack; alias of `start`.
   <light_cyan>update</light_cyan>         Updates the tool and the images used in its services.
   <light_cyan>upgrade</light_cyan>        Upgrades the {$cli_name} repo.
+  <light_cyan>dump</light_cyan>           Installs a specific version of WordPress, wipes the database and exports a tests dump.sql.
 HELP;
 
 $help_message          = colorize( $help_message_template );
