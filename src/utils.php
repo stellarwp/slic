@@ -649,23 +649,23 @@ function ensure_dir( $dir ) {
 /**
  * Removes trailing directory separators.
  *
- * @param string $value
+ * @param string $path The directory path.
  *
  * @return string
  */
-function untrailingslashit( $value ) {
-	return rtrim( $value, DIRECTORY_SEPARATOR );
+function untrailingslashit( $path ) {
+	return rtrim( $path, DIRECTORY_SEPARATOR );
 }
 
 /**
  * Appends a directory separator.
  *
- * @param string $value
+ * @param string $path The directory path.
  *
  * @return string
  */
-function trailingslashit( $value ) {
-	return untrailingslashit( $value ) . DIRECTORY_SEPARATOR;
+function trailingslashit( $path ) {
+	return untrailingslashit( $path ) . DIRECTORY_SEPARATOR;
 }
 
 /**
@@ -673,10 +673,10 @@ function trailingslashit( $value ) {
  *
  * @example /my-project//tests > /my-project/tests
  *
- * @param string $value
+ * @param string $path The directory path.
  *
  * @return string
  */
-function remove_double_separators( $value ) {
-	return str_replace( sprintf( '%s%s', DIRECTORY_SEPARATOR, DIRECTORY_SEPARATOR ), DIRECTORY_SEPARATOR, $value );
+function remove_double_separators( $path ) {
+	return str_replace( sprintf( '%s%s', DIRECTORY_SEPARATOR, DIRECTORY_SEPARATOR ), DIRECTORY_SEPARATOR, $path );
 }
