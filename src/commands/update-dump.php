@@ -61,7 +61,7 @@ if ( $version ) {
 	$update_command = cli_command( [
 		'core',
 		'update-db',
-	] );
+	], true );
 }
 
 $commands = [
