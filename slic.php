@@ -113,7 +113,7 @@ $help_advanced_message_template = <<< HELP
   <light_cyan>up</light_cyan>             Starts containers in the stack; alias of `start`.
   <light_cyan>update</light_cyan>         Updates the tool and the images used in its services.
   <light_cyan>upgrade</light_cyan>        Upgrades the {$cli_name} repo.
-  <light_cyan>dump</light_cyan>           Installs a specific version of WordPress, wipes the database and exports a tests dump.sql.
+  <light_cyan>update-dump</light_cyan>    Clears the database and exports a new dump.sql for use with acceptance tests. Optionally, installs a specific WordPress version.       
 HELP;
 
 $help_message          = colorize( $help_message_template );
