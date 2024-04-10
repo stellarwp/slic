@@ -645,3 +645,38 @@ function ensure_dir( $dir ) {
 
 	return realpath( $dir );
 }
+
+/**
+ * Removes trailing directory separators.
+ *
+ * @param string $path The directory path.
+ *
+ * @return string
+ */
+function untrailingslashit( $path ) {
+	return rtrim( $path, DIRECTORY_SEPARATOR );
+}
+
+/**
+ * Appends a directory separator.
+ *
+ * @param string $path The directory path.
+ *
+ * @return string
+ */
+function trailingslashit( $path ) {
+	return untrailingslashit( $path ) . DIRECTORY_SEPARATOR;
+}
+
+/**
+ * Remove any double directory separators.
+ *
+ * @example /my-project//tests > /my-project/tests
+ *
+ * @param string $path The directory path.
+ *
+ * @return string
+ */
+function remove_double_separators( $path ) {
+	return str_replace( sprintf( '%s%s', DIRECTORY_SEPARATOR, DIRECTORY_SEPARATOR ), DIRECTORY_SEPARATOR, $path );
+}
