@@ -3,8 +3,7 @@
 namespace StellarWP\Slic;
 
 /**
- * Clears the database and exports a new dump.sql for use with acceptance tests. Optionally, installs a specific
- * WordPress version.
+ * Updates a SQL dump file. Optionally, installs a specific WordPress version.
  *
  * @var bool     $is_help    Whether we're handling an `help` request on this command or not.
  * @var string   $subcommand This command.
@@ -15,7 +14,7 @@ if ( $is_help ) {
 	$help = <<< HELP
 	SUMMARY:
 
-		Clears the database and exports a new dump.sql for use with acceptance tests. Optionally, installs a specific WordPress version.
+		Updates a SQL dump file. Optionally, installs a specific WordPress version.
 
 	USAGE:
 
@@ -24,13 +23,13 @@ if ( $is_help ) {
 	EXAMPLES:
 
 		<light_cyan>$cli_name $subcommand tests/_data/dump.sql</light_cyan>
-		Export a dump.sql using slic's currently installed version of WordPress.
+		Update the dump file using slic's currently installed version of WordPress.
 		
 		<light_cyan>$cli_name $subcommand tests/_data/dump.sql latest</light_cyan>
-		Export a dump.sql using the latest WordPress version.		
+		Update the WordPress version to the latest and update the dump file.
 
 		<light_cyan>$cli_name $subcommand tests/_data/dump.sql 6.4.3</light_cyan>
-		Export a dump.sql using WordPress version 6.4.3.
+		Update the WordPress version to 6.4.3 and update the dump file.
 	HELP;
 
 	echo colorize( $help );

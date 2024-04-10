@@ -34,7 +34,7 @@ $args = args( [
 ] );
 
 $cli_name = 'slic';
-const CLI_VERSION = '1.5.4';
+const CLI_VERSION = '1.6.0';
 
 // If the run-time option `-q`, for "quiet", is specified, then do not print the header.
 if ( in_array( '-q', $argv, true ) || ( in_array( 'exec', $argv, true ) && ! in_array( 'help', $argv, true ) ) ) {
@@ -113,7 +113,7 @@ $help_advanced_message_template = <<< HELP
   <light_cyan>up</light_cyan>             Starts containers in the stack; alias of `start`.
   <light_cyan>update</light_cyan>         Updates the tool and the images used in its services.
   <light_cyan>upgrade</light_cyan>        Upgrades the {$cli_name} repo.
-  <light_cyan>update-dump</light_cyan>    Clears the database and exports a new dump.sql for use with acceptance tests. Optionally, installs a specific WordPress version.       
+  <light_cyan>update-dump</light_cyan>    Updates a SQL dump file. Optionally, installs a specific WordPress version..       
 HELP;
 
 $help_message          = colorize( $help_message_template );
