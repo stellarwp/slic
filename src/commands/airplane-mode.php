@@ -74,6 +74,9 @@ $ensure_airplane_mode_plugin_present = static function () {
 	$loader_code = <<< PHP
 <?php
 
+add_filter( 'pre_site_option_airplane-mode', function () {
+	return 'on';
+} );
 require_once __DIR__ . '/airplane-mode/airplane-mode.php';
 PHP;
 
