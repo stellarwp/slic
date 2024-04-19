@@ -460,6 +460,17 @@ function slic_themes_dir( $path = '' ) {
 }
 
 /**
+ * Returns the absolute path to the current mu-plugins directory slic is using.
+ *
+ * @param string $path An optional path to append to the current slic mu-plugins directory.
+ *
+ * @return string The absolute path to the current mu-plugins directory slic is using.
+ */
+function slic_mu_plugins_dir( $path = '' ) {
+	return slic_content_type_dir( 'mu-plugins', $path );
+}
+
+/**
  * Returns the absolute path to the current content directory slic is using.
  *
  * @param string $path An optional path to append to the current slic content directory.
@@ -475,6 +486,8 @@ function slic_content_type_dir( $content_type = 'plugins', $path = '' ) {
 		$default_path = '/_plugins';
 	} elseif ( 'themes' === $content_type ) {
 		$default_path = '/_wordpress/wp-content/themes';
+	} elseif ( 'mu-plugins' === $content_type ) {
+		$default_path = '/_wordpress/wp-content/mu-plugins';
 	}
 
 	if ( empty( $content_type_dir ) ) {
