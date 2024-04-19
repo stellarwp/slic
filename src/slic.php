@@ -462,8 +462,6 @@ function slic_themes_dir( $path = '' ) {
 /**
  * Returns the absolute path to the current mu-plugins directory slic is using.
  *
- * @since TBD
- *
  * @param string $path An optional path to append to the current slic mu-plugins directory.
  *
  * @return string The absolute path to the current mu-plugins directory slic is using.
