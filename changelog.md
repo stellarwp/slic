@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [1.6.1] - 2024-04-19
+* Change - the `airplane-mode` command now installs the plugin in the must-use plugins directory instead of the plugins directory.
+* Fixed - `.bat` file now uses the correct path to the `slic` executable on Windows.
+
 # [1.6.0] - 2024-04-10
 * Added - The `slic update-dump` command to update a dump file for the current project, with an optional WordPress version update, e.g. `slic update-dump tests/_data/dump.sql latest`. 
 
