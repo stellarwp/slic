@@ -262,6 +262,15 @@ function setup_slic_env( $root_dir, $reset = false ) {
 		load_env_file( $root_dir . '/.env.slic.local' );
 	}
 
+	$target = slic_target(); // Not working because this is empty - but this is the concept...
+
+	if( ! empty( $target ) ) {
+		// Load the local overrides from the target.
+		if ( file_exists( $target . '/.env.slic.local' ) ) {
+			load_env_file( $target . '/.env.slic.local' );
+		}
+	}
+
 	// Load the current session configuration file.
 	if ( file_exists( $root_dir . '/.env.slic.run' ) ) {
 		load_env_file( $root_dir . '/.env.slic.run' );
