@@ -4,6 +4,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [1.6.1] - 2024-04-19
+* Change - the `airplane-mode` command now installs the plugin in the must-use plugins directory instead of the plugins directory.
+* Fixed - `.bat` file now uses the correct path to the `slic` executable on Windows.
+
+# [1.6.0] - 2024-04-10
+* Added - The `slic update-dump` command to update a dump file for the current project, with an optional WordPress version update, e.g. `slic update-dump tests/_data/dump.sql latest`. 
+
+# [1.5.4] - 2024-04-08
+* Change - Disable WordPress's automatic updating in slic containers via docker compose `WORDPRESS_CONFIG_EXTRA` defines. See comments in `.env.slic` to customize this behavior.
+
+# [1.5.3] - 2024-04-05
+* Change - Build `linux/arm64` images for the `slic` and `wordpress` containers to avoid issues when running `slic` on ARM machines.
+
+# [1.5.2] - 2024-04-04
+* Change - Remove `version` property from docker compose .yml files as it's obsolete since v2.25. https://github.com/docker/compose/issues/11628 
+
+# [1.5.1] - 2024-01-05
+* Change - Update the `npm` version to `18.13.0`
+* Change - Update the `nvm` version to `v0.39.7`
+* Fixed - Ensure `nvm` cache directory is world-accessible to allow use of `nvm install`
+
+# [1.5.1] - 2023-11-20
+* Change - Allow controlling the value of the `WP_HTTP_BLOCK_EXTERNAL` constant using the `SLIC_WP_HTTP_BLOCK_EXTERNAL` environment variable defined in the `.env.slic.run` configuration file; set to `true` by default to block all outgoing HTTP requests from WordPress.
+* Change - Allow controlling  the value of the `DISABLE_WP_CRON` constant using the `SLIC_DISABLE_WP_CRON` environment variable defined in the `.env.slic.run` configuration file; set to `true` by default to disable the WordPress cron system.
+
 # [1.5.0] - 2023-09-06
 * Fix - Added `extra_hosts:"${host:-host}:host-gateway"` to slick-stack.yml for Linux compatibility, enabling Xdebug without modifying the XDH environment variable. [Ref](https://github.com/docker/for-linux/issues/264#issuecomment-785247571).
 

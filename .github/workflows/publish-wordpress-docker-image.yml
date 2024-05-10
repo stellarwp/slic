@@ -74,3 +74,4 @@ jobs:
           build-args: |
             PHP_VERSION=${{ matrix.php_version }}
             WP_VERSION=${{ matrix.wp_version }}
+          platforms: linux/amd64,linux/arm64
