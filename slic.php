@@ -80,6 +80,7 @@ Available commands:
   <light_cyan>using</light_cyan>          Returns the current <light_cyan>use</light_cyan> target.
   <light_cyan>wp</light_cyan>             Runs a wp-cli command or opens a `wp-cli shell` in the stack.
   <light_cyan>xdebug</light_cyan>         Activates and deactivates XDebug in the stack, returns the current XDebug status or sets its values.
+  <light_cyan>playwright</light_cyan>     Runs Playwright commands in the stack.
 
 Type <light_cyan>{$cli_name} <command> help</light_cyan> for info about each command.
 HELP;
