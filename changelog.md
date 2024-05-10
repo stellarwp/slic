@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [1.6.3] - 2024-05-10
+* Added - The `playwright` command to Playwright commands in the stack.
+* Added - The `less` binary to the `slic` container (to correctly format wp-cli output).
+* Added - The `p` alias to the `slic` container to allow running Playwright commands with `p <command>`, similar to `c <command>` to run Codeception commands.
+
 # [1.6.2] - 2024-05-10
 * Added - The `slic` command now loads the `.env.slic.local` file from the target directory if it exists. (thanks @cliffordp)
 * Added - The `chrome` container shm size is now set to `256m` by default, and is controllable via the `SLIC_CHROME_CONTAINER_SHM_SIZE` env var. (thanks @maurisrx)
