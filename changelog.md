@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [1.6.2] - 2024-05-10
+* Added - The `slic` command now loads the `.env.slic.local` file from the target directory if it exists. (thanks @cliffordp)
+* Added - The `chrome` container shm size is now set to `256m` by default, and is controllable via the `SLIC_CHROME_CONTAINER_SHM_SIZE` env var. (thanks @maurisrx)
+
 # [1.6.1] - 2024-04-19
 * Change - the `airplane-mode` command now installs the plugin in the must-use plugins directory instead of the plugins directory.
 * Fixed - `.bat` file now uses the correct path to the `slic` executable on Windows.
