@@ -13,9 +13,7 @@ if ( $is_help ) {
 	$help = <<< HELP
 	SUMMARY:
 
-		Runs Playwright commands in the stack.
-		This command will not set up Playwright and its dependencies.
-		If Playwright is not already configured, run the <light_cyan>{$cli_name} playwright install</light_cyan> first.
+		This command requires a use target set using the <light_cyan>use</light_cyan> command.
 
 	USAGE:
 
