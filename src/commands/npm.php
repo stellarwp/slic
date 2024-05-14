@@ -6,8 +6,6 @@ if ( $is_help ) {
 	$help = <<< HELP
 	SUMMARY:
 
-		Runs an npm command in the stack. If an .nvmrc is present, that version of node will be used.
-
 		This command requires a use target set using the <light_cyan>use</light_cyan> command.
 
 	USAGE:

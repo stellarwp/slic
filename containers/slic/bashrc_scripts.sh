@@ -1,6 +1,7 @@
 # Some aliases to save some typing.
 alias c="vendor/bin/codecept -c $(if [ -f 'codeception.slic.yml' ]; then echo 'codeception.slic.yml'; else echo 'codeception.tric.yml'; fi)"
 alias cr="vendor/bin/codecept -c $(if [ -f 'codeception.slic.yml' ]; then echo 'codeception.slic.yml'; else echo 'codeception.tric.yml'; fi) run"
+alias p="node_modules/.bin/playwright"
 
 # Returns the path to the PHP version configuration file.
 function xdebug_config_file(){
@@ -32,6 +33,7 @@ fi
 
 echo "  c    = codecept"
 echo "  cr   = codecept run"
+echo "  p    = playwright"
 echo "  xon  = turn xdebug on"
 echo "  xoff = turn xdebug off"
 echo ""
