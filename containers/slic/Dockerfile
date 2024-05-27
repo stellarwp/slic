@@ -1,4 +1,4 @@
-ARG PHP_VERSION=7.4.33
+ARG PHP_VERSION=7.4
 
 # Source Composer 1 and 2 from the respective images, multi-layer builds.
 FROM composer:1 AS composer1
