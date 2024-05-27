@@ -5,9 +5,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 # [Unreleased] - 2024-05-27
-* Change - Add PHP 8.3 docker images.
+* Added - PHP 8.3 docker images.
 * Change - Update GitHub action versions to remove node notices.
-* Change - Build slic images from the latest PHP minor versions.
+* Change - Build slic images from the latest PHP patch versions.
 
 # [1.6.3] - 2024-05-10
 * Added - The `playwright` command to Playwright commands in the stack.
