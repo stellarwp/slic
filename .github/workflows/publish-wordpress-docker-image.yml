@@ -27,7 +27,7 @@ jobs:
           # See containers/wordpress/Dockerfile for the wp-cli update to version 6.2.
           - wp_version: '6.1.1'
             php_version: '7.4'
-          # Use the latest 6.5 WordPress version for PHP 8.3
+          # Use the latest 6.5 WordPress version for PHP 8.3.
           - wp_version: '6.5'
             php_version: '8.3'
 
