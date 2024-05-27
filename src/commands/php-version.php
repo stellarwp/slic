@@ -60,6 +60,8 @@ if ( in_array( $sub_command, [ 'set', 'reset' ] ) ) {
                 if ( $confirm ) {
                     rebuild_stack();
                     update_stack_images();
+	                load_env_file( root() . '/.env.slic.run' );
+	                restart_php_services( true );
                 }
             }
 
