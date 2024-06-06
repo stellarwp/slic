@@ -385,10 +385,40 @@ function php_services() {
  * @param bool $hard Whether to restart the PHP services using the `docker compose restart` command or by using a
  *                   tear-down and up again cycle.
  */
-function restart_php_services( $hard = false ) {
-	foreach ( php_services() as $service => $pretty_name ) {
-		restart_service( $service, $pretty_name, $hard );
+function restart_php_services( bool $hard = false ): void {
+	restart_services( php_services(), $hard );
+}
+
+/**
+ * Concurrently restart multiple services at once.
+ *
+ * @param  array<string, string>|string[]  $services  The list of services to restart, e.g. [ 'wordpress', 'slic' ],
+ *                                                    or keyed by service => pretty_name, e.g. [ 'wordpress' => 'WordPress' ]
+ * @param  bool                            $hard      Whether to restart the service using the `docker compose restart`
+ *                                                    command or to use full tear-down and up again cycle.
+ */
+function restart_services( array $services, bool $hard = false ): void {
+	echo colorize( sprintf( PHP_EOL . 'Restarting services %s...' . PHP_EOL, implode( ', ', $services ) ) );
+
+	if ( isset( $services[0] ) ) {
+		$service_ids = $services;
+	} else {
+		$service_ids = array_keys( $services );
 	}
+
+	if ( $hard ) {
+		slic_realtime()( array_merge( [ 'rm', '--stop', '--force' ], $service_ids ) );
+		slic_realtime()( array_merge( [ 'up', '-d' ], $service_ids ) );
+	} else {
+		slic_realtime()( array_merge( [ 'restart' ], $service_ids ) );
+	}
+
+	echo colorize( PHP_EOL .
+	               sprintf(
+					   "✅ <light_cyan>%s service%s restarted.</light_cyan>",
+					   implode( ', ', $services ),
+					   count( $services ) > 1 ? 's' : ''
+	               ) . PHP_EOL );
 }
 
 /**
