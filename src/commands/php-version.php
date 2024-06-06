@@ -57,10 +57,12 @@ if ( in_array( $sub_command, [ 'set', 'reset' ] ) ) {
             if ( ! $skip_rebuild ) {
                 $confirm = ask("Do you want to restart the stack now? ", 'yes');
 
-                if ( $confirm ) {
-                    rebuild_stack();
-                    update_stack_images();
-                }
+	            if ( $confirm ) {
+		            rebuild_stack();
+		            update_stack_images();
+		            load_env_file( root() . '/.env.slic.run' );
+		            restart_php_services( true );
+	            }
             }
 
 			exit( 0 );
