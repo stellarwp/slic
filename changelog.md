@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 # [1.7.1] - 2024-08-20
 * Fixed - Run the `playwright install` command as root
-* Change - The `playwright intall` command will now install only the Chromium browser and its dependencies.
+* Change - The `playwright install` command will now install only the Chromium browser and its dependencies.
 
 # [1.7.0] - 2024-06-06
 * Fixed - Properly read changes and restart stack after using the `slic php-version set` command.
