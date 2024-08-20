@@ -48,7 +48,7 @@ $is_install_command = $playwright_args[0] === 'install';
 
 if ( $is_install_command ) {
 	// Install commands will need to run as root.
-	$user = '--user 0:0';
+	$user = '0:0';
 } else {
 	// Other commands will run as the current user.
 	$user = sprintf( '"%s:%s"', getenv( 'SLIC_UID' ), getenv( 'SLIC_GID' ) );
