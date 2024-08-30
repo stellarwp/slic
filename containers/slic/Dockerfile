@@ -1,10 +1,10 @@
 ARG PHP_VERSION=7.4
 
 # Source Composer 1 and 2 from the respective images, multi-layer builds.
-FROM ghcr.io/composer/docker:1 AS composer1
-FROM ghcr.io/composer/docker:2 AS composer2
+FROM composer:1 AS composer1
+FROM composer:2 AS composer2
 
-FROM ghcr.io/php/php:${PHP_VERSION}
+FROM php:${PHP_VERSION}
 
 ARG NODE_VERSION=18.13.0
 ARG NVM_VERSION=v0.39.7
