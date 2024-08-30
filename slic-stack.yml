@@ -180,6 +180,8 @@ services:
       COLUMNS: "${COLUMNS:-80}"
       # Explicitly set the env var that will define the Function Mocker cache path: it will be picked up by the config file.
       FUNCTION_MOCKER_CACHE_PATH: "/cache"
+      # Explicitly set the path to the Playwright browsers cache to make sure it will be the same for all users.
+      PLAYWRIGHT_BROWSERS_PATH: "/home/slic/.cache/ms-playwright"
     volumes:
       # Paths are relative to the directory that contains this file, NOT the current working directory.
       # Share the WordPress core installation files in the `_wordpress` directory.
