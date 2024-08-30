@@ -11,8 +11,6 @@ RUN chmod a+x /usr/local/bin/xdebug-on && \
     chmod a+x /usr/local/bin/xdebug-off && \
     xdebug-off
 RUN chmod -R a+rwx /usr/local/etc/php/conf.d
-# Use our own ini configuration file to set up some PHP default.
-COPY ./php.ini /usr/local/etc/php/conf.d/999-slic.ini
 
 # Install and make wp-cli binary available and executable by all users.
 ADD https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar /usr/local/bin/wp

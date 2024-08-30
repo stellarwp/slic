@@ -108,6 +108,7 @@ services:
       - ${SLIC_PLUGINS_DIR}:/var/www/html/wp-content/plugins
       - ${SLIC_THEMES_DIR}:/var/www/html/wp-content/themes
       - ${COMPOSER_CACHE_DIR:-./.cache}:/composer-cache
+      - ./containers/wordpress/php.ini:/usr/local/etc/php/conf.d/zz-docker.ini
     healthcheck: # Apache service should be running correctly.
       test: service apache2 status
       start_period: 5s
@@ -197,6 +198,8 @@ services:
       - ${COMPOSER_CACHE_DIR:-./.cache}:/composer-cache
       # Scripts volume
       - ${SLIC_SCRIPTS}:/slic-scripts
+      # Configurable php.ini volume
+      - ./containers/slic/php.ini:/usr/local/etc/php/conf.d/zz-docker.ini
     extra_hosts:
       # Set as host=host.docker.internal in src/slic.php on Linux for XDebug.
       - "${host:-host}:host-gateway"
