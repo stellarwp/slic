@@ -44,20 +44,40 @@ ensure_service_running( 'slic' );
 
 setup_id();
 $playwright_args = $args( '...' );
-$status          = slic_realtime()(
-	array_merge(
-		[
-			'exec',
-			'--user',
-			sprintf( '"%s:%s"', getenv( 'SLIC_UID' ), getenv( 'SLIC_GID' ) ),
-			'--workdir',
-			escapeshellarg( get_project_container_path() ),
-			'slic',
-			'node_modules/.bin/playwright',
-		],
-		$playwright_args
-	)
-);
+$is_install_command = $playwright_args[0] === 'install';
+
+if ( $is_install_command ) {
+	// Install commands will need to run as root.
+	$user = '0:0';
+} else {
+	// Other commands will run as the current user.
+	$user = sprintf( '"%s:%s"', getenv( 'SLIC_UID' ), getenv( 'SLIC_GID' ) );
+}
+
+if ( $playwright_args === ['install'] ) {
+	// It's exactly the `playwright install` command and nothing more.
+	$command = [
+		'exec',
+		'--user',
+		'0:0',
+		'--workdir',
+		escapeshellarg( get_project_container_path() ),
+		'slic',
+		'node_modules/.bin/playwright install chromium --with-deps',
+	];
+} else {
+	$command = array_merge( [
+		'exec',
+		'--user',
+		$user,
+		'--workdir',
+		escapeshellarg( get_project_container_path() ),
+		'slic',
+		'node_modules/.bin/playwright',
+	], $playwright_args );
+}
+
+$status = slic_realtime()( $command );
 
 // If there is a status other than 0, we have an error. Bail.
 if ( $status ) {

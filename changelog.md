@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [1.7.1] - 2024-08-30
+* Fixed - Run the `playwright install` command as root, allow running Playwright tests as the `slic` user.
+* Change - The `playwright install` command will now install only the Chromium browser and its dependencies.
+
 # [1.7.0] - 2024-06-06
 * Fixed - Properly read changes and restart stack after using the `slic php-version set` command.
 * Added - PHP 8.3 docker images.
