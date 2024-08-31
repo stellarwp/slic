@@ -40,9 +40,6 @@ RUN apt-get update && apt-get upgrade -yqq && apt-get install -yqq --no-install-
 # Configure the uopz extension.
 COPY ./docker-php-ext-uopz.ini /usr/local/etc/php/conf.d/docker-php-ext-uopz.ini
 
-# Use our own ini configuration file to set up some PHP default.
-COPY ./php.ini /usr/local/etc/php/conf.d/999-slic.ini
-
 # Add the XDebug control scripts.
 COPY ./xdebug-on.sh /usr/local/bin/xdebug-on
 COPY ./xdebug-off.sh /usr/local/bin/xdebug-off
