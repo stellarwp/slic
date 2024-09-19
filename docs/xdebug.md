@@ -6,9 +6,6 @@ Use `slic xdebug status` to find the configuration details for the project that 
 
 Video walk-throughs for [PhpStorm](https://drive.google.com/file/d/1sD8djXgmYWCUDCm_1XZNRx_GBbotmmiB/view?usp=sharing) and [VSCode](https://drive.google.com/file/d/1519M2SRVgWVgTm0Px6UKfBjoQgxCR7Cp/view?usp=sharing).
 
-Screenshot from PhpStorm's video:
-
-![PhpStorm XDebug settings](/docs/images/slic-Xdebug-PhpStorm.png "PhpStorm XDebug settings")
 
 ### Set appropriate debug ports
 
@@ -32,6 +29,9 @@ In PHPStorm settings:
 8. Find the `wp-content/plugins` directory and set the `Absolute path on the server` to `/var/www/html/wp-content/plugins`
 9. If you've added the `slic` directory to your workspace, find the `slic/_wordpress` directory and set the `Absolute path on the server` to `/var/www/html`
 
+Screenshot from PhpStorm's video:
+
+![PhpStorm XDebug settings](/docs/images/slic-Xdebug-PhpStorm.png "PhpStorm XDebug settings")
 
 ## VSCode
 
