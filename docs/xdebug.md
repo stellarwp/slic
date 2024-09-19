@@ -2,6 +2,9 @@
 
 Use `slic xdebug status` to find the configuration details for the project that you have run `slic use` on. This command will give you the path mappings and the port number that you need.
 
+* [PHPStorm](#phpstorm)
+* [VSCode](#vscode)
+
 ## PHPStorm
 
 [Video walk-through](https://drive.google.com/file/d/1sD8djXgmYWCUDCm_1XZNRx_GBbotmmiB/view?usp=sharing)
