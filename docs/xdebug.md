@@ -4,7 +4,7 @@ Use `slic xdebug status` to find the configuration details for the project that 
 
 ## PHPStorm
 
-Video walk-throughs for [PhpStorm](https://drive.google.com/file/d/1sD8djXgmYWCUDCm_1XZNRx_GBbotmmiB/view?usp=sharing) and [VSCode](https://drive.google.com/file/d/1519M2SRVgWVgTm0Px6UKfBjoQgxCR7Cp/view?usp=sharing).
+[Video walk-through](https://drive.google.com/file/d/1sD8djXgmYWCUDCm_1XZNRx_GBbotmmiB/view?usp=sharing)
 
 
 ### Set appropriate debug ports
@@ -34,6 +34,8 @@ Screenshot from PhpStorm's video:
 ![PhpStorm XDebug settings](/docs/images/slic-Xdebug-PhpStorm.png "PhpStorm XDebug settings")
 
 ## VSCode
+
+[Video walk-through](https://drive.google.com/file/d/1519M2SRVgWVgTm0Px6UKfBjoQgxCR7Cp/view?usp=sharing)
 
 Here's a standard configuration for Xdebug in VSCode or VSCode-like editors. _(Note: Be sure to use `slic xdebug status` to get the correct paths and port number.)_
 
