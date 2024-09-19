@@ -20,6 +20,7 @@ The slic (**S**tellarWP **L**ocal **I**nteractive **C**ontainers) CLI command pr
 	* [Changing your composer version](#changing-your-composer-version)
 	* [Customizing `slic`'s `.env` file](#customizing-slics-env-file)
 	* [Xdebug and `slic`](#xdebug-and-slic)
+    * [Configuring IDEs for Xdebug](/docs/xdebug.md)
     * [Releasing a new version of `slic`](/CONTRIBUTING.md)
 
 
