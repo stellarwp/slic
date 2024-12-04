@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [1.8.0] - 2024-12-04
+- Updated the `node` version to `18.17.0`, this affects the `npm` command and any other command usin the `npm` container.
+
 # [1.7.2] - 2024-08-30
 * Fixed - Set the `opcache.revalidate_freq` to `0` in the `slic` and `wordpress` containers to avoid issues with cached files in tests.
 
