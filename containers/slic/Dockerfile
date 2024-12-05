@@ -6,8 +6,8 @@ FROM composer:2 AS composer2
 
 FROM php:${PHP_VERSION}
 
-ARG NODE_VERSION=18.13.0
-ARG NVM_VERSION=v0.39.7
+ARG NODE_VERSION=18.17.0
+ARG NVM_VERSION=v0.40.1
 # Disable AVIF for GD https://github.com/mlocati/docker-php-extension-installer#configuration
 ARG IPE_GD_WITHOUTAVIF=true
 
