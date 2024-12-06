@@ -27,6 +27,9 @@ use function StellarWP\Slic\maybe_prompt_for_repo_update;
 use function StellarWP\Slic\maybe_prompt_for_stack_update;
 use function StellarWP\Slic\root;
 use function StellarWP\Slic\setup_slic_env;
+
+uopz_allow_exit( true );
+
 // Set up the argument parsing function.
 $args = args( [
 	'subcommand',

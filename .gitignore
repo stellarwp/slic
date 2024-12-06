@@ -4,6 +4,7 @@ wp
 vendor
 .data
 .idea
+.vscode
 *.log
 local-config.php
 
