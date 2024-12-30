@@ -132,7 +132,7 @@ services:
       interval: 1s
       timeout: 3s
       retries: 30
-    shm_size: "${SLIC_CHROME_CONTAINER_SHM_SIZE:-256m}"
+    shm_size: "${SLIC_CHROME_CONTAINER_SHM_SIZE:-512m}"
 
   slic:
     image: ghcr.io/stellarwp/slic-php${SLIC_PHP_VERSION}:${SLIC_VERSION}

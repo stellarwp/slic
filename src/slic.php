@@ -1642,10 +1642,10 @@ function is_arm64() {
 function setup_architecture_env() {
 	if ( is_arm64() ) {
 		putenv( 'SLIC_ARCHITECTURE=arm64' );
-		putenv( 'SLIC_CHROME_CONTAINER=seleniarm/standalone-chromium:4.1.2-20220227' );
+		putenv( 'SLIC_CHROME_CONTAINER=seleniarm/standalone-chromium:4.20.0-20240427' );
 	} else {
 		putenv( 'SLIC_ARCHITECTURE=x86' );
-		putenv( 'SLIC_CHROME_CONTAINER=selenium/standalone-chrome:3.141.59' );
+		putenv( 'SLIC_CHROME_CONTAINER=selenium/standalone-chrome:4.27.0-20241225' );
 	}
 }
 
