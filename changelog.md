@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [1.8.1] - 2024-12-30
+- Updated the ARM64 Chrome container image to version 4.20.0-20240427 from 4.1.2-20220227.
+- Updated the x86 Chrome container image to version 4.27.0-20241225 from 3.141.59.
+
 # [1.8.0] - 2024-12-04
 - Updated the `node` version to `18.17.0`, this affects the `npm` command and any other command usin the `npm` container.
 
