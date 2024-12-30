@@ -1,7 +1,7 @@
 <?php
 /**
  * Sets the directory target operations directory.
- * The directory could be a WordPress installation directory, the one containig the `wp-config.php` file,
+ * The directory could be a WordPress installation directory, the one containing the `wp-config.php` file,
  * a themes directory or a plugins directory.
  *
  * @var string $run_settings_file The absolute path to the file that should be used to load runtime settings.
