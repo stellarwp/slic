@@ -308,8 +308,48 @@ function setup_slic_env( $root_dir, $reset = false ) {
 		putenv( 'COMPOSER_CACHE_DIR=' . cache( '/composer' ) );
 	}
 
+	if ( ! empty( $target_path ) ) {
+		if ( file_exists( $target_path . '/.slicrc' ) ) {
+			$slicrc = file_get_contents( $target_path . '/.slicrc' );
+			$slicrc = json_decode( $slicrc, true );
+			if ( ! empty( $slicrc['php-version'] ) ) {
+				$needed_php_version  = $slicrc['php-version'];
+				$current_php_version = getenv( 'SLIC_PHP_VERSION' );
+
+				if ( $needed_php_version !== $current_php_version ) {
+					slic_set_php_version( $needed_php_version, false );
+				}
+			}
+		}
+	}
+
 	// Most commands are nested shells that should not run with a time limit.
 	remove_time_limit();
+}
+
+function slic_set_php_version( $version, $require_confirm = false, $skip_rebuild = false ) {
+	$run_settings_file = root( '/.env.slic.run' );
+	write_env_file( $run_settings_file, [ 'SLIC_PHP_VERSION' => $version ], true );
+	echo colorize( "PHP version set to $version" . PHP_EOL );
+
+	$confirm = true;
+
+	if ( ! $skip_rebuild && $require_confirm ) {
+		$confirm = ask("Do you want to restart the stack now? ", 'yes');
+	}
+
+	if ( ! $confirm ) {
+		return;
+	}
+
+	if ( $skip_rebuild ) {
+		return;
+	}
+
+	rebuild_stack();
+	update_stack_images();
+	load_env_file( root() . '/.env.slic.run' );
+	restart_php_services( true );
 }
 
 /**
