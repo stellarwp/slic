@@ -308,25 +308,17 @@ function setup_slic_env( $root_dir, $reset = false ) {
 		putenv( 'COMPOSER_CACHE_DIR=' . cache( '/composer' ) );
 	}
 
-	if ( ! empty( $target_path ) ) {
-		if ( file_exists( $target_path . '/.slicrc' ) ) {
-			$slicrc = file_get_contents( $target_path . '/.slicrc' );
-			$slicrc = json_decode( $slicrc, true );
-			if ( ! empty( $slicrc['php-version'] ) ) {
-				$needed_php_version  = $slicrc['php-version'];
-				$current_php_version = getenv( 'SLIC_PHP_VERSION' );
-
-				if ( $needed_php_version !== $current_php_version ) {
-					slic_set_php_version( $needed_php_version, false );
-				}
-			}
-		}
-	}
-
 	// Most commands are nested shells that should not run with a time limit.
 	remove_time_limit();
 }
 
+/**
+ * Sets the PHP version for the current environment.
+ *
+ * @param string $version The PHP version to set.
+ * @param bool $require_confirm Whether to require confirmation before restarting the stack.
+ * @param bool $skip_rebuild Whether to skip rebuilding the stack.
+ */
 function slic_set_php_version( $version, $require_confirm = false, $skip_rebuild = false ) {
 	$run_settings_file = root( '/.env.slic.run' );
 	write_env_file( $run_settings_file, [ 'SLIC_PHP_VERSION' => $version ], true );

@@ -39,3 +39,106 @@ function get_project_container_path() {
 			return '/var/www/html';
 	}
 }
+
+/**
+ * Returns the .slicrc file as an array.
+ *
+ * @param string $project_root_path The path to the project root.
+ *
+ * @return array<string,mixed> The .slicrc file as an array.
+ */
+function project_get_slicrc( $project_root_path ) {
+	if ( ! $project_root_path ) {
+		return [];
+	}
+
+	if ( ! file_exists( $project_root_path . '/.slicrc' ) ) {
+		return [];
+	}
+
+	$slicrc = file_get_contents( $project_root_path . '/.slicrc' );
+	$slicrc = json_decode( $slicrc, true );
+
+	return $slicrc;
+}
+
+/**
+ * Applies the .slicrc and/or composer.json file to the current environment.
+ *
+ * @param string $project_root_path The path to the project root.
+ */
+function project_apply_config( $project_root_path ) {
+	if ( ! $project_root_path ) {
+		return;
+	}
+
+	$slicrc        = project_get_slicrc( $project_root_path );
+	$composer_json = project_get_composer( $project_root_path );
+
+	project_apply_php_version( $slicrc, $composer_json );
+}
+
+/**
+ * Returns the composer.json file as an array.
+ *
+ * @param string $project_root_path The path to the project root.
+ *
+ * @return array<string,mixed> The composer.json file as an array.
+ */
+function project_get_composer( $project_root_path ) {
+	if ( ! file_exists( $project_root_path . '/composer.json' ) ) {
+		return null;
+	}
+
+	$composer_json = file_get_contents( $project_root_path . '/composer.json' );
+	$composer_json = json_decode( $composer_json, true );
+
+	return $composer_json;
+}
+
+/**
+ * Returns a slic-usable PHP version from the composer.json file.
+ *
+ * The PHP version is grabbed from config.platform.php if present and converted to a x.y format
+ * if it is not already. If the PHP version is less than 7.4, then null is returned.
+ *
+ * @param array<string,mixed> $composer_json The composer.json file as an array.
+ *
+ * @return string|null The PHP version specified in the composer.json file or null if not found.
+ */
+function project_get_composer_php_version( $composer_json ) {
+	if ( ! $composer_json ) {
+		return null;
+	}
+
+	if ( empty( $composer_json['config']['platform']['php'] ) ) {
+		return null;
+	}
+
+	$php_version = $composer_json['config']['platform']['php'];
+	$php_version = preg_replace( '/^(\d\.\d)\..+/', '$1', $php_version );
+	if ( strpos( $php_version, '.' ) === false ) {
+		$php_version .= '.0';
+	}
+
+	if ( version_compare( $php_version, '7.4', '<' ) ) {
+		return null;
+	}
+
+	return $php_version;
+}
+
+/**
+ * Applies the PHP version specified in the .slicrc or composer.json file to the current environment.
+ *
+ * @param array<string,mixed> $slicrc The .slicrc file as an array.
+ * @param array<string,mixed> $composer_json The composer.json file as an array.
+ */
+function project_apply_php_version( $slicrc, $composer_json ) {
+	$current_php_version = getenv( 'SLIC_PHP_VERSION' );
+	$project_php_version = $slicrc['php-version'] ?? project_get_composer_php_version( $composer_json );
+
+	if ( $project_php_version && $project_php_version !== $current_php_version ) {
+		slic_set_php_version( $project_php_version, false );
+	}
+}
