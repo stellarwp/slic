@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [1.9.0] - 2025-01-20
+- Added - Allow for projects to declare their desired PHP version for slic via `slic.json` (`phpVersion`) or `composer.json` (`config.platform.php`).
+- Added - Support for auto-setup of appropriate PHP containers when running `slic use`.
+
 # [1.8.1] - 2024-12-30
 - Updated the ARM64 Chrome container image to version 4.20.0-20240427 from 4.1.2-20220227.
 - Updated the x86 Chrome container image to version 4.27.0-20241225 from 3.141.59.
@@ -38,7 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Fixed - `.bat` file now uses the correct path to the `slic` executable on Windows.
 
 # [1.6.0] - 2024-04-10
-* Added - The `slic update-dump` command to update a dump file for the current project, with an optional WordPress version update, e.g. `slic update-dump tests/_data/dump.sql latest`. 
+* Added - The `slic update-dump` command to update a dump file for the current project, with an optional WordPress version update, e.g. `slic update-dump tests/_data/dump.sql latest`.
 
 # [1.5.4] - 2024-04-08
 * Change - Disable WordPress's automatic updating in slic containers via docker compose `WORDPRESS_CONFIG_EXTRA` defines. See comments in `.env.slic` to customize this behavior.
@@ -47,7 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Change - Build `linux/arm64` images for the `slic` and `wordpress` containers to avoid issues when running `slic` on ARM machines.
 
 # [1.5.2] - 2024-04-04
-* Change - Remove `version` property from docker compose .yml files as it's obsolete since v2.25. https://github.com/docker/compose/issues/11628 
+* Change - Remove `version` property from docker compose .yml files as it's obsolete since v2.25. https://github.com/docker/compose/issues/11628
 
 # [1.5.1] - 2024-01-05
 * Change - Update the `npm` version to `18.13.0`
