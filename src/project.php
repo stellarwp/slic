@@ -47,7 +47,7 @@ function get_project_container_path() {
  *
  * @return array<string,mixed> The .slicrc file as an array.
  */
-function project_get_slicrc( $project_root_path ) {
+function project_get_slic_json( $project_root_path ) {
 	if ( ! $project_root_path ) {
 		return [];
 	}
@@ -56,10 +56,10 @@ function project_get_slicrc( $project_root_path ) {
 		return [];
 	}
 
-	$slicrc = file_get_contents( $project_root_path . '/slic.json' );
-	$slicrc = json_decode( $slicrc, true );
+	$slic_json = file_get_contents( $project_root_path . '/slic.json' );
+	$slic_json = json_decode( $slic_json, true, 512, JSON_THROW_ON_ERROR );
 
-	return $slicrc;
+	return $slic_json;
 }
 
 /**
@@ -72,10 +72,42 @@ function project_apply_config( $project_root_path ) {
 		return;
 	}
 
-	$slicrc        = project_get_slicrc( $project_root_path );
-	$composer_json = project_get_composer( $project_root_path );
+	$has_error = false;
 
-	project_apply_php_version( $slicrc, $composer_json );
+	try {
+		$slic_json = project_get_slic_json( $project_root_path );
+	} catch ( \Exception $e ) {
+		$has_error = true;
+		echo colorize( PHP_EOL .
+			sprintf(
+				"❌ <red>Error parsing slic.json file in %s: %s</red>",
+				$project_root_path,
+				$e->getMessage()
+			) . PHP_EOL );
+	}
+
+	try {
+		$composer_json = project_get_composer( $project_root_path );
+	} catch ( \Exception $e ) {
+		$has_error = true;
+		echo colorize( PHP_EOL .
+			sprintf(
+				"❌ <red>Error parsing composer.json file in %s: %s</red>",
+				$project_root_path,
+				$e->getMessage()
+			) . PHP_EOL );
+	}
+
+	if ( $has_error ) {
+		echo colorize( PHP_EOL .
+			sprintf(
+				"<red>Could not properly read your project's PHP requirements. Resolve the errors and try again.</red>",
+				$project_root_path
+			) . PHP_EOL );
+		return;
+	}
+
+	project_apply_php_version( $slic_json, $composer_json );
 }
 
 /**
@@ -91,7 +123,7 @@ function project_get_composer( $project_root_path ) {
 	}
 
 	$composer_json = file_get_contents( $project_root_path . '/composer.json' );
-	$composer_json = json_decode( $composer_json, true );
+	$composer_json = json_decode( $composer_json, true, 512, JSON_THROW_ON_ERROR );
 
 	return $composer_json;
 }
@@ -131,12 +163,12 @@ function project_get_composer_php_version( $composer_json ) {
 /**
  * Applies the PHP version specified in the .slicrc or composer.json file to the current environment.
  *
- * @param array<string,mixed> $slicrc The .slicrc file as an array.
+ * @param array<string,mixed> $slic_json The .slic.json file as an array.
  * @param array<string,mixed> $composer_json The composer.json file as an array.
  */
-function project_apply_php_version( $slicrc, $composer_json ) {
+function project_apply_php_version( $slic_json, $composer_json ) {
 	$current_php_version = getenv( 'SLIC_PHP_VERSION' );
-	$project_php_version = $slicrc['phpVersion'] ?? project_get_composer_php_version( $composer_json );
+	$project_php_version = $slic_json['phpVersion'] ?? project_get_composer_php_version( $composer_json );
 
 	if ( $project_php_version && $project_php_version !== $current_php_version ) {
 		slic_set_php_version( $project_php_version, false );
