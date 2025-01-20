@@ -74,6 +74,11 @@ function project_apply_config( $project_root_path ) {
 
 	$has_error = false;
 
+	$slic_env_local = '';
+	if ( file_exists( $project_root_path . '/.env.slic.local' ) ) {
+		$slic_env_local = file_get_contents( $project_root_path . '/.env.slic.local' );
+	}
+
 	try {
 		$slic_json = project_get_slic_json( $project_root_path );
 	} catch ( \Exception $e ) {
@@ -107,7 +112,7 @@ function project_apply_config( $project_root_path ) {
 		return;
 	}
 
-	project_apply_php_version( $slic_json, $composer_json );
+	project_apply_php_version( $slic_env_local, $slic_json, $composer_json );
 }
 
 /**
@@ -163,14 +168,32 @@ function project_get_composer_php_version( $composer_json ) {
 /**
  * Applies the PHP version specified in the .slicrc or composer.json file to the current environment.
  *
+ * @param string $slic_env_local The .env.slic.local file as a string.
  * @param array<string,mixed> $slic_json The .slic.json file as an array.
  * @param array<string,mixed> $composer_json The composer.json file as an array.
  */
-function project_apply_php_version( $slic_json, $composer_json ) {
+function project_apply_php_version( $slic_env_local, $slic_json, $composer_json ) {
 	$current_php_version = getenv( 'SLIC_PHP_VERSION' );
 	$project_php_version = $slic_json['phpVersion'] ?? project_get_composer_php_version( $composer_json );
 
+	$slic_env_php_version = $project_php_version;
+
+	if (
+		$slic_env_local
+		&& preg_match( '/SLIC_PHP_VERSION=([^\n]+)/m', $slic_env_local, $matches )
+	) {
+		$slic_env_php_version = trim( $matches[1] );
+	}
+
 	if ( $project_php_version && $project_php_version !== $current_php_version ) {
 		slic_set_php_version( $project_php_version, false );
+	}
+
+	if ( $slic_env_php_version !== $project_php_version ) {
+		echo colorize(
+			PHP_EOL .
+			"<red>Your .env.slic.local file's PHP version is different than either your slic.json or composer.json file. This will cause your project to rebuild the PHP containers any type you `slic use`.</red>" .
+			PHP_EOL
+		);
 	}
 }
