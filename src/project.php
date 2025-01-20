@@ -52,11 +52,11 @@ function project_get_slicrc( $project_root_path ) {
 		return [];
 	}
 
-	if ( ! file_exists( $project_root_path . '/.slicrc' ) ) {
+	if ( ! file_exists( $project_root_path . '/slic.json' ) ) {
 		return [];
 	}
 
-	$slicrc = file_get_contents( $project_root_path . '/.slicrc' );
+	$slicrc = file_get_contents( $project_root_path . '/slic.json' );
 	$slicrc = json_decode( $slicrc, true );
 
 	return $slicrc;
@@ -136,7 +136,7 @@ function project_get_composer_php_version( $composer_json ) {
  */
 function project_apply_php_version( $slicrc, $composer_json ) {
 	$current_php_version = getenv( 'SLIC_PHP_VERSION' );
-	$project_php_version = $slicrc['php-version'] ?? project_get_composer_php_version( $composer_json );
+	$project_php_version = $slicrc['phpVersion'] ?? project_get_composer_php_version( $composer_json );
 
 	if ( $project_php_version && $project_php_version !== $current_php_version ) {
 		slic_set_php_version( $project_php_version, false );

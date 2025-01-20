@@ -16,7 +16,7 @@ The slic (**S**tellarWP **L**ocal **I**nteractive **C**ontainers) CLI command pr
 	* [Adding tests](#adding-tests)
 	* [Running tests](#running-tests)
 * [Advanced topics](#advanced-topics)
-	* [Defaults for your project with `.slicrc`](/docs/slicrc.md)
+	* [Defaults for your project with `slic.json`](/docs/slicjson.md)
 	* [Making composer installs faster](#making-composer-installs-faster)
 	* [Changing your composer version](#changing-your-composer-version)
 	* [Customizing `slic`'s `.env` file](#customizing-slics-env-file)
