@@ -192,7 +192,7 @@ function project_apply_php_version( $slic_env_local, $slic_json, $composer_json 
 	if ( $slic_env_php_version !== $project_php_version ) {
 		echo colorize(
 			PHP_EOL .
-			"<red>Your .env.slic.local file's PHP version is different than either your slic.json or composer.json file. This will cause your project to rebuild the PHP containers any type you `slic use`.</red>" .
+			"<red>Your .env.slic.local file's PHP version is different than either your slic.json or composer.json file. This will cause your project to rebuild the PHP containers any time you type `slic use`.</red>" .
 			PHP_EOL
 		);
 	}
