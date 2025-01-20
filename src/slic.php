@@ -313,6 +313,38 @@ function setup_slic_env( $root_dir, $reset = false ) {
 }
 
 /**
+ * Sets the PHP version for the current environment.
+ *
+ * @param string $version The PHP version to set.
+ * @param bool $require_confirm Whether to require confirmation before restarting the stack.
+ * @param bool $skip_rebuild Whether to skip rebuilding the stack.
+ */
+function slic_set_php_version( $version, $require_confirm = false, $skip_rebuild = false ) {
+	$run_settings_file = root( '/.env.slic.run' );
+	write_env_file( $run_settings_file, [ 'SLIC_PHP_VERSION' => $version ], true );
+	echo colorize( "PHP version set to $version" . PHP_EOL );
+
+	$confirm = true;
+
+	if ( ! $skip_rebuild && $require_confirm ) {
+		$confirm = ask("Do you want to restart the stack now? ", 'yes');
+	}
+
+	if ( ! $confirm ) {
+		return;
+	}
+
+	if ( $skip_rebuild ) {
+		return;
+	}
+
+	rebuild_stack();
+	update_stack_images();
+	load_env_file( root() . '/.env.slic.run' );
+	restart_php_services( true );
+}
+
+/**
  * Returns the current `use` target.
  *
  * @param bool $require Whether to require a target, and fail if not set, or not.

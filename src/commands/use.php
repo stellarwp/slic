@@ -35,3 +35,5 @@ if ( ! empty( $target ) ) {
 }
 
 echo light_cyan( "Using {$target}" . PHP_EOL );
+
+project_apply_config( get_target_relative_path( $target ) );
