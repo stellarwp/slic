@@ -1631,34 +1631,36 @@ function collect_target_suites() {
  * the `slic` root directory under the reasonable assumption
  * the architecture will not change on the same machine.
  *
- * @return bool Whether the current system is ARM-based or not.
+ * @return bool Whether the current system is ARM-based, or not.
  */
 function is_arm64() {
-	$arm64_architecture_file = __DIR__ . '/../.architecture_arm64';
-	$x86_architecture_file   = __DIR__ . '/../.architecture_x86';
-	if ( file_exists( $arm64_architecture_file ) ) {
-		return true;
-	} elseif ( file_exists( $x86_architecture_file ) ) {
-		return false;
+    $arm64_architecture_file = __DIR__ . '/../.architecture_arm64';
+    $x86_architecture_file   = __DIR__ . '/../.architecture_x86';
+
+	if ( is_file($arm64_architecture_file) ) {
+	    return true;
 	}
 
-	exec( PHP_BINARY . ' -i', $output, $result_code );
-
-	if ( $result_code !== 0 ) {
-		return false;
+	if ( is_file($x86_architecture_file) ) {
+	    return false;
 	}
 
-	$is_arm64 = false !== strpos( implode( ' ', (array) $output ), 'arm64' );
+    $is_64bit = PHP_INT_SIZE === 8;
 
-	if ( $is_arm64 ) {
-		touch( $arm64_architecture_file );
+    $machine_type = strtolower(php_uname('m'));
 
-		return true;
-	}
+	// Non 64bit machines are not supported.
+    $is_arm64 = $is_64bit
+                && (strpos($machine_type, 'aarch64') !== false || strpos($machine_type, 'arm64') !== false);
 
-	touch( $x86_architecture_file );
+    if ($is_arm64) {
+        touch($arm64_architecture_file);
+        return true;
+    }
 
-	return false;
+    touch($x86_architecture_file);
+
+    return false;
 }
 
 /**
