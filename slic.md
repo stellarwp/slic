@@ -1,6 +1,6 @@
 # Products local testing environment
 
-The purpose of this environemt is to provide Products developers with a local testing environment that is identical to the one running in CI.
+The purpose of this environment is to provide Products developers with a local testing environment that is identical to the one running in CI.
 The same local testing environment *can be* used as a local development, but that is not its main goal.
 
 The entrypoint to anything you will need to do will be the `slic` binary, located in the root directory.
@@ -131,7 +131,7 @@ Please refer to your IDE of choice to know how to set up these values.
 
 > Note if you cannot set the above values in your "IDE", then your "IDE" is not an "IDE": it's a powerful and cute text editor.
 
-When you are done with debuggin and want to deactivate it, just run this command:
+When you are done with debugging and want to deactivate it, just run this command:
 
 ```bash
 slic xdebug off

@@ -5,7 +5,7 @@
  * Codeception allows specifying an additional configuration file to load with the `-c`, or `--config` option.
  * Since the `codeception.dist.yml` and `codeception.yml` files will always be loaded if they exist, here we set up
  * the command to load the slic configuration file (`coeception.slic.yml`) if it exists.
- * Note: we cannot use `-o "params: .env.testing.slic"` to load slic env file as the `params` key is not overrideable
+ * Note: we cannot use `-o "params: .env.testing.slic"` to load slic env file as the `params` key is not overridable
  * if not using a file; so we scaffold a slic-specific Codeception configuration file to get around it in the `init`
  * command.
  * See the `init` command for more details.

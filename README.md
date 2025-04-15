@@ -25,7 +25,7 @@ The slic (**S**tellarWP **L**ocal **I**nteractive **C**ontainers) CLI command pr
     * [Releasing a new version of `slic`](/CONTRIBUTING.md)
 
 
-## Gettings started
+## Getting started
 
 ### Why use `slic`?
 
