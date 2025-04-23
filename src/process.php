@@ -237,7 +237,7 @@ function check_status_or_wait( callable $process, $timeout = 10 ) {
  *
  * @return callable The process closure.
  */
-function check_status_or( callable $process, callable $else = null ) {
+function check_status_or( callable $process, callable $else ) {
 	if ( 0 !== (int) $process( 'status' ) ) {
 		$else( $process );
 	}
