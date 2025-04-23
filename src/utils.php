@@ -41,7 +41,7 @@ function args( array $map = [], ?array $source = null, $offset = 1 ) {
 			continue;
 		}
 
-		$full_map[ $key ] = isset( $source[ $position + $offset ] ) ? $source[ $position + $offset ] : null;
+		$full_map[ $key ] = $source[ $position + $offset ] ?? null;
 	}
 
 	return static function ( $key, $default = null ) use ( $full_map ) {
