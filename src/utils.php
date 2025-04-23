@@ -13,15 +13,15 @@ require_once __DIR__ . '/colors.php';
 /**
  * Curried argument fetcher to avoid global spamming.
  *
- * @param array<string>     $map    The list of arguments to fetch from `$argv`.
- * @param array<mixed>|null $source The arguments source array, if not specified, then the global `$argv` array will
- *                                  be used.
- * @param int               $offset Start reading arguments from this position, usually `1` for the main args and `0`
- *                                  when reading an array of sub-arguments.
+ * @param array<string> $map    The list of arguments to fetch from `$argv`.
+ * @param ?array<mixed> $source The arguments source array, if not specified, then the global `$argv` array will
+ *                              be used.
+ * @param int           $offset Start reading arguments from this position, usually `1` for the main args and `0`
+ *                              when reading an array of sub-arguments.
  *
  * @return Closure The arg fetching closure.
  */
-function args( array $map = [], array $source = null, $offset = 1 ) {
+function args( array $map = [], ?array $source = null, $offset = 1 ) {
 	if ( null === $source ) {
 		// If the source is not specified, then read the arguments from the global CLI arguments array.
 		global $argv;
