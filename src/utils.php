@@ -5,6 +5,8 @@
 
 namespace StellarWP\Slic;
 
+use Closure;
+
 require_once __DIR__ . '/process.php';
 require_once __DIR__ . '/colors.php';
 
@@ -17,7 +19,7 @@ require_once __DIR__ . '/colors.php';
  * @param int               $offset Start reading arguments from this position, usually `1` for the main args and `0`
  *                                  when reading an array of sub-arguments.
  *
- * @return \Closure The arg fetching closure.
+ * @return Closure The arg fetching closure.
  */
 function args( array $map = [], array $source = null, $offset = 1 ) {
 	if ( null === $source ) {
@@ -365,7 +367,7 @@ function write_env_file( $file, array $lines = [], $update = false ) {
  *
  * @param string $file The path to the env file to parse.
  *
- * @return \Closure A closure that will take the `$key` and `$default` arguments to fetch a value read from the env
+ * @return Closure A closure that will take the `$key` and `$default` arguments to fetch a value read from the env
  *                  format file.
  */
 function env_file( $file ) {
