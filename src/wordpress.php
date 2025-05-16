@@ -147,11 +147,9 @@ function ensure_wordpress_installed(): bool {
 /**
  * Ensure, failing if not possible, that WordPress is correctly set up, configured and installed.
  *
- * @param string|null $version The WordPress version to ensure the readiness of, `latest` if null.
- *
  * @return bool Always `true` to indicate success.
  */
-function ensure_wordpress_ready( string $version = null ): bool {
+function ensure_wordpress_ready(): bool {
 	ensure_services_running( [ 'slic', 'wordpress' ] );
 	ensure_wordpress_installed();
 

@@ -5,21 +5,23 @@
 
 namespace StellarWP\Slic;
 
+use Closure;
+
 require_once __DIR__ . '/process.php';
 require_once __DIR__ . '/colors.php';
 
 /**
  * Curried argument fetcher to avoid global spamming.
  *
- * @param array<string>     $map    The list of arguments to fetch from `$argv`.
- * @param array<mixed>|null $source The arguments source array, if not specified, then the global `$argv` array will
- *                                  be used.
- * @param int               $offset Start reading arguments from this position, usually `1` for the main args and `0`
- *                                  when reading an array of sub-arguments.
+ * @param array<string> $map    The list of arguments to fetch from `$argv`.
+ * @param ?array<mixed> $source The arguments source array, if not specified, then the global `$argv` array will
+ *                              be used.
+ * @param int           $offset Start reading arguments from this position, usually `1` for the main args and `0`
+ *                              when reading an array of sub-arguments.
  *
- * @return \Closure The arg fetching closure.
+ * @return Closure The arg fetching closure.
  */
-function args( array $map = [], array $source = null, $offset = 1 ) {
+function args( array $map = [], ?array $source = null, $offset = 1 ) {
 	if ( null === $source ) {
 		// If the source is not specified, then read the arguments from the global CLI arguments array.
 		global $argv;
@@ -39,7 +41,7 @@ function args( array $map = [], array $source = null, $offset = 1 ) {
 			continue;
 		}
 
-		$full_map[ $key ] = isset( $source[ $position + $offset ] ) ? $source[ $position + $offset ] : null;
+		$full_map[ $key ] = $source[ $position + $offset ] ?? null;
 	}
 
 	return static function ( $key, $default = null ) use ( $full_map ) {
@@ -365,7 +367,7 @@ function write_env_file( $file, array $lines = [], $update = false ) {
  *
  * @param string $file The path to the env file to parse.
  *
- * @return \Closure A closure that will take the `$key` and `$default` arguments to fetch a value read from the env
+ * @return Closure A closure that will take the `$key` and `$default` arguments to fetch a value read from the env
  *                  format file.
  */
 function env_file( $file ) {
