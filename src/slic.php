@@ -275,6 +275,9 @@ function setup_slic_env( $root_dir, $reset = false ) {
 		}
 	}
 
+	// All the possible env files have been loaded, time to set the db image depending on the PHP version.
+	setup_db_env();
+
 	/*
 	 * Set the host env var to make xdebug work on Linux with host.docker.internal.
 	 * This will already be set on Mac/Windows, and overriding it would break things.
@@ -1676,10 +1679,10 @@ function is_arm64() {
 function setup_architecture_env() {
 	if ( is_arm64() ) {
 		putenv( 'SLIC_ARCHITECTURE=arm64' );
-		putenv( 'SLIC_CHROME_CONTAINER=seleniarm/standalone-chromium:4.20.0-20240427' );
+		putenv( 'SLIC_CHROME_IMAGE=seleniarm/standalone-chromium:4.20.0-20240427' );
 	} else {
 		putenv( 'SLIC_ARCHITECTURE=x86' );
-		putenv( 'SLIC_CHROME_CONTAINER=selenium/standalone-chrome:3.141.59' );
+		putenv( 'SLIC_CHROME_IMAGE=selenium/standalone-chrome:3.141.59' );
 	}
 }
 
@@ -1721,4 +1724,38 @@ function cache( $path = '/', $create = true ) {
 	}
 
 	return $full_path;
+}
+
+function setup_db_env() {
+	$php_version = getenv( 'SLIC_PHP_VERSION' ) ?: '7.4';
+
+	if ( $php_version !== '7.4' ) {
+		// MySQL 5.5 is only used for PHP 7.4.
+		return;
+	}
+
+	// Was a db image explicitly set?
+	$mysql_image = getenv( 'SLIC_DB_IMAGE' ) ?: null;
+
+	if ( $mysql_image ) {
+		// The db image was explicitly set, we're not overriding it.
+		return;
+	}
+
+	$db_no_min = getenv( 'SLIC_DB_NO_MIN' ) ?: false;
+
+	if ( $db_no_min ) {
+		// The env var not to use the minimum db image was set, we're not overriding it.
+		return;
+	}
+
+	/*
+	 * Use the latest version of the minimum database version supported by WordPress.
+	 * The image only comes in linux/amd64, so we need to use the x86 image.
+	 * arm64 machines that cannot run it will fail at the docker level with a message.
+	 * The function is not trying to guess what combination of architecture and OS will
+	 * support it, and it should not.
+	 */
+	putenv( 'SLIC_DB_IMAGE=mysql:5.5.62' );
+	putenv( 'SLIC_DB_PLATFORM=linux/amd64' );
 }
