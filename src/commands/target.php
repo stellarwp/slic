@@ -2,7 +2,7 @@
 /**
  * Handles the execution of the `target` command.
  *
- * @packag StellarWP\Slic
+ * @package StellarWP\Slic
  */
 
 namespace StellarWP\Slic;

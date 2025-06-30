@@ -259,7 +259,7 @@ function check_status_or( callable $process, callable $else ) {
  */
 function parallel_process( $pool ) {
 	$process_children = [];
-	// Start on the upper end of hte subnets to try and avoid overlapping pool issues.
+	// Start on the upper end of the subnets to try and avoid overlapping pool issues.
 	$subnet_pool      = array_rand( array_flip( range( 220, 255 ) ), count( $pool ) );
 	$pool_with_subnet = array_combine( $subnet_pool, $pool );
 
@@ -335,7 +335,7 @@ function get_status_of_forked_children( array $children = [] ) {
 }
 
 /**
- * A function that will `exit` or `return` the status depending on the current OS supprt of the Process Control
+ * A function that will `exit` or `return` the status depending on the current OS support of the Process Control
  * extension.
  *
  * The function will `exit` on OSes that do support the Process Control extension.
