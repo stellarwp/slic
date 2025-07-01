@@ -174,7 +174,18 @@ function project_get_composer_php_version( $composer_json ) {
  */
 function project_apply_php_version( $slic_env_local, $slic_json, $composer_json ) {
 	$current_php_version = getenv( 'SLIC_PHP_VERSION' );
+
+	// Ensure the current PHP version is in `major.minor` format,  the format used by slic.
+	if ( $current_php_version ) {
+		$current_php_version = preg_replace( '/^(\d\.\d)\..+/', '$1', $current_php_version );
+	}
+
 	$project_php_version = $slic_json['phpVersion'] ?? project_get_composer_php_version( $composer_json );
+
+	// Ensure the project PHP version is in the `major.minor` format, the format used by slic.
+	if ( $project_php_version ) {
+		$project_php_version = preg_replace( '/^(\d\.\d)\..+/', '$1', $project_php_version );
+	}
 
 	$slic_env_php_version = $project_php_version;
 
@@ -184,6 +195,9 @@ function project_apply_php_version( $slic_env_local, $slic_json, $composer_json 
 	) {
 		$slic_env_php_version = trim( $matches[1] );
 	}
+
+	// Ensure the env PHP version is in the `major.minor` format, the format used by slic.
+	$slic_env_php_version = preg_replace( '/^(\d\.\d)\..+/', '$1', $slic_env_php_version );
 
 	if ( $project_php_version && $project_php_version !== $current_php_version ) {
 		slic_set_php_version( $project_php_version, false );
