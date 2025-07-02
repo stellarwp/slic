@@ -5,11 +5,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 # [1.10.0] - TBD
-
+- Breaking Minor Change - On PHP 7.4 MySQL version to 5.5.62 to align with WordPress minimum requirements. The version of MySQL can be overridden using a version of PHP that is not 7.4, by setting the `SLIC_DB_IMAGE` environment variable explicitly or by setting the `SLIC_DB_NO_MIN` environment variable to a non falsy value.
 - Fixed - Normalize the PHP version read from the project `slic.json` or `composer.json` files to make sure no useless PHP version changes will be triggered.
 
 # [1.9.2] - 2025-05-14
-- Restored the `selenium/standaolone-crome` image to version `3.141.59` from `4.27.0-20241225` to ensure compatibility with older PHP driver versions.
+- Fixed - Restored the `selenium/standaolone-crome` image to version `3.141.59` from `4.27.0-20241225` to ensure compatibility with older PHP driver versions.
 
 # [1.9.1] - 2025-04-15
 - Fixed - Better detection of ARM64 architecture in `is_arm64` function.
