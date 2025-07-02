@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [1.10.0] - TBD
+
+- Fixed - Normalize the PHP version read from the project `slic.json` or `composer.json` files to make sure no useless PHP version changes will be triggered.
+
 # [1.9.2] - 2025-05-14
 - Restored the `selenium/standaolone-crome` image to version `3.141.59` from `4.27.0-20241225` to ensure compatibility with older PHP driver versions.
 
