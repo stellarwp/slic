@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed - Normalize the PHP version read from the project `slic.json` or `composer.json` files to make sure no useless PHP version changes will be triggered.
 
 # [1.9.2] - 2025-05-14
-- Fixed - Restored the `selenium/standaolone-crome` image to version `3.141.59` from `4.27.0-20241225` to ensure compatibility with older PHP driver versions.
+- Fixed - Restored the `selenium/standaolone-chrome` image to version `3.141.59` from `4.27.0-20241225` to ensure compatibility with older PHP driver versions.
 
 # [1.9.1] - 2025-04-15
 - Fixed - Better detection of ARM64 architecture in `is_arm64` function.
