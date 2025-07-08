@@ -4,8 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [2.0.0] - TBD
+- Breaking Change - On PHP 7.4 MySQL version to 5.5.62 to align with WordPress minimum requirements. The version of MySQL can be overridden using a version of PHP that is not 7.4, by setting the `SLIC_DB_IMAGE` environment variable explicitly or by setting the `SLIC_DB_NO_MIN` environment variable to a non falsy value.
+- Fixed - Normalize the PHP version read from the project `slic.json` or `composer.json` files to make sure no useless PHP version changes will be triggered.
+
 # [1.9.2] - 2025-05-14
-- Restored the `selenium/standaolone-crome` image to version `3.141.59` from `4.27.0-20241225` to ensure compatibility with older PHP driver versions.
+- Fixed - Restored the `selenium/standaolone-chrome` image to version `3.141.59` from `4.27.0-20241225` to ensure compatibility with older PHP driver versions.
 
 # [1.9.1] - 2025-04-15
 - Fixed - Better detection of ARM64 architecture in `is_arm64` function.
@@ -19,7 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated the x86 Chrome container image to version 4.27.0-20241225 from 3.141.59.
 
 # [1.8.0] - 2024-12-04
-- Updated the `node` version to `18.17.0`, this affects the `npm` command and any other command usin the `npm` container.
+- Updated the `node` version to `18.17.0`, this affects the `npm` command and any other command using the `npm` container.
 
 # [1.7.2] - 2024-08-30
 * Fixed - Set the `opcache.revalidate_freq` to `0` in the `slic` and `wordpress` containers to avoid issues with cached files in tests.
@@ -99,7 +103,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.3.2] - 2023-04-03
 
 * Updates slic-stack.site.yml for full site testing.
-* Adds check for `site` target to refrence `slic_wp_dir()` when running commands.
+* Adds check for `site` target to reference `slic_wp_dir()` when running commands.
 
 ## [1.3.1] - 2023-03-31
 
@@ -253,7 +257,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.5.28] - 2021-10-06
 
-- Updated the `node` version to `10.16.0`, this affects the `npm` command and any other command usin the `npm` container.
+- Updated the `node` version to `10.16.0`, this affects the `npm` command and any other command using the `npm` container.
 - Added the `host-ip` command to get the host machine IP address containers will be able to use to connect to the host (e.g. when setting up XDebug on Linux).
 
 ## [0.5.27] - 2021-06-03
@@ -313,7 +317,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Default to the host machin IP address to set `xdebug.remote_host` only if the host has not been set  by means of a call to `tric xdebug host <host>` or by setting the `XDH` environment variable explicitly.
 - Fix an issue that would reset run settings stored in the `.env.tric.run` file when using the `tric xdebug <key> <value>` command.
 - Correctly handle Docker network removal in parallel tasks to avoid "error while removing network" errors.
-- Add support for `tric run` to run all the avaiable Codeception test suites from the target one after another.
+- Add support for `tric run` to run all the available Codeception test suites from the target one after another.
 
 ## [0.5.15] - 2020-11-24
 

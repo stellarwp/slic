@@ -9,7 +9,9 @@ volumes:
 services:
 
   db:
-    image: mariadb:10.7.8
+    image: ${SLIC_DB_IMAGE:-mariadb:10.7.8}
+    # Not specifying a platform will ignore the setting and use the current platform.
+    platform: ${SLIC_DB_PLATFORM:-}
     networks:
       - slic
     ports:
@@ -120,7 +122,7 @@ services:
       - "${host:-host}:host-gateway"
 
   chrome:
-    image: ${SLIC_CHROME_CONTAINER:-selenium/standalone-chrome:3.141.59}
+    image: ${SLIC_CHROME_IMAGE:-selenium/standalone-chrome:3.141.59}
     networks:
       - slic
     depends_on:
