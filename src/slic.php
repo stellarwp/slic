@@ -1726,6 +1726,17 @@ function cache( $path = '/', $create = true ) {
 	return $full_path;
 }
 
+/**
+ * Sets up the environment variables related to the database.
+ *
+ * Specifically, the function will use MySQL 5.5.62 image when the PHP version used by `slic` is 7.4
+ * unless the env var `SLIC_DB_NO_MIN` is set to a non-empty value or the `SLIC_DB_IMAGE` env var
+ * is set to point to a specific database image.
+ *
+ * @since TBD
+ *
+ * @return void
+ */
 function setup_db_env() {
 	$php_version = getenv( 'SLIC_PHP_VERSION' ) ?: '7.4';
 
