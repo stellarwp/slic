@@ -5,24 +5,26 @@ The slic (**S**tellarWP **L**ocal **I**nteractive **C**ontainers) CLI command pr
 ## Table of Contents
 
 * [Getting started](#getting-started)
-	* [Why use `slic`?](#why-use-slic)
-	* [Why use Codeception?](#why-use-codeception)
-	* [Requirements](#requirements)
-	* [Installation](#installation)
-	* [The most important command to know](#the-most-important-command-to-know)
+    * [Why use `slic`?](#why-use-slic)
+    * [Why use Codeception?](#why-use-codeception)
+    * [Requirements](#requirements)
+    * [Installation](#installation)
+    * [The most important command to know](#the-most-important-command-to-know)
 * [Using `slic`](#using-slic)
-	* [Tell `slic` how to find your project](#tell-slic-how-to-find-your-project)
-	* [Preparing your project](#preparing-your-project)
-	* [Adding tests](#adding-tests)
-	* [Running tests](#running-tests)
+    * [Tell `slic` how to find your project](#tell-slic-how-to-find-your-project)
+    * [Preparing your project](#preparing-your-project)
+    * [Adding tests](#adding-tests)
+    * [Running tests](#running-tests)
 * [Advanced topics](#advanced-topics)
-	* [Defaults for your project with `slic.json`](/docs/slicjson.md)
-	* [Making composer installs faster](#making-composer-installs-faster)
-	* [Changing your composer version](#changing-your-composer-version)
-	* [Customizing `slic`'s `.env` file](#customizing-slics-env-file)
-	* [Xdebug and `slic`](#xdebug-and-slic)
+    * [Defaults for your project with `slic.json`](/docs/slicjson.md)
+    * [Making composer installs faster](#making-composer-installs-faster)
+    * [Changing your composer version](#changing-your-composer-version)
+    * [Customizing `slic`'s `.env` file](#customizing-slics-env-file)
+    * [Xdebug and `slic`](#xdebug-and-slic)
     * [Configuring IDEs for Xdebug](/docs/xdebug.md)
     * [Releasing a new version of `slic`](/CONTRIBUTING.md)
+* [Update guide](#update-guide)
+  * [From 1.0 to 2.0](#from-10-to-20)
 
 
 ## Getting started
@@ -290,13 +292,49 @@ See also: [Configuring Xdebug](/docs/xdebug.md)
 
 #### Enable/Disable Xdebug
 
-1. `slic xdebug on`
-1. `slic xdebug off`
-1. Within `slic shell`:
-    1. `slic xon`
-    1. `slic xoff`
+Xdebug can be toggled in both the `wordpress` and `slic` containers:
 
+**Global commands** (requires container restart):
+- `slic xdebug on` - Enable Xdebug in both containers
+- `slic xdebug off` - Disable Xdebug in both containers
 
+When using these commands, `slic` will prompt you to restart the containers.
+
+**Within `slic shell`** (takes effect immediately, no restart needed):
+- `xon` - Enable Xdebug
+- `xoff` - Disable Xdebug
+
+## Update Guide
+
+This guide covers the steps needed when upgrading `slic` between major versions.
+
+### From 1.0 to 2.0
+
+> **Breaking Change:**
+> - MySQL 5.5.62 is now used with PHP 7.4 to match WordPress minimum requirements
+
+#### MySQL 5.5 Database Changes
+
+* You can opt out of this by setting the `SLIC_DB_NO_MIN` env var to a non-falsy value
+* You can specify the database image to use with the `SLIC_DB_IMAGE` env var
+* Database dump collations might need to be updated in test files
+
+**What you need to update:**
+
+If your tests use database dumps, they might need updating to be compatible with MySQL `5.5.62`.  
+The change needed is updating the collation of database tables from `utf8mb4_unicode_520_ci` to `utf8mb4_unicode_ci`.
+
+**Option 1:** Use this command:
+
+```bash
+find ./tests -type f -name "*.sql" | xargs -I{} sed -i.bak 's/utf8mb4_unicode_520_ci/utf8mb4_unicode_ci/g' {} && find ./tests -name "*.sql.bak" -delete
+```
+
+**Option 2:** Use your IDE's search-and-replace functionality to replace, in the database dump files, occurrences of `utf8mb4_unicode_520_ci` with `utf8mb4_unicode_ci`.
+
+**Verifying the changes:**
+After updating your SQL files, run a sample test to ensure the database loads correctly.
+Look for any SQL errors related to collations in your test output.
 
 ## Acknowledgements
 
