@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-# [2.0.0] - TBD
+# [2.0.0] - 2025-07-08
 - Breaking Change - On PHP 7.4 MySQL version to 5.5.62 to align with WordPress minimum requirements. The version of MySQL can be overridden using a version of PHP that is not 7.4, by setting the `SLIC_DB_IMAGE` environment variable explicitly or by setting the `SLIC_DB_NO_MIN` environment variable to a non falsy value.
 - Fixed - Normalize the PHP version read from the project `slic.json` or `composer.json` files to make sure no useless PHP version changes will be triggered.
 
