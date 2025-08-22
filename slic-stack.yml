@@ -47,6 +47,7 @@ services:
       - /data
 
   wordpress:
+    privileged: true
     image: ghcr.io/stellarwp/slic-wordpress-php${SLIC_PHP_VERSION}:${SLIC_VERSION}
     networks:
       slic:
