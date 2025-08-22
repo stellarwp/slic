@@ -1,5 +1,8 @@
 # docker compose configuration file used to run cross-activation tests.
 
+# Add a prefix to containers to avoid conflicts when running in parallel. Default 'slic'.
+name: ${SLIC_COMPOSE_PROJECT_NAME:-slic}
+
 networks:
   slic:
 
