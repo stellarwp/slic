@@ -8,8 +8,6 @@ networks:
 
 volumes:
   function-mocker-cache:
-  wwwtemp:
-    external: true
 
 services:
 
