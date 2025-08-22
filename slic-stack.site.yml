@@ -3,7 +3,6 @@
 services:
 
   wordpress:
-    user: "${SLIC_UID:-}:${SLIC_GID:-}"
     volumes:
       # Paths are relative to the directory that contains this file, NOT the current working directory.
       # Share the WordPress core installation files in the `_wordpress` directory.
