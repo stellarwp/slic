@@ -682,3 +682,28 @@ function trailingslashit( $path ) {
 function remove_double_separators( $path ) {
 	return str_replace( sprintf( '%s%s', DIRECTORY_SEPARATOR, DIRECTORY_SEPARATOR ), DIRECTORY_SEPARATOR, $path );
 }
+
+/**
+ * Normalizes a PHP version string to major.minor format (e.g., 8.1).
+ *
+ * @param string|null $version The PHP version to normalize (e.g., "8.1.10", "8.1", "8").
+ *
+ * @return string|null The normalized version in major.minor format, or null if invalid.
+ */
+function normalize_php_version( $version ) {
+	if ( ! $version ) {
+		return null;
+	}
+
+	$version = trim( (string) $version );
+
+	// Extract major.minor from versions like "8.1.10" -> "8.1".
+	$version = preg_replace( '/^(\d\.\d)\..+/', '$1', $version );
+
+	// Handle versions like "8" -> "8.0".
+	if ( strpos( $version, '.' ) === false ) {
+		$version .= '.0';
+	}
+
+	return $version;
+}
