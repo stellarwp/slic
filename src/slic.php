@@ -325,7 +325,7 @@ function setup_slic_env( $root_dir, $reset = false ) {
 function slic_set_php_version( $version, $require_confirm = false, $skip_rebuild = false ) {
 	$run_settings_file = root( '/.env.slic.run' );
 	write_env_file( $run_settings_file, [ 'SLIC_PHP_VERSION' => $version ], true );
-	echo light_green( "*** PHP version set to $version" . PHP_EOL );
+	echo light_green( ">>> PHP version set to $version" . PHP_EOL );
 
 	$confirm = true;
 
