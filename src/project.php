@@ -152,13 +152,9 @@ function project_get_composer_php_version( $composer_json ) {
 		return null;
 	}
 
-	$php_version = $composer_json['config']['platform']['php'];
-	$php_version = preg_replace( '/^(\d\.\d)\..+/', '$1', $php_version );
-	if ( strpos( $php_version, '.' ) === false ) {
-		$php_version .= '.0';
-	}
+	$php_version = normalize_php_version( $composer_json['config']['platform']['php'] );
 
-	if ( version_compare( $php_version, '7.4', '<' ) ) {
+	if ( $php_version && version_compare( $php_version, '7.4', '<' ) ) {
 		return null;
 	}
 
