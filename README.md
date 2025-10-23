@@ -17,6 +17,7 @@ The slic (**S**tellarWP **L**ocal **I**nteractive **C**ontainers) CLI command pr
     * [Running tests](#running-tests)
 * [Advanced topics](#advanced-topics)
     * [Defaults for your project with `slic.json`](/docs/slicjson.md)
+    * [Managing PHP Versions](#managing-php-versions)
     * [Making composer installs faster](#making-composer-installs-faster)
     * [Changing your composer version](#changing-your-composer-version)
     * [Customizing `slic`'s `.env` file](#customizing-slics-env-file)
@@ -205,6 +206,60 @@ slic shell
 ```
 
 ## Advanced topics
+
+### Managing PHP Versions
+
+By default, slic uses PHP 7.4, but you can easily switch between different PHP versions for your projects.
+
+#### Checking the Current PHP Version
+
+To see which PHP version slic is configured to use or if a version is staged:
+
+```bash
+slic php-version
+```
+
+#### Setting a PHP Version
+
+If you're working with a project and want to test it with a different PHP version, you can manually set the version:
+
+```bash
+slic php-version set 8.1
+```
+
+This will set the PHP version to 8.1 and prompt you to rebuild the stack. This is useful when you want to test your project against a different PHP version than what's automatically detected.
+
+For CI environments or when you want to pre-configure the PHP version before running `slic use`:
+
+```bash
+slic php-version set 8.4 --skip-rebuild
+```
+
+This stages the PHP version change for the next time you run `slic use <project>`, allowing you to avoid pulling Docker images multiple times.
+
+#### Automatic PHP Version Detection
+
+When you run `slic use <project>`, slic will automatically detect and use the PHP version specified in:
+
+1. The project's `slic.json` file (using the `phpVersion` property)
+2. The project's `composer.json` file (using the `config.platform.php` property)
+
+#### PHP Version Priority
+
+PHP versions are applied in the following priority order:
+
+1. Command line override: `SLIC_PHP_VERSION=8.3 slic use <project>`
+2. Staged version (from `slic php-version set <version> --skip-rebuild`)
+3. A Project's `.env.slic.local` file
+4. Auto-detected version from project configuration
+
+#### Resetting to Default
+
+To reset slic to the default PHP version (7.4):
+
+```bash
+slic php-version reset
+```
 
 ### Making composer installs faster
 
