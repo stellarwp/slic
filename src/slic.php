@@ -254,6 +254,11 @@ function setup_slic_env( $root_dir, $reset = false ) {
 
 	backup_env_var( 'COMPOSER_CACHE_DIR' );
 
+	// If a SLIC_PHP_VERSION env var is already set, back it up.
+	if ( getenv( 'SLIC_PHP_VERSION' ) ) {
+		backup_env_var( 'SLIC_PHP_VERSION' );
+	}
+
 	// Load the distribution version configuration file, the version-controlled one.
 	load_env_file( $root_dir . '/.env.slic' );
 
@@ -273,6 +278,14 @@ function setup_slic_env( $root_dir, $reset = false ) {
 		if ( file_exists( $target_path . '/.env.slic.local' ) ) {
 			load_env_file( $target_path . '/.env.slic.local' );
 		}
+	}
+
+	// SLIC_PHP_VERSION was passed via the command line.
+	$target_version = env_var_backup( 'SLIC_PHP_VERSION' );
+
+	if ( $target_version ) {
+		putenv( "SLIC_PHP_VERSION=$target_version" );
+		putenv( "SLIC_PHP_CLI_VERSION=$target_version" );
 	}
 
 	// All the possible env files have been loaded, time to set the db image depending on the PHP version.
@@ -323,9 +336,27 @@ function setup_slic_env( $root_dir, $reset = false ) {
  * @param bool $skip_rebuild Whether to skip rebuilding the stack.
  */
 function slic_set_php_version( $version, $require_confirm = false, $skip_rebuild = false ) {
+	$message        = "<yellow>✓</yellow> PHP version set: <yellow>$version</yellow>";
+	$staged_message = "<yellow>✓</yellow> PHP version staged for one time use: <yellow>$version</yellow>. " .
+	                  "The next <light_green>slic use <project></light_green> will use this version";
+
+	$data = [
+		'SLIC_PHP_VERSION' => $version,
+	];
+
+	// Store a temporary staged variable for the next `slic use` command.
+	if ( $skip_rebuild ) {
+		$data = array_merge( $data, [
+			'SLIC_PHP_VERSION_STAGED' => 1,
+		] );
+
+		$message = $staged_message;
+	}
+
 	$run_settings_file = root( '/.env.slic.run' );
-	write_env_file( $run_settings_file, [ 'SLIC_PHP_VERSION' => $version ], true );
-	echo light_green( ">>> PHP version set to $version" . PHP_EOL );
+	write_env_file( $run_settings_file, $data, true );
+
+	echo colorize( $message . PHP_EOL );
 
 	$confirm = true;
 
@@ -334,6 +365,11 @@ function slic_set_php_version( $version, $require_confirm = false, $skip_rebuild
 	}
 
 	if ( ! $confirm ) {
+		// If the user didn't confirm, stage the change for the next `slic use`.
+		write_env_file( $run_settings_file, [ 'SLIC_PHP_VERSION_STAGED' => 1 ], true );
+
+		echo colorize( $staged_message . PHP_EOL );
+
 		return;
 	}
 
@@ -345,6 +381,18 @@ function slic_set_php_version( $version, $require_confirm = false, $skip_rebuild
 	update_stack_images();
 	load_env_file( root() . '/.env.slic.run' );
 	restart_php_services( true );
+}
+
+/**
+ * Clears the SLIC_PHP_VERSION_STAGED flag from .env.slic.run to signal to no longer switch
+ * PHP versions on the next `slic use <project>`.
+ *
+ * @return void
+ */
+function slic_clear_staged_php_flag() {
+	$run_settings_file = root( '/.env.slic.run' );
+
+	write_env_file( $run_settings_file, [ 'SLIC_PHP_VERSION_STAGED' => false ], true );
 }
 
 /**
@@ -762,6 +810,7 @@ function slic_info() {
         'CONTINUOUS_INTEGRATION',
         'GITHUB_ACTION',
         'SLIC_PHP_VERSION',
+	    'SLIC_PHP_VERSION_STAGED',
         'SLIC_COMPOSER_VERSION',
         'SLIC_CURRENT_PROJECT',
         'SLIC_CURRENT_PROJECT_RELATIVE_PATH',
