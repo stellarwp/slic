@@ -841,6 +841,13 @@ function slic_info() {
         'SSH_AUTH_SOCK',
     ];
 
+	// Read .env.slic.run directly to show runtime state.
+	$run_env_file = root( '/.env.slic.run' );
+	$run_env      = [];
+	if ( file_exists( $run_env_file ) ) {
+		$run_env = read_env_file( $run_env_file );
+	}
+
 	echo colorize( "<yellow>Configuration read from the following files:</yellow>" . PHP_EOL );
 	$slic_root   = root();
 	$target_path = get_project_local_path();
@@ -853,11 +860,20 @@ function slic_info() {
 
 	echo colorize( "<yellow>Current configuration:</yellow>" . PHP_EOL );
 	foreach ( $config_vars as $key ) {
-		$value = print_r( getenv( $key ), true );
+		$effective_value = getenv( $key );
+		$runtime_value   = $run_env[ $key ] ?? null;
+
+		// Show runtime value if it exists, otherwise effective value
+		$value = $runtime_value ? print_r( $runtime_value, true ) : print_r( $effective_value, true );
 
 		if ( $key === 'SLIC_PLUGINS_DIR' && $value !== slic_plugins_dir() ) {
 			// If the configuration is using a relative path, then expose the absolute path.
 			$value .= ' => ' . slic_plugins_dir();
+		}
+
+		// Show if there's a mismatch between effective and runtime (something is overriding).
+		if ( $runtime_value && $runtime_value !== $effective_value ) {
+			$value .= colorize( " [runtime] <yellow>⚠ {$effective_value} [configured]</yellow>" );
 		}
 
 		echo colorize( "  - <light_cyan>{$key}</light_cyan>: {$value}" . PHP_EOL );

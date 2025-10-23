@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Project's `.env.slic.local` file 
     - Auto-detected from project's `slic.json` or `composer.json`.
 - Change - `slic php-version set X.Y --skip-rebuild` now stages the PHP version for the next `slic use` command without rebuilding containers, useful for CI environments to avoid pulling Docker images multiple times.
+- Change - `slic php-version` now shows if the runtime version differs from the configured version.
+- Change - `slic info` now displays values from `.env.slic.run` and warns when they're being overridden by other configuration files (like a project's `.env.slic.local`), making it easier to identify configuration conflicts.
 - Change - Added console messages to `slic use` to clearly indicate which PHP version is being used and why.
 - Added - PHP version management documentation.
 
