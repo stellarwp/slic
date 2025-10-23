@@ -247,6 +247,7 @@ function project_apply_php_version( $slic_env_local, $slic_json, $composer_json 
 	}
 
 	// Check if the project's .env.slic.local has an explicit PHP version override.
+	// Keep in mind, if this is a different project than the one that was previously used, the previous project's .env.slic.local has been loaded!
 	if ( $slic_env_local && preg_match( '/SLIC_PHP_VERSION=([^\n]+)/m', $slic_env_local, $matches ) ) {
 		$local = normalize_php_version( trim( $matches[1] ) );
 
