@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [Unreleased] - TBD
+- Fixed - `backup_env_var()` not actually populating `backup_vault()` and `env_var_backup()` will properly read from the values.
+- Fixed - PHP version priority order when running `slic use <project>` now properly respects overrides in the following order: 
+    - CLI environment variable (e.g., `SLIC_PHP_VERSION=8.3 slic use`)
+    - Staged version (from `slic php-version set --skip-rebuild`)
+    - Project's `.env.slic.local` file 
+    - Auto-detected from project's `slic.json` or `composer.json`.
+- Change - `slic php-version set X.Y --skip-rebuild` now stages the PHP version for the next `slic use` command without rebuilding containers, useful for CI environments to avoid pulling Docker images multiple times.
+- Change - Added console messages to `slic use` to clearly indicate which PHP version is being used and why.
+- Added - PHP version management documentation.
+
 # [2.0.0] - 2025-07-08
 - Breaking Change - On PHP 7.4 MySQL version to 5.5.62 to align with WordPress minimum requirements. The version of MySQL can be overridden using a version of PHP that is not 7.4, by setting the `SLIC_DB_IMAGE` environment variable explicitly or by setting the `SLIC_DB_NO_MIN` environment variable to a non falsy value.
 - Fixed - Normalize the PHP version read from the project `slic.json` or `composer.json` files to make sure no useless PHP version changes will be triggered.
