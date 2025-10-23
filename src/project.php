@@ -240,8 +240,8 @@ function project_apply_php_version( $slic_env_local, $slic_json, $composer_json 
 	if ( $is_staged ) {
 		project_show_php_version_message( $effective, 'using staged version', 'success' );
 		project_maybe_show_version_mismatch_message( $effective, $project_version );
-		slic_clear_staged_php_flag();
 		slic_set_php_version( $effective );
+		slic_clear_staged_php_flag();
 
 		return;
 	}
