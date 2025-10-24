@@ -64,6 +64,17 @@ function green( $string ) {
 }
 
 /**
+ * Colorizes a string in light (bold) green.
+ *
+ * @param string $string The string to colorize.
+ *
+ * @return string The colorized string.
+ */
+function light_green( $string ) {
+	return style( $string, '1;32' );
+}
+
+/**
  * Colorizes a string in yellow.
  *
  * @param string $string The string to colorize.

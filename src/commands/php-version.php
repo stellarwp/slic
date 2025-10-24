@@ -56,14 +56,33 @@ if ( in_array( $sub_command, [ 'set', 'reset' ] ) ) {
 
 			exit( 0 );
 		case 'reset':
-			$run_settings_file = root( '/.env.slic.run' );
-			write_env_file( $run_settings_file, [ 'SLIC_PHP_VERSION' => $default_version ], true );
-			echo colorize( "PHP version reset to default: $default_version" . PHP_EOL );
+			echo colorize( "Resetting PHP version to: <yellow>$default_version</yellow>" . PHP_EOL );
+			slic_clear_staged_php_flag();
+			slic_set_php_version( $default_version, ! $confirm, $skip_rebuild );
 
 			exit( 0 );
 	}
 }
 
-echo colorize( "PHP version currently set to <magenta>$current_version</magenta>" . PHP_EOL );
+// Read .env.slic.run to get runtime value.
+$run_env_file    = root( '/.env.slic.run' );
+$runtime_version = null;
+if ( file_exists( $run_env_file ) ) {
+	$run_env         = read_env_file( $run_env_file );
+	$runtime_version = $run_env['SLIC_PHP_VERSION'] ?? null;
+}
+
+$php_message = "PHP version currently set to <yellow>$current_version</yellow>";
+
+// Show mismatch if runtime differs from effective.
+if ( $runtime_version && $runtime_version !== $current_version ) {
+	$php_message = "PHP version: <yellow>$runtime_version</yellow> [runtime] <yellow>⚠ $current_version [configured]</yellow>";
+}
+
+if ( getenv( 'SLIC_PHP_VERSION_STAGED' ) === '1' ) {
+	$php_message = "PHP version is staged to switch to <yellow>$current_version</yellow> on the next <light_green>$cli_name use <project></light_green>";
+}
+
+echo colorize( $php_message . PHP_EOL );
 
 exit( 0 );

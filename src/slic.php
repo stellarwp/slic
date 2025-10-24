@@ -254,6 +254,11 @@ function setup_slic_env( $root_dir, $reset = false ) {
 
 	backup_env_var( 'COMPOSER_CACHE_DIR' );
 
+	// If a SLIC_PHP_VERSION env var is already set, back it up.
+	if ( getenv( 'SLIC_PHP_VERSION' ) ) {
+		backup_env_var( 'SLIC_PHP_VERSION' );
+	}
+
 	// Load the distribution version configuration file, the version-controlled one.
 	load_env_file( $root_dir . '/.env.slic' );
 
@@ -273,6 +278,14 @@ function setup_slic_env( $root_dir, $reset = false ) {
 		if ( file_exists( $target_path . '/.env.slic.local' ) ) {
 			load_env_file( $target_path . '/.env.slic.local' );
 		}
+	}
+
+	// SLIC_PHP_VERSION was passed via the command line.
+	$target_version = env_var_backup( 'SLIC_PHP_VERSION' );
+
+	if ( $target_version ) {
+		putenv( "SLIC_PHP_VERSION=$target_version" );
+		putenv( "SLIC_PHP_CLI_VERSION=$target_version" );
 	}
 
 	// All the possible env files have been loaded, time to set the db image depending on the PHP version.
@@ -323,9 +336,27 @@ function setup_slic_env( $root_dir, $reset = false ) {
  * @param bool $skip_rebuild Whether to skip rebuilding the stack.
  */
 function slic_set_php_version( $version, $require_confirm = false, $skip_rebuild = false ) {
+	$message        = "<yellow>✓</yellow> PHP version set: <yellow>$version</yellow>";
+	$staged_message = "<yellow>✓</yellow> PHP version staged for one time use: <yellow>$version</yellow>. " .
+	                  "The next <light_green>slic use <project></light_green> will use this version";
+
+	$data = [
+		'SLIC_PHP_VERSION' => $version,
+	];
+
+	// Store a temporary staged variable for the next `slic use` command.
+	if ( $skip_rebuild ) {
+		$data = array_merge( $data, [
+			'SLIC_PHP_VERSION_STAGED' => 1,
+		] );
+
+		$message = $staged_message;
+	}
+
 	$run_settings_file = root( '/.env.slic.run' );
-	write_env_file( $run_settings_file, [ 'SLIC_PHP_VERSION' => $version ], true );
-	echo colorize( "PHP version set to $version" . PHP_EOL );
+	write_env_file( $run_settings_file, $data, true );
+
+	echo colorize( $message . PHP_EOL );
 
 	$confirm = true;
 
@@ -334,6 +365,11 @@ function slic_set_php_version( $version, $require_confirm = false, $skip_rebuild
 	}
 
 	if ( ! $confirm ) {
+		// If the user didn't confirm, stage the change for the next `slic use`.
+		write_env_file( $run_settings_file, [ 'SLIC_PHP_VERSION_STAGED' => 1 ], true );
+
+		echo colorize( $staged_message . PHP_EOL );
+
 		return;
 	}
 
@@ -345,6 +381,18 @@ function slic_set_php_version( $version, $require_confirm = false, $skip_rebuild
 	update_stack_images();
 	load_env_file( root() . '/.env.slic.run' );
 	restart_php_services( true );
+}
+
+/**
+ * Clears the SLIC_PHP_VERSION_STAGED flag from .env.slic.run to signal to no longer switch
+ * PHP versions on the next `slic use <project>`.
+ *
+ * @return void
+ */
+function slic_clear_staged_php_flag() {
+	$run_settings_file = root( '/.env.slic.run' );
+
+	write_env_file( $run_settings_file, [ 'SLIC_PHP_VERSION_STAGED' => false ], true );
 }
 
 /**
@@ -753,44 +801,52 @@ function write_build_version() {
  * Prints information about slic tool.
  */
 function slic_info() {
-    $config_vars = [
-        'SLIC_TEST_SUBNET',
-        'CLI_VERBOSITY',
-        'CI',
-        'TRAVIS_CI',
-        'COMPOSER_CACHE_DIR',
-        'CONTINUOUS_INTEGRATION',
-        'GITHUB_ACTION',
-        'SLIC_PHP_VERSION',
-        'SLIC_COMPOSER_VERSION',
-        'SLIC_CURRENT_PROJECT',
-        'SLIC_CURRENT_PROJECT_RELATIVE_PATH',
-        'SLIC_CURRENT_PROJECT_SUBDIR',
-        'SLIC_HOST',
-        'SLIC_PLUGINS',
-        'SLIC_THEMES',
-        'SLIC_GIT_DOMAIN',
-        'SLIC_GIT_HANDLE',
-        'SLIC_HERE_DIR',
-        'SLIC_PLUGINS_DIR',
-        'SLIC_THEMES_DIR',
-        'SLIC_WP_DIR',
-        'SLIC_INTERACTIVE',
-        'SLIC_BUILD_PROMPT',
-        'SLIC_BUILD_SUBDIR',
-        'TERM',
-        'XDK',
-        'XDE',
-        'XDH',
-        'XDP',
-        'UID',
-        'SLIC_UID',
-        'GID',
-        'SLIC_GID',
-        'MYSQL_ROOT_PASSWORD',
-        'WORDPRESS_HTTP_PORT',
-        'SSH_AUTH_SOCK',
-    ];
+	$config_vars = [
+		'SLIC_TEST_SUBNET',
+		'CLI_VERBOSITY',
+		'CI',
+		'TRAVIS_CI',
+		'COMPOSER_CACHE_DIR',
+		'CONTINUOUS_INTEGRATION',
+		'GITHUB_ACTION',
+		'SLIC_PHP_VERSION',
+		'SLIC_PHP_VERSION_STAGED',
+		'SLIC_COMPOSER_VERSION',
+		'SLIC_CURRENT_PROJECT',
+		'SLIC_CURRENT_PROJECT_RELATIVE_PATH',
+		'SLIC_CURRENT_PROJECT_SUBDIR',
+		'SLIC_HOST',
+		'SLIC_PLUGINS',
+		'SLIC_THEMES',
+		'SLIC_GIT_DOMAIN',
+		'SLIC_GIT_HANDLE',
+		'SLIC_HERE_DIR',
+		'SLIC_PLUGINS_DIR',
+		'SLIC_THEMES_DIR',
+		'SLIC_WP_DIR',
+		'SLIC_INTERACTIVE',
+		'SLIC_BUILD_PROMPT',
+		'SLIC_BUILD_SUBDIR',
+		'TERM',
+		'XDK',
+		'XDE',
+		'XDH',
+		'XDP',
+		'UID',
+		'SLIC_UID',
+		'GID',
+		'SLIC_GID',
+		'MYSQL_ROOT_PASSWORD',
+		'WORDPRESS_HTTP_PORT',
+		'SSH_AUTH_SOCK',
+	];
+
+	// Read .env.slic.run directly to show runtime state.
+	$run_env_file = root( '/.env.slic.run' );
+	$run_env      = [];
+	if ( file_exists( $run_env_file ) ) {
+		$run_env = read_env_file( $run_env_file );
+	}
 
 	echo colorize( "<yellow>Configuration read from the following files:</yellow>" . PHP_EOL );
 	$slic_root   = root();
@@ -804,11 +860,20 @@ function slic_info() {
 
 	echo colorize( "<yellow>Current configuration:</yellow>" . PHP_EOL );
 	foreach ( $config_vars as $key ) {
-		$value = print_r( getenv( $key ), true );
+		$effective_value = getenv( $key );
+		$runtime_value   = $run_env[ $key ] ?? null;
+
+		// Show runtime value if it exists, otherwise effective value
+		$value = $runtime_value ? print_r( $runtime_value, true ) : print_r( $effective_value, true );
 
 		if ( $key === 'SLIC_PLUGINS_DIR' && $value !== slic_plugins_dir() ) {
 			// If the configuration is using a relative path, then expose the absolute path.
 			$value .= ' => ' . slic_plugins_dir();
+		}
+
+		// Show if there's a mismatch between effective and runtime (something is overriding).
+		if ( $runtime_value && $runtime_value !== $effective_value ) {
+			$value .= colorize( " [runtime] <yellow>⚠ {$effective_value} [configured]</yellow>" );
 		}
 
 		echo colorize( "  - <light_cyan>{$key}</light_cyan>: {$value}" . PHP_EOL );

@@ -10,8 +10,8 @@ namespace StellarWP\Slic\Env;
  *
  * @return array<string,int|string> A map from backed up environment variables to their values.
  */
-function backup_vault() {
-	static $vault;
+function &backup_vault() {
+	static $vault = [];
 
 	return $vault;
 }
@@ -24,7 +24,9 @@ function backup_vault() {
  * @return void The method does not return any value and will backup the env var current value.
  */
 function backup_env_var( $key ) {
-	backup_vault()[ $key ] = getenv( $key );
+	$vault = &backup_vault();
+
+	$vault[ $key ] = getenv( $key );
 }
 
 /**
@@ -37,7 +39,7 @@ function backup_env_var( $key ) {
  * @return int|string|null The backed up environment variable value, or the default one.
  */
 function env_var_backup( $key, $default = null ) {
-	$vault = backup_vault();
+	$vault = &backup_vault();
 
 	return isset( $vault[ $key ] ) ? $vault[ $key ] : $default;
 }
