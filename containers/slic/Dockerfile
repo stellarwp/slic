@@ -23,32 +23,25 @@ RUN chmod a+rx /usr/local/bin/wp && \
 ENV IPE_GD_WITHOUTAVIF=${IPE_GD_WITHOUTAVIF}
 RUN install-php-extensions xdebug pdo pdo_mysql mysqli zip uopz pcntl sockets intl exif gd
 
-# Install NVM scripts for runtime use.
+# NVM environment variables.
 ENV NVM_VERSION=${NVM_VERSION}
 ENV NVM_DIR=/usr/local/bin/.nvm
-RUN mkdir -p $NVM_DIR/cache && \
-    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/${NVM_VERSION}/install.sh | bash && \
-    chmod a+x $NVM_DIR/nvm.sh && \
-    chmod a+rwx $NVM_DIR/cache
 
-# Install a default, pre-compiled Node.js via apt for a fast build.
-# This will be the default Node available at container start.
+# Install dependencies, NVM, and Node.js in a single layer.
 RUN apt-get update && \
-    apt-get install -yqq --no-install-recommends ca-certificates curl gpg && \
-    mkdir -p /etc/apt/keyrings && \
+    apt-get install -yqq --no-install-recommends ca-certificates curl gpg git zip unzip iproute2 \
+        libnss3 libnspr4 libdbus-1-3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 libxkbcommon0 \
+        libatspi2.0-0 libxcomposite1 libxdamage1 libxext6 libxfixes3 libxrandr2 libgbm1 \
+        libpango-1.0-0 libcairo2 libasound2 less default-mysql-client && \
+    mkdir -p $NVM_DIR/cache /etc/apt/keyrings && chmod 755 /etc/apt/keyrings && \
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/${NVM_VERSION}/install.sh | bash && \
+    chmod a+x $NVM_DIR/nvm.sh && chmod a+rwx $NVM_DIR/cache && \
     export NODE_MAJOR=$(echo ${NODE_VERSION} | cut -d. -f1) && \
     curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg && \
-    export DEBIAN_CODENAME=$(. /etc/os-release && echo $VERSION_CODENAME) && \
-    echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_${NODE_MAJOR}.x ${DEBIAN_CODENAME} main" | tee /etc/apt/sources.list.d/nodesource.list && \
-    apt-get update && \
-    apt-get install -yqq --no-install-recommends --show-progress \
-    nodejs \
-    default-mysql-client git zip unzip iproute2 \
-    libnss3 libnspr4 libdbus-1-3 libatk1.0-0 libatk-bridge2.0-0 \
-    libcups2 libdrm2 libxkbcommon0 libatspi2.0-0 libxcomposite1 \
-    libxdamage1 libxext6 libxfixes3 libxrandr2 libgbm1 \
-    libpango-1.0-0 libcairo2 libasound2 less \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+    echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_${NODE_MAJOR}.x nodistro main" \
+      | tee /etc/apt/sources.list.d/nodesource.list && \
+    apt-get update && apt-get install -yqq --no-install-recommends nodejs && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Configure the uopz extension.
 COPY ./docker-php-ext-uopz.ini /usr/local/etc/php/conf.d/docker-php-ext-uopz.ini
