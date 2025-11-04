@@ -16,15 +16,54 @@ jobs:
       packages: write
     strategy:
       matrix:
-        # The php_version is the docker tag from https://hub.docker.com/_/php/tags
-        php_version: [ '7.3', '7.4', '8.0', '8.1', '8.2', '8.3' ]
         include:
-          # Build amd64 on x86 runners
-          - runner: ubuntu-latest
+          # PHP versions - both architectures
+          - php_version: '7.3'
+            runner: ubuntu-latest
             platform: linux/amd64
             arch: amd64
-          # Build arm64 on native ARM runners
-          - runner: ubuntu-24.04-arm64
+          - php_version: '7.3'
+            runner: ubuntu-24.04-arm64
+            platform: linux/arm64
+            arch: arm64
+          - php_version: '7.4'
+            runner: ubuntu-latest
+            platform: linux/amd64
+            arch: amd64
+          - php_version: '7.4'
+            runner: ubuntu-24.04-arm64
+            platform: linux/arm64
+            arch: arm64
+          - php_version: '8.0'
+            runner: ubuntu-latest
+            platform: linux/amd64
+            arch: amd64
+          - php_version: '8.0'
+            runner: ubuntu-24.04-arm64
+            platform: linux/arm64
+            arch: arm64
+          - php_version: '8.1'
+            runner: ubuntu-latest
+            platform: linux/amd64
+            arch: amd64
+          - php_version: '8.1'
+            runner: ubuntu-24.04-arm64
+            platform: linux/arm64
+            arch: arm64
+          - php_version: '8.2'
+            runner: ubuntu-latest
+            platform: linux/amd64
+            arch: amd64
+          - php_version: '8.2'
+            runner: ubuntu-24.04-arm64
+            platform: linux/arm64
+            arch: arm64
+          - php_version: '8.3'
+            runner: ubuntu-latest
+            platform: linux/amd64
+            arch: amd64
+          - php_version: '8.3'
+            runner: ubuntu-24.04-arm64
             platform: linux/arm64
             arch: arm64
 
