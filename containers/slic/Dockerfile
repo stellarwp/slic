@@ -1,94 +1,117 @@
 ARG PHP_VERSION=7.4
 
-# Source Composer 1 and 2 from the respective images, multi-layer builds.
-FROM composer:1 AS composer1
-FROM composer:2 AS composer2
+# Source Composer 1 and 2 from the respective images, multi-stage builds.
+FROM ghcr.io/composer/docker:1 AS composer1
+FROM ghcr.io/composer/docker:2 AS composer2
 
 FROM php:${PHP_VERSION}
 
 ARG NODE_VERSION=18.17.0
 ARG NVM_VERSION=v0.40.1
-# Disable AVIF for GD https://github.com/mlocati/docker-php-extension-installer#configuration
-ARG IPE_GD_WITHOUTAVIF=true
+ARG IPE_GD_WITHOUTAVIF=1
+ARG TARGETPLATFORM
 
 SHELL ["/bin/bash", "-eou", "pipefail", "-c"]
 
-# Install and make wp-cli binary available and executable by all users.
+# -------------------------------
+# WP-CLI & PHP extension installer
+# -------------------------------
 ADD https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar /usr/local/bin/wp
-RUN chmod a+rx /usr/local/bin/wp
-
-# The mlocati/docker-php-extension-installer will install PHP extensions setting up requirements correctly and cleaning up after.
 ADD https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
-RUN chmod a+x /usr/local/bin/install-php-extensions && \
-    install-php-extensions xdebug pdo pdo_mysql mysqli zip uopz pcntl sockets intl exif
 
-RUN if [ ${IPE_GD_WITHOUTAVIF} = true ]; then \
-      IPE_GD_WITHOUTAVIF=1 install-php-extensions gd; \
-    else \
-      install-php-extensions gd; \
-    fi
+RUN chmod a+rx /usr/local/bin/wp /usr/local/bin/install-php-extensions
 
-# Install some more packages required by wp-cli, Composer and Playwright.
-RUN apt-get update && apt-get upgrade -yqq && apt-get install -yqq --no-install-recommends --show-progress \
-    default-mysql-client curl git zip unzip iproute2 \
-    libnss3 libnspr4 libdbus-1-3 libatk1.0-0 libatk-bridge2.0-0 \
-    libcups2 libdrm2 libxkbcommon0 libatspi2.0-0 libxcomposite1 \
-    libxdamage1 libxext6 libxfixes3 libxrandr2 libgbm1 \
-    libpango-1.0-0 libcairo2 libasound2 less \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+# Disable AVIF for GD https://github.com/mlocati/docker-php-extension-installer#configuration
+ENV IPE_GD_WITHOUTAVIF=${IPE_GD_WITHOUTAVIF}
+RUN install-php-extensions xdebug pdo pdo_mysql mysqli zip uopz pcntl sockets intl exif gd
 
-# Configure the uopz extension.
-COPY ./docker-php-ext-uopz.ini /usr/local/etc/php/conf.d/docker-php-ext-uopz.ini
-
-# Add the XDebug control scripts.
-COPY ./xdebug-on.sh /usr/local/bin/xdebug-on
-COPY ./xdebug-off.sh /usr/local/bin/xdebug-off
-RUN chmod a+x /usr/local/bin/xdebug-on && \
-    chmod a+x /usr/local/bin/xdebug-off
-
-# Make the PHP configuration directory recursively readable and writable to allow all users to activate and deactivate XDebug.
-RUN chmod -R a+rwx /usr/local/etc/php/conf.d
-RUN xdebug-off
-
-# Install nvm.
-ENV NODE_VERSION=${NODE_VERSION}
+# -------------------------------
+# NVM environment variables
+# -------------------------------
 ENV NVM_VERSION=${NVM_VERSION}
 ENV NVM_DIR=/usr/local/bin/.nvm
-RUN mkdir /usr/local/bin/.nvm && mkdir /usr/local/bin/.nvm/cache
-RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/${NVM_VERSION}/install.sh | bash
-RUN bash -c '. $NVM_DIR/nvm.sh && nvm install $NODE_VERSION'
-RUN bash -c '. $NVM_DIR/nvm.sh && nvm alias default $NODE_VERSION'
-RUN bash -c '. $NVM_DIR/nvm.sh && nvm use default'
 
-ENV PATH $NVM_DIR/versions/node/v$NODE_VERSION/bin:$NVM_DIR:$PATH
-RUN chmod a+x $NVM_DIR/nvm.sh && chmod a+rwx $NVM_DIR/cache
+# -------------------------------
+# Dependencies for NVM & general builds
+# -------------------------------
+RUN apt-get update && \
+    apt-get install -yqq --no-install-recommends \
+        ca-certificates curl git zip unzip iproute2 \
+        libnss3 libnspr4 libdbus-1-3 libatk1.0-0 libatk-bridge2.0-0 \
+        libcups2 libdrm2 libxkbcommon0 libatspi2.0-0 libxcomposite1 \
+        libxdamage1 libxext6 libxfixes3 libxrandr2 libgbm1 \
+        libpango-1.0-0 libcairo2 libasound2 less default-mysql-client && \
+    mkdir -p $NVM_DIR/cache /cache /composer-cache && \
+    chmod a+rwx $NVM_DIR/cache /cache /composer-cache
 
-# Install Composer 1 and 2 from the respective images and make them world-executable.
+# -------------------------------
+# Install NVM
+# -------------------------------
+RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/${NVM_VERSION}/install.sh | bash && \
+    chmod a+x $NVM_DIR/nvm.sh
+
+# -------------------------------
+# Install Node.js via precompiled tarballs
+# -------------------------------
+RUN set -eux; \
+    case "${TARGETPLATFORM}" in \
+        "linux/amd64") ARCH="x64";; \
+        "linux/arm64") ARCH="arm64";; \
+        *) echo "Unsupported platform: ${TARGETPLATFORM}"; exit 1;; \
+    esac; \
+    NODE_DISTRO="node-v${NODE_VERSION}-linux-${ARCH}.tar.xz"; \
+    curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}/${NODE_DISTRO}" -o "/tmp/${NODE_DISTRO}"; \
+    tar -xJf "/tmp/${NODE_DISTRO}" -C /usr/local --strip-components=1; \
+    rm "/tmp/${NODE_DISTRO}"; \
+    node -v; npm -v
+
+# -------------------------------
+# PHP uopz extension & XDebug
+# -------------------------------
+COPY ./docker-php-ext-uopz.ini /usr/local/etc/php/conf.d/docker-php-ext-uopz.ini
+COPY ./xdebug-on.sh /usr/local/bin/xdebug-on
+COPY ./xdebug-off.sh /usr/local/bin/xdebug-off
+
+RUN chmod a+x /usr/local/bin/xdebug-on /usr/local/bin/xdebug-off && \
+    chmod -R a+rwx /usr/local/etc/php/conf.d && xdebug-off
+
+# -------------------------------
+# Composer 1 & 2
+# -------------------------------
 COPY --from=composer1 /usr/bin/composer /usr/local/bin/composer1
 COPY --from=composer2 /usr/bin/composer /usr/local/bin/composer
-RUN chmod a+x /usr/local/bin/composer1 && chmod a+x /usr/local/bin/composer
 
-# Create a `slic` user and group fixuid will use.
-RUN [ $(getent group 1000) ] || addgroup --gid 1000 slic && \
-    [ $(id -u 1000) ] || adduser --uid 1000 --gid 1000 --home /home/slic --shell /bin/bash --disabled-password --gecos "" slic && \
-    mkdir -p /home/slic && \
-    curl -SsL https://github.com/boxboat/fixuid/releases/download/v0.5.1/fixuid-0.5.1-linux-amd64.tar.gz | tar -C /usr/local/bin -xzf - && \
-    chown root:root /usr/local/bin/fixuid && \
-    chmod 4755 /usr/local/bin/fixuid && \
+RUN chmod a+x /usr/local/bin/composer /usr/local/bin/composer1
+
+# -------------------------------
+# Slic user & fixuid
+# -------------------------------
+RUN groupadd -g 1000 slic 2>/dev/null || true && \
+    useradd -u 1000 -g 1000 -m -s /bin/bash slic 2>/dev/null || true && \
+    case "$TARGETPLATFORM" in \
+        "linux/amd64") FIXUID_ARCH=amd64 ;; \
+        "linux/arm64") FIXUID_ARCH=arm64 ;; \
+        *) echo "Unsupported platform: $TARGETPLATFORM" && exit 1 ;; \
+    esac && \
+    curl -SsL https://github.com/boxboat/fixuid/releases/download/v0.6.0/fixuid-0.6.0-linux-$FIXUID_ARCH.tar.gz \
+        | tar -C /usr/local/bin -xzf - && \
+    chown root:root /usr/local/bin/fixuid && chmod 4755 /usr/local/bin/fixuid && \
     mkdir -p /etc/fixuid
+
 COPY ./fixuid.yml /etc/fixuid/config.yml
 COPY ./.bashrc /home/slic/.bashrc
 COPY ./.bashrc /root/.bashrc
 COPY ./bashrc_scripts.sh /home/slic/bashrc_scripts.sh
 
+# Ensure NVM directory is owned by slic
 RUN chown -R slic:slic $NVM_DIR
 
-# Create a /cache directory any user will be able to read, write and execute from.
-RUN mkdir /cache && chmod a+rwx /cache
-RUN mkdir /composer-cache && chmod a+rwx /composer-cache
-
+# -------------------------------
+# Entrypoint
+# -------------------------------
 COPY ./slic-entrypoint.sh /usr/local/bin/slic-entrypoint.sh
 RUN chmod a+x /usr/local/bin/slic-entrypoint.sh
+
 ENTRYPOINT ["/usr/local/bin/slic-entrypoint.sh"]
 
 USER slic:slic
