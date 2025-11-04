@@ -10,7 +10,7 @@ on:
 
 jobs:
   publish-wordpress-image:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
     permissions:
       contents: read
       packages: write
@@ -19,6 +19,14 @@ jobs:
         wp_version: [ '6.2' ]
         php_version: [ '8.0', '8.1', '8.2' ]
         include:
+          # Build amd64 on x86 runners
+          - runner: ubuntu-latest
+            platform: linux/amd64
+            arch: amd64
+          # Build arm64 on native ARM runners
+          - runner: ubuntu-24.04-arm64
+            platform: linux/arm64
+            arch: arm64
           # No WordPress image for version 6.2+ and PHP 7.3: use the latest 5.9 version.
           # This version is NOT updated in the containers/wordpress/Dockerfile for back-compatibility.
           - wp_version: '5.9'
@@ -59,9 +67,6 @@ jobs:
             type=ref,event=tag
             type=semver,pattern={{raw}}
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -73,10 +78,10 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          # Use the faster registry cache.
-          cache-from: type=registry,ref=ghcr.io/${{ github.repository }}/cache/slic-wp-${{ matrix.wp_version }}-${{ matrix.php_version }}
-          cache-to: type=registry,ref=ghcr.io/${{ github.repository }}/cache/slic-wp-${{ matrix.wp_version }}-${{ matrix.php_version }},mode=max
+          # Use the faster registry cache with platform-specific caching
+          cache-from: type=registry,ref=ghcr.io/${{ github.repository }}/cache/slic-wp-${{ matrix.wp_version }}-${{ matrix.php_version }}-${{ matrix.arch }}
+          cache-to: type=registry,ref=ghcr.io/${{ github.repository }}/cache/slic-wp-${{ matrix.wp_version }}-${{ matrix.php_version }}-${{ matrix.arch }},mode=max
           build-args: |
             PHP_VERSION=${{ matrix.php_version }}
             WP_VERSION=${{ matrix.wp_version }}
-          platforms: linux/amd64,linux/arm64
+          platforms: ${{ matrix.platform }}
