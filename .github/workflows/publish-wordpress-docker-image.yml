@@ -16,28 +16,71 @@ jobs:
       packages: write
     strategy:
       matrix:
-        # Default WordPress/PHP combinations
-        wp_version: [ '6.2' ]
-        php_version: [ '8.0', '8.1', '8.2' ]
-        arch: [ 'amd64', 'arm64' ]
         include:
-          # Add runner and platform info for each architecture
-          - arch: amd64
+          # WordPress 6.2 with PHP 8.0, 8.1, 8.2 - both architectures
+          - wp_version: '6.2'
+            php_version: '8.0'
             runner: ubuntu-latest
             platform: linux/amd64
-          - arch: arm64
+            arch: amd64
+          - wp_version: '6.2'
+            php_version: '8.0'
             runner: ubuntu-24.04-arm
             platform: linux/arm64
-          # Add special WordPress/PHP version combinations
-          # WordPress 5.9 with PHP 7.3 (both architectures via cross-multiply)
+            arch: arm64
+          - wp_version: '6.2'
+            php_version: '8.1'
+            runner: ubuntu-latest
+            platform: linux/amd64
+            arch: amd64
+          - wp_version: '6.2'
+            php_version: '8.1'
+            runner: ubuntu-24.04-arm
+            platform: linux/arm64
+            arch: arm64
+          - wp_version: '6.2'
+            php_version: '8.2'
+            runner: ubuntu-latest
+            platform: linux/amd64
+            arch: amd64
+          - wp_version: '6.2'
+            php_version: '8.2'
+            runner: ubuntu-24.04-arm
+            platform: linux/arm64
+            arch: arm64
+          # WordPress 5.9 with PHP 7.3 - both architectures
           - wp_version: '5.9'
             php_version: '7.3'
-          # WordPress 6.1.1 with PHP 7.4 (both architectures via cross-multiply)
+            runner: ubuntu-latest
+            platform: linux/amd64
+            arch: amd64
+          - wp_version: '5.9'
+            php_version: '7.3'
+            runner: ubuntu-24.04-arm
+            platform: linux/arm64
+            arch: arm64
+          # WordPress 6.1.1 with PHP 7.4 - both architectures
           - wp_version: '6.1.1'
             php_version: '7.4'
-          # WordPress 6.5 with PHP 8.3 (both architectures via cross-multiply)
+            runner: ubuntu-latest
+            platform: linux/amd64
+            arch: amd64
+          - wp_version: '6.1.1'
+            php_version: '7.4'
+            runner: ubuntu-24.04-arm
+            platform: linux/arm64
+            arch: arm64
+          # WordPress 6.5 with PHP 8.3 - both architectures
           - wp_version: '6.5'
             php_version: '8.3'
+            runner: ubuntu-latest
+            platform: linux/amd64
+            arch: amd64
+          - wp_version: '6.5'
+            php_version: '8.3'
+            runner: ubuntu-24.04-arm
+            platform: linux/arm64
+            arch: arm64
 
     steps:
       - name: Checkout repository
