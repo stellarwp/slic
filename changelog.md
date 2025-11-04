@@ -5,7 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 # [2.1.2] - TBD
-- Change - GitHub Actions workflows now use native ARM64 runners (`ubuntu-24.04-arm64`) instead of QEMU emulation for multi-platform builds, to reduce build times.
+- Change - GitHub Actions workflows now use native ARM64 runners (`ubuntu-24.04-arm`) instead of QEMU emulation for multi-platform builds, to reduce build times.
 - Change - Optimized Dockerfile layer ordering to improve cache hit rates - local config files moved to end to prevent invalidating heavy system installation layers.
 - Change - Added BuildKit cache mounts for apt package installation and PHP extension compilation, to reduce subsequent build times.
 - Change - Added `IPE_CACHE_DIR` environment variable to cache PHP extension downloads and compiled artifacts across builds.
