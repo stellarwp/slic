@@ -25,7 +25,7 @@ jobs:
             arch: amd64
           - wp_version: '6.2'
             php_version: '8.0'
-            runner: ubuntu-24.04-arm64
+            runner: ubuntu-24.04-arm
             platform: linux/arm64
             arch: arm64
           - wp_version: '6.2'
@@ -35,7 +35,7 @@ jobs:
             arch: amd64
           - wp_version: '6.2'
             php_version: '8.1'
-            runner: ubuntu-24.04-arm64
+            runner: ubuntu-24.04-arm
             platform: linux/arm64
             arch: arm64
           - wp_version: '6.2'
@@ -45,7 +45,7 @@ jobs:
             arch: amd64
           - wp_version: '6.2'
             php_version: '8.2'
-            runner: ubuntu-24.04-arm64
+            runner: ubuntu-24.04-arm
             platform: linux/arm64
             arch: arm64
           # WordPress 5.9 with PHP 7.3 - both architectures
@@ -56,7 +56,7 @@ jobs:
             arch: amd64
           - wp_version: '5.9'
             php_version: '7.3'
-            runner: ubuntu-24.04-arm64
+            runner: ubuntu-24.04-arm
             platform: linux/arm64
             arch: arm64
           # WordPress 6.1.1 with PHP 7.4 - both architectures
@@ -67,7 +67,7 @@ jobs:
             arch: amd64
           - wp_version: '6.1.1'
             php_version: '7.4'
-            runner: ubuntu-24.04-arm64
+            runner: ubuntu-24.04-arm
             platform: linux/arm64
             arch: arm64
           # WordPress 6.5 with PHP 8.3 - both architectures
@@ -78,7 +78,7 @@ jobs:
             arch: amd64
           - wp_version: '6.5'
             php_version: '8.3'
-            runner: ubuntu-24.04-arm64
+            runner: ubuntu-24.04-arm
             platform: linux/arm64
             arch: arm64
 

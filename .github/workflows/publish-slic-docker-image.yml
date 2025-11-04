@@ -23,7 +23,7 @@ jobs:
             platform: linux/amd64
             arch: amd64
           - php_version: '7.3'
-            runner: ubuntu-24.04-arm64
+            runner: ubuntu-24.04-arm
             platform: linux/arm64
             arch: arm64
           - php_version: '7.4'
@@ -31,7 +31,7 @@ jobs:
             platform: linux/amd64
             arch: amd64
           - php_version: '7.4'
-            runner: ubuntu-24.04-arm64
+            runner: ubuntu-24.04-arm
             platform: linux/arm64
             arch: arm64
           - php_version: '8.0'
@@ -39,7 +39,7 @@ jobs:
             platform: linux/amd64
             arch: amd64
           - php_version: '8.0'
-            runner: ubuntu-24.04-arm64
+            runner: ubuntu-24.04-arm
             platform: linux/arm64
             arch: arm64
           - php_version: '8.1'
@@ -47,7 +47,7 @@ jobs:
             platform: linux/amd64
             arch: amd64
           - php_version: '8.1'
-            runner: ubuntu-24.04-arm64
+            runner: ubuntu-24.04-arm
             platform: linux/arm64
             arch: arm64
           - php_version: '8.2'
@@ -55,7 +55,7 @@ jobs:
             platform: linux/amd64
             arch: amd64
           - php_version: '8.2'
-            runner: ubuntu-24.04-arm64
+            runner: ubuntu-24.04-arm
             platform: linux/arm64
             arch: arm64
           - php_version: '8.3'
@@ -63,7 +63,7 @@ jobs:
             platform: linux/amd64
             arch: amd64
           - php_version: '8.3'
-            runner: ubuntu-24.04-arm64
+            runner: ubuntu-24.04-arm
             platform: linux/arm64
             arch: arm64
 
