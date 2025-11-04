@@ -14,6 +14,15 @@ ARG TARGETPLATFORM
 SHELL ["/bin/bash", "-eou", "pipefail", "-c"]
 
 # -------------------------------
+# Environment variables
+# -------------------------------
+# Disable AVIF for GD https://github.com/mlocati/docker-php-extension-installer#configuration
+ENV IPE_GD_WITHOUTAVIF=${IPE_GD_WITHOUTAVIF}
+ENV NVM_VERSION=${NVM_VERSION}
+ENV NVM_DIR=/usr/local/bin/.nvm
+ENV IPE_CACHE_DIR=/tmp/ipe-cache
+
+# -------------------------------
 # WP-CLI & PHP extension installer
 # -------------------------------
 ADD https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar /usr/local/bin/wp
@@ -21,20 +30,19 @@ ADD https://github.com/mlocati/docker-php-extension-installer/releases/latest/do
 
 RUN chmod a+rx /usr/local/bin/wp /usr/local/bin/install-php-extensions
 
-# Disable AVIF for GD https://github.com/mlocati/docker-php-extension-installer#configuration
-ENV IPE_GD_WITHOUTAVIF=${IPE_GD_WITHOUTAVIF}
-RUN install-php-extensions xdebug pdo pdo_mysql mysqli zip uopz pcntl sockets intl exif gd
+# -------------------------------
+# PHP extensions (heavy compilation step with cache mount)
+# -------------------------------
+RUN --mount=type=cache,target=/tmp/ipe-cache,sharing=locked \
+    install-php-extensions xdebug pdo pdo_mysql mysqli zip uopz pcntl sockets intl exif gd
 
 # -------------------------------
-# NVM environment variables
+# System dependencies (with cache mount for speed)
 # -------------------------------
-ENV NVM_VERSION=${NVM_VERSION}
-ENV NVM_DIR=/usr/local/bin/.nvm
-
-# -------------------------------
-# Dependencies for NVM & general builds
-# -------------------------------
-RUN apt-get update && \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    rm -f /etc/apt/apt.conf.d/docker-clean && \
+    apt-get update && \
     apt-get install -yqq --no-install-recommends \
         ca-certificates curl git zip unzip iproute2 \
         libnss3 libnspr4 libdbus-1-3 libatk1.0-0 libatk-bridge2.0-0 \
@@ -66,25 +74,7 @@ RUN set -eux; \
     node -v; npm -v
 
 # -------------------------------
-# PHP uopz extension & XDebug
-# -------------------------------
-COPY ./docker-php-ext-uopz.ini /usr/local/etc/php/conf.d/docker-php-ext-uopz.ini
-COPY ./xdebug-on.sh /usr/local/bin/xdebug-on
-COPY ./xdebug-off.sh /usr/local/bin/xdebug-off
-
-RUN chmod a+x /usr/local/bin/xdebug-on /usr/local/bin/xdebug-off && \
-    chmod -R a+rwx /usr/local/etc/php/conf.d && xdebug-off
-
-# -------------------------------
-# Composer 1 & 2
-# -------------------------------
-COPY --from=composer1 /usr/bin/composer /usr/local/bin/composer1
-COPY --from=composer2 /usr/bin/composer /usr/local/bin/composer
-
-RUN chmod a+x /usr/local/bin/composer /usr/local/bin/composer1
-
-# -------------------------------
-# Slic user & fixuid
+# Slic user & fixuid setup
 # -------------------------------
 RUN groupadd -g 1000 slic 2>/dev/null || true && \
     useradd -u 1000 -g 1000 -m -s /bin/bash slic 2>/dev/null || true && \
@@ -95,22 +85,37 @@ RUN groupadd -g 1000 slic 2>/dev/null || true && \
     esac && \
     curl -SsL https://github.com/boxboat/fixuid/releases/download/v0.6.0/fixuid-0.6.0-linux-$FIXUID_ARCH.tar.gz \
         | tar -C /usr/local/bin -xzf - && \
-    chown root:root /usr/local/bin/fixuid && chmod 4755 /usr/local/bin/fixuid && \
+    chown root:root /usr/local/bin/fixuid && \
+    chmod 4755 /usr/local/bin/fixuid && \
     mkdir -p /etc/fixuid
 
+# -------------------------------
+# Composer 1 & 2 from multi-stage builds
+# -------------------------------
+COPY --from=composer1 /usr/bin/composer /usr/local/bin/composer1
+COPY --from=composer2 /usr/bin/composer /usr/local/bin/composer
+
+# -------------------------------
+# Local config files (moved late for better caching)
+# -------------------------------
+COPY ./docker-php-ext-uopz.ini /usr/local/etc/php/conf.d/docker-php-ext-uopz.ini
+COPY ./xdebug-on.sh /usr/local/bin/xdebug-on
+COPY ./xdebug-off.sh /usr/local/bin/xdebug-off
 COPY ./fixuid.yml /etc/fixuid/config.yml
 COPY ./.bashrc /home/slic/.bashrc
 COPY ./.bashrc /root/.bashrc
 COPY ./bashrc_scripts.sh /home/slic/bashrc_scripts.sh
-
-# Ensure NVM directory is owned by slic
-RUN chown -R slic:slic $NVM_DIR
-
-# -------------------------------
-# Entrypoint
-# -------------------------------
 COPY ./slic-entrypoint.sh /usr/local/bin/slic-entrypoint.sh
-RUN chmod a+x /usr/local/bin/slic-entrypoint.sh
+
+# -------------------------------
+# Final permissions & setup
+# -------------------------------
+RUN chmod a+x /usr/local/bin/xdebug-on /usr/local/bin/xdebug-off \
+             /usr/local/bin/composer /usr/local/bin/composer1 \
+             /usr/local/bin/slic-entrypoint.sh && \
+    chmod -R a+rwx /usr/local/etc/php/conf.d && \
+    chown -R slic:slic $NVM_DIR && \
+    xdebug-off
 
 ENTRYPOINT ["/usr/local/bin/slic-entrypoint.sh"]
 
