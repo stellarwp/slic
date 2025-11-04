@@ -16,56 +16,17 @@ jobs:
       packages: write
     strategy:
       matrix:
+        # Cross-multiply these to create all combinations
+        php_version: [ '7.3', '7.4', '8.0', '8.1', '8.2', '8.3' ]
+        arch: [ 'amd64', 'arm64' ]
+        # Add runner and platform info for each architecture
         include:
-          # PHP versions - both architectures
-          - php_version: '7.3'
+          - arch: amd64
             runner: ubuntu-latest
             platform: linux/amd64
-            arch: amd64
-          - php_version: '7.3'
+          - arch: arm64
             runner: ubuntu-24.04-arm
             platform: linux/arm64
-            arch: arm64
-          - php_version: '7.4'
-            runner: ubuntu-latest
-            platform: linux/amd64
-            arch: amd64
-          - php_version: '7.4'
-            runner: ubuntu-24.04-arm
-            platform: linux/arm64
-            arch: arm64
-          - php_version: '8.0'
-            runner: ubuntu-latest
-            platform: linux/amd64
-            arch: amd64
-          - php_version: '8.0'
-            runner: ubuntu-24.04-arm
-            platform: linux/arm64
-            arch: arm64
-          - php_version: '8.1'
-            runner: ubuntu-latest
-            platform: linux/amd64
-            arch: amd64
-          - php_version: '8.1'
-            runner: ubuntu-24.04-arm
-            platform: linux/arm64
-            arch: arm64
-          - php_version: '8.2'
-            runner: ubuntu-latest
-            platform: linux/amd64
-            arch: amd64
-          - php_version: '8.2'
-            runner: ubuntu-24.04-arm
-            platform: linux/arm64
-            arch: arm64
-          - php_version: '8.3'
-            runner: ubuntu-latest
-            platform: linux/amd64
-            arch: amd64
-          - php_version: '8.3'
-            runner: ubuntu-24.04-arm
-            platform: linux/arm64
-            arch: arm64
 
     steps:
       - name: Checkout repository
