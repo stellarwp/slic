@@ -707,3 +707,23 @@ function normalize_php_version( $version ) {
 
 	return $version;
 }
+
+/**
+ * Gets the state file path for a specific stack.
+ *
+ * @param string|null $stack_id The stack identifier. If null, returns the default .env.slic.run path.
+ *
+ * @return string The absolute path to the stack's state file.
+ */
+function get_stack_env_file( $stack_id = null ) {
+	if ( null === $stack_id ) {
+		return root( '.env.slic.run' );
+	}
+
+	// Load stacks.php functions if not already loaded
+	if ( ! function_exists( 'slic_stacks_get_state_file' ) ) {
+		require_once __DIR__ . '/stacks.php';
+	}
+
+	return slic_stacks_get_state_file( $stack_id );
+}

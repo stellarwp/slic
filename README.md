@@ -13,6 +13,7 @@ The slic (**S**tellarWP **L**ocal **I**nteractive **C**ontainers) CLI command pr
 * [Using `slic`](#using-slic)
     * [Tell `slic` how to find your project](#tell-slic-how-to-find-your-project)
     * [Preparing your project](#preparing-your-project)
+    * [Working with Multiple Stacks](#working-with-multiple-stacks)
     * [Adding tests](#adding-tests)
     * [Running tests](#running-tests)
 * [Advanced topics](#advanced-topics)
@@ -25,6 +26,7 @@ The slic (**S**tellarWP **L**ocal **I**nteractive **C**ontainers) CLI command pr
     * [Configuring IDEs for Xdebug](/docs/xdebug.md)
     * [Releasing a new version of `slic`](/CONTRIBUTING.md)
 * [Update guide](#update-guide)
+  * [From 2.0 to 3.0](#from-20-to-30)
   * [From 1.0 to 2.0](#from-10-to-20)
 
 
@@ -88,6 +90,8 @@ You can see details and usage on each command by running:
 slic help <command>
 ```
 
+> **Working with Multiple Stacks:** Most `slic` commands support a global `--stack=<path>` flag to target a specific stack. See [Working with Multiple Stacks](#working-with-multiple-stacks) for details.
+
 ## Using `slic`
 
 The `slic` command has many subcommands. You can discover what those are by typing `slic` or `slic help`. If you want
@@ -95,12 +99,13 @@ more details on any of the subcommands, simply type: `slic [subcommand] help`.
 
 ### Tell `slic` how to find your project
 
-The `slic` command needs a place to look for plugins, themes, and WordPress. By default, `slic` creates a `_plugins` and
-`_wordpress` directory within the local checkout of `slic`. In most cases, however, developers like to run automated tests
-against the paths where they are actively working on code – which likely lives elsewhere.
+The `slic` command needs a place to look for plugins, themes, and WordPress. By default, `slic` creates a `_plugins` and `_wordpress` directory within the local checkout of `slic`. In most cases, however, developers like to run automated tests against the paths where they are actively working on code – which likely lives elsewhere.
 
-Good news! You can use the `slic here` sub-command to re-point `slic`'s paths so it looks in the places you wish. There
-are two locations you can tell `slic` to look.
+Good news! You can use the `slic here` sub-command to create a **stack** that points to the directories you want to work with.
+
+**What's a stack?** A stack is an isolated slic environment with its own containers, configuration, and ports. You can have multiple stacks running simultaneously, allowing you to work on different projects or WordPress installations without conflicts.
+
+There are two locations you can tell `slic` to look.
 
 #### 1. Plugins Directory
 
@@ -115,6 +120,8 @@ cd /path/to/your/wp-content/plugins
 
 slic here
 ```
+
+This creates a new stack for this directory. If you already have a stack for this directory, it updates the configuration.
 
 ![slic here](docs/images/slic-here.gif)
 
@@ -140,6 +147,24 @@ By running `slic here` at the site level, this allows you to set plugins, themes
 from which to run tests. This also has the benefit of running tests within the WP version that your site uses.
 
 ![slic here](docs/images/slic-here-wp.gif)
+
+#### Stack Isolation and Ports
+
+Each stack runs in complete isolation with its own:
+- Docker containers (separate from other stacks)
+- MySQL database instance
+- Redis cache
+- WordPress container
+
+**Important Note:** While each stack has its own WordPress *container*, the WordPress codebase itself may be shared among containers. If you're using the default `_wordpress` directory inside slic (when running `slic here` from a plugins directory), all stacks will share the same WordPress installation files. However, each stack maintains its own database and Redis cache, so data remains isolated.
+
+**Ports are automatically assigned by Docker** when containers start. You don't need to configure or worry about port conflicts – Docker handles this for you. You can view the assigned ports for any stack using:
+
+```bash
+slic using        # Show current stack and its ports
+slic stack list   # Show all stacks and their ports
+slic stack info   # Show detailed info for current stack
+```
 
 ### Preparing your project
 
@@ -180,6 +205,225 @@ What this command does:
 2. Generates a `test-config.slic.php` file in the plugin.
 3. Generates a `codeception.slic.yml` file in the plugin.
 4. Prompts for confirmation on running `composer` and `npm` installs on the plugin.
+
+### Working with Multiple Stacks
+
+`slic` supports running multiple isolated stacks simultaneously. This is useful when you're working on multiple projects, need different WordPress versions, or want to test against different configurations.
+
+#### How Stack Resolution Works
+
+When you run a `slic` command, it determines which stack to use in this priority order:
+
+1. **`--stack=<path>` flag** - Explicitly specify the stack to use
+2. **`SLIC_STACK` environment variable** - Set programmatically for CI or scripts
+3. **Current working directory** - Automatically uses the stack that matches your current directory
+4. **Single stack fallback** - If only one stack exists, uses it automatically
+
+#### Managing Multiple Stacks
+
+##### Viewing All Stacks
+
+To see all your registered stacks with their configuration and ports:
+
+```bash
+slic stack list
+```
+
+This shows:
+- Stack directory path
+- Current target (which plugin/project is active)
+- WordPress URL and assigned port
+- MySQL and Redis ports
+- Container status
+
+##### Viewing Current Stack Information
+
+To see detailed information about the stack you're currently using:
+
+```bash
+slic using
+```
+
+This displays:
+- Current target plugin/project
+- Stack directory
+- WordPress URL and all port assignments
+- Whether your current directory matches the active target
+
+For even more details:
+
+```bash
+slic stack info
+```
+
+##### Stopping a Specific Stack
+
+To stop containers for a specific stack without affecting others:
+
+```bash
+slic stack stop /path/to/your/plugins
+```
+
+If you have multiple stacks and don't specify which one, `slic` will show you a list to choose from.
+
+##### Stopping All Stacks
+
+To stop all registered stacks at once:
+
+```bash
+slic stack stop all
+```
+
+This command:
+- Shows a list of all stacks that will be stopped
+- Prompts for confirmation before proceeding
+- Stops each stack even if one fails
+- Shows a comprehensive summary with success/failure counts
+- Works from any directory
+
+**Note:** This command requires interactive input to confirm the action. It will exit with an error when run in non-interactive environments (such as CI pipelines or automation scripts).
+
+This is useful when you want to free up system resources or restart your Docker environment cleanly.
+
+##### Targeting a Specific Stack
+
+When working with multiple stacks, you can target a specific one in two ways:
+
+**Option 1: Change to the stack directory**
+
+```bash
+cd /path/to/project-a/wp-content/plugins
+slic run wpunit  # Runs tests in project-a's stack
+```
+
+**Option 2: Use the `--stack` flag**
+
+```bash
+slic --stack=/path/to/project-a/wp-content/plugins run wpunit
+```
+
+The `--stack` flag works with any `slic` command:
+
+```bash
+# Use a different stack
+slic --stack=/path/to/project-b/wp-content/plugins use my-plugin
+
+# Run composer in a specific stack
+slic --stack=/path/to/project-a/wp-content/plugins composer install
+
+# View logs from a specific stack
+slic --stack=/path/to/project-b/wp-content/plugins logs
+```
+
+#### Port Management
+
+Unlike earlier versions of `slic`, you **no longer need to configure ports**. Docker automatically assigns available ports when containers start, preventing conflicts when running multiple stacks.
+
+To find your stack's ports:
+
+```bash
+# Quick view
+slic using
+
+# Detailed view
+slic stack info
+
+# All stacks
+slic stack list
+```
+
+The WordPress site will be accessible at `http://localhost:<auto-assigned-port>` where the port is shown by these commands.
+
+#### Example Multi-Stack Workflow
+
+Here's a typical workflow when working on multiple projects:
+
+```bash
+# Create stack for project A
+cd ~/projects/client-a/wp-content/plugins
+slic here
+slic use their-plugin
+
+# Create stack for project B
+cd ~/projects/client-b/wp-content/plugins
+slic here
+slic use another-plugin
+
+# Work on project A from anywhere
+slic --stack=~/projects/client-a/wp-content/plugins run wpunit
+
+# Or cd to project A and work normally
+cd ~/projects/client-a/wp-content/plugins/their-plugin
+slic run wpunit  # Automatically uses project A's stack
+
+# Switch to project B
+cd ~/projects/client-b/wp-content/plugins/another-plugin
+slic shell  # Opens shell in project B's stack
+
+# View all your stacks
+slic stack list
+```
+
+#### XDebug Configuration
+
+Each stack gets its own unique XDebug configuration to enable debugging multiple stacks simultaneously without conflicts. This is achieved through stack-specific XDebug ports and server names.
+
+**How Stack-Specific XDebug Works:**
+
+When you create a stack with `slic here`, slic automatically generates:
+- A unique XDebug port in the range 49000-59000
+- A unique server name in the format `slic_{hash}`
+
+Both are deterministically generated from your stack path using an MD5 hash, so they remain consistent across restarts.
+
+**Viewing Your Stack's XDebug Configuration:**
+
+To see your stack's XDebug settings, run:
+
+```bash
+slic xdebug status
+```
+
+This displays:
+- XDebug status (on/off)
+- Remote host and port
+- IDE key (server name)
+- Path mappings for your IDE
+
+**Why This Matters:**
+
+With stack-specific XDebug configuration, you can:
+- Debug tests running in multiple stacks at the same time
+- Keep separate IDE debug configurations for each project
+- Avoid port conflicts when multiple stacks are active
+
+**Example:**
+
+If you create stacks for two different projects:
+
+```bash
+# Stack A at ~/projects/client-a/wp-content/plugins
+cd ~/projects/client-a/wp-content/plugins
+slic here
+slic xdebug status
+# Shows: IDE Key: slic_a7f3c891, Remote port: 52341
+
+# Stack B at ~/projects/client-b/wp-content/plugins
+cd ~/projects/client-b/wp-content/plugins
+slic here
+slic xdebug status
+# Shows: IDE Key: slic_b8d4e902, Remote port: 54782
+```
+
+Each stack has different port numbers and server names based on their paths. This means you can run tests with debugging enabled in both stacks simultaneously, as long as your IDE has separate debug configurations for each (using their respective ports and server names).
+
+For detailed instructions on configuring your IDE for XDebug, see [Configuring IDEs for Xdebug](/docs/xdebug.md).
+
+#### Legacy Single-Stack Migration
+
+If you were using `slic` before multi-stack support was added, your existing configuration is automatically migrated the first time you run a `slic` command. Your original `.env.slic.run` file is backed up as `.env.slic.run.backup` and a new stack is registered for your configuration.
+
+The migration is seamless – you can continue using `slic` exactly as before, and when you're ready, you can create additional stacks for other projects.
 
 ### Adding tests
 
@@ -340,6 +584,13 @@ List the available Xdebug commands.
 
 See if Xdebug is enabled or disabled, the host information, and the path mapping to add to your IDE.
 
+When working with multiple stacks, this command displays stack-specific XDebug configuration:
+- The unique XDebug remote port for the current stack (range 49000-59000)
+- The stack-specific IDE key/server name (format: `slic_<hash>`)
+- Path mappings for your IDE
+
+Each stack gets its own XDebug configuration, allowing you to debug tests running in multiple stacks simultaneously without port conflicts.
+
 Note that this command cannot be ran within `slic shell` because you've SSH'd into the Codeception container which has no knowledge of *slic*.
 
 See also: [Configuring Xdebug](/docs/xdebug.md)
@@ -362,6 +613,50 @@ When using these commands, `slic` will prompt you to restart the containers.
 ## Update Guide
 
 This guide covers the steps needed when upgrading `slic` between major versions.
+
+### From 2.0 to 3.0
+
+> **New Feature:**
+> - Multi-stack support allows running multiple isolated slic environments simultaneously
+> - Automatic port assignment eliminates port configuration and conflicts
+
+#### Automatic Migration
+
+If you're upgrading from a single-stack setup, `slic` will automatically migrate your configuration:
+
+1. Your existing `.env.slic.run` is backed up to `.env.slic.run.backup`
+2. A new stack is registered for your current configuration
+3. Default ports (8888 for WordPress, 9006 for MySQL, 8379 for Redis) are preserved in the migrated stack
+4. You can continue working exactly as before
+
+**No action required** – the migration happens automatically on your next `slic` command.
+
+#### Taking Advantage of Multi-Stack Features
+
+After migration, you can:
+
+1. **Create additional stacks** for other projects:
+   ```bash
+   cd /path/to/another/project/wp-content/plugins
+   slic here
+   ```
+
+2. **View all your stacks**:
+   ```bash
+   slic stack list
+   ```
+
+3. **Check current ports** (now auto-assigned by Docker):
+   ```bash
+   slic using
+   ```
+
+4. **Target specific stacks** when needed:
+   ```bash
+   slic --stack=/path/to/project run wpunit
+   ```
+
+See [Working with Multiple Stacks](#working-with-multiple-stacks) for complete documentation.
 
 ### From 1.0 to 2.0
 

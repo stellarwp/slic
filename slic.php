@@ -36,6 +36,21 @@ $args = args( [
 $cli_name = 'slic';
 const CLI_VERSION = '2.1.1';
 
+// Parse --stack flag if present and store in global variable for stack resolution
+global $SLIC_STACK_OVERRIDE;
+$SLIC_STACK_OVERRIDE = null;
+
+foreach ( $argv as $index => $arg ) {
+	if ( strpos( $arg, '--stack=' ) === 0 ) {
+		$SLIC_STACK_OVERRIDE = substr( $arg, 8 ); // Extract value after '--stack='
+		// Remove the --stack flag from argv
+		unset( $argv[ $index ] );
+		$argv = array_values( $argv );
+		$argc = count( $argv );
+		break;
+	}
+}
+
 // If the run-time option `-q`, for "quiet", is specified, then do not print the header.
 if ( in_array( '-q', $argv, true ) || ( in_array( 'exec', $argv, true ) && ! in_array( 'help', $argv, true ) ) ) {
 	// Remove the `-q` flag from the global array of arguments to leave the rest of the commands unchanged.
@@ -74,6 +89,7 @@ Available commands:
   <light_cyan>restart</light_cyan>        Restarts containers in the stack.
   <light_cyan>run</light_cyan>            Runs a Codeception test in the stack, the equivalent to <light_cyan>'codecept run ...'</light_cyan>.
   <light_cyan>shell</light_cyan>          Opens a shell in the `slic` container.
+  <light_cyan>stack</light_cyan>          Manages multiple slic stacks (list, stop, info).
   <light_cyan>start</light_cyan>          Starts containers in the stack.
   <light_cyan>stop</light_cyan>           Stops containers in the stack.
   <light_cyan>use</light_cyan>            Sets the plugin to use in the tests.
@@ -83,6 +99,7 @@ Available commands:
   <light_cyan>playwright</light_cyan>     Runs Playwright commands in the stack.
 
 Type <light_cyan>{$cli_name} <command> help</light_cyan> for info about each command.
+Global option: <yellow>--stack=<path></yellow> to target a specific stack.
 HELP;
 
 $help_advanced_message_template = <<< HELP

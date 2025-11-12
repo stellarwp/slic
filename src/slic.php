@@ -233,8 +233,9 @@ function get_target_relative_path( $target ) {
  *
  * @param string $root_dir The cli tool root directory.
  * @param bool $reset Whether to force a reset of the env vars or not, if already set up.
+ * @param string|null $stack_id The stack to load environment for. If null, uses current stack or legacy file.
  */
-function setup_slic_env( $root_dir, $reset = false ) {
+function setup_slic_env( $root_dir, $reset = false, $stack_id = null ) {
 	static $set;
 
 	if ( ! $reset && $set === true ) {
@@ -242,6 +243,15 @@ function setup_slic_env( $root_dir, $reset = false ) {
 	}
 
 	$set = true;
+
+	// Attempt legacy migration on first run
+	if ( ! $reset && file_exists( __DIR__ . '/stacks.php' ) ) {
+		require_once __DIR__ . '/stacks.php';
+		if ( slic_stacks_migrate_legacy() ) {
+			echo colorize( PHP_EOL . "<yellow>✓ Migrated existing slic configuration to multi-stack format.</yellow>" . PHP_EOL );
+			echo colorize( "Your previous configuration has been backed up to .env.slic.run.backup" . PHP_EOL . PHP_EOL );
+		}
+	}
 
 	// Let's declare we're performing slics.
 	putenv( 'STELLAR_SLIC=1' );
@@ -268,8 +278,62 @@ function setup_slic_env( $root_dir, $reset = false ) {
 	}
 
 	// Load the current session configuration file.
-	if ( file_exists( $root_dir . '/.env.slic.run' ) ) {
-		load_env_file( $root_dir . '/.env.slic.run' );
+	// If a stack_id is provided, load that stack's state file.
+	// Otherwise, try to determine the current stack or fall back to legacy .env.slic.run.
+	$run_file = null;
+
+	if ( null !== $stack_id ) {
+		$run_file = get_stack_env_file( $stack_id );
+	} else {
+		// Try to determine current stack
+		if ( function_exists( 'slic_current_stack' ) || file_exists( __DIR__ . '/stacks.php' ) ) {
+			if ( ! function_exists( 'slic_current_stack' ) ) {
+				require_once __DIR__ . '/stacks.php';
+			}
+			$current_stack = slic_current_stack();
+			if ( null !== $current_stack ) {
+				$run_file = get_stack_env_file( $current_stack );
+			}
+		}
+
+		// Fall back to legacy .env.slic.run file if it exists and no stack was found
+		if ( null === $run_file && file_exists( $root_dir . '/.env.slic.run' ) ) {
+			$run_file = $root_dir . '/.env.slic.run';
+		}
+	}
+
+	if ( null !== $run_file && file_exists( $run_file ) ) {
+		load_env_file( $run_file );
+	}
+
+	// Set stack-specific XDebug configuration
+	// This needs to happen after loading the run file but before loading target overrides
+	// so that .env.slic.local in the target can still override if needed
+	$effective_stack_id = $stack_id;
+	if ( null === $effective_stack_id && function_exists( 'slic_current_stack' ) ) {
+		$effective_stack_id = slic_current_stack();
+	}
+
+	if ( null !== $effective_stack_id ) {
+		if ( ! function_exists( 'slic_stacks_get' ) ) {
+			require_once __DIR__ . '/stacks.php';
+		}
+		$stack = slic_stacks_get( $effective_stack_id );
+
+		// Always set XDebug values from stack registry to ensure stack-specific values are used
+		// These will override default values from .env.slic, but can still be overridden by
+		// .env.slic.local files loaded later
+		if ( null !== $stack ) {
+			if ( isset( $stack['xdebug_port'] ) ) {
+				$xdebug_port = $stack['xdebug_port'];
+				putenv( "XDP={$xdebug_port}" );
+			}
+
+			if ( isset( $stack['xdebug_key'] ) ) {
+				$xdebug_key = $stack['xdebug_key'];
+				putenv( "XDK={$xdebug_key}" );
+			}
+		}
 	}
 
 	$target_path = get_project_local_path();
@@ -421,15 +485,105 @@ function slic_target( $require = true ) {
 }
 
 /**
+ * Determines the current stack to use.
+ *
+ * Priority order:
+ * 1. Global $SLIC_STACK_OVERRIDE (set by --stack flag)
+ * 2. SLIC_STACK environment variable
+ * 3. Stack matching current working directory
+ * 4. Single stack if only one exists
+ * 5. null if no stack can be determined
+ *
+ * @return string|null The stack ID or null if not found.
+ */
+function slic_current_stack() {
+	// Load stacks.php functions if not already loaded
+	if ( ! function_exists( 'slic_stacks_list' ) ) {
+		require_once __DIR__ . '/stacks.php';
+	}
+
+	// 1. Check global override (set by --stack flag)
+	global $SLIC_STACK_OVERRIDE;
+	if ( ! empty( $SLIC_STACK_OVERRIDE ) ) {
+		return slic_stacks_resolve_from_path( $SLIC_STACK_OVERRIDE );
+	}
+
+	// 2. Check environment variable
+	$env_stack = getenv( 'SLIC_STACK' );
+	if ( ! empty( $env_stack ) ) {
+		return slic_stacks_resolve_from_path( $env_stack );
+	}
+
+	// 3. Try to resolve from current working directory
+	$cwd_stack = slic_stacks_resolve_from_cwd();
+	if ( null !== $cwd_stack ) {
+		return $cwd_stack;
+	}
+
+	// 4. If only one stack exists, use it (backward compatibility)
+	$single_stack_id = slic_stacks_get_single_id();
+	if ( null !== $single_stack_id ) {
+		return $single_stack_id;
+	}
+
+	return null;
+}
+
+/**
+ * Gets the current stack or exits with an error if not found.
+ *
+ * @param string|null $reason Optional reason to display if stack not found.
+ * @return string The stack ID.
+ */
+function slic_current_stack_or_fail( $reason = null ) {
+	$stack_id = slic_current_stack();
+
+	if ( null === $stack_id ) {
+		$message = "No slic stack found.";
+
+		if ( ! empty( $reason ) ) {
+			$message .= " " . $reason;
+		}
+
+		// Load stacks.php functions if not already loaded
+		if ( ! function_exists( 'slic_stacks_count' ) ) {
+			require_once __DIR__ . '/stacks.php';
+		}
+
+		$stack_count = slic_stacks_count();
+
+		if ( $stack_count === 0 ) {
+			$message .= PHP_EOL . "Run 'slic here' in a plugin directory to create a stack.";
+		} elseif ( $stack_count > 1 ) {
+			$message .= PHP_EOL . "Multiple stacks exist. Use --stack=<path> or cd to the stack directory.";
+			$message .= PHP_EOL . "Run 'slic stack list' to see all available stacks.";
+		}
+
+		echo magenta( $message . PHP_EOL );
+		exit( 1 );
+	}
+
+	return $stack_id;
+}
+
+/**
  * Switches the current `use` target.
  *
  * @param string $target Target to switch to.
+ * @param string|null $stack_id The stack to switch target for. If null, uses current stack.
  */
-function slic_switch_target( $target ) {
+function slic_switch_target( $target, $stack_id = null ) {
 	$root                 = root();
-	$run_settings_file    = "{$root}/.env.slic.run";
 	$target_relative_path = '';
 	$subdir               = '';
+
+	// Determine which stack to use
+	if ( null === $stack_id ) {
+		$stack_id = slic_current_stack_or_fail( "Cannot switch target without an active stack." );
+	}
+
+	// Get the stack-specific state file
+	$run_settings_file = get_stack_env_file( $stack_id );
 
 	if ( slic_here_is_site() ) {
 		$target_relative_path = get_target_relative_path( $target );
@@ -447,7 +601,7 @@ function slic_switch_target( $target ) {
 
 	write_env_file( $run_settings_file, $env_values, true );
 
-	setup_slic_env( $root );
+	setup_slic_env( $root, false, $stack_id );
 }
 
 /**
@@ -741,37 +895,42 @@ function git_handle() {
  *
  * @return \Closure The process closure to start a real-time process using slic stack.
  */
-function slic_passive() {
-	return docker_compose_passive( slic_stack_array() );
+function slic_passive( $stack_id = null ) {
+	return docker_compose_passive( slic_stack_array(), $stack_id );
 }
 
 /**
  * Runs a process in slic stack and returns the exit status.
  *
+ * @param string|null $stack_id The stack to run the command for. If null, uses current stack.
  * @return \Closure The process closure to start a real-time process using slic stack.
  */
-function slic_realtime() {
-	return docker_compose_realtime( slic_stack_array() );
+function slic_realtime( $stack_id = null ) {
+	return docker_compose_realtime( slic_stack_array(), $stack_id );
 }
 
 /**
  * Returns the process Closure to start a real-time process using slic stack.
  *
+ * @param string|null $stack_id The stack to run the command for. If null, uses current stack.
  * @return \Closure The process closure to start a real-time process using slic stack.
  */
-function slic_process() {
-	return docker_compose( slic_stack_array() );
+function slic_process( $stack_id = null ) {
+	return docker_compose( slic_stack_array(), $stack_id );
 }
 
 /**
  * Tears down slic stack.
+ *
+ * @param bool $passive Whether to run the command passively or in realtime.
+ * @param string|null $stack_id The stack to tear down. If null, uses current stack.
  */
-function teardown_stack( $passive = false ) {
+function teardown_stack( $passive = false, $stack_id = null ) {
 	if ( $passive ) {
-		return slic_passive()( [ 'down', '--volumes', '--remove-orphans' ] );
+		return slic_passive( $stack_id )( [ 'down', '--volumes', '--remove-orphans' ] );
 	}
 
-	return slic_realtime()( [ 'down', '--volumes', '--remove-orphans' ] );
+	return slic_realtime( $stack_id )( [ 'down', '--volumes', '--remove-orphans' ] );
 }
 
 /**
@@ -1039,23 +1198,92 @@ function slic_handle_interactive( callable $args ) {
 
 /**
  * Prints the current XDebug status to screen.
+ *
+ * @param string|null $stack_id The stack to show XDebug status for. If null, uses current stack.
  */
-function xdebug_status() {
+function xdebug_status( $stack_id = null ) {
+	// Determine which stack to show status for
+	if ( null === $stack_id && function_exists( 'slic_current_stack' ) ) {
+		$stack_id = slic_current_stack();
+	}
+
+	// Explicitly reload environment for the target stack to ensure correct values
+	setup_slic_env( root(), true, $stack_id );
+
 	$enabled = getenv( 'XDE' );
 	$ide_key = getenv( 'XDK' );
 	if ( empty( $ide_key ) ) {
 		$ide_key = 'slic';
 	}
-	$localhost_port = getenv( 'WORDPRESS_HTTP_PORT' );
+
+	// Get the WordPress port from the stack registry if available
+	$localhost_port = null;
+	if ( null !== $stack_id ) {
+		if ( ! function_exists( 'slic_stacks_ensure_ports' ) ) {
+			require_once __DIR__ . '/stacks.php';
+		}
+		slic_stacks_ensure_ports( $stack_id );  // Refresh ports from Docker
+		$stack = slic_stacks_get( $stack_id );
+		if ( null !== $stack && isset( $stack['ports']['wp'] ) ) {
+			$localhost_port = $stack['ports']['wp'];
+		}
+	}
+
+	// Fall back to WORDPRESS_HTTP_PORT env var or default
+	if ( empty( $localhost_port ) ) {
+		$localhost_port = getenv( 'WORDPRESS_HTTP_PORT' );
+	}
 	if ( empty( $localhost_port ) ) {
 		$localhost_port = '8888';
+	}
+
+	// Show current stack information if multi-stack is active
+	if ( ! function_exists( 'slic_stacks_list' ) ) {
+		require_once __DIR__ . '/stacks.php';
+	}
+	if ( function_exists( 'slic_stacks_list' ) ) {
+		$all_stacks = slic_stacks_list();
+		$stack_count = count( $all_stacks );
+
+		// Helper function to display stack information
+		$display_stack_info = function( $stack_id, $label_prefix = 'Stack' ) {
+			if ( ! function_exists( 'slic_stacks_get' ) ) {
+				echo colorize( '<red>Warning: Stack functions not available.</red>' ) . PHP_EOL;
+				return;
+			}
+			$stack = slic_stacks_get( $stack_id );
+			if ( null !== $stack ) {
+				echo colorize( $label_prefix . ': <yellow>' . $stack_id . '</yellow>' ) . PHP_EOL;
+				echo colorize( 'Project: <light_cyan>' . $stack['project_name'] . '</light_cyan>' ) . PHP_EOL . PHP_EOL;
+			} else {
+				echo colorize( '<red>Warning: Stack ID "' . $stack_id . '" not found.</red>' ) . PHP_EOL;
+				echo colorize( '<yellow>Showing global XDebug settings from .env.slic files.</yellow>' ) . PHP_EOL . PHP_EOL;
+			}
+		};
+
+		if ( $stack_count > 1 ) {
+			// Multiple stacks exist
+			if ( null !== $stack_id ) {
+				// Show which stack we're displaying config for
+				$display_stack_info( $stack_id, 'XDebug configuration for stack' );
+			} else {
+				// No active stack found
+				echo colorize( '<yellow>No active stack found. Showing global XDebug settings from .env.slic files.</yellow>' ) . PHP_EOL . PHP_EOL;
+			}
+		} elseif ( $stack_count === 1 ) {
+			// Single stack - backward compatible display
+			if ( null !== $stack_id ) {
+				$display_stack_info( $stack_id );
+			}
+		}
+		// If no stacks exist, don't show stack info at all
 	}
 
 	echo 'XDebug status is: ' . ( $enabled ? light_cyan( 'on' ) : magenta( 'off' ) ) . PHP_EOL;
 	echo 'Remote host: ' . light_cyan( getenv( 'XDH' ) ) . PHP_EOL;
 	echo 'Remote port: ' . light_cyan( getenv( 'XDP' ) ) . PHP_EOL;
 
-	echo 'IDE Key: ' . light_cyan( $ide_key ) . PHP_EOL;
+	echo 'IDE Key (server name): ' . light_cyan( $ide_key ) . PHP_EOL;
 	echo colorize( PHP_EOL . "You can override these values in the <light_cyan>.env.slic.local" .
 	               "</light_cyan> file or by using the " .
 	               "<light_cyan>'xdebug (host|key|port) <value>'</light_cyan> command." ) . PHP_EOL;
@@ -1096,11 +1324,18 @@ function xdebug_status() {
  * @param callable $args The closure that will produce the current XDebug request arguments.
  */
 function slic_handle_xdebug( callable $args ) {
-	$run_settings_file = root( '/.env.slic.run' );
-	$toggle            = $args( 'toggle', 'on' );
+	// Get the current stack's run file
+	$stack_id = slic_current_stack();
+	if ( null !== $stack_id ) {
+		$run_settings_file = get_stack_env_file( $stack_id );
+	} else {
+		// Fall back to legacy file if no stack
+		$run_settings_file = root( '/.env.slic.run' );
+	}
+	$toggle = $args( 'toggle', 'on' );
 
 	if ( 'status' === $toggle ) {
-		xdebug_status();
+		xdebug_status( $stack_id );
 
 		return;
 	}
