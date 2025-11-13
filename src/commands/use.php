@@ -28,12 +28,21 @@ if ( $is_help ) {
 $sub_args = args( [ 'target' ], $args( '...' ), 0 );
 $target   = $sub_args( 'target', false );
 
+// Determine which stack to use
+$stack_id = slic_current_stack_or_fail( "Cannot switch target without an active stack." );
+
 $target = (string) ensure_valid_target( $target );
 
 if ( ! empty( $target ) ) {
-	slic_switch_target( $target );
+	slic_switch_target( $target, $stack_id );
 }
 
-echo light_cyan( "Using {$target}" . PHP_EOL );
+// Show which stack is being used
+require_once __DIR__ . '/../stacks.php';
+$stack = slic_stacks_get( $stack_id );
+echo light_cyan( "Using {$target} in stack: {$stack_id}" . PHP_EOL );
+if ( null !== $stack && isset( $stack['ports']['wp'] ) ) {
+	echo colorize( "WordPress URL: <yellow>http://localhost:{$stack['ports']['wp']}</yellow>" . PHP_EOL );
+}
 
 project_apply_config( get_target_relative_path( $target ) );

@@ -31,13 +31,20 @@ function os() {
  * Curried docker compose wrapper.
  *
  * @param array<string> $options A list of options to initialize the wrapper.
+ * @param string|null $stack_id The stack to run docker compose for. If null, uses current stack.
  *
  * @return \Closure A closure to actually call docker compose with more arguments.
  */
-function docker_compose( array $options = [] ) {
+function docker_compose( array $options = [], $stack_id = null ) {
 	setup_id();
 
 	$is_ci = is_ci();
+
+	// Add project name for stack isolation
+	$project_name = get_stack_project_name( $stack_id );
+	if ( null !== $project_name ) {
+		$options = array_merge( [ '-p', $project_name ], $options );
+	}
 
 	$host_ip = false;
 	if ( ! $is_ci && 'Linux' === os() ) {
@@ -172,13 +179,20 @@ function slic_stack_array( $filenames_only = false ) {
  *
  * @param array<string> $options A list of options to initialize the wrapper.
  * @param bool $is_realtime Whether the command should be run in real time (true) or passively (false).
+ * @param string|null $stack_id The stack to run docker compose for. If null, uses current stack.
  *
  * @return \Closure A closure that will run the process in real time and return the process exit status.
  */
-function docker_compose_process( array $options = [], $is_realtime = true ) {
+function docker_compose_process( array $options = [], $is_realtime = true, $stack_id = null ) {
 	setup_id();
 
 	$is_ci = is_ci();
+
+	// Add project name for stack isolation
+	$project_name = get_stack_project_name( $stack_id );
+	if ( null !== $project_name ) {
+		$options = array_merge( [ '-p', $project_name ], $options );
+	}
 
 	$host_ip = false;
 	if ( ! $is_ci && 'Linux' === os() ) {
@@ -229,22 +243,24 @@ function docker_compose_process( array $options = [], $is_realtime = true ) {
  * This approach is used for commands that can be run in a parallel or forked process without interactivity.
  *
  * @param array<string> $options A list of options to initialize the wrapper.
+ * @param string|null $stack_id The stack to run docker compose for. If null, uses current stack.
  *
  * @return \Closure A closure that will run the process in real time and return the process exit status.
  */
-function docker_compose_passive( array $options = [] ) {
-	return docker_compose_process( $options, false );
+function docker_compose_passive( array $options = [], $stack_id = null ) {
+	return docker_compose_process( $options, false, $stack_id );
 }
 
 /**
  * Executes a docker compose command in real time, printing the output as produced by the command.
  *
  * @param array<string> $options A list of options to initialize the wrapper.
+ * @param string|null $stack_id The stack to run docker compose for. If null, uses current stack.
  *
  * @return \Closure A closure that will run the process in real time and return the process exit status.
  */
-function docker_compose_realtime( array $options = [] ) {
-	return docker_compose_process( $options, true );
+function docker_compose_realtime( array $options = [], $stack_id = null ) {
+	return docker_compose_process( $options, true, $stack_id );
 }
 
 /**
@@ -260,4 +276,32 @@ function docker_compose_realtime( array $options = [] ) {
 function docker_compose_bin(): string {
 	return (string) getenv( 'SLIC_DOCKER_COMPOSE_BIN' ) ?: 'docker compose';
 }
+
+/**
+ * Gets the Docker Compose project name for a stack.
+ *
+ * @param string|null $stack_id The stack identifier. If null, uses current stack.
+ * @return string|null The project name or null if no stack.
+ */
+function get_stack_project_name( $stack_id = null ) {
+	// Load stacks.php functions if not already loaded
+	if ( ! function_exists( 'slic_stacks_get_project_name' ) ) {
+		require_once __DIR__ . '/stacks.php';
+	}
+
+	// If no stack_id provided, try to determine current stack
+	if ( null === $stack_id ) {
+		if ( ! function_exists( 'slic_current_stack' ) ) {
+			require_once __DIR__ . '/slic.php';
+		}
+		$stack_id = slic_current_stack();
+	}
+
+	if ( null === $stack_id ) {
+		return null;
+	}
+
+	return slic_stacks_get_project_name( $stack_id );
+}
+
 

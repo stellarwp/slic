@@ -15,7 +15,7 @@ services:
     networks:
       - slic
     ports:
-      - "${SLIC_DB_LOCALHOST_PORT:-9006}:3306"
+      - "0:3306"
     environment:
       MYSQL_DATABASE: test
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
@@ -33,7 +33,7 @@ services:
     networks:
       - slic
     ports:
-      - "${SLIC_REDIS_LOCALHOST_PORT:-8379}:6379"
+      - "0:6379"
     healthcheck: # It should reply PONG to PING
       test: redis-cli ping | grep PONG
       start_period: 2s
@@ -67,9 +67,9 @@ services:
       # wheel in the container.
       net.ipv4.ip_unprivileged_port_start: 0
     ports:
-      # Allow reaching the site at `http://localhost:8888`.
+      # Allow reaching the site at a Docker-assigned port on localhost.
       # The port, in the container, is not the default `80` to allow non root users to bind (listen) to it.
-      - "${WORDPRESS_HTTP_PORT:-8888}:80"
+      - "0:80"
     environment:
       COMPOSER_CACHE_DIR: "/composer-cache"
       WORDPRESS_DB_USER: root
