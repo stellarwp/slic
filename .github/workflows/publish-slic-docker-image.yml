@@ -16,7 +16,7 @@ jobs:
       packages: write
     strategy:
       matrix:
-        # Cross-multiply these to create all combinations
+        # The php_version is the docker tag from https://hub.docker.com/_/php/tags
         php_version: [ '7.3', '7.4', '8.0', '8.1', '8.2', '8.3' ]
         arch: [ 'amd64', 'arm64' ]
         # Add runner and platform info for each architecture
@@ -94,7 +94,7 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: Create and push multi-arch manifest
         run: |
           # Determine the tag based on the event type
