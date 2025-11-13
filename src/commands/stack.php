@@ -92,72 +92,58 @@ switch ( $subcommand ) {
  * Lists all registered stacks.
  */
 function command_stack_list() {
+	slic_display_stacks_nested();
+}
+
+/**
+ * Displays stacks in a nested, hierarchical view showing base stacks and their worktrees.
+ */
+function slic_display_stacks_nested() {
+	$current_stack = slic_current_stack();
 	$stacks = slic_stacks_list();
 
-	if ( empty( $stacks ) ) {
-		echo colorize( "<yellow>No stacks registered.</yellow>" . PHP_EOL );
-		echo colorize( "Run <light_cyan>slic here</light_cyan> in a plugin directory to create a stack." . PHP_EOL );
+	// Separate base stacks and worktrees
+	$base_stacks = [];
+	$worktree_map = [];
+
+	foreach ( $stacks as $stack_id => $state ) {
+		if ( ! empty( $state['is_worktree'] ) ) {
+			$base_id = $state['base_stack_id'];
+			if ( ! isset( $worktree_map[ $base_id ] ) ) {
+				$worktree_map[ $base_id ] = [];
+			}
+			$worktree_map[ $base_id ][ $stack_id ] = $state;
+		} else {
+			$base_stacks[ $stack_id ] = $state;
+		}
+	}
+
+	// Display
+	if ( empty( $base_stacks ) ) {
+		echo "No stacks registered.\n";
 		return;
 	}
 
-	echo colorize( PHP_EOL . "<light_cyan>Registered Stacks:</light_cyan>" . PHP_EOL . PHP_EOL );
+	foreach ( $base_stacks as $stack_id => $state ) {
+		$status_icon = ( $state['status'] === 'running' ) ? '●' : '○';
 
-	foreach ( $stacks as $stack_id => $stack ) {
-		// Check if this is the current stack
-		$current_stack = slic_current_stack();
-		$is_current = ( $current_stack === $stack_id );
-		$marker = $is_current ? ' <green>← current</green>' : '';
+		echo "$status_icon $stack_id" . ($stack_id === $current_stack ? ' <-current' : '') . "\n";
+		echo "    Status: {$state['status']}\n";
+		echo "    Target: " . ( $state['target'] ?? 'none' ) . "\n";
+		echo "    XDebug: {$state['xdebug_port']}\n";
 
-		echo colorize( "<yellow>{$stack_id}</yellow>{$marker}" . PHP_EOL );
-		echo colorize( "  Project: <light_cyan>{$stack['project_name']}</light_cyan>" . PHP_EOL );
+		// Show worktrees if any
+		if ( isset( $worktree_map[ $stack_id ] ) ) {
+			echo "    Worktrees:\n";
 
-		// Show current target if set
-		$stack_env_file = slic_stacks_get_state_file( $stack_id );
-		if ( file_exists( $stack_env_file ) ) {
-			$env_data = read_env_file( $stack_env_file );
-			if ( isset( $env_data['SLIC_CURRENT_PROJECT'] ) && ! empty( $env_data['SLIC_CURRENT_PROJECT'] ) ) {
-				$target = $env_data['SLIC_CURRENT_PROJECT'];
-				if ( isset( $env_data['SLIC_CURRENT_PROJECT_SUBDIR'] ) && ! empty( $env_data['SLIC_CURRENT_PROJECT_SUBDIR'] ) ) {
-					$target .= '/' . $env_data['SLIC_CURRENT_PROJECT_SUBDIR'];
-				}
-				echo colorize( "  Target: <light_cyan>{$target}</light_cyan>" . PHP_EOL );
-			} else {
-				echo colorize( "  Target: <yellow>not set</yellow>" . PHP_EOL );
+			foreach ( $worktree_map[ $stack_id ] as $wt_id => $wt_state ) {
+				$wt_status_icon = ( $wt_state['status'] === 'running' ) ? '●' : '○';
+				echo "      $wt_status_icon {$wt_state['worktree_dir']} ({$wt_state['worktree_branch']})" . ($wt_id === $current_stack ? ' <-current' : '') . "\n";
+				echo "         XDebug: {$wt_state['xdebug_port']}\n";
 			}
 		}
 
-		// Show ports - ensure they're up-to-date from Docker
-		if ( slic_stacks_ensure_ports( $stack_id ) ) {
-			$updated_stack = slic_stacks_get( $stack_id );
-			echo colorize( "  WordPress: <light_cyan>http://localhost:{$updated_stack['ports']['wp']}</light_cyan>" . PHP_EOL );
-			echo colorize( "  MySQL Port: <light_cyan>{$updated_stack['ports']['mysql']}</light_cyan>" . PHP_EOL );
-			if ( isset( $updated_stack['ports']['redis'] ) ) {
-				echo colorize( "  Redis Port: <light_cyan>{$updated_stack['ports']['redis']}</light_cyan>" . PHP_EOL );
-			}
-			// Show XDebug configuration if available
-			if ( isset( $updated_stack['xdebug_port'] ) && isset( $updated_stack['xdebug_key'] ) ) {
-				echo colorize( "  XDebug Port: <light_cyan>{$updated_stack['xdebug_port']}</light_cyan>" . PHP_EOL );
-				echo colorize( "  XDebug Server: <light_cyan>{$updated_stack['xdebug_key']}</light_cyan>" . PHP_EOL );
-			} else {
-				echo colorize( "  <yellow>XDebug: Run 'slic here' to configure</yellow>" . PHP_EOL );
-			}
-		} else {
-			echo colorize( "  <yellow>Ports will be available after containers start</yellow>" . PHP_EOL );
-		}
-
-		// Show status
-		if ( isset( $stack['status'] ) ) {
-			$status_color = $stack['status'] === 'running' ? 'green' : 'yellow';
-			echo colorize( "  Status: <{$status_color}>{$stack['status']}</{$status_color}>" . PHP_EOL );
-		}
-
-		// Show created time
-		if ( isset( $stack['created_at'] ) ) {
-			$created = date( 'Y-m-d H:i:s', strtotime( $stack['created_at'] ) );
-			echo colorize( "  Created: <light_cyan>{$created}</light_cyan>" . PHP_EOL );
-		}
-
-		echo PHP_EOL;
+		echo "\n";
 	}
 }
 

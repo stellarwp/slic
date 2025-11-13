@@ -14,6 +14,7 @@ The slic (**S**tellarWP **L**ocal **I**nteractive **C**ontainers) CLI command pr
     * [Tell `slic` how to find your project](#tell-slic-how-to-find-your-project)
     * [Preparing your project](#preparing-your-project)
     * [Working with Multiple Stacks](#working-with-multiple-stacks)
+    * [Git Worktree Support](#git-worktree-support)
     * [Adding tests](#adding-tests)
     * [Running tests](#running-tests)
 * [Advanced topics](#advanced-topics)
@@ -424,6 +425,255 @@ For detailed instructions on configuring your IDE for XDebug, see [Configuring I
 If you were using `slic` before multi-stack support was added, your existing configuration is automatically migrated the first time you run a `slic` command. Your original `.env.slic.run` file is backed up as `.env.slic.run.backup` and a new stack is registered for your configuration.
 
 The migration is seamless – you can continue using `slic` exactly as before, and when you're ready, you can create additional stacks for other projects.
+
+### Git Worktree Support
+
+`slic` supports git worktrees for concurrent development workflows. Each worktree automatically gets its own isolated Docker Compose stack with unique XDebug ports, allowing you to work on multiple branches of the same plugin simultaneously without switching context.
+
+#### Use Cases
+
+Git worktree support is ideal for:
+
+- **Parallel feature development** - Work on multiple features in the same plugin at once
+- **Pull request reviews** - Test and review PRs without losing your current work
+- **Bug fixes while developing** - Quickly switch to a hotfix without disrupting your feature branch
+- **Cross-branch testing** - Compare behavior across different branches side-by-side
+- **Concurrent client work** - Handle urgent fixes while keeping long-running features in progress
+
+#### How It Works
+
+When you create a worktree with `slic`, it:
+
+1. Creates a new git worktree in a parallel directory (following git's standard naming convention)
+2. Automatically registers a new slic stack for that worktree
+3. Assigns a unique XDebug port (in the 49000-59000 range)
+4. Links the worktree stack to the base stack (shown hierarchically in `slic stack list`)
+5. Maintains complete stack isolation while sharing the WordPress installation and database
+
+**Important:** Each worktree stack shares the same WordPress codebase and database as the base stack, but runs in its own isolated Docker containers with its own ports.
+
+#### Creating a Worktree
+
+To create a new worktree for your current plugin:
+
+```bash
+cd /path/to/plugins/the-events-calendar
+slic worktree add feature/my-new-feature
+```
+
+This creates:
+- A new git worktree at `../the-events-calendar-feature-my-new-feature/`
+- A dedicated slic stack with format `base-stack@worktree-dir`
+- A unique XDebug port for isolated debugging
+
+**Options:**
+
+```bash
+# Create from a specific branch
+slic worktree add feature/new-feature origin/main
+
+# Create and track a new branch
+slic worktree add -b feature/new-feature
+```
+
+The worktree directory name follows git's convention: the plugin name followed by the branch name with slashes replaced by hyphens.
+
+#### Listing Worktrees
+
+To see all worktrees for your current plugin:
+
+```bash
+slic worktree list
+```
+
+This displays a table showing:
+- Branch name
+- Full path to the worktree
+- Associated slic stack name
+- XDebug port assignment
+- Whether the stack is currently active
+
+#### Switching Between Worktrees
+
+Simply navigate to the worktree directory:
+
+```bash
+cd ../the-events-calendar-feature-my-new-feature
+slic run wpunit  # Automatically uses the worktree's stack
+```
+
+Or use the `--stack` flag from anywhere:
+
+```bash
+slic --stack=/path/to/worktree run wpunit
+```
+
+#### Removing a Worktree
+
+To remove a worktree and clean up its slic stack:
+
+```bash
+slic worktree remove feature/my-new-feature
+```
+
+You can specify the worktree by:
+- Branch name: `slic worktree remove feature/my-new-feature`
+- Directory name: `slic worktree remove ../the-events-calendar-feature-my-new-feature`
+- Absolute path: `slic worktree remove /full/path/to/worktree`
+
+This command:
+1. Removes the git worktree
+2. Unregisters the associated slic stack
+3. Cleans up Docker resources
+
+**Note:** The command will fail if:
+- The worktree has uncommitted changes (use `git worktree remove --force` separately if needed)
+- The worktree is currently locked
+- The worktree directory is in use
+
+#### Syncing Worktrees
+
+Over time, worktrees and stacks can become out of sync (e.g., if a worktree is manually deleted or a stack is removed). To detect and clean up orphaned resources:
+
+```bash
+slic worktree sync
+```
+
+This command:
+- Detects orphaned worktree stacks (slic stack exists but git worktree doesn't)
+- Detects unregistered worktrees (git worktree exists but slic stack doesn't)
+- Prompts you to clean up orphaned stacks
+- Offers to register unregistered worktrees
+
+Run this periodically or whenever you suspect your worktrees and stacks are out of sync.
+
+#### Stack Isolation and XDebug
+
+Each worktree stack:
+- Has its own Docker Compose project name (e.g., `slic_plugins_tec_feature_my_feature`)
+- Gets a unique XDebug port (automatically allocated from 49000-59000)
+- Runs in complete isolation with separate containers
+- Shares the same WordPress installation and database with the base stack
+- Can run simultaneously with the base stack and other worktree stacks
+
+**Example XDebug configuration:**
+
+```bash
+# In base stack
+cd /path/to/plugins/the-events-calendar
+slic xdebug status
+# Shows: IDE Key: slic_a7f3c891, Remote port: 52341
+
+# In worktree
+cd ../the-events-calendar-feature-new-feature
+slic xdebug status
+# Shows: IDE Key: slic_b8d4e902, Remote port: 54782
+```
+
+Each worktree can be debugged independently without port conflicts.
+
+#### Automatic Worktree Detection
+
+If you navigate to a worktree directory that hasn't been registered with `slic`, the CLI will automatically detect it and offer to register it:
+
+```bash
+cd ../the-events-calendar-feature-some-feature
+slic use the-events-calendar
+# Detects unregistered worktree and prompts: "Register this worktree? (y/n)"
+```
+
+This is useful when:
+- Cloning a repository with existing worktrees
+- Switching to a new machine
+- Working with worktrees created by team members
+
+#### Hierarchical Stack View
+
+To see your base stack and all associated worktree stacks in a tree structure:
+
+```bash
+slic stack list
+```
+
+Example output:
+
+```
+┌─ /path/to/plugins
+│  └─ Target: the-events-calendar
+│     WordPress: http://localhost:52341
+│
+│  ┌─ Worktrees:
+│  │  ├─ /path/to/plugins-feature-new-widget (feature/new-widget)
+│  │  │  └─ XDebug: 54782
+│  │  └─ /path/to/plugins-bugfix-123 (bugfix/123)
+│  │     └─ XDebug: 55891
+```
+
+This view makes it easy to:
+- See which worktrees exist for each base stack
+- Identify XDebug ports for each worktree
+- Understand the relationship between stacks
+
+#### Example Workflow
+
+Here's a typical workflow using worktrees:
+
+```bash
+# Start with your main development branch
+cd ~/projects/wp-content/plugins/the-events-calendar
+slic use the-events-calendar
+
+# Create a worktree for a new feature
+slic worktree add feature/new-widget
+cd ../the-events-calendar-feature-new-widget
+
+# Work on the feature
+slic run wpunit
+slic shell
+
+# Meanwhile, an urgent bug comes in
+cd ~/projects/wp-content/plugins/the-events-calendar
+slic worktree add bugfix/urgent-fix
+cd ../the-events-calendar-bugfix-urgent-fix
+
+# Fix the bug and test
+slic run wpunit
+
+# Both stacks are running simultaneously
+slic stack list  # See both worktrees
+
+# When done, clean up
+cd ~/projects/wp-content/plugins/the-events-calendar
+slic worktree remove feature/new-widget
+slic worktree remove bugfix/urgent-fix
+```
+
+#### Best Practices
+
+**Do:**
+- Use `slic worktree list` to see what worktrees you have before creating new ones
+- Run `slic worktree sync` periodically to keep things clean
+- Use descriptive branch names that clearly identify the purpose
+- Remove worktrees when you're done with them to save disk space
+
+**Don't:**
+- Manually delete worktree directories (use `slic worktree remove` instead)
+- Create too many worktrees simultaneously (each consumes system resources)
+- Forget to commit or push work before removing a worktree
+
+#### Troubleshooting
+
+**Problem:** `slic worktree add` fails with "worktree already exists"
+**Solution:** Check `git worktree list` and either use the existing worktree or remove it first with `slic worktree remove`
+
+**Problem:** Stack appears in `slic stack list` but worktree doesn't exist
+**Solution:** Run `slic worktree sync` to clean up orphaned stacks
+
+**Problem:** Worktree exists but stack isn't registered
+**Solution:** Navigate to the worktree directory and run any `slic` command, which will prompt to register it, or run `slic worktree sync`
+
+**Problem:** XDebug not working in worktree
+**Solution:** Check `slic xdebug status` in the worktree directory to see the unique port, then configure your IDE with that port
 
 ### Adding tests
 

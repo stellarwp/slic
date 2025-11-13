@@ -4,23 +4,48 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [3.1.0] - 2025-11-13
+
+### Added
+- Git worktree multi-stack support for concurrent development workflows
+- New `slic worktree` command with subcommands:
+  - `slic worktree add <branch>` - Create a new git worktree with dedicated stack
+  - `slic worktree list` - List all worktrees and their stacks
+  - `slic worktree remove <branch>` - Remove a worktree and its stack
+  - `slic worktree sync` - Synchronize git worktrees with slic registry
+- Automatic worktree detection and registration prompts
+- Isolated Docker Compose projects per worktree with unique XDebug ports
+- Worktree-specific environment variables (SLIC_IS_WORKTREE, SLIC_WORKTREE_FULL_PATH, SLIC_WORKTREE_CONTAINER_PATH)
+- `slic stack list` command to display all registered stacks with their status, target paths, and ports
+- `slic stack stop [<stack>]` command to stop a specific stack. If no stack is provided and multiple exist, prompts user to choose one
+- `slic stack stop all` command to stop all registered stacks at once. Always prompts for confirmation, shows list of stacks being stopped, continues even if one stack fails, and displays comprehensive summary with success/failure counts. Works from any directory
+- `slic stack info [<stack>]` command to display detailed information about a specific stack including container status, ports, and configuration
+- Global `--stack=<path>` flag to target specific stacks. This allows running commands against any registered stack without changing the current working directory
+
 # [3.0.0] - 2025-11-13
-- Breaking Change - Port assignment changed from pre-allocation to Docker auto-assignment. Ports are now discovered from running containers after they start, eliminating port allocation race conditions. This change affects how `slic` handles container networking and may require adjustments to workflows that relied on predictable port allocation.
-- Breaking Change - Stack registry system introduced using `.env.slic.stacks` file to track active stacks. This enables support for multiple concurrent stacks with proper isolation.
-- Breaking Change - Stack-specific state files now use `.env.slic.run.{hash}` format instead of a single `.env.slic.run` file. Each stack maintains its own state file, preventing conflicts when running multiple projects simultaneously. Legacy `.env.slic.run` files are automatically migrated on first run.
-- Breaking Change - Multiple concurrent stacks now supported with isolated Docker Compose projects. Each stack uses a unique project name based on the target path hash, ensuring complete isolation between concurrent stacks.
-- Added - `slic stack list` command to display all registered stacks with their status, target paths, and ports.
-- Added - `slic stack stop [<stack>]` command to stop a specific stack. If no stack is provided and multiple exist, prompts user to choose one.
-- Added - `slic stack stop all` command to stop all registered stacks at once. Always prompts for confirmation, shows list of stacks being stopped, continues even if one stack fails, and displays comprehensive summary with success/failure counts. Works from any directory.
-- Added - `slic stack info [<stack>]` command to display detailed information about a specific stack including container status, ports, and configuration.
-- Added - Global `--stack=<path>` flag to target specific stacks. This allows running commands against any registered stack without changing the current working directory.
-- Change - Improved stack isolation using Docker Compose project names based on target path hashes, preventing container name collisions when running multiple stacks.
-- Change - Port discovery now happens automatically from running containers rather than pre-allocating ports in configuration files, providing more reliable networking.
-- Change - Better state management with stack-specific configuration files that track each stack independently.
-- Change - XDebug port and server name are now stack-specific, allowing debugging of multiple stacks simultaneously. Each stack gets a unique port (49000-59000 range) and server name (slic_{hash}) based on the stack path.
-- Change - XDebug configuration is automatically generated and stored for each stack, eliminating port conflicts when running multiple stacks.
-- Fixed - `slic xdebug status` now correctly displays stack-specific XDebug configuration instead of showing incorrect or default values. The command now properly retrieves XDebug port, IDE key, and remote host from the active stack's registry, with proper fallback to defaults when no active stack exists.
-- Fixed - Eliminated port allocation race conditions that could occur when starting multiple stacks simultaneously or when ports were already in use by other processes.
+
+### Changed
+- Breaking Change - Port assignment changed from pre-allocation to Docker auto-assignment. Ports are now discovered from running containers after they start, eliminating port allocation race conditions. This change affects how `slic` handles container networking and may require adjustments to workflows that relied on predictable port allocation
+- Breaking Change - Stack registry system introduced using `.env.slic.stacks` file to track active stacks. This enables support for multiple concurrent stacks with proper isolation
+- Breaking Change - Stack-specific state files now use `.env.slic.run.{hash}` format instead of a single `.env.slic.run` file. Each stack maintains its own state file, preventing conflicts when running multiple projects simultaneously. Legacy `.env.slic.run` files are automatically migrated on first run
+- Breaking Change - Multiple concurrent stacks now supported with isolated Docker Compose projects. Each stack uses a unique project name based on the target path hash, ensuring complete isolation between concurrent stacks
+- Stack resolution now prioritizes worktree stacks over base stacks
+- `slic stack list` command now displays stacks in a nested hierarchical view showing worktree relationships
+- Docker Compose integration automatically includes worktree override file when applicable
+- Improved stack isolation using Docker Compose project names based on target path hashes, preventing container name collisions when running multiple stacks
+- Port discovery now happens automatically from running containers rather than pre-allocating ports in configuration files, providing more reliable networking
+- Better state management with stack-specific configuration files that track each stack independently
+- XDebug port and server name are now stack-specific, allowing debugging of multiple stacks simultaneously. Each stack gets a unique port (49000-59000 range) and server name (slic_{hash}) based on the stack path
+- XDebug configuration is automatically generated and stored for each stack, eliminating port conflicts when running multiple stacks
+
+### Enhanced
+- Stack registry now uses atomic file locking for thread-safe operations
+- XDebug port allocation now uses deterministic hashing with collision detection
+- Input validation utilities for secure worktree operations
+
+### Fixed
+- `slic xdebug status` now correctly displays stack-specific XDebug configuration instead of showing incorrect or default values. The command now properly retrieves XDebug port, IDE key, and remote host from the active stack's registry, with proper fallback to defaults when no active stack exists
+- Eliminated port allocation race conditions that could occur when starting multiple stacks simultaneously or when ports were already in use by other processes
 
 # [2.1.1] - 2025-11-04
 - Change - Optimize docker builds and workflows for slic and WordPress containers.

@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  wordpress:
+    volumes:
+      # Mount worktree directory OVER the target plugin/theme
+      # This creates a bind mount that shadows the base directory
+      - type: bind
+        source: ${SLIC_WORKTREE_FULL_PATH}
+        target: /var/www/html/wp-content/${SLIC_WORKTREE_CONTAINER_PATH}
+        consistency: delegated
+
+  slic:
+    volumes:
+      - type: bind
+        source: ${SLIC_WORKTREE_FULL_PATH}
+        target: /var/www/html/wp-content/${SLIC_WORKTREE_CONTAINER_PATH}
+        consistency: delegated

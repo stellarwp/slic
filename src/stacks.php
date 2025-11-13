@@ -40,35 +40,80 @@ function slic_stacks_list() {
 }
 
 /**
- * Registers a new stack in the registry.
+ * Registers a new stack in the registry (thread-safe).
+ * Uses file locking to prevent race conditions during concurrent stack registration.
  *
  * @param string $stack_id The stack identifier (full directory path).
  * @param array $state The stack state data.
  * @return bool True on success, false on failure.
  */
 function slic_stacks_register($stack_id, array $state) {
-	$stacks = slic_stacks_list();
-	$stacks[$stack_id] = $state;
+	return slic_stacks_with_lock(function() use ($stack_id, $state) {
+		$stacks = slic_stacks_list();
 
-	return slic_stacks_write_registry($stacks);
+		// Validate base stack exists for worktrees
+		if (!empty($state['is_worktree']) && !empty($state['base_stack_id'])) {
+			if (!isset($stacks[$state['base_stack_id']])) {
+				echo "Error: Base stack not found: {$state['base_stack_id']}\n";
+				return false;
+			}
+		}
+
+		// Allocate XDebug port if not provided (CRITICAL: inside lock)
+		if (!isset($state['xdebug_port'])) {
+			$state['xdebug_port'] = slic_stacks_xdebug_port($stack_id);
+		}
+
+		$stacks[$stack_id] = array_merge([
+			'created_at' => date('c'),
+			'status' => 'created',
+		], $state);
+
+		return slic_stacks_write_registry($stacks);
+	});
 }
 
 /**
- * Unregisters a stack from the registry.
+ * Unregisters a stack from the registry (thread-safe).
+ * Uses file locking to prevent race conditions during concurrent stack operations.
  *
  * @param string $stack_id The stack identifier to remove.
+ * @param bool $cascade If true, also removes child worktree stacks.
  * @return bool True on success, false on failure.
  */
-function slic_stacks_unregister($stack_id) {
-	$stacks = slic_stacks_list();
+function slic_stacks_unregister($stack_id, $cascade = false) {
+	return slic_stacks_with_lock(function() use ($stack_id, $cascade) {
+		$stacks = slic_stacks_list();
 
-	if (!isset($stacks[$stack_id])) {
-		return true; // Already not registered
-	}
+		if (!isset($stacks[$stack_id])) {
+			return true; // Already not registered
+		}
 
-	unset($stacks[$stack_id]);
+		// Check if this is a base stack with worktrees
+		if (!slic_stacks_is_worktree($stack_id)) {
+			$worktrees = slic_stacks_get_worktrees($stack_id);
+			if (!empty($worktrees)) {
+				if (!$cascade) {
+					echo "Warning: Stack has " . count($worktrees) . " worktree(s). ";
+					echo "Use --cascade to remove them.\n";
 
-	return slic_stacks_write_registry($stacks);
+					foreach ($worktrees as $wt_id => $wt_state) {
+						echo "  - {$wt_state['worktree_dir']}\n";
+					}
+
+					return false;
+				}
+
+				// Remove all worktrees
+				foreach (array_keys($worktrees) as $wt_id) {
+					unset($stacks[$wt_id]);
+				}
+			}
+		}
+
+		unset($stacks[$stack_id]);
+		return slic_stacks_write_registry($stacks);
+	});
 }
 
 /**
@@ -90,49 +135,204 @@ function slic_stacks_get($stack_id) {
  * @return bool True on success, false on failure.
  */
 function slic_stacks_update($stack_id, array $state) {
-	$stacks = slic_stacks_list();
+	return slic_stacks_with_lock(function() use ($stack_id, $state) {
+		$stacks = slic_stacks_list();
 
-	if (!isset($stacks[$stack_id])) {
-		return false;
-	}
+		if (!isset($stacks[$stack_id])) {
+			return false;
+		}
 
-	$stacks[$stack_id] = array_merge($stacks[$stack_id], $state);
+		$stacks[$stack_id] = array_merge($stacks[$stack_id], $state);
 
-	return slic_stacks_write_registry($stacks);
+		return slic_stacks_write_registry($stacks);
+	});
 }
 
 /**
- * Writes the stacks registry to disk.
+ * Writes the stacks registry to disk with atomic file operations.
+ * Prevents race conditions when multiple slic processes run concurrently.
  *
  * @param array $stacks The stacks data to write.
  * @return bool True on success, false on failure.
  */
 function slic_stacks_write_registry(array $stacks) {
 	$registry_file = slic_stacks_registry_file();
-	$json = json_encode($stacks, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+	$temp_file = $registry_file . '.tmp.' . getmypid();
 
+	// Encode JSON
+	$json = json_encode($stacks, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 	if ($json === false) {
+		echo "Error encoding registry: " . json_last_error_msg() . "\n";
 		return false;
 	}
 
-	$result = file_put_contents($registry_file, $json);
-	return $result !== false;
+	// Write to temporary file
+	$result = file_put_contents($temp_file, $json);
+	if ($result === false) {
+		return false;
+	}
+
+	// Atomic rename (overwrites registry file)
+	if (!rename($temp_file, $registry_file)) {
+		@unlink($temp_file);
+		return false;
+	}
+
+	return true;
+}
+
+/**
+ * Acquires an exclusive lock on the registry file for atomic read-modify-write operations.
+ * Executes the provided callback while holding the lock to prevent race conditions.
+ *
+ * @param callable $callback Function to execute with locked registry.
+ * @return mixed Result of callback.
+ * @throws \RuntimeException If lock cannot be acquired.
+ */
+function slic_stacks_with_lock(callable $callback) {
+	$registry_file = slic_stacks_registry_file();
+	$lock_file = $registry_file . '.lock';
+
+	// Create lock file if it doesn't exist
+	if (!file_exists($lock_file)) {
+		if (@touch($lock_file) === false) {
+			throw new \RuntimeException("Cannot create lock file: $lock_file (check permissions)");
+		}
+	}
+
+	$lock_handle = fopen($lock_file, 'c');
+	if ($lock_handle === false) {
+		throw new \RuntimeException("Cannot open lock file: $lock_file");
+	}
+
+	try {
+		// Acquire exclusive lock with timeout
+		$attempts = 0;
+		$max_attempts = 50; // 5 seconds total
+
+		while (!flock($lock_handle, LOCK_EX | LOCK_NB)) {
+			if ($attempts++ >= $max_attempts) {
+				throw new \RuntimeException(
+					"Cannot acquire lock on registry after 5 seconds. " .
+					"Another slic process may be running. " .
+					"If stuck, remove: $lock_file"
+				);
+			}
+			usleep(100000); // 100ms
+		}
+
+		// Execute callback with lock held
+		$result = $callback();
+
+		// Release lock
+		flock($lock_handle, LOCK_UN);
+
+		return $result;
+	} finally {
+		fclose($lock_handle);
+	}
 }
 
 /**
  * Resolves the stack ID from the current working directory.
- * Matches exact path or finds parent directory that matches a registered stack.
+ * Uses prioritized resolution to prefer worktree stacks over base stacks.
+ *
+ * Resolution priority:
+ * 1. Exact match with worktree stacks (checked FIRST)
+ * 2. Exact match with base stacks
+ * 3. CWD is within a base stack directory
+ * 4. Parent directory walk
  *
  * @return string|null The stack ID or null if not found.
  */
 function slic_stacks_resolve_from_cwd() {
 	$cwd = getcwd();
 
-	if ($cwd === false) {
+	if ($cwd === false || $cwd === '') {
 		return null;
 	}
 
-	return slic_stacks_resolve_from_path($cwd);
+	$stacks = slic_stacks_list();
+
+	// Normalize CWD for comparison
+	$cwd_real = realpath($cwd);
+	if ($cwd_real === false) {
+		// Path doesn't exist or realpath failed, use original
+		$cwd_real = $cwd;
+	}
+
+	// PRIORITY 1: Exact match with worktree stacks (check FIRST)
+	// This ensures worktrees take precedence over base stacks
+	foreach ($stacks as $stack_id => $state) {
+		if (slic_stacks_is_worktree($stack_id)) {
+			$worktree_path = $state['worktree_full_path'] ?? null;
+
+			if ($worktree_path) {
+				$worktree_real = realpath($worktree_path);
+				if ($worktree_real === false) {
+					// realpath failed, use original path
+					$worktree_real = $worktree_path;
+				}
+
+				// Check exact match
+				if ($cwd_real === $worktree_real) {
+					return $stack_id;
+				}
+
+				// Check if CWD is within worktree directory tree
+				// Add trailing slashes to prevent partial matches (e.g., /foo vs /foobar)
+				if (strpos($cwd_real . '/', $worktree_real . '/') === 0) {
+					return $stack_id;
+				}
+			}
+		}
+	}
+
+	// PRIORITY 2: Exact match with base stacks
+	foreach ($stacks as $stack_id => $state) {
+		if (!slic_stacks_is_worktree($stack_id)) {
+			$stack_real = realpath($stack_id);
+			if ($stack_real === false) {
+				// realpath failed, use original stack_id
+				$stack_real = $stack_id;
+			}
+
+			// Check exact match
+			if ($cwd_real === $stack_real) {
+				return $stack_id;
+			}
+		}
+	}
+
+	// PRIORITY 3: CWD is within a base stack directory
+	foreach ($stacks as $stack_id => $state) {
+		if (!slic_stacks_is_worktree($stack_id)) {
+			$stack_real = realpath($stack_id);
+			if ($stack_real === false) {
+				// realpath failed, use original stack_id
+				$stack_real = $stack_id;
+			}
+
+			// Check if CWD is within base stack directory tree
+			// Add trailing slashes to prevent partial matches
+			if (strpos($cwd_real . '/', $stack_real . '/') === 0) {
+				return $stack_id;
+			}
+		}
+	}
+
+	// PRIORITY 4: Parent directory walk
+	// Walk up the directory tree to find any matching stack
+	$path = $cwd_real;  // Use normalized path for consistency
+	while ($path !== '/' && $path !== '.') {
+		$resolved = slic_stacks_resolve_from_path($path);
+		if ($resolved) {
+			return $resolved;
+		}
+		$path = dirname($path);
+	}
+
+	return null;
 }
 
 /**
@@ -179,7 +379,8 @@ function slic_stacks_resolve_from_path($path) {
 	// and path is /Users/Alice/project/wp-content/plugins/my-plugin
 	// we should match it
 	foreach ($stacks as $stack_id => $stack) {
-		if (strpos($path, $stack_id) === 0) {
+		// Add trailing slashes to prevent false positives (e.g., /foo vs /foobar)
+		if (strpos($path . '/', $stack_id . '/') === 0) {
 			// Path starts with stack_id, so it's within that stack's directory
 			return $stack_id;
 		}
@@ -222,7 +423,11 @@ function slic_stacks_get_state_file($stack_id) {
 }
 
 /**
- * Generates a deterministic XDebug port for a stack based on its path.
+ * Allocates an XDebug port for a stack, ensuring no conflicts with other stacks.
+ *
+ * This function uses a two-phase allocation strategy:
+ * 1. Attempts to use a deterministic hash-based port (preferred for consistency)
+ * 2. If collision detected, finds the next available port in the range
  *
  * Port range: 49000-59000 (10,000 possible unique ports)
  * - Avoids well-known ports (< 1024)
@@ -230,25 +435,56 @@ function slic_stacks_get_state_file($stack_id) {
  * - Avoids Docker's ephemeral port range (32768-65535)
  * - Provides 10,000 possible unique ports
  *
+ * Conflict Detection:
+ * - Checks all registered stacks for existing port allocations
+ * - Excludes current stack from conflict check (allows re-initialization)
+ * - Linear search for next available port if preferred port is taken
+ *
+ * Edge Cases Handled:
+ * - Stack re-initialization: Excluded from its own conflict check
+ * - Port exhaustion: Falls back to preferred port (should never happen with 10k ports)
+ * - Missing xdebug_port in state: Safely ignored during conflict check
+ *
  * @param string $stack_id The stack identifier (absolute path).
- * @return int The XDebug port number (49000-59000).
+ * @return int The allocated XDebug port number (49000-59000).
  */
 function slic_stacks_xdebug_port($stack_id) {
-	// Use the same hash approach as project names for consistency
-	$hash = substr(md5($stack_id), 0, 8);
-
-	// Convert hex hash to decimal and map to port range
-	$hash_decimal = hexdec($hash);
-
-	// Port range: 49000 to 59000 (10,000 ports)
 	$min_port = 49000;
 	$max_port = 59000;
+
+	// Try deterministic port first (hash-based for consistency)
+	$hash = substr(md5($stack_id), 0, 8);
+	$hash_decimal = hexdec($hash);
 	$port_range = $max_port - $min_port + 1;
+	$preferred_port = $min_port + ($hash_decimal % $port_range);
 
-	// Map hash to port range
-	$port = $min_port + ($hash_decimal % $port_range);
+	// Check if port is available across all registered stacks
+	$stacks = slic_stacks_list();
+	$used_ports = [];
+	foreach ($stacks as $sid => $state) {
+		// Exclude current stack from conflict check (allows re-initialization)
+		if ($sid !== $stack_id && !empty($state['xdebug_port'])) {
+			$used_ports[] = $state['xdebug_port'];
+		}
+	}
 
-	return $port;
+	// Convert to hash set for O(1) lookups
+	$used_ports_set = array_flip($used_ports);
+
+	// Return preferred port if available
+	if (!isset($used_ports_set[$preferred_port])) {
+		return $preferred_port;
+	}
+
+	// Collision detected - find next available port
+	for ($port = $min_port; $port <= $max_port; $port++) {
+		if (!isset($used_ports_set[$port])) {
+			return $port;
+		}
+	}
+
+	// Fallback (should never happen with 10,000 ports available)
+	return $preferred_port;
 }
 
 /**
@@ -396,6 +632,152 @@ function slic_stacks_ensure_ports($stack_id) {
 
 	// Containers not running yet
 	return false;
+}
+
+/**
+ * Checks if a stack ID represents a worktree.
+ *
+ * @param string $stack_id The stack identifier.
+ * @return bool True if worktree.
+ */
+function slic_stacks_is_worktree($stack_id) {
+	return strpos($stack_id, '@') !== false;
+}
+
+/**
+ * Gets all worktree stacks for a base stack.
+ *
+ * @param string $base_stack_id The base stack identifier.
+ * @return array Array of worktree stacks.
+ */
+function slic_stacks_get_worktrees($base_stack_id) {
+	$stacks = slic_stacks_list();
+	$worktrees = [];
+
+	foreach ($stacks as $stack_id => $state) {
+		if (!empty($state['is_worktree']) &&
+			!empty($state['base_stack_id']) &&
+			$state['base_stack_id'] === $base_stack_id) {
+			$worktrees[$stack_id] = $state;
+		}
+	}
+
+	return $worktrees;
+}
+
+/**
+ * Parses a worktree stack ID into components.
+ *
+ * @param string $stack_id The stack identifier.
+ * @return array|null Array with 'base_path' and 'worktree_dir', or null if not a worktree.
+ */
+function slic_stacks_parse_worktree_id($stack_id) {
+	if (!slic_stacks_is_worktree($stack_id)) {
+		return null;
+	}
+
+	$parts = explode('@', $stack_id, 2);
+	if (count($parts) !== 2) {
+		return null;
+	}
+
+	// Validate that worktree_dir does not contain @
+	if (strpos($parts[1], '@') !== false) {
+		return null; // worktree_dir must not contain @
+	}
+
+	return [
+		'base_path' => $parts[0],
+		'worktree_dir' => $parts[1],
+	];
+}
+
+/**
+ * Gets the base stack ID for a given stack (base or worktree).
+ *
+ * @param string $stack_id The stack identifier.
+ * @return string The base stack ID.
+ */
+function slic_stacks_get_base_stack_id($stack_id) {
+	// Validate input
+	if (!is_string($stack_id) || $stack_id === '') {
+		return '';
+	}
+
+	$parsed = slic_stacks_parse_worktree_id($stack_id);
+	return $parsed ? $parsed['base_path'] : $stack_id;
+}
+
+/**
+ * Detects if a path is an unregistered git worktree.
+ * Checks if the .git file (not directory) contains gitdir: reference,
+ * which indicates a git worktree. Attempts to match against registered
+ * base stacks to provide worktree metadata.
+ *
+ * @param string $path The path to check.
+ * @return array|null Worktree metadata or null if not a worktree.
+ */
+function slic_stacks_detect_worktree($path) {
+	$git_file = $path . '/.git';
+
+	// Check if .git is a FILE (not directory) - indicates worktree
+	if (!is_file($git_file)) {
+		return null;
+	}
+
+	// Read .git file content
+	$git_content = @file_get_contents($git_file);
+	if ($git_content === false) {
+		return null;
+	}
+
+	// Check for gitdir reference (worktree marker)
+	if (strpos($git_content, 'gitdir:') !== 0) {
+		return null; // Could be a submodule or other git construct
+	}
+
+	// This is a git worktree - try to find the base stack
+	$parent_dir = dirname($path);
+	$dir_name = basename($path);
+
+	// Look for registered base stacks in parent directory
+	$stacks = slic_stacks_list();
+	foreach ($stacks as $stack_id => $state) {
+		// Skip existing worktrees
+		if (slic_stacks_is_worktree($stack_id)) {
+			continue;
+		}
+
+		// Check if parent directory matches
+		$stack_real = realpath($stack_id);
+		$parent_real = realpath($parent_dir);
+
+		if ($stack_real === false || $parent_real === false) {
+			continue;
+		}
+
+		if ($stack_real !== $parent_real) {
+			continue;
+		}
+
+		// Check if directory name matches pattern: {target}-{branch-slug}
+		$target = $state['target'] ?? null;
+		if ($target && strpos($dir_name, $target . '-') === 0) {
+			// Extract branch from git
+			$current_branch = trim(shell_exec("git -C " . escapeshellarg($path) . " rev-parse --abbrev-ref HEAD 2>/dev/null"));
+
+			return [
+				'base_stack_id' => $stack_id,
+				'target' => $target,
+				'dir_name' => $dir_name,
+				'parent_dir' => $parent_dir,
+				'full_path' => $path,
+				'branch' => $current_branch,
+			];
+		}
+	}
+
+	return null;
 }
 
 /**

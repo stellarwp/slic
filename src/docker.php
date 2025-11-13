@@ -171,6 +171,25 @@ function slic_stack_array( $filenames_only = false ) {
 		$stack_array[] = $quote . stack( '.site' ) . $quote;
 	}
 
+	// Load stacks.php if needed for worktree detection
+	if ( ! function_exists( 'slic_stacks_is_worktree' ) ) {
+		$stacks_file = __DIR__ . '/stacks.php';
+		if ( file_exists( $stacks_file ) ) {
+			require_once $stacks_file;
+		}
+	}
+
+	// Add worktree override if current stack is a worktree
+	if ( ! function_exists( 'slic_current_stack' ) ) {
+		require_once __DIR__ . '/slic.php';
+	}
+
+	$stack_id = slic_current_stack();
+	if ( $stack_id && function_exists( 'slic_stacks_is_worktree' ) && slic_stacks_is_worktree( $stack_id ) ) {
+		$stack_array[] = $file_prefix;
+		$stack_array[] = $quote . stack( '.worktree' ) . $quote;
+	}
+
 	return array_values( array_filter( $stack_array ) );
 }
 

@@ -34,7 +34,7 @@ $args = args( [
 ] );
 
 $cli_name = 'slic';
-const CLI_VERSION = '3.0.0';
+const CLI_VERSION = '3.1.0';
 
 // Parse --stack flag if present and store in global variable for stack resolution
 global $SLIC_STACK_OVERRIDE;

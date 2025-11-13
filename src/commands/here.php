@@ -103,15 +103,8 @@ if ( null !== $existing_stack ) {
 	// Stack exists, update its state
 	echo colorize( PHP_EOL . "<light_cyan>Stack already exists for this directory, updating configuration...</light_cyan>" . PHP_EOL );
 
-	// Ensure XDebug configuration exists for this stack (may not exist for older stacks)
-	$needs_xdebug_update = false;
-	if ( ! isset( $existing_stack['xdebug_port'] ) || ! isset( $existing_stack['xdebug_key'] ) ) {
-		$needs_xdebug_update = true;
-		slic_stacks_update( $stack_id, [
-			'xdebug_port' => slic_stacks_xdebug_port( $stack_id ),
-			'xdebug_key'  => slic_stacks_xdebug_server_name( $stack_id ),
-		] );
-	}
+	// Note: XDebug configuration is allocated atomically during initial registration.
+	// For older stacks that may not have XDebug config, it will be allocated on next register call.
 
 	// Get the stack-specific state file
 	$stack_run_file = slic_stacks_get_state_file( $stack_id );
@@ -142,13 +135,11 @@ if ( null !== $existing_stack ) {
 	echo colorize( PHP_EOL . "<light_cyan>Creating new stack...</light_cyan>" . PHP_EOL );
 
 	// Create stack state without ports - they'll be read from Docker after container start
-	// Generate stack-specific XDebug configuration
+	// XDebug configuration will be allocated atomically inside slic_stacks_register()
 	$stack_state = [
 		'stack_id'     => $stack_id,
 		'project_name' => slic_stacks_get_project_name( $stack_id ),
 		'state_file'   => basename( slic_stacks_get_state_file( $stack_id ) ),
-		'xdebug_port'  => slic_stacks_xdebug_port( $stack_id ),
-		'xdebug_key'   => slic_stacks_xdebug_server_name( $stack_id ),
 		'ports'        => null,
 		'created_at'   => date( 'c' ),
 		'status'       => 'created',

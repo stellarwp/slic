@@ -388,6 +388,73 @@ function setup_slic_env( $root_dir, $reset = false, $stack_id = null ) {
 		putenv( 'COMPOSER_CACHE_DIR=' . cache( '/composer' ) );
 	}
 
+	// WORKTREE SUPPORT: Set worktree-specific environment variables
+	// These variables are used by slic-stack.worktree.yml to mount the worktree directory
+	// into the correct container path, shadowing the base stack's version.
+	$current_stack = null;
+	if ( null !== $stack_id ) {
+		$current_stack = $stack_id;
+	} elseif ( function_exists( 'slic_current_stack' ) ) {
+		$current_stack = slic_current_stack();
+	}
+
+	if ( null !== $current_stack && slic_stacks_is_worktree( $current_stack ) ) {
+		$parsed = slic_stacks_parse_worktree_id( $current_stack );
+
+		if ( null !== $parsed ) {
+			// Calculate full worktree path
+			$worktree_full_path = $parsed['base_path'] . '/' . $parsed['worktree_dir'];
+
+			// Set the full path to the worktree directory
+			putenv( "SLIC_WORKTREE_FULL_PATH={$worktree_full_path}" );
+			$_ENV['SLIC_WORKTREE_FULL_PATH'] = $worktree_full_path;
+
+			// Determine container path based on target type (plugin or theme)
+			$stack = slic_stacks_get( $current_stack );
+			if ( null !== $stack && isset( $stack['target'] ) ) {
+				$target = $stack['target'];
+
+				// Check if target is a plugin or theme
+				// Plugins are in SLIC_PLUGINS_DIR, themes are in SLIC_THEMES_DIR
+				$plugins_dir = getenv( 'SLIC_PLUGINS_DIR' );
+				$themes_dir  = getenv( 'SLIC_THEMES_DIR' );
+
+				$container_path = null;
+
+				// Check if target exists in plugins directory
+				if ( ! empty( $plugins_dir ) && file_exists( "{$plugins_dir}/{$target}" ) ) {
+					$container_path = "plugins/{$target}";
+				} elseif ( ! empty( $themes_dir ) && file_exists( "{$themes_dir}/{$target}" ) ) {
+					$container_path = "themes/{$target}";
+				}
+
+				// Log error if container path could not be determined
+				if ( null === $container_path ) {
+					error_log( "slic: Could not determine container path for worktree target '{$target}'" );
+				}
+
+				// Set container path if determined
+				if ( null !== $container_path ) {
+					putenv( "SLIC_WORKTREE_CONTAINER_PATH={$container_path}" );
+					$_ENV['SLIC_WORKTREE_CONTAINER_PATH'] = $container_path;
+				}
+			}
+
+			// Set flag to indicate this is a worktree context
+			putenv( "SLIC_IS_WORKTREE=1" );
+			$_ENV['SLIC_IS_WORKTREE'] = '1';
+		}
+	} else {
+		// Not a worktree stack - clear any stale worktree variables
+		putenv( 'SLIC_IS_WORKTREE=' );
+		putenv( 'SLIC_WORKTREE_FULL_PATH=' );
+		putenv( 'SLIC_WORKTREE_CONTAINER_PATH=' );
+
+		unset( $_ENV['SLIC_IS_WORKTREE'] );
+		unset( $_ENV['SLIC_WORKTREE_FULL_PATH'] );
+		unset( $_ENV['SLIC_WORKTREE_CONTAINER_PATH'] );
+	}
+
 	// Most commands are nested shells that should not run with a time limit.
 	remove_time_limit();
 }
@@ -524,6 +591,50 @@ function slic_current_stack() {
 	$single_stack_id = slic_stacks_get_single_id();
 	if ( null !== $single_stack_id ) {
 		return $single_stack_id;
+	}
+
+	// 5. Auto-detect and offer to register unregistered worktrees
+	$cwd = getcwd();
+	$detected = slic_stacks_detect_worktree( $cwd );
+
+	if ( $detected ) {
+		echo "Detected unregistered git worktree!\n";
+		echo "  Target: {$detected['target']}\n";
+		echo "  Directory: {$detected['dir_name']}\n";
+		echo "  Branch: {$detected['branch']}\n";
+		echo "\nRegister this as a slic worktree stack? [y/N] ";
+
+		$handle = fopen( 'php://stdin', 'r' );
+		$confirmation = trim( fgets( $handle ) );
+		fclose( $handle );
+
+		if ( strtolower( $confirmation ) === 'y' ) {
+			// Auto-register
+			$worktree_stack_id = $detected['base_stack_id'] . '@' . $detected['dir_name'];
+
+			$worktree_state = [
+				'stack_id' => $worktree_stack_id,
+				'is_worktree' => true,
+				'base_stack_id' => $detected['base_stack_id'],
+				'worktree_target' => $detected['target'],
+				'worktree_dir' => $detected['dir_name'],
+				'worktree_branch' => $detected['branch'],
+				'worktree_full_path' => $detected['full_path'],
+				'project_name' => slic_stacks_get_project_name( $worktree_stack_id ),
+				'state_file' => slic_stacks_get_state_file( $worktree_stack_id ),
+				'xdebug_port' => slic_stacks_xdebug_port( $worktree_stack_id ),
+				'xdebug_key' => slic_stacks_xdebug_server_name( $worktree_stack_id ),
+				'target' => $detected['target'],
+				'status' => 'created',
+			];
+
+			if ( slic_stacks_register( $worktree_stack_id, $worktree_state ) ) {
+				echo "Registered successfully!\n";
+				return $worktree_stack_id;
+			} else {
+				echo "Failed to register stack.\n";
+			}
+		}
 	}
 
 	return null;

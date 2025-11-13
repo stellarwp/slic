@@ -29,6 +29,7 @@ _plugins
 .env.slic.local
 .env.slic.run*
 .env.slic.stacks
+.env.slic.stacks.lock
 
 # Any .build-version file created by the slic cli tool.
 .build-version
