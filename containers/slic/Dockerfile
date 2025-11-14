@@ -44,7 +44,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     rm -f /etc/apt/apt.conf.d/docker-clean && \
     apt-get update && \
     apt-get install -yqq --no-install-recommends \
-        ca-certificates curl git zip unzip iproute2 \
+        ca-certificates curl git zip unzip iproute2 openssh-client \
         libnss3 libnspr4 libdbus-1-3 libatk1.0-0 libatk-bridge2.0-0 \
         libcups2 libdrm2 libxkbcommon0 libatspi2.0-0 libxcomposite1 \
         libxdamage1 libxext6 libxfixes3 libxrandr2 libgbm1 \
