@@ -712,6 +712,13 @@ function slic_switch_target( $target, $stack_id = null ) {
 
 	write_env_file( $run_settings_file, $env_values, true );
 
+	// Update the stack registry with the target so worktree commands can access it
+	require_once __DIR__ . '/stacks.php';
+	if ( ! slic_stacks_update( $stack_id, [ 'target' => $target ] ) ) {
+		echo magenta( "Warning: Could not update stack registry with target." . PHP_EOL );
+		echo magenta( "Worktree commands may not work correctly." . PHP_EOL );
+	}
+
 	setup_slic_env( $root, false, $stack_id );
 }
 
