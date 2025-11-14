@@ -1,6 +1,9 @@
 <?php
 namespace StellarWP\Slic;
 
+// Load worktree utility functions
+require_once __DIR__ . '/../worktree-utils.php';
+
 $worktree_subcommands = [
 	'add' => 'Create a new git worktree with dedicated stack',
 	'list' => 'List worktrees and their stacks',
