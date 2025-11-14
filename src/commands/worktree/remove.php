@@ -45,9 +45,51 @@ $worktree_full_path = $base_stack_id . '/' . $worktree_dir;
 
 // Check if stack exists
 $wt_state = slic_stacks_get($worktree_stack_id);
-if (!$wt_state) {
-    echo "Error: Worktree stack not found: $worktree_stack_id\n";
+$is_registered = ($wt_state !== null);
+
+// Check if git worktree exists
+$git_worktree_exists = false;
+$target_path = $base_stack_id . '/' . $target;
+
+if (is_dir($target_path)) {
+    $original_cwd = getcwd();
+    chdir($target_path);
+
+    exec('git worktree list --porcelain 2>&1', $worktree_list_output, $worktree_list_code);
+    chdir($original_cwd);
+
+    if ($worktree_list_code === 0) {
+        // Parse worktree list output to find our worktree
+        $current_worktree = null;
+        foreach ($worktree_list_output as $line) {
+            if (strpos($line, 'worktree ') === 0) {
+                $current_worktree = substr($line, 9); // Remove "worktree " prefix
+            }
+            if ($current_worktree && realpath($current_worktree) === realpath($worktree_full_path)) {
+                $git_worktree_exists = true;
+                break;
+            }
+        }
+    }
+}
+
+// Handle different scenarios
+if (!$is_registered && !$git_worktree_exists) {
+    echo "Error: Worktree not found.\n";
+    echo "  - Not registered with slic: $worktree_stack_id\n";
+    echo "  - Not found as git worktree: $worktree_full_path\n";
+    echo "\nRun 'slic worktree list' to see available worktrees.\n";
     exit(1);
+}
+
+if (!$is_registered && $git_worktree_exists) {
+    echo "WARNING: This worktree is NOT registered with slic.\n";
+    echo "  - Git worktree exists: $worktree_full_path\n";
+    echo "  - But no slic stack found: $worktree_stack_id\n";
+    echo "\n";
+    echo "This can happen if you ran 'slic stop' on the worktree.\n";
+    echo "Only the git worktree will be removed.\n";
+    echo "\n";
 }
 
 // Pre-removal validation: Check for uncommitted changes
@@ -82,10 +124,14 @@ if (is_dir($worktree_full_path)) {
 // Final confirmation
 if (!$force_yes) {
     echo "This will:\n";
-    echo "  1. Stop Docker containers (if running)\n";
-    echo "  2. Remove git worktree directory: $worktree_full_path\n";
-    echo "  3. Unregister slic stack: $worktree_stack_id\n";
-    echo "  4. Delete stack state file\n";
+    if ($is_registered) {
+        echo "  1. Stop Docker containers (if running)\n";
+        echo "  2. Remove git worktree directory: $worktree_full_path\n";
+        echo "  3. Unregister slic stack: $worktree_stack_id\n";
+        echo "  4. Delete stack state file\n";
+    } else {
+        echo "  1. Remove git worktree directory: $worktree_full_path\n";
+    }
     echo "\nThis operation cannot be undone. Continue? [y/N] ";
 
     $handle = fopen('php://stdin', 'r');
@@ -98,10 +144,12 @@ if (!$force_yes) {
     }
 }
 
-// Step 1: Stop containers
-echo "\nStopping Docker containers...\n";
-$docker_compose = docker_compose(['stop'], $worktree_stack_id);
-$docker_compose();
+// Step 1: Stop containers (only if registered)
+if ($is_registered) {
+    echo "\nStopping Docker containers...\n";
+    $docker_compose = docker_compose(['stop'], $worktree_stack_id);
+    $docker_compose();
+}
 
 // Step 2: Remove git worktree
 echo "Removing git worktree...\n";
@@ -142,17 +190,19 @@ if (is_dir($target_path)) {
     echo "Warning: Target directory not found, skipping git worktree removal.\n";
 }
 
-// Step 3: Unregister stack
-echo "Unregistering stack...\n";
-if (!slic_stacks_unregister($worktree_stack_id)) {
-    echo "Warning: Failed to unregister stack from registry.\n";
-}
+// Step 3: Unregister stack (only if registered)
+if ($is_registered) {
+    echo "Unregistering stack...\n";
+    if (!slic_stacks_unregister($worktree_stack_id)) {
+        echo "Warning: Failed to unregister stack from registry.\n";
+    }
 
-// Step 4: Remove state file
-$state_file = $wt_state['state_file'];
-if (file_exists($state_file)) {
-    if (!unlink($state_file)) {
-        echo "Warning: Failed to remove state file: $state_file\n";
+    // Step 4: Remove state file
+    $state_file = $wt_state['state_file'];
+    if (file_exists($state_file)) {
+        if (!unlink($state_file)) {
+            echo "Warning: Failed to remove state file: $state_file\n";
+        }
     }
 }
 

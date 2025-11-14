@@ -27,36 +27,159 @@ use function StellarWP\Slic\maybe_prompt_for_repo_update;
 use function StellarWP\Slic\maybe_prompt_for_stack_update;
 use function StellarWP\Slic\root;
 use function StellarWP\Slic\setup_slic_env;
+
+$cli_name = 'slic';
+const CLI_VERSION = '3.1.0';
+
+/*
+ * Parse global flags BEFORE argument parsing to avoid them being treated as commands.
+ *
+ * This two-pass loop allows global flags like --stack and -q to appear anywhere in the command line,
+ * providing flexibility in command invocation (e.g., both "slic --stack=/path shell" and "slic shell --stack=/path" work).
+ *
+ * Global flags are removed from $argv before the args() function processes the remaining arguments.
+ */
+global $SLIC_STACK_OVERRIDE;
+$SLIC_STACK_OVERRIDE = null;
+
+// Track indices to remove after iteration
+$indices_to_remove = [];
+$is_quiet = false;
+$stack_flag_count = 0; // Track duplicate --stack flags
+
+foreach ( $argv as $index => $arg ) {
+	// Handle --stack=<path> syntax
+	if ( strpos( $arg, '--stack=' ) === 0 ) {
+		$stack_flag_count++;
+		// Extract the path value after '--stack=' (8 characters: length of '--stack=')
+		$SLIC_STACK_OVERRIDE = substr( $arg, 8 );
+		if ( empty( $SLIC_STACK_OVERRIDE ) ) {
+			echo colorize( "<magenta>Error: --stack requires a path argument</magenta>" . PHP_EOL );
+			echo colorize( "Usage: slic --stack=<path> <command> or slic --stack <path> <command>" . PHP_EOL );
+			exit( 1 );
+		}
+		$indices_to_remove[] = $index;
+	}
+	// Handle --stack <path> syntax (two separate arguments)
+	elseif ( $arg === '--stack' ) {
+		$stack_flag_count++;
+		/*
+		 * Check if the next argument exists and is not a flag.
+		 * We check for '--' prefix to identify flags, allowing paths that start with a single hyphen
+		 * (e.g., "-mypath" is valid, but "--help" is a flag).
+		 */
+		if ( isset( $argv[ $index + 1 ] ) && strpos( $argv[ $index + 1 ], '--' ) !== 0 ) {
+			$SLIC_STACK_OVERRIDE = $argv[ $index + 1 ];
+			// Mark both --stack and the path for removal
+			$indices_to_remove[] = $index;
+			$indices_to_remove[] = $index + 1;
+		} else {
+			// --stack flag present but no valid path provided
+			echo colorize( "<magenta>Error: --stack requires a path argument</magenta>" . PHP_EOL );
+			echo colorize( "Usage: slic --stack=<path> <command> or slic --stack <path> <command>" . PHP_EOL );
+			exit( 1 );
+		}
+	}
+	// Handle -q (quiet) flag
+	elseif ( $arg === '-q' ) {
+		$is_quiet = true;
+		$indices_to_remove[] = $index;
+	}
+}
+
+// Warn if duplicate --stack flags were provided
+if ( $stack_flag_count > 1 ) {
+	echo colorize( "<yellow>Warning: Multiple --stack flags detected. Using the last one: {$SLIC_STACK_OVERRIDE}</yellow>" . PHP_EOL );
+}
+
+// Validate the stack path exists if --stack was provided
+if ( null !== $SLIC_STACK_OVERRIDE ) {
+	// Store the original path for error messages
+	$original_stack_path = $SLIC_STACK_OVERRIDE;
+
+	// Check if this is a stack ID with @ format (worktree)
+	$is_stack_id = strpos( $SLIC_STACK_OVERRIDE, '@' ) !== false;
+
+	if ( $is_stack_id ) {
+		// Stack ID format: /base/path@worktree-dir
+		// Extract the actual directory path for validation
+		$parts = explode( '@', $SLIC_STACK_OVERRIDE, 2 );
+		if ( count( $parts ) === 2 ) {
+			$base_path = $parts[0];
+			$worktree_dir = $parts[1];
+
+			// Validate that both components are non-empty
+			if ( empty( $base_path ) || empty( $worktree_dir ) ) {
+				echo colorize( "<magenta>Error: Invalid stack ID format - both base path and worktree directory are required</magenta>" . PHP_EOL );
+				echo colorize( "Stack ID provided: {$original_stack_path}" . PHP_EOL );
+				echo colorize( "Expected format: /base/path@worktree-directory" . PHP_EOL );
+				echo colorize( "Examples:" . PHP_EOL );
+				echo colorize( "  /Users/Alice/project@feature-branch" . PHP_EOL );
+				echo colorize( "  ~/work/tec@bugfix-123" . PHP_EOL );
+				exit( 1 );
+			}
+
+			// The actual worktree directory is: base_path/worktree_dir
+			$worktree_full_path = $base_path . '/' . $worktree_dir;
+
+			// Validate the worktree directory exists
+			$worktree_real = realpath( $worktree_full_path );
+			if ( false === $worktree_real || ! file_exists( $worktree_real ) ) {
+				echo colorize( "<magenta>Error: The worktree directory specified with --stack does not exist</magenta>" . PHP_EOL );
+				echo colorize( "Stack ID: {$original_stack_path}" . PHP_EOL );
+				echo colorize( "Expected path: {$worktree_full_path}" . PHP_EOL );
+				exit( 1 );
+			}
+		} else {
+			echo colorize( "<magenta>Error: Invalid stack ID format</magenta>" . PHP_EOL );
+			echo colorize( "Stack ID provided: {$original_stack_path}" . PHP_EOL );
+			echo colorize( "Expected format: /base/path@worktree-dir" . PHP_EOL );
+			exit( 1 );
+		}
+	} else {
+		// Regular filesystem path - validate as before
+		// Expand relative paths and handle tilde (~) expansion
+		if ( '~' === $SLIC_STACK_OVERRIDE[0] ) {
+			$home = getenv( 'HOME' );
+			if ( false !== $home ) {
+				$SLIC_STACK_OVERRIDE = $home . substr( $SLIC_STACK_OVERRIDE, 1 );
+			}
+		}
+
+		// Convert to absolute path if relative
+		if ( '/' !== $SLIC_STACK_OVERRIDE[0] ) {
+			$SLIC_STACK_OVERRIDE = getcwd() . '/' . $SLIC_STACK_OVERRIDE;
+		}
+
+		// Normalize the path (remove .., ., etc.)
+		$SLIC_STACK_OVERRIDE = realpath( $SLIC_STACK_OVERRIDE );
+
+		// Check if the path exists
+		if ( false === $SLIC_STACK_OVERRIDE || ! file_exists( $SLIC_STACK_OVERRIDE ) ) {
+			echo colorize( "<magenta>Error: The path specified with --stack does not exist</magenta>" . PHP_EOL );
+			echo colorize( "Path provided: {$original_stack_path}" . PHP_EOL );
+			exit( 1 );
+		}
+	}
+}
+
+// Remove the global flags from argv
+foreach ( $indices_to_remove as $index ) {
+	unset( $argv[ $index ] );
+}
+if ( ! empty( $indices_to_remove ) ) {
+	$argv = array_values( $argv );
+	$argc = count( $argv );
+}
+
 // Set up the argument parsing function.
 $args = args( [
 	'subcommand',
 	'...',
 ] );
 
-$cli_name = 'slic';
-const CLI_VERSION = '3.1.0';
-
-// Parse --stack flag if present and store in global variable for stack resolution
-global $SLIC_STACK_OVERRIDE;
-$SLIC_STACK_OVERRIDE = null;
-
-foreach ( $argv as $index => $arg ) {
-	if ( strpos( $arg, '--stack=' ) === 0 ) {
-		$SLIC_STACK_OVERRIDE = substr( $arg, 8 ); // Extract value after '--stack='
-		// Remove the --stack flag from argv
-		unset( $argv[ $index ] );
-		$argv = array_values( $argv );
-		$argc = count( $argv );
-		break;
-	}
-}
-
-// If the run-time option `-q`, for "quiet", is specified, then do not print the header.
-if ( in_array( '-q', $argv, true ) || ( in_array( 'exec', $argv, true ) && ! in_array( 'help', $argv, true ) ) ) {
-	// Remove the `-q` flag from the global array of arguments to leave the rest of the commands unchanged.
-	unset( $argv[ array_search( '-q', $argv ) ] );
-	$argv = array_values( $argv );
-	$argc = count( $argv );
+// Handle quiet mode
+if ( $is_quiet || ( in_array( 'exec', $argv, true ) && ! in_array( 'help', $argv, true ) ) ) {
 	// Define a const commands will be able to check for quietness.
 	define( 'SLIC_QUIET', true );
 } else {

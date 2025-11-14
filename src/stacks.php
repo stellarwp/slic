@@ -337,12 +337,24 @@ function slic_stacks_resolve_from_cwd() {
 
 /**
  * Resolves a stack ID from a given path.
- * Supports ~ expansion and finds matching stack by exact or parent directory match.
+ * Supports ~ expansion, stack IDs with @ format, and finds matching stack by exact or parent directory match.
+ * Prioritizes worktree stacks over base stacks when the path points to a worktree directory.
  *
- * @param string $path The path to resolve.
+ * @param string $path The path to resolve (can be a filesystem path or a stack ID with @).
  * @return string|null The stack ID or null if not found.
  */
 function slic_stacks_resolve_from_path($path) {
+	// Check if this is already a stack ID with @ format
+	if (strpos($path, '@') !== false) {
+		$stacks = slic_stacks_list();
+		// If it's a registered stack ID, return it as-is
+		if (isset($stacks[$path])) {
+			return $path;
+		}
+		// Not a registered stack ID, treat as invalid
+		return null;
+	}
+
 	// Expand ~ to home directory
 	if (strpos($path, '~') === 0) {
 		$home = getenv('HOME');
@@ -369,16 +381,52 @@ function slic_stacks_resolve_from_path($path) {
 
 	$stacks = slic_stacks_list();
 
-	// First, try exact match
+	// PRIORITY 1: Check if this path is a worktree directory (exact match)
+	// This ensures worktree stacks take precedence over base stacks
+	foreach ($stacks as $stack_id => $state) {
+		if (slic_stacks_is_worktree($stack_id)) {
+			$worktree_path = $state['worktree_full_path'] ?? null;
+			if ($worktree_path) {
+				$worktree_real = realpath($worktree_path);
+				if ($worktree_real !== false && $worktree_real === $path) {
+					return $stack_id;
+				}
+			}
+		}
+	}
+
+	// PRIORITY 2: Try exact match with base stacks
 	if (isset($stacks[$path])) {
 		return $path;
 	}
 
-	// Try to find a stack where the path is within its directory
+	// PRIORITY 3: Check if path is within a worktree directory
+	foreach ($stacks as $stack_id => $state) {
+		if (slic_stacks_is_worktree($stack_id)) {
+			$worktree_path = $state['worktree_full_path'] ?? null;
+			if ($worktree_path) {
+				$worktree_real = realpath($worktree_path);
+				if ($worktree_real !== false) {
+					// Check if path is within this worktree directory
+					// strpos($haystack, $needle) checks if $needle appears at position 0 in $haystack
+					// So this checks if $path starts with $worktree_real
+					if (strpos($path . '/', $worktree_real . '/') === 0) {
+						return $stack_id;
+					}
+				}
+			}
+		}
+	}
+
+	// PRIORITY 4: Try to find a base stack where the path is within its directory
 	// For example, if stack is /Users/Alice/project/wp-content/plugins
 	// and path is /Users/Alice/project/wp-content/plugins/my-plugin
 	// we should match it
 	foreach ($stacks as $stack_id => $stack) {
+		// Skip worktrees, we already checked them
+		if (slic_stacks_is_worktree($stack_id)) {
+			continue;
+		}
 		// Add trailing slashes to prevent false positives (e.g., /foo vs /foobar)
 		if (strpos($path . '/', $stack_id . '/') === 0) {
 			// Path starts with stack_id, so it's within that stack's directory
@@ -386,9 +434,22 @@ function slic_stacks_resolve_from_path($path) {
 		}
 	}
 
-	// Try to find a stack by checking parent directories
+	// PRIORITY 5: Try to find a stack by checking parent directories
 	$current_path = $path;
 	while ($current_path !== dirname($current_path)) {
+		// Check worktrees first
+		foreach ($stacks as $stack_id => $state) {
+			if (slic_stacks_is_worktree($stack_id)) {
+				$worktree_path = $state['worktree_full_path'] ?? null;
+				if ($worktree_path) {
+					$worktree_real = realpath($worktree_path);
+					if ($worktree_real !== false && $worktree_real === $current_path) {
+						return $stack_id;
+					}
+				}
+			}
+		}
+		// Then check base stacks
 		if (isset($stacks[$current_path])) {
 			return $current_path;
 		}
@@ -679,6 +740,11 @@ function slic_stacks_parse_worktree_id($stack_id) {
 	$parts = explode('@', $stack_id, 2);
 	if (count($parts) !== 2) {
 		return null;
+	}
+
+	// Validate that both components are non-empty
+	if (empty($parts[0]) || empty($parts[1])) {
+		return null; // Both base path and worktree directory are required
 	}
 
 	// Validate that worktree_dir does not contain @
