@@ -157,10 +157,11 @@ function stack( $postfix = '' ) {
  * Typically, this would be slic-stack.yml for plugin-only setups, but if running in site mode, it adds slic-stack.site.yml.
  *
  * @param bool $filenames_only Return only the files part of the stack, without including option flags.
+ * @param string|null $stack_id The stack identifier to use. If null, uses current stack.
  *
  * @return string[] Array of docker compose arguments indicating the files that should be used to initialize the stack.
  */
-function slic_stack_array( $filenames_only = false ) {
+function slic_stack_array( $filenames_only = false, $stack_id = null ) {
 	$file_prefix = $filenames_only ? '' : '-f';
 	$quote       = $filenames_only ? '' : '"';
 	$base_stack  = stack();
@@ -184,7 +185,11 @@ function slic_stack_array( $filenames_only = false ) {
 		require_once __DIR__ . '/slic.php';
 	}
 
-	$stack_id = slic_current_stack();
+	// Use provided stack_id or fall back to current stack
+	if ( null === $stack_id ) {
+		$stack_id = slic_current_stack();
+	}
+
 	if ( $stack_id && function_exists( 'slic_stacks_is_worktree' ) && slic_stacks_is_worktree( $stack_id ) ) {
 		$stack_array[] = $file_prefix;
 		$stack_array[] = $quote . stack( '.worktree' ) . $quote;

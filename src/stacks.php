@@ -77,6 +77,10 @@ function slic_stacks_register($stack_id, array $state) {
  * Unregisters a stack from the registry (thread-safe).
  * Uses file locking to prevent race conditions during concurrent stack operations.
  *
+ * This function automatically cleans up associated state files (.env.slic.run.<hash>)
+ * when unregistering stacks. This ensures consistent cleanup regardless of which
+ * code path triggers unregistration.
+ *
  * @param string $stack_id The stack identifier to remove.
  * @param bool $cascade If true, also removes child worktree stacks.
  * @return bool True on success, false on failure.
@@ -104,11 +108,22 @@ function slic_stacks_unregister($stack_id, $cascade = false) {
 					return false;
 				}
 
-				// Remove all worktrees
+				// Remove all worktrees and their state files
 				foreach (array_keys($worktrees) as $wt_id) {
+					// Clean up worktree state file
+					$wt_state_file = slic_stacks_get_state_file($wt_id);
+					if (file_exists($wt_state_file)) {
+						@unlink($wt_state_file);
+					}
 					unset($stacks[$wt_id]);
 				}
 			}
+		}
+
+		// Clean up the stack's state file before unregistering
+		$state_file = slic_stacks_get_state_file($stack_id);
+		if (file_exists($state_file)) {
+			@unlink($state_file);
 		}
 
 		unset($stacks[$stack_id]);
@@ -661,6 +676,40 @@ function slic_stacks_read_ports_from_docker($stack_id) {
 	}
 
 	return null;
+}
+
+/**
+ * Checks if a stack's containers are currently running.
+ * Uses caching to avoid repeated Docker calls within a single execution.
+ *
+ * @param string $stack_id The stack identifier.
+ * @return bool True if containers are running, false otherwise.
+ */
+function slic_stacks_is_running($stack_id) {
+	// Cache to avoid repeated Docker calls in a single execution
+	static $cache = [];
+
+	if (isset($cache[$stack_id])) {
+		return $cache[$stack_id];
+	}
+
+	$project_name = slic_stacks_get_project_name($stack_id);
+
+	// Add timeout protection to prevent hanging on slow Docker
+	// Use timeout command if available (2 seconds)
+	$timeout_prefix = '';
+	if (shell_exec('command -v timeout 2>/dev/null')) {
+		$timeout_prefix = 'timeout 2 ';
+	}
+
+	// Check if containers are actually running
+	$check_command = "{$timeout_prefix}docker ps -q -f label=com.docker.compose.project='$project_name' 2>/dev/null";
+	$container_ids = trim(shell_exec($check_command));
+
+	$is_running = !empty($container_ids);
+	$cache[$stack_id] = $is_running;
+
+	return $is_running;
 }
 
 /**

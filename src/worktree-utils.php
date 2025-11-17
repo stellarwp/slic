@@ -134,3 +134,122 @@ function slic_worktree_create_dir_name( $target, $branch ) {
 	// Apply final sanitization to ensure the result is filesystem-safe
 	return slic_worktree_sanitize_dir_name( $dir_name );
 }
+
+/**
+ * Checks if a directory is already a git worktree for a specific target repository.
+ *
+ * Uses 'git worktree list --porcelain' to verify if the directory is already
+ * registered as a worktree in git. This prevents attempting to create a worktree
+ * that already exists.
+ *
+ * @param string $target_path The path to the main repository (e.g., plugin directory).
+ * @param string $worktree_path The full path to the potential worktree directory.
+ * @param string $expected_branch Optional. The expected branch name to verify.
+ *
+ * @return array|false Array with worktree info if exists, false otherwise.
+ *                     Array keys: 'path', 'branch', 'head'
+ */
+function slic_worktree_is_existing( $target_path, $worktree_path, $expected_branch = null ) {
+	// Validate inputs
+	if ( ! is_dir( $target_path ) || ! file_exists( $worktree_path ) ) {
+		return false;
+	}
+
+	// Get worktree list in porcelain format for parsing
+	$escaped_target = escapeshellarg( $target_path );
+	$cmd = "git -C " . $escaped_target . " worktree list --porcelain 2>/dev/null";
+	$output = shell_exec( $cmd );
+
+	if ( empty( $output ) ) {
+		return false;
+	}
+
+	// Parse porcelain output
+	// Format:
+	// worktree /path/to/worktree
+	// HEAD <commit-hash>
+	// branch refs/heads/<branch-name>
+	// <blank line>
+	//
+	// Note: The main repository appears as the first entry in git worktree list.
+	// This is normal git behavior and not an error.
+	$worktrees = [];
+	$current_worktree = [];
+
+	$lines = explode( "\n", trim( $output ) );
+	foreach ( $lines as $line ) {
+		$line = trim( $line );
+
+		// Empty line indicates end of a worktree entry
+		if ( empty( $line ) ) {
+			if ( ! empty( $current_worktree ) ) {
+				$worktrees[] = $current_worktree;
+				$current_worktree = [];
+			}
+			continue;
+		}
+
+		// Parse line
+		if ( strpos( $line, 'worktree ' ) === 0 ) {
+			$current_worktree['path'] = trim( substr( $line, 9 ) );
+		} elseif ( strpos( $line, 'HEAD ' ) === 0 ) {
+			$current_worktree['head'] = trim( substr( $line, 5 ) );
+		} elseif ( strpos( $line, 'branch ' ) === 0 ) {
+			$branch_ref = trim( substr( $line, 7 ) );
+			// Extract branch name from refs/heads/branch-name
+			if ( strpos( $branch_ref, 'refs/heads/' ) === 0 ) {
+				$current_worktree['branch'] = substr( $branch_ref, 11 );
+			}
+		}
+	}
+
+	// Don't forget the last worktree if file doesn't end with blank line
+	if ( ! empty( $current_worktree ) ) {
+		$worktrees[] = $current_worktree;
+	}
+
+	// Normalize paths for comparison (resolve symlinks, etc.)
+	// realpath() can return false for paths that don't exist yet or are not accessible.
+	// Fall back to the original path in such cases for comparison.
+	$worktree_real = realpath( $worktree_path );
+	if ( $worktree_real === false ) {
+		$worktree_real = $worktree_path;
+	}
+
+	// Search for matching worktree
+	foreach ( $worktrees as $wt ) {
+		if ( empty( $wt['path'] ) ) {
+			continue;
+		}
+
+		$wt_real = realpath( $wt['path'] );
+		if ( $wt_real === false ) {
+			$wt_real = $wt['path'];
+		}
+
+		// Check if paths match
+		if ( $wt_real === $worktree_real ) {
+			// If expected branch is specified, verify it matches
+			if ( $expected_branch !== null && ! empty( $wt['branch'] ) ) {
+				if ( $wt['branch'] !== $expected_branch ) {
+					// Worktree exists but for wrong branch
+					return [
+						'path'   => $wt['path'],
+						'branch' => $wt['branch'],
+						'head'   => $wt['head'] ?? null,
+						'error'  => 'branch_mismatch',
+					];
+				}
+			}
+
+			// Worktree exists and branch matches (or not checked)
+			return [
+				'path'   => $wt['path'],
+				'branch' => $wt['branch'] ?? null,
+				'head'   => $wt['head'] ?? null,
+			];
+		}
+	}
+
+	return false;
+}

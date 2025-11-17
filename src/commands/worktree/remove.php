@@ -191,18 +191,11 @@ if (is_dir($target_path)) {
 }
 
 // Step 3: Unregister stack (only if registered)
+// Note: State file cleanup is handled by slic_stacks_unregister()
 if ($is_registered) {
     echo "Unregistering stack...\n";
     if (!slic_stacks_unregister($worktree_stack_id)) {
         echo "Warning: Failed to unregister stack from registry.\n";
-    }
-
-    // Step 4: Remove state file
-    $state_file = $wt_state['state_file'];
-    if (file_exists($state_file)) {
-        if (!unlink($state_file)) {
-            echo "Warning: Failed to remove state file: $state_file\n";
-        }
     }
 }
 

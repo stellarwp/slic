@@ -350,14 +350,8 @@ if (!empty($orphaned_slic_stacks)) {
 		foreach ($orphaned_slic_stacks as $orphan) {
 			echo "Cleaning {$orphan['stack_id']}... ";
 
-			// Unregister from registry
+			// Unregister from registry (state file cleanup is handled by slic_stacks_unregister)
 			if (slic_stacks_unregister($orphan['stack_id'])) {
-				// Remove state file if it exists
-				$state_file = $orphan['state']['state_file'] ?? null;
-				if ($state_file && file_exists($state_file)) {
-					@unlink($state_file);
-				}
-
 				echo "OK\n";
 				$cleaned_count++;
 			} else {

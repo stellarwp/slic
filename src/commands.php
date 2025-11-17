@@ -37,6 +37,7 @@ function command_stop( $stack_id = null, $unregister = true ) : int {
 		echo colorize( PHP_EOL . "✅ <green>All services have been stopped.</green>" . PHP_EOL );
 
 		// Unregister the stack if requested
+		// Note: State file cleanup is handled by slic_stacks_unregister()
 		if ( $unregister ) {
 			if ( slic_stacks_unregister( $stack_id ) ) {
 				echo colorize( "Stack unregistered: <yellow>{$stack_id}</yellow>" . PHP_EOL );

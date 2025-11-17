@@ -60,6 +60,24 @@ $worktree_stack_id = $base_stack_id . '@' . $worktree_dir;
 $worktree_full_path = $base_stack_id . '/' . $worktree_dir;
 $target_full_path = $base_stack_id . '/' . $target;
 
+// Validate target directory exists (fail-fast validation)
+if (!is_dir($target_full_path)) {
+    echo "Error: Target directory not found: $target_full_path\n";
+    exit(1);
+}
+
+// Check if trying to register main repository as a worktree
+// This prevents confusion where the main repo could be detected as a worktree
+// since git worktree list includes the main repo as its first entry
+$target_real = realpath($target_full_path);
+$worktree_real = realpath($worktree_full_path);
+if ($worktree_real !== false && $target_real === $worktree_real) {
+    echo "Error: Cannot register main repository as a worktree.\n";
+    echo "The target and worktree paths are the same: $target_full_path\n";
+    echo "Please specify a different branch name.\n";
+    exit(1);
+}
+
 // Check if worktree stack already exists
 $existing_state = slic_stacks_get($worktree_stack_id);
 if ($existing_state) {
@@ -75,25 +93,51 @@ if ($existing_state) {
 }
 
 // Check if directory already exists
+$should_create_worktree = true;
 if (file_exists($worktree_full_path)) {
-    echo "Error: Directory already exists: $worktree_full_path\n";
-    echo "Remove it manually or choose a different branch name.\n";
-    exit(1);
-}
+    // Directory exists - check if it's already a git worktree
+    $existing_worktree = slic_worktree_is_existing($target_full_path, $worktree_full_path, $branch);
 
-// Validate target directory exists
-if (!is_dir($target_full_path)) {
-    echo "Error: Target directory not found: $target_full_path\n";
-    exit(1);
+    if ($existing_worktree === false) {
+        // Directory exists but is NOT a git worktree
+        echo "Error: Directory already exists but is not a git worktree: $worktree_full_path\n";
+        echo "Please remove it manually or choose a different branch name.\n";
+        echo "\nTo remove the directory:\n";
+        echo "  rm -rf " . escapeshellarg($worktree_full_path) . "\n";
+        exit(1);
+    }
+
+    // Check for branch mismatch
+    if (!empty($existing_worktree['error']) && $existing_worktree['error'] === 'branch_mismatch') {
+        echo "Error: Directory exists as a git worktree but for a different branch.\n";
+        echo "  Expected branch: $branch\n";
+        echo "  Actual branch: {$existing_worktree['branch']}\n";
+        echo "  Directory: $worktree_full_path\n";
+        echo "\nOptions:\n";
+        echo "  1. Use the existing branch with: slic worktree add {$existing_worktree['branch']}\n";
+        echo "  2. Remove the worktree with: cd $target_full_path && git worktree remove " . escapeshellarg(basename($worktree_full_path)) . "\n";
+        exit(1);
+    }
+
+    // Worktree exists with correct branch - skip creation
+    echo "Git worktree already exists for branch '$branch' at $worktree_full_path\n";
+    echo "Skipping git worktree creation, will register slic stack...\n\n";
+    $should_create_worktree = false;
 }
 
 // Confirm action
 if (!$force_yes) {
     echo "This will:\n";
-    echo "  1. Create git worktree at: $worktree_full_path\n";
-    echo "  2. Create new branch: $branch\n";
-    echo "  3. Register slic stack: $worktree_stack_id\n";
-    echo "  4. Allocate unique XDebug port\n";
+    if ($should_create_worktree) {
+        echo "  1. Create git worktree at: $worktree_full_path\n";
+        echo "  2. Create new branch: $branch\n";
+        echo "  3. Register slic stack: $worktree_stack_id\n";
+        echo "  4. Allocate unique XDebug port\n";
+    } else {
+        echo "  1. Register existing worktree with slic\n";
+        echo "  2. Stack ID: $worktree_stack_id\n";
+        echo "  3. Allocate unique XDebug port\n";
+    }
     echo "\nContinue? [y/N] ";
 
     $handle = fopen('php://stdin', 'r');
@@ -106,32 +150,36 @@ if (!$force_yes) {
     }
 }
 
-// Execute git worktree add
-echo "\nCreating git worktree...\n";
+// Execute git worktree add (only if needed)
+if ($should_create_worktree) {
+    echo "\nCreating git worktree...\n";
 
-$original_cwd = getcwd();
-chdir($base_stack_id); // Change to parent plugins/themes directory
+    $original_cwd = getcwd();
+    chdir($base_stack_id); // Change to parent plugins/themes directory
 
-$escaped_dir = escapeshellarg($worktree_dir);
-$escaped_branch = escapeshellarg($branch);
-$cmd = "git -C " . escapeshellarg($target) . " worktree add " . escapeshellarg("../$worktree_dir") . " -b $escaped_branch 2>&1";
+    $escaped_dir = escapeshellarg($worktree_dir);
+    $escaped_branch = escapeshellarg($branch);
+    $cmd = "git -C " . escapeshellarg($target) . " worktree add " . escapeshellarg("../$worktree_dir") . " -b $escaped_branch 2>&1";
 
-exec($cmd, $output, $return_code);
-chdir($original_cwd);
+    exec($cmd, $output, $return_code);
+    chdir($original_cwd);
 
-if ($return_code !== 0) {
-    echo "Error: Failed to create git worktree.\n";
-    echo "Command: $cmd\n";
-    echo "Output:\n";
-    echo implode("\n", $output) . "\n";
-    echo "\nCommon causes:\n";
-    echo "  - Branch '$branch' already exists\n";
-    echo "  - Uncommitted changes in target repository\n";
-    echo "  - Invalid git repository\n";
-    exit(1);
+    if ($return_code !== 0) {
+        echo "Error: Failed to create git worktree.\n";
+        echo "Command: $cmd\n";
+        echo "Output:\n";
+        echo implode("\n", $output) . "\n";
+        echo "\nCommon causes:\n";
+        echo "  - Branch '$branch' already exists\n";
+        echo "  - Uncommitted changes in target repository\n";
+        echo "  - Invalid git repository\n";
+        exit(1);
+    }
+
+    echo "Git worktree created successfully.\n";
+} else {
+    echo "\nUsing existing git worktree...\n";
 }
-
-echo "Git worktree created successfully.\n";
 
 // Register stack with slic
 echo "Registering slic stack...\n";
@@ -176,7 +224,11 @@ $state_env_vars = [
 
 write_env_file($worktree_state['state_file'], $state_env_vars);
 
-echo "Worktree stack registered successfully!\n";
+if ($should_create_worktree) {
+    echo "Worktree stack registered successfully!\n";
+} else {
+    echo "Existing worktree registered successfully!\n";
+}
 echo "\n";
 echo "Stack Details:\n";
 echo "  Stack ID: $worktree_stack_id\n";

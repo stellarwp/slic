@@ -1014,7 +1014,7 @@ function git_handle() {
  * @return \Closure The process closure to start a real-time process using slic stack.
  */
 function slic_passive( $stack_id = null ) {
-	return docker_compose_passive( slic_stack_array(), $stack_id );
+	return docker_compose_passive( slic_stack_array( false, $stack_id ), $stack_id );
 }
 
 /**
@@ -1024,7 +1024,7 @@ function slic_passive( $stack_id = null ) {
  * @return \Closure The process closure to start a real-time process using slic stack.
  */
 function slic_realtime( $stack_id = null ) {
-	return docker_compose_realtime( slic_stack_array(), $stack_id );
+	return docker_compose_realtime( slic_stack_array( false, $stack_id ), $stack_id );
 }
 
 /**
@@ -1034,7 +1034,7 @@ function slic_realtime( $stack_id = null ) {
  * @return \Closure The process closure to start a real-time process using slic stack.
  */
 function slic_process( $stack_id = null ) {
-	return docker_compose( slic_stack_array(), $stack_id );
+	return docker_compose( slic_stack_array( false, $stack_id ), $stack_id );
 }
 
 /**

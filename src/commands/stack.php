@@ -26,7 +26,8 @@ if ( $is_help ) {
 		Stop a specific stack. If no stack is provided, prompts to choose one.
 
 		<light_cyan>stop all</light_cyan>
-		Stop all registered stacks with confirmation.
+		Stop all registered stacks with confirmation. Base stacks will be removed along
+		with their associated worktrees (cascade behavior).
 
 		<light_cyan>info [<stack>]</light_cyan>
 		Show detailed information about a stack. If no stack is provided, uses current stack.
@@ -125,10 +126,12 @@ function slic_display_stacks_nested() {
 	}
 
 	foreach ( $base_stacks as $stack_id => $state ) {
-		$status_icon = ( $state['status'] === 'running' ) ? '●' : '○';
+		// Check if containers are actually running
+		$is_running = slic_stacks_is_running( $stack_id );
+		$status_icon = $is_running ? green( '●' ) : '○';
+		$status_label = $is_running ? green( 'Running' ) : 'Stopped';
 
-		echo "$status_icon $stack_id" . ($stack_id === $current_stack ? ' <-current' : '') . "\n";
-		echo "    Status: {$state['status']}\n";
+		echo "$status_icon $status_label  $stack_id" . ($stack_id === $current_stack ? ' <-current' : '') . "\n";
 		echo "    Target: " . ( $state['target'] ?? 'none' ) . "\n";
 		echo "    XDebug: {$state['xdebug_port']}\n";
 
@@ -137,8 +140,10 @@ function slic_display_stacks_nested() {
 			echo "    Worktrees:\n";
 
 			foreach ( $worktree_map[ $stack_id ] as $wt_id => $wt_state ) {
-				$wt_status_icon = ( $wt_state['status'] === 'running' ) ? '●' : '○';
-				echo "      $wt_status_icon {$wt_state['worktree_dir']} ({$wt_state['worktree_branch']})" . ($wt_id === $current_stack ? ' <-current' : '') . "\n";
+				$wt_is_running = slic_stacks_is_running( $wt_id );
+				$wt_status_icon = $wt_is_running ? green( '●' ) : '○';
+				$wt_status_label = $wt_is_running ? green( 'Running' ) : 'Stopped';
+				echo "      $wt_status_icon $wt_status_label  {$wt_state['worktree_dir']} ({$wt_state['worktree_branch']})" . ($wt_id === $current_stack ? ' <-current' : '') . "\n";
 				echo "         XDebug: {$wt_state['xdebug_port']}\n";
 			}
 		}
@@ -216,17 +221,36 @@ function command_stack_stop_all() {
 		return;
 	}
 
+	// Count base stacks and worktrees
+	$base_count = 0;
+	$worktree_count = 0;
+	foreach ( $stacks as $stack_id => $stack ) {
+		if ( ! empty( $stack['is_worktree'] ) ) {
+			$worktree_count++;
+		} else {
+			$base_count++;
+		}
+	}
+
 	$count = count( $stacks );
 	$stack_word = $count === 1 ? 'stack' : 'stacks';
 
-	echo colorize( PHP_EOL . "<yellow>The following {$count} {$stack_word} will be stopped:</yellow>" . PHP_EOL . PHP_EOL );
+	echo colorize( PHP_EOL . "<yellow>The following {$count} {$stack_word} will be stopped and removed:</yellow>" . PHP_EOL );
 
-	foreach ( $stacks as $stack_id => $stack ) {
-		echo colorize( "  - <light_cyan>{$stack_id}</light_cyan> ({$stack['project_name']})" . PHP_EOL );
+	if ( $worktree_count > 0 ) {
+		$worktree_word = $worktree_count === 1 ? 'worktree' : 'worktrees';
+		echo colorize( "<yellow>(includes {$base_count} base stack(s) and {$worktree_count} {$worktree_word})</yellow>" . PHP_EOL );
 	}
 
 	echo PHP_EOL;
-	echo colorize( "<yellow>Are you sure you want to stop all stacks? (y/N):</yellow> " );
+
+	foreach ( $stacks as $stack_id => $stack ) {
+		$type_label = ! empty( $stack['is_worktree'] ) ? ' [worktree]' : '';
+		echo colorize( "  - <light_cyan>{$stack_id}</light_cyan> ({$stack['project_name']}){$type_label}" . PHP_EOL );
+	}
+
+	echo PHP_EOL;
+	echo colorize( "<yellow>Are you sure you want to stop and remove all stacks? (y/N):</yellow> " );
 
 	// Read user input
 	$handle = fopen( "php://stdin", "r" );
@@ -245,10 +269,39 @@ function command_stack_stop_all() {
 		'failed'  => [],
 	];
 
+	// CRITICAL FIX: Store worktree data BEFORE unregistering stacks
+	// This also avoids redundant lookups during the stop loop
+	$worktree_data = [];
 	foreach ( $stacks as $stack_id => $stack ) {
+		if ( empty( $stack['is_worktree'] ) ) {
+			$worktree_data[ $stack_id ] = slic_stacks_get_worktrees( $stack_id );
+		}
+	}
+
+	foreach ( $stacks as $stack_id => $stack ) {
+		// Skip worktrees as they'll be stopped when we process their base stack
+		if ( ! empty( $stack['is_worktree'] ) ) {
+			continue;
+		}
+
 		echo colorize( "Stopping stack: <yellow>{$stack_id}</yellow>" . PHP_EOL );
 
-		// Stop without unregistering to avoid modifying registry during iteration
+		// CRITICAL FIX: For base stacks with worktrees, stop their worktree containers first
+		if ( isset( $worktree_data[ $stack_id ] ) && count( $worktree_data[ $stack_id ] ) > 0 ) {
+			$worktrees = $worktree_data[ $stack_id ];
+			foreach ( array_keys( $worktrees ) as $wt_id ) {
+				echo colorize( "  Stopping worktree: <yellow>{$wt_id}</yellow>" . PHP_EOL );
+				$wt_status = command_stop( $wt_id, false );
+				if ( $wt_status === 0 ) {
+					$results['success'][] = $wt_id;
+				} else {
+					$results['failed'][] = $wt_id;
+					echo colorize( "  <yellow>Warning: Failed to stop worktree {$wt_id}</yellow>" . PHP_EOL );
+				}
+			}
+		}
+
+		// Stop the base stack without unregistering to avoid modifying registry during iteration
 		$status = command_stop( $stack_id, false );
 
 		if ( $status === 0 ) {
@@ -260,22 +313,48 @@ function command_stack_stop_all() {
 		echo PHP_EOL;
 	}
 
-	// Unregister all successfully stopped stacks
+	// Unregister all successfully stopped stacks with cascade to remove worktrees
+	// Note: State file cleanup is handled by slic_stacks_unregister()
 	foreach ( $results['success'] as $stack_id ) {
-		if ( slic_stacks_unregister( $stack_id ) ) {
+		if ( slic_stacks_unregister( $stack_id, true ) ) {
 			echo colorize( "Stack unregistered: <yellow>{$stack_id}</yellow>" . PHP_EOL );
 		}
 	}
 
-	// Display summary
+	// Display summary with breakdown of base stacks and worktrees
 	$success_count = count( $results['success'] );
 	$failed_count = count( $results['failed'] );
+
+	// Count base stacks and worktrees that were removed
+	// Note: Worktrees are already in results['success'] as they were explicitly stopped
+	$base_removed = 0;
+	$worktree_removed = 0;
+	foreach ( $results['success'] as $stack_id ) {
+		$stack_info = $stacks[ $stack_id ] ?? null;
+		if ( $stack_info ) {
+			if ( ! empty( $stack_info['is_worktree'] ) ) {
+				$worktree_removed++;
+			} else {
+				$base_removed++;
+			}
+		}
+	}
 
 	echo colorize( PHP_EOL . "<light_cyan>Summary:</light_cyan>" . PHP_EOL );
 
 	if ( $success_count > 0 ) {
 		$success_word = $success_count === 1 ? 'stack' : 'stacks';
-		echo colorize( "  <green>Successfully stopped {$success_count} {$success_word}</green>" . PHP_EOL );
+		echo colorize( "  <green>Successfully stopped and removed {$success_count} {$success_word}</green>" . PHP_EOL );
+
+		if ( $base_removed > 0 ) {
+			$base_word = $base_removed === 1 ? 'base stack' : 'base stacks';
+			echo colorize( "    - {$base_removed} {$base_word}" . PHP_EOL );
+		}
+
+		if ( $worktree_removed > 0 ) {
+			$worktree_word = $worktree_removed === 1 ? 'worktree' : 'worktrees';
+			echo colorize( "    - {$worktree_removed} {$worktree_word}" . PHP_EOL );
+		}
 	}
 
 	if ( $failed_count > 0 ) {
