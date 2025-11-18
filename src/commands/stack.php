@@ -249,7 +249,7 @@ function command_stack_stop_all( $force_yes = false ) {
 	$count = count( $stacks );
 	$stack_word = $count === 1 ? 'stack' : 'stacks';
 
-	echo colorize( PHP_EOL . "<yellow>The following {$count} {$stack_word} will be stopped and removed:</yellow>" . PHP_EOL );
+	echo colorize( "<yellow>The following {$count} {$stack_word} will be stopped and removed:</yellow>" . PHP_EOL );
 
 	if ( $worktree_count > 0 ) {
 		$worktree_word = $worktree_count === 1 ? 'worktree' : 'worktrees';
@@ -410,7 +410,7 @@ function command_stack_info( $stack_id = null ) {
 		return;
 	}
 
-	echo colorize( PHP_EOL . "<light_cyan>Stack Information:</light_cyan>" . PHP_EOL . PHP_EOL );
+	echo colorize( "<light_cyan>Stack Information:</light_cyan>" . PHP_EOL . PHP_EOL );
 	echo colorize( "<yellow>Stack ID:</yellow> {$stack_id}" . PHP_EOL );
 	echo colorize( "<yellow>Project Name:</yellow> {$stack['project_name']}" . PHP_EOL );
 	echo colorize( "<yellow>State File:</yellow> {$stack['state_file']}" . PHP_EOL );
