@@ -282,7 +282,19 @@ This command:
 - Shows a comprehensive summary with success/failure counts
 - Works from any directory
 
-**Note:** This command requires interactive input to confirm the action. It will exit with an error when run in non-interactive environments (such as CI pipelines or automation scripts).
+**Options:**
+- `-y, --yes` - Skip confirmation prompt and proceed immediately
+
+**Examples:**
+```bash
+slic stack stop all         # Interactive - prompts for confirmation
+slic stack stop all -y      # Non-interactive - stops all stacks immediately
+slic stack stop all --yes   # Same as -y
+```
+
+**Caution:** Use `-y` carefully in automation scripts. It bypasses all confirmations and will immediately stop and remove all registered stacks.
+
+**Note:** This command requires interactive input to confirm the action unless the `-y` flag is provided. It will exit with an error when run in non-interactive environments (such as CI pipelines or automation scripts) without the `-y` flag.
 
 This is useful when you want to free up system resources or restart your Docker environment cleanly.
 

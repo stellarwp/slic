@@ -25,12 +25,18 @@ if ( $is_help ) {
 		<light_cyan>stop [<stack>]</light_cyan>
 		Stop a specific stack. If no stack is provided, prompts to choose one.
 
-		<light_cyan>stop all</light_cyan>
+		<light_cyan>stop all [-y|--yes]</light_cyan>
 		Stop all registered stacks with confirmation. Base stacks will be removed along
 		with their associated worktrees (cascade behavior).
 
 		<light_cyan>info [<stack>]</light_cyan>
 		Show detailed information about a stack. If no stack is provided, uses current stack.
+
+	OPTIONS:
+
+		<light_cyan>-y, --yes</light_cyan>
+		Skip confirmation prompt and proceed immediately. Useful for non-interactive
+		environments like CI pipelines and automation scripts.
 
 	EXAMPLES:
 
@@ -41,7 +47,10 @@ if ( $is_help ) {
 		Stop the specified stack.
 
 		<light_cyan>{$cli_name} stack stop all</light_cyan>
-		Stop all registered stacks.
+		Stop all registered stacks (with confirmation).
+
+		<light_cyan>{$cli_name} stack stop all -y</light_cyan>
+		Stop all registered stacks without confirmation.
 
 		<light_cyan>{$cli_name} stack info</light_cyan>
 		Show information about the current stack.
@@ -55,6 +64,10 @@ if ( $is_help ) {
 $sub_args    = args( [ 'subcommand', 'stack_path' ], $args( '...' ), 0 );
 $subcommand  = $sub_args( 'subcommand', 'list' );
 $stack_path  = $sub_args( 'stack_path', null );
+
+// Parse all remaining args for flag detection
+$all_args = $sub_args( '...', [] );
+$force_yes = in_array( '-y', $all_args ) || in_array( '--yes', $all_args );
 
 // Resolve stack path if provided (unless it's 'all' for stop command)
 $target_stack_id = null;
@@ -73,7 +86,7 @@ switch ( $subcommand ) {
 
 	case 'stop':
 		if ( $stack_path === 'all' ) {
-			command_stack_stop_all();
+			command_stack_stop_all( $force_yes );
 		} else {
 			command_stack_stop( $target_stack_id );
 		}
@@ -205,12 +218,13 @@ function command_stack_stop( $stack_id = null ) {
  * then unregisters only the successfully stopped stacks at the end to avoid
  * modifying the registry during iteration.
  *
+ * @param bool $force_yes Whether to skip confirmation prompts.
  * @return void Exits with 0 on success, 1 on failure.
  */
-function command_stack_stop_all() {
+function command_stack_stop_all( $force_yes = false ) {
 	// Validate stdin is interactive
-	if ( ! defined( 'STDIN' ) || ! stream_isatty( STDIN ) ) {
-		echo colorize( "<red>Error: This command requires interactive input. Cannot run in non-interactive mode.</red>" . PHP_EOL );
+	if ( ! $force_yes && ( ! defined( 'STDIN' ) || ! stream_isatty( STDIN ) ) ) {
+		echo colorize( "<red>Error: This command requires interactive input or -y flag.</red>" . PHP_EOL );
 		exit( 1 );
 	}
 
@@ -250,19 +264,22 @@ function command_stack_stop_all() {
 	}
 
 	echo PHP_EOL;
-	echo colorize( "<yellow>Are you sure you want to stop and remove all stacks? (y/N):</yellow> " );
 
-	// Read user input
-	$handle = fopen( "php://stdin", "r" );
-	$response = trim( fgets( $handle ) );
-	fclose( $handle );
+	if ( ! $force_yes ) {
+		echo colorize( "<yellow>Are you sure you want to stop and remove all stacks? (y/N):</yellow> " );
 
-	if ( ! in_array( strtolower( $response ), [ 'y', 'yes' ], true ) ) {
-		echo colorize( "<yellow>Operation cancelled.</yellow>" . PHP_EOL );
-		exit( 0 );
+		// Read user input
+		$handle = fopen( "php://stdin", "r" );
+		$response = trim( fgets( $handle ) );
+		fclose( $handle );
+
+		if ( ! in_array( strtolower( $response ), [ 'y', 'yes' ], true ) ) {
+			echo colorize( "<yellow>Operation cancelled.</yellow>" . PHP_EOL );
+			exit( 0 );
+		}
+
+		echo PHP_EOL;
 	}
-
-	echo PHP_EOL;
 
 	$results = [
 		'success' => [],

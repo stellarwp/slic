@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-# [3.1.0] - 2025-11-13
+# [3.0.0] - TBD
 
 ### Added
 - Git worktree multi-stack support for concurrent development workflows
@@ -21,8 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `slic stack stop all` command to stop all registered stacks at once. Always prompts for confirmation, shows list of stacks being stopped, continues even if one stack fails, and displays comprehensive summary with success/failure counts. Works from any directory
 - `slic stack info [<stack>]` command to display detailed information about a specific stack including container status, ports, and configuration
 - Global `--stack=<path>` flag to target specific stacks. This allows running commands against any registered stack without changing the current working directory
-
-# [3.0.0] - 2025-11-13
+- `-y, --yes` flag support for `slic stack stop all` command to skip confirmation prompt, enabling use in non-interactive environments like CI pipelines and automation scripts
 
 ### Changed
 - Breaking Change - Port assignment changed from pre-allocation to Docker auto-assignment. Ports are now discovered from running containers after they start, eliminating port allocation race conditions. This change affects how `slic` handles container networking and may require adjustments to workflows that relied on predictable port allocation
