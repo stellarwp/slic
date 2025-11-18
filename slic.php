@@ -19,8 +19,7 @@ require_once __DIR__ . '/src/project.php';
 require_once __DIR__ . '/src/env.php';
 require_once __DIR__ . '/src/commands.php';
 
-use StellarWP\Slic\Cache;
-use function StellarWP\Slic\args;
+use StellarWP\Slic\Cache; use function StellarWP\Slic\args;
 use function StellarWP\Slic\cli_header;
 use function StellarWP\Slic\colorize;
 use function StellarWP\Slic\maybe_prompt_for_repo_update;
@@ -177,9 +176,6 @@ $args = args( [
 	'subcommand',
 	'...',
 ] );
-
-$cli_name = 'slic';
-const CLI_VERSION = '2.1.2';
 
 // If the run-time option `-q`, for "quiet", is specified, then do not print the header.
 if ( $is_quiet || ( in_array( 'exec', $argv, true ) && ! in_array( 'help', $argv, true ) ) ) {
