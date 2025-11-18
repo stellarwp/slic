@@ -38,11 +38,13 @@ function xdebug_status( $stack_id = null ) {
 
 	// Get the WordPress port from the stack registry if available
 	$localhost_port = null;
+	$stack_has_localhost_port = false;
 	if ( null !== $stack_id ) {
 		slic_stacks_ensure_ports( $stack_id );  // Refresh ports from Docker
 		$stack = slic_stacks_get( $stack_id );
 		if ( null !== $stack && isset( $stack['ports']['wp'] ) ) {
 			$localhost_port = $stack['ports']['wp'];
+			$stack_has_localhost_port = true;
 		}
 	}
 
@@ -106,7 +108,15 @@ function xdebug_status( $stack_id = null ) {
 
 	echo PHP_EOL . 'Set up, in your IDE, a server with the following parameters to debug PHP requests:' . PHP_EOL;
 	echo 'IDE key, or server name: ' . light_cyan( $ide_key ) . PHP_EOL;
-	echo 'Host: ' . light_cyan( 'http://localhost' . ( $localhost_port === '80' ? '' : ':' . $localhost_port ) ) . PHP_EOL;
+	if ($stack_id !== null) {
+		if($stack_has_localhost_port){
+			echo 'Host: ' . light_cyan( 'http://localhost' . ( $localhost_port === '80' ? '' : ':' . $localhost_port ) ) . PHP_EOL;
+		} else {
+			echo 'Host: ' . yellow( 'not available until containers start' ) . PHP_EOL;
+		}
+	} else {
+		echo 'Host: ' . light_cyan( 'http://localhost' . ( $localhost_port === '80' ? '' : ':' . $localhost_port ) ) . PHP_EOL;
+	}
 	echo colorize( 'Path mapping (host => server): <light_cyan>'
 	               . slic_plugins_dir()
 	               . '</light_cyan> => <light_cyan>/var/www/html/wp-content/plugins</light_cyan>' ) . PHP_EOL;
