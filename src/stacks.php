@@ -64,6 +64,8 @@ function slic_stacks_register($stack_id, array $state) {
 			$state['xdebug_port'] = slic_stacks_xdebug_port($stack_id);
 		}
 
+		$state['xdebug_key'] = slic_stacks_xdebug_server_name($stack_id);
+
 		$stacks[$stack_id] = array_merge([
 			'created_at' => date('c'),
 			'status' => 'created',
