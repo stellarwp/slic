@@ -8,6 +8,8 @@ namespace StellarWP\Slic;
 use function StellarWP\Slic\Env\backup_env_var;
 use function StellarWP\Slic\Env\env_var_backup;
 
+require_once __DIR__ . '/xdebug.php';
+
 /**
  * Get the CLI header.
  *
@@ -314,27 +316,8 @@ function setup_slic_env( $root_dir, $reset = false, $stack_id = null ) {
 		$effective_stack_id = slic_current_stack();
 	}
 
-	if ( null !== $effective_stack_id ) {
-		if ( ! function_exists( 'slic_stacks_get' ) ) {
-			require_once __DIR__ . '/stacks.php';
-		}
-		$stack = slic_stacks_get( $effective_stack_id );
-
-		// Always set XDebug values from stack registry to ensure stack-specific values are used
-		// These will override default values from .env.slic, but can still be overridden by
-		// .env.slic.local files loaded later
-		if ( null !== $stack ) {
-			if ( isset( $stack['xdebug_port'] ) ) {
-				$xdebug_port = $stack['xdebug_port'];
-				putenv( "XDP={$xdebug_port}" );
-			}
-
-			if ( isset( $stack['xdebug_key'] ) ) {
-				$xdebug_key = $stack['xdebug_key'];
-				putenv( "XDK={$xdebug_key}" );
-			}
-		}
-	}
+	// Set up XDebug environment variables from stack registry
+	xdebug_setup_env_vars( $effective_stack_id );
 
 	$target_path = get_project_local_path();
 	if( ! empty( $target_path ) ) {
@@ -355,14 +338,8 @@ function setup_slic_env( $root_dir, $reset = false, $stack_id = null ) {
 	// All the possible env files have been loaded, time to set the db image depending on the PHP version.
 	setup_db_env();
 
-	/*
-	 * Set the host env var to make xdebug work on Linux with host.docker.internal.
-	 * This will already be set on Mac/Windows, and overriding it would break things.
-	 * See extra_hosts: in slick-stack.yml.
-	 */
-	if ( PHP_OS === 'Linux' ) {
-		putenv( sprintf( 'host=%s', getenv( 'XDH' ) ?: 'host.docker.internal' ) );
-	}
+	// Set up XDebug host for Linux
+	xdebug_setup_linux_host();
 
 	$default_wp_dir = root( '/_wordpress' );
 	$wp_dir         = getenv( 'SLIC_WP_DIR' );
@@ -1081,45 +1058,46 @@ function write_build_version() {
  * Prints information about slic tool.
  */
 function slic_info() {
-	$config_vars = [
-		'SLIC_TEST_SUBNET',
-		'CLI_VERBOSITY',
-		'CI',
-		'TRAVIS_CI',
-		'COMPOSER_CACHE_DIR',
-		'CONTINUOUS_INTEGRATION',
-		'GITHUB_ACTION',
-		'SLIC_PHP_VERSION',
-		'SLIC_PHP_VERSION_STAGED',
-		'SLIC_COMPOSER_VERSION',
-		'SLIC_CURRENT_PROJECT',
-		'SLIC_CURRENT_PROJECT_RELATIVE_PATH',
-		'SLIC_CURRENT_PROJECT_SUBDIR',
-		'SLIC_HOST',
-		'SLIC_PLUGINS',
-		'SLIC_THEMES',
-		'SLIC_GIT_DOMAIN',
-		'SLIC_GIT_HANDLE',
-		'SLIC_HERE_DIR',
-		'SLIC_PLUGINS_DIR',
-		'SLIC_THEMES_DIR',
-		'SLIC_WP_DIR',
-		'SLIC_INTERACTIVE',
-		'SLIC_BUILD_PROMPT',
-		'SLIC_BUILD_SUBDIR',
-		'TERM',
-		'XDK',
-		'XDE',
-		'XDH',
-		'XDP',
-		'UID',
-		'SLIC_UID',
-		'GID',
-		'SLIC_GID',
-		'MYSQL_ROOT_PASSWORD',
-		'WORDPRESS_HTTP_PORT',
-		'SSH_AUTH_SOCK',
-	];
+	$config_vars = array_merge(
+		[
+			'SLIC_TEST_SUBNET',
+			'CLI_VERBOSITY',
+			'CI',
+			'TRAVIS_CI',
+			'COMPOSER_CACHE_DIR',
+			'CONTINUOUS_INTEGRATION',
+			'GITHUB_ACTION',
+			'SLIC_PHP_VERSION',
+			'SLIC_PHP_VERSION_STAGED',
+			'SLIC_COMPOSER_VERSION',
+			'SLIC_CURRENT_PROJECT',
+			'SLIC_CURRENT_PROJECT_RELATIVE_PATH',
+			'SLIC_CURRENT_PROJECT_SUBDIR',
+			'SLIC_HOST',
+			'SLIC_PLUGINS',
+			'SLIC_THEMES',
+			'SLIC_GIT_DOMAIN',
+			'SLIC_GIT_HANDLE',
+			'SLIC_HERE_DIR',
+			'SLIC_PLUGINS_DIR',
+			'SLIC_THEMES_DIR',
+			'SLIC_WP_DIR',
+			'SLIC_INTERACTIVE',
+			'SLIC_BUILD_PROMPT',
+			'SLIC_BUILD_SUBDIR',
+			'TERM',
+		],
+		xdebug_get_info_vars(),
+		[
+			'UID',
+			'SLIC_UID',
+			'GID',
+			'SLIC_GID',
+			'MYSQL_ROOT_PASSWORD',
+			'WORDPRESS_HTTP_PORT',
+			'SSH_AUTH_SOCK',
+		]
+	);
 
 	// Read .env.slic.run directly to show runtime state.
 	$run_env_file = root( '/.env.slic.run' );
@@ -1315,200 +1293,6 @@ function slic_handle_interactive( callable $args ) {
 	}
 
 	write_env_file( $run_settings_file, [ 'SLIC_INTERACTIVE' => $value ], true );
-}
-
-/**
- * Prints the current XDebug status to screen.
- *
- * @param string|null $stack_id The stack to show XDebug status for. If null, uses current stack.
- */
-function xdebug_status( $stack_id = null ) {
-	if ( ! function_exists( 'slic_stacks_xdebug_server_name' ) ) {
-		require_once __DIR__ . '/stacks.php';
-	}
-
-	// Determine which stack to show status for
-	if ( null === $stack_id ) {
-		$stack_id = slic_current_stack();
-	}
-
-	// Explicitly reload environment for the target stack to ensure correct values
-	setup_slic_env( root(), true, $stack_id );
-
-	$enabled = getenv( 'XDE' );
-
-	if ( null !== $stack_id ) {
-		// Use a stack-specific server name if a stack is detected
-		// The XDK env var will be used as root to build an IDE key like `${XDK:-slic}_<stack_hash>`.
-		$ide_key = slic_stacks_xdebug_server_name( $stack_id );
-	} else {
-		// Final fallback when no stack is detected
-		$ide_key = 'slic';
-	}
-
-	// Get the WordPress port from the stack registry if available
-	$localhost_port = null;
-	if ( null !== $stack_id ) {
-		if ( ! function_exists( 'slic_stacks_ensure_ports' ) ) {
-			require_once __DIR__ . '/stacks.php';
-		}
-		slic_stacks_ensure_ports( $stack_id );  // Refresh ports from Docker
-		$stack = slic_stacks_get( $stack_id );
-		if ( null !== $stack && isset( $stack['ports']['wp'] ) ) {
-			$localhost_port = $stack['ports']['wp'];
-		}
-	}
-
-	// Fall back to WORDPRESS_HTTP_PORT env var or default
-	if ( empty( $localhost_port ) ) {
-		$localhost_port = getenv( 'WORDPRESS_HTTP_PORT' );
-	}
-	if ( empty( $localhost_port ) ) {
-		$localhost_port = '8888';
-	}
-
-	// Show current stack information if multi-stack is active
-	if ( ! function_exists( 'slic_stacks_list' ) ) {
-		require_once __DIR__ . '/stacks.php';
-	}
-	if ( function_exists( 'slic_stacks_list' ) ) {
-		$all_stacks = slic_stacks_list();
-		$stack_count = count( $all_stacks );
-
-		// Helper function to display stack information
-		$display_stack_info = function( $stack_id, $label_prefix = 'Stack' ) {
-			if ( ! function_exists( 'slic_stacks_get' ) ) {
-				echo colorize( '<red>Warning: Stack functions not available.</red>' ) . PHP_EOL;
-				return;
-			}
-			$stack = slic_stacks_get( $stack_id );
-			if ( null !== $stack ) {
-				echo colorize( $label_prefix . ': <yellow>' . $stack_id . '</yellow>' ) . PHP_EOL;
-				echo colorize( 'Project: <light_cyan>' . $stack['project_name'] . '</light_cyan>' ) . PHP_EOL . PHP_EOL;
-			} else {
-				echo colorize( '<red>Warning: Stack ID "' . $stack_id . '" not found.</red>' ) . PHP_EOL;
-				echo colorize( '<yellow>Showing global XDebug settings from .env.slic files.</yellow>' ) . PHP_EOL . PHP_EOL;
-			}
-		};
-
-		if ( $stack_count > 1 ) {
-			// Multiple stacks exist
-			if ( null !== $stack_id ) {
-				// Show which stack we're displaying config for
-				$display_stack_info( $stack_id, 'XDebug configuration for stack' );
-			} else {
-				// No active stack found
-				echo colorize( '<yellow>No active stack found. Showing global XDebug settings from .env.slic files.</yellow>' ) . PHP_EOL . PHP_EOL;
-			}
-		} elseif ( $stack_count === 1 ) {
-			// Single stack - backward compatible display
-			if ( null !== $stack_id ) {
-				$display_stack_info( $stack_id );
-			}
-		}
-		// If no stacks exist, don't show stack info at all
-	}
-
-	echo 'XDebug status is: ' . ( $enabled ? light_cyan( 'on' ) : magenta( 'off' ) ) . PHP_EOL;
-	echo 'Remote host: ' . light_cyan( getenv( 'XDH' ) ) . PHP_EOL;
-	echo 'Remote port: ' . light_cyan( getenv( 'XDP' ) ) . PHP_EOL;
-
-	echo 'IDE Key (server name): ' . light_cyan( $ide_key ) . PHP_EOL;
-	echo colorize( PHP_EOL . "You can override these values in the <light_cyan>.env.slic.local" .
-	               "</light_cyan> file or by using the " .
-	               "<light_cyan>'xdebug (host|key|port) <value>'</light_cyan> command." ) . PHP_EOL;
-
-
-	echo PHP_EOL . 'Set up, in your IDE, a server with the following parameters to debug PHP requests:' . PHP_EOL;
-	echo 'IDE key, or server name: ' . light_cyan( $ide_key ) . PHP_EOL;
-	echo 'Host: ' . light_cyan( 'http://localhost' . ( $localhost_port === '80' ? '' : ':' . $localhost_port ) ) . PHP_EOL;
-	echo colorize( 'Path mapping (host => server): <light_cyan>'
-	               . slic_plugins_dir()
-	               . '</light_cyan> => <light_cyan>/var/www/html/wp-content/plugins</light_cyan>' ) . PHP_EOL;
-	echo colorize( 'Path mapping (host => server): <light_cyan>'
-	               . slic_wp_dir()
-	               . '</light_cyan> => <light_cyan>/var/www/html</light_cyan>' );
-
-	$default_mask = ( slic_wp_dir() === root( '/_wordpress' ) ) + 2 * ( slic_plugins_dir() === root( '/_plugins' ) );
-
-	switch ( $default_mask ) {
-		case 1:
-			echo PHP_EOL . PHP_EOL;
-			echo yellow( 'Note: slic is using the default WordPress directory and a different plugins directory: ' .
-			             'set path mappings correctly and keep that in mind.' );
-			break;
-		case 2:
-			echo PHP_EOL . PHP_EOL;
-			echo yellow( 'Note: slic is using the default plugins directory and a different WordPress directory: ' .
-			             'set path mappings correctly and keep that in mind.' );
-			break;
-		case 3;
-		default:
-			break;
-	}
-}
-
-/**
- * Handles the XDebug command request.
- *
- * @param callable $args The closure that will produce the current XDebug request arguments.
- */
-function slic_handle_xdebug( callable $args ) {
-	// Get the current stack's run file
-	$stack_id = slic_current_stack();
-	if ( null !== $stack_id ) {
-		$run_settings_file = get_stack_env_file( $stack_id );
-	} else {
-		// Fall back to legacy file if no stack
-		$run_settings_file = root( '/.env.slic.run' );
-	}
-	$toggle = $args( 'toggle', 'on' );
-
-	if ( 'status' === $toggle ) {
-		xdebug_status( $stack_id );
-
-		return;
-	}
-
-	$map = [
-		'host' => 'XDH',
-		'key'  => 'XDK',
-		'port' => 'XDP',
-	];
-	if ( array_key_exists( $toggle, $map ) ) {
-		$var = $args( 'value' );
-		echo colorize( "Setting <light_cyan>{$map[$toggle]}={$var}</light_cyan>" ) . PHP_EOL . PHP_EOL;
-		write_env_file( $run_settings_file, [ $map[ $toggle ] => $var ], true );
-		echo PHP_EOL . PHP_EOL . colorize( "Tear down the stack with <light_cyan>down</light_cyan> and restart it to apply the new settings!" . PHP_EOL );
-
-		return;
-	}
-
-	$value = 'on' === $toggle ? 1 : 0;
-	echo 'XDebug status: ' . ( $value ? light_cyan( 'on' ) : magenta( 'off' ) ) . PHP_EOL;
-
-	if ( $value !== (int) getenv( 'XDE' ) ) {
-		$xdebug_env_vars = [ 'XDE' => $value, 'XDEBUG_DISABLE' => 1 === $value ? 0 : 1 ];
-		write_env_file( $run_settings_file, $xdebug_env_vars, true );
-	}
-
-	foreach ( [ 'slic', 'wordpress' ] as $service ) {
-		if ( ! service_running( $service ) ) {
-			continue;
-		}
-
-		echo PHP_EOL;
-
-		if ( $value === 1 ) {
-			// Enable XDebug in the service.
-			echo colorize( "Enabling XDebug in <light_cyan>{$service}</light_cyan>..." );
-			slic_realtime()( [ 'exec', $service, 'xdebug-on' ] );
-		} else {
-			echo colorize( "Disabling XDebug in <light_cyan>{$service}</light_cyan>..." );
-			// Disable XDebug in the service.
-			slic_realtime()( [ 'exec', $service, 'xdebug-off' ] );
-		}
-	}
 }
 
 /**
