@@ -394,7 +394,10 @@ function setup_slic_env( $root_dir, $reset = false, $stack_id = null ) {
 	$current_stack = null;
 	if ( null !== $stack_id ) {
 		$current_stack = $stack_id;
-	} elseif ( function_exists( 'slic_current_stack' ) ) {
+	} else {
+		if(!function_exists( 'slic_current_stack' )){
+			require_once __DIR__ . '/stacks.php';
+		}
 		$current_stack = slic_current_stack();
 	}
 
