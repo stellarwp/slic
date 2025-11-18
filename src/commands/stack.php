@@ -61,7 +61,7 @@ if ( $is_help ) {
 }
 
 // Parse subcommand and arguments
-$sub_args    = args( [ 'subcommand', 'stack_path' ], $args( '...' ), 0 );
+$sub_args    = args( [ 'subcommand', 'stack_path', '...' ], $args( '...' ), 0 );
 $subcommand  = $sub_args( 'subcommand', 'list' );
 $stack_path  = $sub_args( 'stack_path', null );
 
