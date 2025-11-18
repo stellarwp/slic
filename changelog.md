@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Breaking Change - The `slic here` command will now create a new stack for the current path instead of changing the context of the previously only stack to the path.
+- Breaking Change - The `XDK` configuration variable (`slic` by default) is now used as **root** for each stack IDE key. An `XDK` of `slic` will create stack IDE keys like `slic_<stack_hash>` and not just `slic` as it was before. 
 
 ### Added
 - Multi-path support with a 1:1 mapping between stacks and paths.

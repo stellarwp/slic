@@ -569,7 +569,9 @@ function slic_stacks_xdebug_port($stack_id) {
  * The server name is used by IDEs to identify debugging sessions and match
  * path mappings. Each stack needs a unique server name.
  *
- * Format: "slic_{hash}" where hash is the first 8 characters of MD5
+ * The key is built using the XDK configuration env var as root.
+ *
+ * Format: "{key_root:-slic}_{hash}" where hash is the first 8 characters of MD5
  * Example: "slic_a7f3c891"
  *
  * @param string $stack_id The stack identifier (absolute path).
@@ -579,7 +581,10 @@ function slic_stacks_xdebug_server_name($stack_id) {
 	// Use the same hash approach as project names for consistency
 	$hash = substr(md5($stack_id), 0, 8);
 
-	return 'slic_' . $hash;
+	// Build the key from the root defined in the config file, if any.
+	$key_root = getenv('XDK') ?: 'slic';
+
+	return $key_root . '_' . $hash;
 }
 
 /**

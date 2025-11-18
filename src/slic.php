@@ -1323,8 +1323,12 @@ function slic_handle_interactive( callable $args ) {
  * @param string|null $stack_id The stack to show XDebug status for. If null, uses current stack.
  */
 function xdebug_status( $stack_id = null ) {
+	if ( ! function_exists( 'slic_stacks_xdebug_server_name' ) ) {
+		require_once __DIR__ . '/stacks.php';
+	}
+
 	// Determine which stack to show status for
-	if ( null === $stack_id && function_exists( 'slic_current_stack' ) ) {
+	if ( null === $stack_id ) {
 		$stack_id = slic_current_stack();
 	}
 
@@ -1332,8 +1336,13 @@ function xdebug_status( $stack_id = null ) {
 	setup_slic_env( root(), true, $stack_id );
 
 	$enabled = getenv( 'XDE' );
-	$ide_key = getenv( 'XDK' );
-	if ( empty( $ide_key ) ) {
+
+	if ( null !== $stack_id ) {
+		// Use a stack-specific server name if a stack is detected
+		// The XDK env var will be used as root to build an IDE key like `${XDK:-slic}_<stack_hash>`.
+		$ide_key = slic_stacks_xdebug_server_name( $stack_id );
+	} else {
+		// Final fallback when no stack is detected
 		$ide_key = 'slic';
 	}
 
