@@ -45,7 +45,7 @@ function args( array $map = [], ?array $source = null, $offset = 1 ) {
 	}
 
 	return static function ( $key, $default = null ) use ( $full_map ) {
-		return null !== $full_map[ $key ] ? $full_map[ $key ] : $default;
+		return $full_map[ $key ] ?? $default;
 	};
 }
 
