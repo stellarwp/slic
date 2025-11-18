@@ -29,7 +29,7 @@ use function StellarWP\Slic\root;
 use function StellarWP\Slic\setup_slic_env;
 
 $cli_name = 'slic';
-const CLI_VERSION = '3.1.0';
+const CLI_VERSION = '3.0.0';
 
 /*
  * Parse global flags BEFORE argument parsing to avoid them being treated as commands.
@@ -261,7 +261,6 @@ $help_message          = colorize( $help_message_template );
 $help_advanced_message = colorize( $help_advanced_message_template );
 
 $is_help = args( [ 'help' ], $args( '...' ), 0 )( 'help', false ) === 'help';
-
 
 $original_subcommand = $args( 'subcommand' );
 $subcommand          = $args( 'subcommand', 'help' );
