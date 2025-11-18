@@ -95,7 +95,8 @@ function xdebug_status( $stack_id = null ) {
 
 	echo 'XDebug status is: ' . ( $enabled ? light_cyan( 'on' ) : magenta( 'off' ) ) . PHP_EOL;
 	echo 'Remote host: ' . light_cyan( getenv( 'XDH' ) ) . PHP_EOL;
-	echo 'Remote port: ' . light_cyan( getenv( 'XDP' ) ) . PHP_EOL;
+	$remote_port = $stack_id ? slic_stacks_xdebug_port($stack_id) : getenv('XDP');
+	echo 'Remote port: ' . light_cyan( $remote_port ) . PHP_EOL;
 
 	echo 'IDE Key (server name): ' . light_cyan( $ide_key ) . PHP_EOL;
 	echo colorize( PHP_EOL . "You can override these values in the <light_cyan>.env.slic.local" .
@@ -112,6 +113,57 @@ function xdebug_status( $stack_id = null ) {
 	echo colorize( 'Path mapping (host => server): <light_cyan>'
 	               . slic_wp_dir()
 	               . '</light_cyan> => <light_cyan>/var/www/html</light_cyan>' );
+
+	// Add worktree-specific path mapping if this is a worktree stack
+	if ( null !== $stack_id && slic_stacks_is_worktree( $stack_id ) ) {
+		// Get stack data (reuse if already fetched)
+		if ( ! isset( $stack ) ) {
+			$stack = slic_stacks_get( $stack_id );
+		}
+
+		if ( ! empty( $stack['is_worktree'] ) ) {
+			// Validate required fields - corrupted stack entries may be missing these
+			$worktree_path = $stack['worktree_full_path'] ?? null;
+			$base_stack_id = $stack['base_stack_id'] ?? null;
+
+			// Only proceed if we have all required data
+			if ( ! empty( $worktree_path ) && ! empty( $base_stack_id ) ) {
+				// Determine type by checking if base_stack_id is under plugins or themes directory
+				// base_stack_id is the absolute path to the base stack directory
+				$plugins_dir = realpath( slic_plugins_dir() );
+				$themes_dir = realpath( slic_themes_dir() );
+				$base_path = realpath( $base_stack_id );
+
+				$is_plugin = null;
+				if ( $base_path && $plugins_dir && strpos( $base_path, $plugins_dir ) === 0 ) {
+					$is_plugin = true;
+				} elseif ( $base_path && $themes_dir && strpos( $base_path, $themes_dir ) === 0 ) {
+					$is_plugin = false; // It's a theme
+				}
+
+				// Only display mapping if we successfully determined the type
+				if ( $is_plugin !== null ) {
+					// Get the worktree target (plugin or theme name)
+					$target = ! empty( $stack['worktree_target'] ) ? $stack['worktree_target'] : $stack['target'];
+
+					// Validate target is not empty
+					if ( ! empty( $target ) ) {
+						// Build the container path
+						if ( $is_plugin ) {
+							$container_path = '/var/www/html/wp-content/plugins/' . $target;
+						} else {
+							$container_path = '/var/www/html/wp-content/themes/' . $target;
+						}
+
+						// Display the worktree path mapping
+						echo PHP_EOL . colorize( 'Path mapping (host => server): <light_cyan>'
+						                         . $worktree_path
+						                         . '</light_cyan> => <light_cyan>' . $container_path . '</light_cyan>' );
+					}
+				}
+			}
+		}
+	}
 
 	$default_mask = ( slic_wp_dir() === root( '/_wordpress' ) ) + 2 * ( slic_plugins_dir() === root( '/_plugins' ) );
 
