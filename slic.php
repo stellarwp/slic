@@ -178,8 +178,15 @@ $args = args( [
 	'...',
 ] );
 
-// Handle quiet mode
+$cli_name = 'slic';
+const CLI_VERSION = '2.1.2';
+
+// If the run-time option `-q`, for "quiet", is specified, then do not print the header.
 if ( $is_quiet || ( in_array( 'exec', $argv, true ) && ! in_array( 'help', $argv, true ) ) ) {
+	// Remove the `-q` flag from the global array of arguments to leave the rest of the commands unchanged.
+	unset( $argv[ array_search( '-q', $argv ) ] );
+	$argv = array_values( $argv );
+	$argc = count( $argv );
 	// Define a const commands will be able to check for quietness.
 	define( 'SLIC_QUIET', true );
 } else {
