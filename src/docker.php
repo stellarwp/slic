@@ -58,13 +58,21 @@ function docker_compose( array $options = [], $stack_id = null ) {
 
 	$dc_bin = docker_compose_bin();
 
-	return static function ( array $command = [] ) use ( $dc_bin, $options, $host_ip, $is_ci ) {
+	$stack_id = slic_current_stack();
+
+	return static function ( array $command = [] ) use ( $dc_bin, $options, $host_ip, $is_ci, $stack_id ) {
 		$command = $dc_bin . ' ' . implode( ' ', $options ) . ' ' . implode( ' ', $command );
 
 		if ( ! empty( $host_ip ) ) {
 			// Set the host IP address on Linux machines.
 			$xdebug_remote_host = (string) getenv( 'XDH' ) ?: host_ip();
 			$command            = 'XDH=' . $xdebug_remote_host . ' ' . $command;
+		}
+
+		if ( ! empty( $stack_id ) ) {
+			foreach ( xdebug_get_env_vars( $stack_id ) as $key => $value ) {
+				$command = "{$key}={$value} " . $command;
+			}
 		}
 
 		if ( ! empty( $is_ci ) ) {
@@ -225,7 +233,9 @@ function docker_compose_process( array $options = [], $is_realtime = true, $stac
 		$host_ip = host_ip( 'Linux' );
 	}
 
-	return static function ( array $command = [], $prefix = null ) use ( $options, $host_ip, $is_ci, $is_realtime ) {
+	$stack_id = slic_current_stack();
+
+	return static function ( array $command = [], $prefix = null ) use ( $options, $host_ip, $is_ci, $is_realtime, $stack_id ) {
 		if ( $is_ci || ! is_interactive() ) {
 			$no_tty_map = [
 				'exec' => [ '-T' ],
@@ -247,6 +257,12 @@ function docker_compose_process( array $options = [], $is_realtime = true, $stac
 			// Set the host IP address on Linux machines.
 			$xdebug_remote_host = (string) getenv( 'XDH' ) ?: host_ip();
 			$command            = 'XDH=' . $xdebug_remote_host . ' ' . $command;
+		}
+
+		if ( ! empty( $stack_id ) ) {
+			foreach ( xdebug_get_env_vars( $stack_id ) as $key => $value ) {
+				$command = "{$key}={$value} " . $command;
+			}
 		}
 
 		if ( ! empty( $is_ci ) ) {

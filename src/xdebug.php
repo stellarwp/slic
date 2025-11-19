@@ -260,6 +260,42 @@ function slic_handle_xdebug( callable $args ) {
 }
 
 /**
+ * Returns an array of environment variables to set up XDebug for the current stack, if any.
+ *
+ * @since TBD
+ *
+ * @param string|null $stack_id The stack ID to get the env vars for.
+ *
+ * @return array{XDP?: string, XDE?: string} A map of the XDebug env vars to set, if any,
+ */
+function xdebug_get_env_vars($stack_id = null):array{
+	if ( null === $stack_id ) {
+		return [];
+	}
+
+	$stack = slic_stacks_get( $stack_id );
+
+	// Always set XDebug values from stack registry to ensure stack-specific values are used
+	// These will override default values from .env.slic, but can still be overridden by
+	// .env.slic.local files loaded later
+	if ( null == $stack ) {
+		return [];
+	}
+
+	$env_vars = [];
+
+	if ( isset( $stack['xdebug_port'] ) ) {
+		$env_vars['XDP']	 = $stack['xdebug_port'];
+	}
+
+	if ( isset( $stack['xdebug_key'] ) ) {
+		$env_vars['XDK']	 = $stack['xdebug_key'];
+	}
+
+	return $env_vars;
+}
+
+/**
  * Sets up XDebug environment variables from the stack registry.
  *
  * This function loads XDebug configuration from the stack registry and sets
@@ -275,25 +311,10 @@ function slic_handle_xdebug( callable $args ) {
  * @param string|null $stack_id Optional stack ID. If not provided, no stack-specific values are loaded.
  */
 function xdebug_setup_env_vars( $stack_id = null ) {
-	if ( null === $stack_id ) {
-		return;
-	}
+	$env_vars = xdebug_get_env_vars( $stack_id );
 
-	$stack = slic_stacks_get( $stack_id );
-
-	// Always set XDebug values from stack registry to ensure stack-specific values are used
-	// These will override default values from .env.slic, but can still be overridden by
-	// .env.slic.local files loaded later
-	if ( null !== $stack ) {
-		if ( isset( $stack['xdebug_port'] ) ) {
-			$xdebug_port = $stack['xdebug_port'];
-			putenv( "XDP={$xdebug_port}" );
-		}
-
-		if ( isset( $stack['xdebug_key'] ) ) {
-			$xdebug_key = $stack['xdebug_key'];
-			putenv( "XDK={$xdebug_key}" );
-		}
+	foreach($env_vars as $key => $value){
+		putenv( $key . '=' . $value );
 	}
 }
 
