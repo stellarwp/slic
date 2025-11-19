@@ -443,6 +443,7 @@ function command_stack_info( $stack_id = null ) {
 		}
 	}
 
+	slic_stacks_ensure_ports( $stack_id );
 	$updated_stack = slic_stacks_get( $stack_id );
 
 	// Show XDebug configuration since it's always available and it's not allocated by docker.
@@ -453,8 +454,8 @@ function command_stack_info( $stack_id = null ) {
 
 	// Show ports - ensure they're up-to-date from Docker
 	echo colorize( PHP_EOL . "<yellow>Ports:</yellow>" . PHP_EOL );
-	if ( slic_stacks_ensure_ports( $stack_id ) ) {
-		echo colorize( "  WordPress: <light_cyan>http://localhost:{$updated_stack['ports']['wp']}</light_cyan>" . PHP_EOL );
+	if ( isset( $updated_stack['ports']['wp'], $updated_stack['ports']['mysql'] ) ) {
+		echo colorize( "  WordPress: <light_cyan>{$updated_stack['ports']['wp']} (http://localhost:{$updated_stack['ports']['wp']})</light_cyan>" . PHP_EOL );
 		echo colorize( "  MySQL: <light_cyan>{$updated_stack['ports']['mysql']}</light_cyan>" . PHP_EOL );
 		if ( isset( $updated_stack['ports']['redis'] ) ) {
 			echo colorize( "  Redis: <light_cyan>{$updated_stack['ports']['redis']}</light_cyan>" . PHP_EOL );
