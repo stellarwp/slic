@@ -13,9 +13,10 @@ require_once __DIR__ . '/xdebug.php';
 /**
  * Get the CLI header.
  *
- * @param string $cli_name CLI command name.
- * @param boolean $full Should the full heading be returned?
- * @param string|null $extra Extra message to add to the header.
+ * @param string      $cli_name CLI command name.
+ * @param boolean     $full     Should the full heading be returned?
+ * @param string|null $extra    Extra message to add to the header.
+ *
  * @return string
  */
 function cli_header( $cli_name, $full = false, $extra = null ) {
@@ -133,20 +134,24 @@ function get_valid_targets( $as_array = true ) {
 
 	$targets_str .= PHP_EOL . "  Plugins:" . PHP_EOL;
 	$targets_str .= implode(
-		PHP_EOL, array_map(
+		PHP_EOL,
+		array_map(
 			static function ( $target ) {
 				return "    - {$target}";
-			}, $plugins
+			},
+			$plugins
 		)
 	);
 
 	if ( slic_here_is_site() && $themes ) {
 		$targets_str .= PHP_EOL . "  Themes:" . PHP_EOL;
 		$targets_str .= implode(
-			PHP_EOL, array_map(
+			PHP_EOL,
+			array_map(
 				static function ( $target ) {
 					return "    - {$target}";
-				}, $themes
+				},
+				$themes
 			)
 		);
 	}
@@ -166,7 +171,7 @@ function get_valid_targets( $as_array = true ) {
  *   - If slic here was done on the site level, "site" is also a valid target.
  *
  * @param string $target The target to check in the valid list of targets.
- * @param bool $exit Whether to exit if the target is invalid, or to return `false`.
+ * @param bool   $exit   Whether to exit if the target is invalid, or to return `false`.
  *
  * @return string|false $target The validated target or `false` to indicate the target is not valid if the `$exit`
  *                              parameter is set to `false`.
@@ -233,8 +238,8 @@ function get_target_relative_path( $target ) {
 /**
  * Sets up the environment from the cli tool.
  *
- * @param string $root_dir The cli tool root directory.
- * @param bool $reset Whether to force a reset of the env vars or not, if already set up.
+ * @param string      $root_dir The cli tool root directory.
+ * @param bool        $reset    Whether to force a reset of the env vars or not, if already set up.
  * @param string|null $stack_id The stack to load environment for. If null, uses current stack or legacy file.
  */
 function setup_slic_env( $root_dir, $reset = false, $stack_id = null ) {
@@ -247,7 +252,7 @@ function setup_slic_env( $root_dir, $reset = false, $stack_id = null ) {
 	$set = true;
 
 	// Attempt legacy migration on first run
-	if ( ! $reset && file_exists( __DIR__ . '/stacks.php' ) ) {
+	if ( ! $reset && is_file( __DIR__ . '/stacks.php' ) ) {
 		require_once __DIR__ . '/stacks.php';
 		if ( slic_stacks_migrate_legacy() ) {
 			echo colorize( PHP_EOL . "<yellow>✓ Migrated existing slic configuration to multi-stack format.</yellow>" . PHP_EOL );
@@ -279,33 +284,31 @@ function setup_slic_env( $root_dir, $reset = false, $stack_id = null ) {
 		load_env_file( $root_dir . '/.env.slic.local' );
 	}
 
-	// Load the current session configuration file.
-	// If a stack_id is provided, load that stack's state file.
-	// Otherwise, try to determine the current stack or fall back to legacy .env.slic.run.
-	$run_file = null;
-
-	if ( null !== $stack_id ) {
-		$run_file = get_stack_env_file( $stack_id );
-	} else {
-		// Try to determine current stack
-		if ( function_exists( 'slic_current_stack' ) || file_exists( __DIR__ . '/stacks.php' ) ) {
-			if ( ! function_exists( 'slic_current_stack' ) ) {
-				require_once __DIR__ . '/stacks.php';
-			}
-			$current_stack = slic_current_stack();
-			if ( null !== $current_stack ) {
-				$run_file = get_stack_env_file( $current_stack );
-			}
-		}
-
-		// Fall back to legacy .env.slic.run file if it exists and no stack was found
-		if ( null === $run_file && file_exists( $root_dir . '/.env.slic.run' ) ) {
-			$run_file = $root_dir . '/.env.slic.run';
-		}
+	// Start by loadind the run file for all stacks, if any.
+	$run_file = $root_dir . '/.env.slic.run';
+	if ( is_file( $run_file ) ) {
+		load_env_file( $run_file );
 	}
 
-	if ( null !== $run_file && file_exists( $run_file ) ) {
-		load_env_file( $run_file );
+	// Load the current session configuration file.
+	// If a stack_id is provided, load that stack's state file.
+	// Otherwise, try to determine the current stack or fall back to .env.slic.run.
+	if ( null !== $stack_id ) {
+		$run_file = get_stack_env_file( $stack_id );
+	} else if ( function_exists( 'slic_current_stack' ) || is_file( __DIR__ . '/stacks.php' ) ) {
+		if ( ! function_exists( 'slic_current_stack' ) ) {
+			require_once __DIR__ . '/stacks.php';
+		}
+
+		$current_stack = slic_current_stack();
+
+		if ( null !== $current_stack ) {
+			$stack_run_file = get_stack_env_file( $current_stack );
+
+			if ( null !== $stack_run_file && file_exists( $stack_run_file ) ) {
+				load_env_file( $stack_run_file );
+			}
+		}
 	}
 
 	// Set stack-specific XDebug configuration
@@ -320,7 +323,7 @@ function setup_slic_env( $root_dir, $reset = false, $stack_id = null ) {
 	xdebug_setup_env_vars( $effective_stack_id );
 
 	$target_path = get_project_local_path();
-	if( ! empty( $target_path ) ) {
+	if ( ! empty( $target_path ) ) {
 		// Load the local overrides from the target.
 		if ( file_exists( $target_path . '/.env.slic.local' ) ) {
 			load_env_file( $target_path . '/.env.slic.local' );
@@ -372,7 +375,7 @@ function setup_slic_env( $root_dir, $reset = false, $stack_id = null ) {
 	if ( null !== $stack_id ) {
 		$current_stack = $stack_id;
 	} else {
-		if(!function_exists( 'slic_current_stack' )){
+		if ( ! function_exists( 'slic_current_stack' ) ) {
 			require_once __DIR__ . '/stacks.php';
 		}
 		$current_stack = slic_current_stack();
@@ -442,9 +445,9 @@ function setup_slic_env( $root_dir, $reset = false, $stack_id = null ) {
 /**
  * Sets the PHP version for the current environment.
  *
- * @param string $version The PHP version to set.
- * @param bool $require_confirm Whether to require confirmation before restarting the stack.
- * @param bool $skip_rebuild Whether to skip rebuilding the stack.
+ * @param string $version         The PHP version to set.
+ * @param bool   $require_confirm Whether to require confirmation before restarting the stack.
+ * @param bool   $skip_rebuild    Whether to skip rebuilding the stack.
  */
 function slic_set_php_version( $version, $require_confirm = false, $skip_rebuild = false ) {
 	$message        = "<yellow>✓</yellow> PHP version set: <yellow>$version</yellow>";
@@ -472,7 +475,7 @@ function slic_set_php_version( $version, $require_confirm = false, $skip_rebuild
 	$confirm = true;
 
 	if ( ! $skip_rebuild && $require_confirm ) {
-		$confirm = ask("Do you want to restart the stack now? ", 'yes');
+		$confirm = ask( "Do you want to restart the stack now? ", 'yes' );
 	}
 
 	if ( ! $confirm ) {
@@ -574,7 +577,7 @@ function slic_current_stack() {
 	}
 
 	// 5. Auto-detect and offer to register unregistered worktrees
-	$cwd = getcwd();
+	$cwd      = getcwd();
 	$detected = slic_stacks_detect_worktree( $cwd );
 
 	if ( $detected ) {
@@ -584,7 +587,7 @@ function slic_current_stack() {
 		echo "  Branch: {$detected['branch']}\n";
 		echo "\nRegister this as a slic worktree stack? [y/N] ";
 
-		$handle = fopen( 'php://stdin', 'r' );
+		$handle       = fopen( 'php://stdin', 'r' );
 		$confirmation = trim( fgets( $handle ) );
 		fclose( $handle );
 
@@ -593,23 +596,24 @@ function slic_current_stack() {
 			$worktree_stack_id = $detected['base_stack_id'] . '@' . $detected['dir_name'];
 
 			$worktree_state = [
-				'stack_id' => $worktree_stack_id,
-				'is_worktree' => true,
-				'base_stack_id' => $detected['base_stack_id'],
-				'worktree_target' => $detected['target'],
-				'worktree_dir' => $detected['dir_name'],
-				'worktree_branch' => $detected['branch'],
+				'stack_id'           => $worktree_stack_id,
+				'is_worktree'        => true,
+				'base_stack_id'      => $detected['base_stack_id'],
+				'worktree_target'    => $detected['target'],
+				'worktree_dir'       => $detected['dir_name'],
+				'worktree_branch'    => $detected['branch'],
 				'worktree_full_path' => $detected['full_path'],
-				'project_name' => slic_stacks_get_project_name( $worktree_stack_id ),
-				'state_file' => slic_stacks_get_state_file( $worktree_stack_id ),
-				'xdebug_port' => slic_stacks_xdebug_port( $worktree_stack_id ),
-				'xdebug_key' => slic_stacks_xdebug_server_name( $worktree_stack_id ),
-				'target' => $detected['target'],
-				'status' => 'created',
+				'project_name'       => slic_stacks_get_project_name( $worktree_stack_id ),
+				'state_file'         => slic_stacks_get_state_file( $worktree_stack_id ),
+				'xdebug_port'        => slic_stacks_xdebug_port( $worktree_stack_id ),
+				'xdebug_key'         => slic_stacks_xdebug_server_name( $worktree_stack_id ),
+				'target'             => $detected['target'],
+				'status'             => 'created',
 			];
 
 			if ( slic_stacks_register( $worktree_stack_id, $worktree_state ) ) {
 				echo "Registered successfully!\n";
+
 				return $worktree_stack_id;
 			} else {
 				echo "Failed to register stack.\n";
@@ -624,6 +628,7 @@ function slic_current_stack() {
  * Gets the current stack or exits with an error if not found.
  *
  * @param string|null $reason Optional reason to display if stack not found.
+ *
  * @return string The stack ID.
  */
 function slic_current_stack_or_fail( $reason = null ) {
@@ -660,7 +665,7 @@ function slic_current_stack_or_fail( $reason = null ) {
 /**
  * Switches the current `use` target.
  *
- * @param string $target Target to switch to.
+ * @param string      $target   Target to switch to.
  * @param string|null $stack_id The stack to switch target for. If null, uses current stack.
  */
 function slic_switch_target( $target, $stack_id = null ) {
@@ -709,8 +714,8 @@ function slic_switch_target( $target, $stack_id = null ) {
  */
 function php_services() {
 	return [
-		'slic'        => 'slic',
-		'wordpress'   => 'WordPress',
+		'slic'      => 'slic',
+		'wordpress' => 'WordPress',
 	];
 }
 
@@ -727,9 +732,10 @@ function restart_php_services( bool $hard = false ): void {
 /**
  * Concurrently restart multiple services at once.
  *
- * @param  array<string, string>|string[]  $services  The list of services to restart, e.g. [ 'wordpress', 'slic' ],
- *                                                    or keyed by service => pretty_name, e.g. [ 'wordpress' => 'WordPress' ]
- * @param  bool                            $hard      Whether to restart the service using the `docker compose restart`
+ * @param array<string, string>|string[] $services    The list of services to restart, e.g. [ 'wordpress', 'slic' ],
+ *                                                    or keyed by service => pretty_name, e.g. [ 'wordpress' =>
+ *                                                    'WordPress' ]
+ * @param bool                           $hard        Whether to restart the service using the `docker compose restart`
  *                                                    command or to use full tear-down and up again cycle.
  */
 function restart_services( array $services, bool $hard = false ): void {
@@ -750,19 +756,19 @@ function restart_services( array $services, bool $hard = false ): void {
 
 	echo colorize( PHP_EOL .
 	               sprintf(
-					   "✅ <light_cyan>%s service%s restarted.</light_cyan>",
-					   implode( ', ', $services ),
-					   count( $services ) > 1 ? 's' : ''
+		               "✅ <light_cyan>%s service%s restarted.</light_cyan>",
+		               implode( ', ', $services ),
+		               count( $services ) > 1 ? 's' : ''
 	               ) . PHP_EOL );
 }
 
 /**
  * Restarts a stack services if it's running.
  *
- * @param string $service The name of the service to restart, e.g. `wordpress`.
+ * @param string      $service     The name of the service to restart, e.g. `wordpress`.
  * @param string|null $pretty_name The pretty name to use for the service, or `null` to use the service name.
- * @param bool $hard Whether to restart the service using the `docker compose restart` command or to use full tear-down
- *                   and up again cycle.
+ * @param bool        $hard        Whether to restart the service using the `docker compose restart` command or to use
+ *                                 full tear-down and up again cycle.
  */
 function restart_service( $service, $pretty_name = null, $hard = false ) {
 	$pretty_name   = $pretty_name ?: $service;
@@ -1001,6 +1007,7 @@ function slic_passive( $stack_id = null ) {
  * Runs a process in slic stack and returns the exit status.
  *
  * @param string|null $stack_id The stack to run the command for. If null, uses current stack.
+ *
  * @return \Closure The process closure to start a real-time process using slic stack.
  */
 function slic_realtime( $stack_id = null ) {
@@ -1011,6 +1018,7 @@ function slic_realtime( $stack_id = null ) {
  * Returns the process Closure to start a real-time process using slic stack.
  *
  * @param string|null $stack_id The stack to run the command for. If null, uses current stack.
+ *
  * @return \Closure The process closure to start a real-time process using slic stack.
  */
 function slic_process( $stack_id = null ) {
@@ -1020,7 +1028,7 @@ function slic_process( $stack_id = null ) {
 /**
  * Tears down slic stack.
  *
- * @param bool $passive Whether to run the command passively or in realtime.
+ * @param bool        $passive  Whether to run the command passively or in realtime.
  * @param string|null $stack_id The stack to tear down. If null, uses current stack.
  */
 function teardown_stack( $passive = false, $stack_id = null ) {
@@ -1110,11 +1118,11 @@ function slic_info() {
 	$slic_root   = root();
 	$target_path = get_project_local_path();
 	echo implode( PHP_EOL, array_filter( [
-		file_exists( $slic_root . '/.env.slic' ) ? "  - " . $slic_root . '/.env.slic' : null,
-		file_exists( $slic_root . '/.env.slic.local' ) ? "  - " . $slic_root . '/.env.slic.local' : null,
-		file_exists( $target_path . '/.env.slic.local' ) ? "  - " . $target_path . '/.env.slic.local' : null,
-		file_exists( $slic_root . '/.env.slic.run' ) ? "  - " . $slic_root . '/.env.slic.run' : null,
-	] ) ) . PHP_EOL . PHP_EOL;
+			file_exists( $slic_root . '/.env.slic' ) ? "  - " . $slic_root . '/.env.slic' : null,
+			file_exists( $slic_root . '/.env.slic.local' ) ? "  - " . $slic_root . '/.env.slic.local' : null,
+			file_exists( $target_path . '/.env.slic.local' ) ? "  - " . $target_path . '/.env.slic.local' : null,
+			file_exists( $slic_root . '/.env.slic.run' ) ? "  - " . $slic_root . '/.env.slic.run' : null,
+		] ) ) . PHP_EOL . PHP_EOL;
 
 	echo colorize( "<yellow>Current configuration:</yellow>" . PHP_EOL );
 	foreach ( $config_vars as $key ) {
@@ -1308,7 +1316,7 @@ function update_stack_images() {
  * Check if a recognized command's required file exists in the specified directory.
  *
  * @param string $base_command Command name, such as 'composer' or 'npm'.
- * @param string $path The directory path in which to look for relevantly-required files (e.g. 'package.json').
+ * @param string $path         The directory path in which to look for relevantly-required files (e.g. 'package.json').
  *
  * @return bool True if the path is a directory and the command doesn't have a known file requirement or the expected
  *              file does exist. False if the path is not a directory or a recognized command didn't find the
@@ -1337,9 +1345,9 @@ function dir_has_req_build_file( $base_command, $path ) {
 /**
  * Maybe run the install process (e.g. Composer, NPM) on a given target.
  *
- * @param string $base_command Base command to run.
- * @param string $target Target to potentially run composer install against.
- * @param array $sub_directories Sub directories to prompt for additional execution.
+ * @param string $base_command    Base command to run.
+ * @param string $target          Target to potentially run composer install against.
+ * @param array  $sub_directories Sub directories to prompt for additional execution.
  *
  * @return array Result of command execution.
  */
@@ -1377,10 +1385,10 @@ function maybe_build_install_command_pool( $base_command, $target, array $sub_di
  * If any subdirectories are provided and are available in the target, then the user will be prompted to run the same
  * command on those subdirectories.
  *
- * @param string $base_command The base service command to run, e.g. `npm`, `composer`, etc.
- * @param array<string> $command The command to run, e.g. `['install','--save-dev']` in array format.
+ * @param string        $base_command    The base service command to run, e.g. `npm`, `composer`, etc.
+ * @param array<string> $command         The command to run, e.g. `['install','--save-dev']` in array format.
  * @param array<string> $sub_directories Sub directories to prompt for additional execution.
- * @param string $using An optional target to use in place of the specified one.
+ * @param string        $using           An optional target to use in place of the specified one.
  *
  * @return array The built command pool.
  */
@@ -1423,11 +1431,12 @@ function build_command_pool( $base_command, array $command, array $sub_directori
 
 		// If the command is executing a dynamic script in the scripts directory, grab the command name.
 		if ( preg_match( '!\. /slic-scripts/(\..*.sh)!', $friendly_base_command, $results ) ) {
-			$file = escapeshellarg( SLIC_ROOT_DIR . '/' . trim( getenv( 'SLIC_SCRIPTS' ), '.' ) . '/' . $results[1] );
+			$file                  = escapeshellarg( SLIC_ROOT_DIR . '/' . trim( getenv( 'SLIC_SCRIPTS' ),
+					'.' ) . '/' . $results[1] );
 			$friendly_base_command = `tail -n 1 $file`;
 		}
 
-		$prefix      = "{$friendly_base_command}:" . light_cyan( $target_name );
+		$prefix = "{$friendly_base_command}:" . light_cyan( $target_name );
 
 		// Execute command as the parent.
 		if ( 'target' !== $target ) {
@@ -1491,12 +1500,12 @@ function build_command_pool( $base_command, array $command, array $sub_directori
  * Executes a pool of commands in parallel.
  *
  * @param array $pool Pool of processes to execute in parallel.
- *     $pool[] = [
- *       'target'    => (string) Slic target.
- *       'container' => (string) Container on which to execute the command.
- *       'command'   => (array) The command to run, e.g. `['install', '--save-dev']` in array format.
- *       'process'   => (closure) The function to execute for each Slic target.
- *     ]
+ *                    $pool[] = [
+ *                    'target'    => (string) Slic target.
+ *                    'container' => (string) Container on which to execute the command.
+ *                    'command'   => (array) The command to run, e.g. `['install', '--save-dev']` in array format.
+ *                    'process'   => (closure) The function to execute for each Slic target.
+ *                    ]
  *
  * @return int Result of combined command execution.
  */
@@ -1522,8 +1531,8 @@ function execute_command_pool( $pool ) {
 /**
  * Returns an array of arguments to correctly run a wp-cli command in the slic stack.
  *
- * @param array<string> $command The wp-cli command to run, anything after the `wp`; e.g. `['plugin', 'list']`.
- * @param bool $requirements Whether to ensure the requirements to run a cli command are met or not.
+ * @param array<string> $command      The wp-cli command to run, anything after the `wp`; e.g. `['plugin', 'list']`.
+ * @param bool          $requirements Whether to ensure the requirements to run a cli command are met or not.
  *
  * @return array<string> The complete command arguments, ready to be used in the `slic` or `slic_realtime` functions.
  */
@@ -1544,7 +1553,7 @@ function cli_command( array $command = [], $requirements = false ) {
  * be up-to-date with the remote: this is done by design as the sync of local and remote branches should be a developer
  * concern.
  *
- * @param string $branch The name of the branch to switch to, e.g. `release/B20.03`.
+ * @param string      $branch The name of the branch to switch to, e.g. `release/B20.03`.
  * @param string|null $plugin The slug of the plugin to switch branch for; if not specified, then the current slic
  *                            target will be used.
  */
@@ -1611,7 +1620,7 @@ function switch_plugin_branch( $branch, $plugin = null ) {
 	}
 
 	// Restore the current working directory to the previous value.
-	echo light_cyan( 'Using ' . slic_target() . " once again". PHP_EOL );
+	echo light_cyan( 'Using ' . slic_target() . " once again" . PHP_EOL );
 	$restored = chdir( $cwd );
 
 	if ( false === $restored ) {
@@ -1629,7 +1638,7 @@ function maybe_prompt_for_repo_update() {
 	$cli_version    = CLI_VERSION;
 	$today          = date( 'Y-m-d' );
 
-	if ( file_exists( SLIC_ROOT_DIR . '/.remote-version' ) ) {
+	if ( is_file( SLIC_ROOT_DIR . '/.remote-version' ) ) {
 		list( $check_date, $remote_version ) = explode( ':', file_get_contents( SLIC_ROOT_DIR . '/.remote-version' ) );
 	}
 
@@ -1672,7 +1681,7 @@ function maybe_prompt_for_stack_update() {
 	$build_version = '0.0.1';
 	$cli_version   = CLI_VERSION;
 
-	if ( file_exists( SLIC_ROOT_DIR . '/.build-version' ) ) {
+	if ( is_file( SLIC_ROOT_DIR . '/.build-version' ) ) {
 		$build_version = file_get_contents( SLIC_ROOT_DIR . '/.build-version' );
 	}
 
@@ -1739,10 +1748,10 @@ function build_subdir_status() {
  * If any subdirectories are provided and are available in the target, then the user will be prompted to run the same
  * command on those subdirectories.
  *
- * @param array<string> $targets An array of targets for the command pool; note the targets are NOT validated by
+ * @param array<string> $targets         An array of targets for the command pool; note the targets are NOT validated by
  *                                       this function and the validation should be done by the calling code.
- * @param string $base_command The base service command to run, e.g. `npm`, `composer`, etc.
- * @param array<string> $command The command to run, e.g. `['install','--save-dev']` in array format.
+ * @param string        $base_command    The base service command to run, e.g. `npm`, `composer`, etc.
+ * @param array<string> $command         The command to run, e.g. `['install','--save-dev']` in array format.
  * @param array<string> $sub_directories Sub directories to prompt for additional execution.
  *
  * @return array The built command pool for all the targets.
@@ -1851,33 +1860,34 @@ function collect_target_suites() {
  * @return bool Whether the current system is ARM-based, or not.
  */
 function is_arm64() {
-    $arm64_architecture_file = __DIR__ . '/../.architecture_arm64';
-    $x86_architecture_file   = __DIR__ . '/../.architecture_x86';
+	$arm64_architecture_file = __DIR__ . '/../.architecture_arm64';
+	$x86_architecture_file   = __DIR__ . '/../.architecture_x86';
 
-	if ( is_file($arm64_architecture_file) ) {
-	    return true;
+	if ( is_file( $arm64_architecture_file ) ) {
+		return true;
 	}
 
-	if ( is_file($x86_architecture_file) ) {
-	    return false;
+	if ( is_file( $x86_architecture_file ) ) {
+		return false;
 	}
 
-    $is_64bit = PHP_INT_SIZE === 8;
+	$is_64bit = PHP_INT_SIZE === 8;
 
-    $machine_type = strtolower(php_uname('m'));
+	$machine_type = strtolower( php_uname( 'm' ) );
 
 	// Non 64bit machines are not supported.
-    $is_arm64 = $is_64bit
-                && (strpos($machine_type, 'aarch64') !== false || strpos($machine_type, 'arm64') !== false);
+	$is_arm64 = $is_64bit
+	            && ( strpos( $machine_type, 'aarch64' ) !== false || strpos( $machine_type, 'arm64' ) !== false );
 
-    if ($is_arm64) {
-        touch($arm64_architecture_file);
-        return true;
-    }
+	if ( $is_arm64 ) {
+		touch( $arm64_architecture_file );
 
-    touch($x86_architecture_file);
+		return true;
+	}
 
-    return false;
+	touch( $x86_architecture_file );
+
+	return false;
 }
 
 /**
@@ -1905,8 +1915,9 @@ function setup_architecture_env() {
  *
  * Directories part of the path will be recursively created.
  *
- * @param string $path The path, relative to the cache directory root directory, to return the cache absolute path for.
- * @param bool $create Whether the directory required should be created if not present or not.
+ * @param string $path   The path, relative to the cache directory root directory, to return the cache absolute path
+ *                       for.
+ * @param bool   $create Whether the directory required should be created if not present or not.
  *
  * @return string The absolute path to the created directory or file.
  */
