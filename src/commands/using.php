@@ -32,14 +32,35 @@ if ( null === $stack_id ) {
 }
 
 $using = slic_target();
-$target_path = slic_plugins_dir( $using );
+$is_worktree = slic_stacks_is_worktree( $stack_id );
+$worktree_info = null;
+
+if ( $is_worktree ) {
+	$stack_state = slic_stacks_get( $stack_id );
+	if ( $stack_state ) {
+		$worktree_info = [
+			'target'    => $stack_state['worktree_target'] ?? null,
+			'branch'    => $stack_state['worktree_branch'] ?? null,
+			'full_path' => $stack_state['worktree_full_path'] ?? null,
+		];
+	}
+}
+
+$target_path = $is_worktree && ! empty( $worktree_info['full_path'] )
+	? $worktree_info['full_path']
+	: slic_plugins_dir( $using );
+
 if ( empty( $using ) ) {
 	echo magenta( "Currently not using any target, commands requiring a target will fail." . PHP_EOL );
 	echo light_cyan( "Stack: {$stack_id}" . PHP_EOL );
 	return;
 }
 
-echo light_cyan( "Using {$using}" . PHP_EOL );
+if ( $is_worktree && ! empty( $worktree_info['target'] ) && ! empty( $worktree_info['branch'] ) ) {
+	echo light_cyan( "Using {$using} ({$worktree_info['target']} worktree for {$worktree_info['branch']})" . PHP_EOL );
+} else {
+	echo light_cyan( "Using {$using}" . PHP_EOL );
+}
 echo light_cyan( "Stack: {$stack_id}" . PHP_EOL );
 
 // Show stack ports - ensure they're up-to-date from Docker
@@ -60,7 +81,13 @@ if ( slic_plugins_dir() !== root( '_plugins' ) ) {
 }
 
 if ( $target_path === getcwd() ) {
-	echo light_cyan( PHP_EOL . "The directory you are in is the current use target." );
+	$message = $is_worktree
+		? "The directory you are in is the current use target of the worktree."
+		: "The directory you are in is the current use target.";
+	echo light_cyan( PHP_EOL . $message );
 } else {
-	echo yellow( PHP_EOL . "The directory you are in is not the current use target." );
+	$message = $is_worktree
+		? "The directory you are in is not the current use target of the worktree."
+		: "The directory you are in is not the current use target.";
+	echo yellow( PHP_EOL . $message );
 }
