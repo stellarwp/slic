@@ -49,6 +49,13 @@ if ( empty( $reset ) ) {
 	$here_dir = $plugins_dir;
 }
 
+// Normalize to absolute path
+$here_dir = realpath( $here_dir );
+if ( false === $here_dir ) {
+	echo magenta( "Cannot resolve the directory path." );
+	exit( 1 );
+}
+
 $has_wp_config = dir_has_wp_config( $here_dir );
 $env_values    = [];
 
@@ -83,10 +90,81 @@ if ( $has_wp_config ) {
 $env_values['SLIC_CURRENT_PROJECT']               = '';
 $env_values['SLIC_CURRENT_PROJECT_RELATIVE_PATH'] = '';
 
-write_env_file( $run_settings_file, $env_values, true );
+// Load stacks.php functions
+require_once __DIR__ . '/../stacks.php';
 
-setup_slic_env( root() );
-quietly_tear_down_stack();
+// Use the plugins directory as the stack identifier
+$stack_id = $env_values['SLIC_PLUGINS_DIR'];
 
-echo colorize( PHP_EOL . "<light_cyan>Slic plugin path set to</light_cyan> {$here_dir}." . PHP_EOL . PHP_EOL );
-echo colorize( "If this is the first time setting this plugin path, be sure to <light_cyan>slic init <plugin></light_cyan>." );
+// Check if stack already exists
+$existing_stack = slic_stacks_get( $stack_id );
+
+if ( null !== $existing_stack ) {
+	// Stack exists, update its state
+	echo colorize( PHP_EOL . "<light_cyan>Stack already exists for this directory, updating configuration...</light_cyan>" . PHP_EOL );
+
+	// Note: XDebug configuration is allocated atomically during initial registration.
+	// For older stacks that may not have XDebug config, it will be allocated on next register call.
+
+	// Get the stack-specific state file
+	$stack_run_file = slic_stacks_get_state_file( $stack_id );
+
+	// Update the state file
+	write_env_file( $stack_run_file, $env_values, true );
+
+	// Reload environment
+	setup_slic_env( root(), true, $stack_id );
+
+	echo colorize( PHP_EOL . "<light_cyan>Stack configuration updated.</light_cyan>" . PHP_EOL );
+	echo colorize( "Stack ID: <yellow>{$stack_id}</yellow>" . PHP_EOL );
+
+	// Ensure ports are up-to-date from Docker if containers are running
+	if ( slic_stacks_ensure_ports( $stack_id ) ) {
+		$updated_stack = slic_stacks_get( $stack_id );
+		echo colorize( "WordPress URL: <yellow>http://localhost:{$updated_stack['ports']['wp']}</yellow>" . PHP_EOL );
+		echo colorize( "MySQL Port: <yellow>{$updated_stack['ports']['mysql']}</yellow>" . PHP_EOL );
+		if ( isset( $updated_stack['ports']['redis'] ) ) {
+			echo colorize( "Redis Port: <yellow>{$updated_stack['ports']['redis']}</yellow>" . PHP_EOL );
+		}
+	} else {
+		echo colorize( "<yellow>Ports will be available after containers start.</yellow>" . PHP_EOL );
+	}
+	echo PHP_EOL;
+} else {
+	// New stack, register without ports (Docker will auto-assign when containers start)
+	echo colorize( PHP_EOL . "<light_cyan>Creating new stack...</light_cyan>" . PHP_EOL );
+
+	// Create stack state without ports - they'll be read from Docker after container start
+	// XDebug configuration will be allocated atomically inside slic_stacks_register()
+	$stack_state = [
+		'stack_id'     => $stack_id,
+		'project_name' => slic_stacks_get_project_name( $stack_id ),
+		'state_file'   => basename( slic_stacks_get_state_file( $stack_id ) ),
+		'ports'        => null,
+		'created_at'   => date( 'c' ),
+		'status'       => 'created',
+	];
+
+	// Register the stack
+	if ( ! slic_stacks_register( $stack_id, $stack_state ) ) {
+		echo magenta( "Failed to register stack." );
+		exit( 1 );
+	}
+
+	// Get the stack-specific state file
+	$stack_run_file = slic_stacks_get_state_file( $stack_id );
+
+	// Write the state file
+	write_env_file( $stack_run_file, $env_values, true );
+
+	// Reload environment
+	setup_slic_env( root(), true, $stack_id );
+
+	echo colorize( PHP_EOL . "<light_cyan>Stack created successfully!</light_cyan>" . PHP_EOL );
+	echo colorize( "Stack ID: <yellow>{$stack_id}</yellow>" . PHP_EOL . PHP_EOL );
+	echo colorize( "<yellow>Note:</yellow> Port assignments will be available after containers start." . PHP_EOL );
+	echo colorize( "Run <light_cyan>slic using</light_cyan> or <light_cyan>slic stack info</light_cyan> to see port assignments after starting." . PHP_EOL . PHP_EOL );
+	echo colorize( "To start using this stack, run: <light_cyan>slic use <plugin></light_cyan>" . PHP_EOL );
+}
+
+echo colorize( PHP_EOL . "If this is the first time setting this plugin path, be sure to <light_cyan>slic init <plugin></light_cyan>." );

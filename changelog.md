@@ -4,6 +4,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [3.0.0] - TBD
+
+### Changed
+- Breaking Change - The `slic here` command will now create a new stack for the current path instead of changing the context of the previously only stack to the path.
+- Breaking Change - The `XDK` configuration variable (`slic` by default) is now used as **root** for each stack IDE key. An `XDK` of `slic` will create stack IDE keys like `slic_<stack_hash>` and not just `slic` as it was before. 
+
+### Added
+- Multi-path support with a 1:1 mapping between stacks and paths.
+- Git worktree multi-stack support for concurrent development workflows
+- New `slic worktree` command with subcommands:
+  - `slic worktree add <branch>` - Create a new git worktree with dedicated stack
+  - `slic worktree list` - List all worktrees and their stacks
+  - `slic worktree remove <branch>` - Remove a worktree and its stack
+  - `slic worktree sync` - Synchronize git worktrees with slic registry
+- Automatic worktree detection and registration prompts
+- Isolated Docker Compose projects per worktree with unique XDebug ports
+- Worktree-specific environment variables (SLIC_IS_WORKTREE, SLIC_WORKTREE_FULL_PATH, SLIC_WORKTREE_CONTAINER_PATH)
+- `slic stack list` command to display all registered stacks with their status, target paths, and ports
+- `slic stack stop [<stack>]` command to stop a specific stack. If no stack is provided and multiple exist, prompts user to choose one
+- `slic stack stop all` command to stop all registered stacks at once. Always prompts for confirmation, shows list of stacks being stopped, continues even if one stack fails, and displays comprehensive summary with success/failure counts. Works from any directory
+- `slic stack info [<stack>]` command to display detailed information about a specific stack including container status, ports, and configuration
+- Global `--stack=<path>` flag to target specific stacks. This allows running commands against any registered stack without changing the current working directory
+- `-y, --yes` flag support for `slic stack stop all` command to skip confirmation prompt, enabling use in non-interactive environments like CI pipelines and automation scripts
+
 # [2.1.2] - 2025-11-13
 - Change - GitHub Actions workflows now use native ARM64 runners (`ubuntu-24.04-arm`) instead of QEMU emulation for multi-platform builds, to reduce build times.
 - Change - Optimized Dockerfile layer ordering to improve cache hit rates - local config files moved to end to prevent invalidating heavy system installation layers.

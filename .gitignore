@@ -27,7 +27,9 @@ _plugins
 .using
 # Any .env.slic.* file created to override the slic cli tool configuration or to configure the runs.
 .env.slic.local
-.env.slic.run
+.env.slic.run*
+.env.slic.stacks
+.env.slic.stacks.lock
 
 # Any .build-version file created by the slic cli tool.
 .build-version

@@ -175,6 +175,74 @@ As an example, if I wanted to dump the current database contents to the `tests/_
 slic cli db export /plugins/the-events/calendar/tests/_data/dump.sql
 ```
 
+## Git Worktree Support
+
+The stack supports git worktrees with dedicated slic stacks, allowing you to work on multiple branches simultaneously with isolated environments.
+
+### Creating a worktree
+
+Create a new worktree for a feature branch:
+
+```bash
+slic worktree add fix/issue-123
+```
+
+This will:
+- Create a git worktree in a sibling directory
+- Set up a dedicated slic stack for the worktree
+- Allow you to run tests and develop in isolation
+
+### Listing worktrees
+
+View all worktrees and their associated stacks:
+
+```bash
+slic worktree list
+```
+
+### Merging a worktree
+
+When you're done working on a feature branch, merge it back and clean up:
+
+```bash
+# From the base stack directory (not the worktree directory)
+slic worktree merge fix/issue-123
+```
+
+**Important:** This command must be run from the base stack directory, not from within the worktree directory being merged. The worktree directory will be removed by git during the merge process.
+
+The merge command will:
+1. Checkout the base branch in the target repository
+2. Merge the worktree branch into the base branch
+3. Remove the git worktree directory
+4. Delete the local worktree branch
+5. Stop Docker containers
+6. Unregister the slic stack
+
+Use `-y` or `--yes` to skip confirmation prompts:
+
+```bash
+slic worktree merge fix/issue-123 -y
+```
+
+If the merge encounters conflicts, the command will stop and provide instructions for manual resolution.
+
+### Removing a worktree without merging
+
+To remove a worktree without merging its changes:
+
+```bash
+slic worktree remove fix/issue-123
+```
+
+### Synchronizing worktrees
+
+Clean up stale entries when worktrees have been manually removed:
+
+```bash
+slic worktree sync
+```
+
 ## How the stack works, an overview
 
 The stack services are defined by the `slic-stack.yml` file.

@@ -31,13 +31,20 @@ function os() {
  * Curried docker compose wrapper.
  *
  * @param array<string> $options A list of options to initialize the wrapper.
+ * @param string|null $stack_id The stack to run docker compose for. If null, uses current stack.
  *
  * @return \Closure A closure to actually call docker compose with more arguments.
  */
-function docker_compose( array $options = [] ) {
+function docker_compose( array $options = [], $stack_id = null ) {
 	setup_id();
 
 	$is_ci = is_ci();
+
+	// Add project name for stack isolation
+	$project_name = get_stack_project_name( $stack_id );
+	if ( null !== $project_name ) {
+		$options = array_merge( [ '-p', $project_name ], $options );
+	}
 
 	$host_ip = false;
 	if ( ! $is_ci && 'Linux' === os() ) {
@@ -51,13 +58,21 @@ function docker_compose( array $options = [] ) {
 
 	$dc_bin = docker_compose_bin();
 
-	return static function ( array $command = [] ) use ( $dc_bin, $options, $host_ip, $is_ci ) {
+	$stack_id = slic_current_stack();
+
+	return static function ( array $command = [] ) use ( $dc_bin, $options, $host_ip, $is_ci, $stack_id ) {
 		$command = $dc_bin . ' ' . implode( ' ', $options ) . ' ' . implode( ' ', $command );
 
 		if ( ! empty( $host_ip ) ) {
 			// Set the host IP address on Linux machines.
 			$xdebug_remote_host = (string) getenv( 'XDH' ) ?: host_ip();
 			$command            = 'XDH=' . $xdebug_remote_host . ' ' . $command;
+		}
+
+		if ( ! empty( $stack_id ) ) {
+			foreach ( xdebug_get_env_vars( $stack_id ) as $key => $value ) {
+				$command = "{$key}={$value} " . $command;
+			}
 		}
 
 		if ( ! empty( $is_ci ) ) {
@@ -150,10 +165,11 @@ function stack( $postfix = '' ) {
  * Typically, this would be slic-stack.yml for plugin-only setups, but if running in site mode, it adds slic-stack.site.yml.
  *
  * @param bool $filenames_only Return only the files part of the stack, without including option flags.
+ * @param string|null $stack_id The stack identifier to use. If null, uses current stack.
  *
  * @return string[] Array of docker compose arguments indicating the files that should be used to initialize the stack.
  */
-function slic_stack_array( $filenames_only = false ) {
+function slic_stack_array( $filenames_only = false, $stack_id = null ) {
 	$file_prefix = $filenames_only ? '' : '-f';
 	$quote       = $filenames_only ? '' : '"';
 	$base_stack  = stack();
@@ -164,6 +180,26 @@ function slic_stack_array( $filenames_only = false ) {
 		$stack_array[] = $quote . stack( '.site' ) . $quote;
 	}
 
+	// Load stacks.php if needed for worktree detection
+	if ( ! function_exists( 'slic_stacks_is_worktree' ) ) {
+		require_once __DIR__ . '/stacks.php';
+	}
+
+	// Add worktree override if current stack is a worktree
+	if ( ! function_exists( 'slic_current_stack' ) ) {
+		require_once __DIR__ . '/slic.php';
+	}
+
+	// Use provided stack_id or fall back to current stack
+	if ( null === $stack_id ) {
+		$stack_id = slic_current_stack();
+	}
+
+	if ( $stack_id && slic_stacks_is_worktree( $stack_id ) ) {
+		$stack_array[] = $file_prefix;
+		$stack_array[] = $quote . stack( '.worktree' ) . $quote;
+	}
+
 	return array_values( array_filter( $stack_array ) );
 }
 
@@ -172,13 +208,20 @@ function slic_stack_array( $filenames_only = false ) {
  *
  * @param array<string> $options A list of options to initialize the wrapper.
  * @param bool $is_realtime Whether the command should be run in real time (true) or passively (false).
+ * @param string|null $stack_id The stack to run docker compose for. If null, uses current stack.
  *
  * @return \Closure A closure that will run the process in real time and return the process exit status.
  */
-function docker_compose_process( array $options = [], $is_realtime = true ) {
+function docker_compose_process( array $options = [], $is_realtime = true, $stack_id = null ) {
 	setup_id();
 
 	$is_ci = is_ci();
+
+	// Add project name for stack isolation
+	$project_name = get_stack_project_name( $stack_id );
+	if ( null !== $project_name ) {
+		$options = array_merge( [ '-p', $project_name ], $options );
+	}
 
 	$host_ip = false;
 	if ( ! $is_ci && 'Linux' === os() ) {
@@ -190,7 +233,9 @@ function docker_compose_process( array $options = [], $is_realtime = true ) {
 		$host_ip = host_ip( 'Linux' );
 	}
 
-	return static function ( array $command = [], $prefix = null ) use ( $options, $host_ip, $is_ci, $is_realtime ) {
+	$stack_id = slic_current_stack();
+
+	return static function ( array $command = [], $prefix = null ) use ( $options, $host_ip, $is_ci, $is_realtime, $stack_id ) {
 		if ( $is_ci || ! is_interactive() ) {
 			$no_tty_map = [
 				'exec' => [ '-T' ],
@@ -214,6 +259,12 @@ function docker_compose_process( array $options = [], $is_realtime = true ) {
 			$command            = 'XDH=' . $xdebug_remote_host . ' ' . $command;
 		}
 
+		if ( ! empty( $stack_id ) ) {
+			foreach ( xdebug_get_env_vars( $stack_id ) as $key => $value ) {
+				$command = "{$key}={$value} " . $command;
+			}
+		}
+
 		if ( ! empty( $is_ci ) ) {
 			// Disable XDebug in CI context to speed up the builds.
 			$command = 'XDE=0 ' . $command;
@@ -229,22 +280,24 @@ function docker_compose_process( array $options = [], $is_realtime = true ) {
  * This approach is used for commands that can be run in a parallel or forked process without interactivity.
  *
  * @param array<string> $options A list of options to initialize the wrapper.
+ * @param string|null $stack_id The stack to run docker compose for. If null, uses current stack.
  *
  * @return \Closure A closure that will run the process in real time and return the process exit status.
  */
-function docker_compose_passive( array $options = [] ) {
-	return docker_compose_process( $options, false );
+function docker_compose_passive( array $options = [], $stack_id = null ) {
+	return docker_compose_process( $options, false, $stack_id );
 }
 
 /**
  * Executes a docker compose command in real time, printing the output as produced by the command.
  *
  * @param array<string> $options A list of options to initialize the wrapper.
+ * @param string|null $stack_id The stack to run docker compose for. If null, uses current stack.
  *
  * @return \Closure A closure that will run the process in real time and return the process exit status.
  */
-function docker_compose_realtime( array $options = [] ) {
-	return docker_compose_process( $options, true );
+function docker_compose_realtime( array $options = [], $stack_id = null ) {
+	return docker_compose_process( $options, true, $stack_id );
 }
 
 /**
@@ -260,4 +313,32 @@ function docker_compose_realtime( array $options = [] ) {
 function docker_compose_bin(): string {
 	return (string) getenv( 'SLIC_DOCKER_COMPOSE_BIN' ) ?: 'docker compose';
 }
+
+/**
+ * Gets the Docker Compose project name for a stack.
+ *
+ * @param string|null $stack_id The stack identifier. If null, uses current stack.
+ * @return string|null The project name or null if no stack.
+ */
+function get_stack_project_name( $stack_id = null ) {
+	// Load stacks.php functions if not already loaded
+	if ( ! function_exists( 'slic_stacks_get_project_name' ) ) {
+		require_once __DIR__ . '/stacks.php';
+	}
+
+	// If no stack_id provided, try to determine current stack
+	if ( null === $stack_id ) {
+		if ( ! function_exists( 'slic_current_stack' ) ) {
+			require_once __DIR__ . '/slic.php';
+		}
+		$stack_id = slic_current_stack();
+	}
+
+	if ( null === $stack_id ) {
+		return null;
+	}
+
+	return slic_stacks_get_project_name( $stack_id );
+}
+
 
