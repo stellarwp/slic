@@ -258,6 +258,7 @@ $help_advanced_message_template = <<< HELP
   <light_cyan>update</light_cyan>         Updates the tool and the images used in its services.
   <light_cyan>upgrade</light_cyan>        Upgrades the {$cli_name} repo.
   <light_cyan>update-dump</light_cyan>    Updates a SQL dump file. Optionally, installs a specific WordPress version..
+  <light_cyan>worktree</light_cyan>       Manages git worktrees with dedicated stacks.
 HELP;
 
 $help_message          = colorize( $help_message_template );
