@@ -584,6 +584,27 @@ slic xdebug status
 
 Each worktree can be debugged independently without port conflicts.
 
+#### Target Switching in Worktrees
+
+Worktree stacks are tied to their specific target directory and **cannot switch targets** using `slic use`. This is by design - each worktree represents a specific branch/feature context.
+
+If you attempt to run `slic use <target>` in a worktree stack, you'll see an error explaining the restriction and suggesting to switch to the base stack:
+
+```bash
+cd ../the-events-calendar-feature-new-feature
+slic use event-tickets
+# Error: Cannot switch target in a worktree stack.
+# Worktree stacks are tied to a specific target directory.
+# To switch targets, use the base stack: slic stack switch /path/to/plugins
+```
+
+To work with a different target, switch back to your base stack first:
+
+```bash
+slic stack switch /path/to/plugins
+slic use event-tickets
+```
+
 #### Automatic Worktree Detection
 
 If you navigate to a worktree directory that hasn't been registered with `slic`, the CLI will automatically detect it and offer to register it:
