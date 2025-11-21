@@ -520,6 +520,33 @@ Or use the `--stack` flag from anywhere:
 slic --stack=/path/to/worktree run wpunit
 ```
 
+#### Merging a Worktree
+
+When you're done working on a feature branch, merge it back and clean up:
+
+```bash
+# From the base stack directory (not the worktree directory)
+slic worktree merge fix/issue-123
+```
+
+**Important:** This command must be run from the base stack directory, not from within the worktree directory being merged. The worktree directory will be removed by git during the merge process.
+
+The merge command will:
+1. Checkout the base branch in the target repository
+2. Merge the worktree branch into the base branch
+3. Remove the git worktree directory
+4. Delete the local worktree branch
+5. Stop Docker containers
+6. Unregister the slic stack
+
+Use `-y` or `--yes` to skip confirmation prompts:
+
+```bash
+slic worktree merge fix/issue-123 -y
+```
+
+If the merge encounters conflicts, the command will stop and provide instructions for manual resolution.
+
 #### Removing a Worktree
 
 To remove a worktree and clean up its slic stack:

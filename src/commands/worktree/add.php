@@ -150,6 +150,9 @@ if (!$force_yes) {
     }
 }
 
+// Get the base branch before creating the worktree
+$base_branch = trim(shell_exec("git -C " . escapeshellarg($target_full_path) . " rev-parse --abbrev-ref HEAD 2>/dev/null"));
+
 // Execute git worktree add (only if needed)
 if ($should_create_worktree) {
     echo "\nCreating git worktree...\n";
@@ -192,6 +195,7 @@ $worktree_state = [
     'stack_id' => $worktree_stack_id,
     'is_worktree' => true,
     'base_stack_id' => $base_stack_id,
+    'base_branch' => $base_branch,
     'worktree_target' => $target,
     'worktree_dir' => $worktree_dir,
     'worktree_branch' => $branch,

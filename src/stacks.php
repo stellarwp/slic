@@ -710,8 +710,9 @@ function slic_stacks_is_running($stack_id) {
 	}
 
 	// Check if containers are actually running
-	$check_command = "{$timeout_prefix}docker ps -q -f label=com.docker.compose.project='$project_name' 2>/dev/null";
-	$container_ids = trim(shell_exec($check_command));
+    $check_command = "{$timeout_prefix}docker ps -q -f label=com.docker.compose.project='$project_name' 2>/dev/null";
+    $check_command_output = shell_exec($check_command);
+	$container_ids = $check_command_output ? trim($check_command_output) : null;
 
 	$is_running = !empty($container_ids);
 	$cache[$stack_id] = $is_running;
