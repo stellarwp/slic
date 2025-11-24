@@ -175,17 +175,46 @@ Before you can do anything productive with `slic`, you need to tell it which
 project you wish to use and then you can initialize the project, run tests, and
 execute other commands to your heart's content!
 
-Assuming you have a plugin called `the-events-calendar` in the plugins directory
-where you ran `slic here`, you can tell `slic` you want to take actions on that
-plugin using the following command:
+The `slic use` command offers two ways to select your target:
+
+#### Interactive Mode (No Arguments)
+
+When you run `slic use` without any arguments, it opens an interactive Terminal User Interface (TUI) that lets you browse and select from available targets:
+
+```bash
+slic use
+```
+
+This launches an interactive menu with these features:
+- **Browse targets**: Navigate through all available plugins/themes with arrow keys (↑↓)
+- **Fuzzy search**: Type to filter targets instantly (case-insensitive substring matching)
+- **Current target indicator**: See which target is currently active (marked with ✓)
+- **Scroll indicators**: Visual cues when there are more items above/below the visible window
+- **Keyboard controls**:
+  - `↑↓` Arrow keys to navigate
+  - Type to filter/search
+  - `Enter` to select
+  - `ESC` or `Ctrl+C` to cancel
+- **Cross-platform**: Works on Windows, macOS, and Linux
+
+The interactive mode is especially helpful when:
+- You're not sure of the exact target name
+- You want to see all available options at once
+- You need to quickly switch between targets
+
+![slic use](docs/images/slic-use.gif)
+
+#### Direct Mode (With Target Name)
+
+If you already know which target you want, you can specify it directly:
 
 ```bash
 slic use the-events-calendar
 ```
 
-> For more information on this command, run `slic help use`.
+This immediately switches to the specified target without showing the interactive menu.
 
-![slic use](docs/images/slic-use.gif)
+> For more information on this command, run `slic help use`.
 
 ### Initialize your project
 

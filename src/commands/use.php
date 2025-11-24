@@ -10,9 +10,14 @@ if ( $is_help ) {
 
 	USAGE:
 
-		<yellow>{$cli_name} {$subcommand} <target>[/<subdir>]</yellow>
+		<yellow>{$cli_name} {$subcommand} [<target>[/<subdir>]]</yellow>
+
+		When called without a target argument, displays an interactive selection menu.
 
 	EXAMPLES:
+
+	<light_cyan>{$cli_name} {$subcommand}</light_cyan>
+	Open interactive target selection menu.
 
 	<light_cyan>{$cli_name} {$subcommand} the-events-calendar</light_cyan>
 	Set the use target to the-events-calendar.
@@ -27,6 +32,38 @@ if ( $is_help ) {
 
 $sub_args = args( [ 'target' ], $args( '...' ), 0 );
 $target   = $sub_args( 'target', false );
+
+// If no target provided, show TUI
+if ( $target === false ) {
+	// Get all valid targets
+	$valid_targets = get_valid_targets( true ); // true = return as array
+
+	if ( empty( $valid_targets ) ) {
+		echo colorize( "<red>No valid targets found. Run 'slic here' first.</red>\n" );
+		return 1;
+	}
+
+	// Get current target (don't require it - may not be set yet)
+	$current_target = null;
+	$using          = getenv( 'SLIC_CURRENT_PROJECT' );
+	$using_subdir   = getenv( 'SLIC_CURRENT_PROJECT_SUBDIR' );
+	if ( ! empty( $using ) ) {
+		$current_target = $using . ( $using_subdir ? '/' . $using_subdir : '' );
+	}
+
+	// Show TUI
+	require_once __DIR__ . '/../tui.php';
+	$target = tui_select(
+		$valid_targets,
+		$current_target,
+		'Select target (type to filter, ↑↓ to navigate, Enter to select, ESC to cancel):'
+	);
+
+	// If user cancelled, exit gracefully
+	if ( $target === null ) {
+		return 0;
+	}
+}
 
 // Determine which stack to use
 $stack_id = slic_current_stack_or_fail( "Cannot switch target without an active stack." );

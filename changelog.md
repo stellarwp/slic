@@ -8,10 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Breaking Change - The `slic here` command will now create a new stack for the current path instead of changing the context of the previously only stack to the path.
-- Breaking Change - The `XDK` configuration variable (`slic` by default) is now used as **root** for each stack IDE key. An `XDK` of `slic` will create stack IDE keys like `slic_<stack_hash>` and not just `slic` as it was before. 
+- Breaking Change - The `XDK` configuration variable (`slic` by default) is now used as **root** for each stack IDE key. An `XDK` of `slic` will create stack IDE keys like `slic_<stack_hash>` and not just `slic` as it was before.
 
 ### Added
 - Multi-path support with a 1:1 mapping between stacks and paths.
+- Interactive Terminal User Interface (TUI) for the `slic use` command. Running `slic use` without arguments now opens an interactive selection menu with fuzzy search and current selection indicator.
 - Git worktree multi-stack support for concurrent development workflows
 - New `slic worktree` command with subcommands:
   - `slic worktree add <branch>` - Create a new git worktree with dedicated stack

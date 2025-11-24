@@ -63,7 +63,18 @@ slic run wpunit
 ```
 
 Since the command might potentially run on any of the plugins maintained by the Products team, you'll need to tell the `slic` command what plugin you're currently working on with the `use` sub-command.
-You can change the plugin you want to run tests on by using the `slic use` command again at any moment. If you want, now to run Event Tickets tests, you could just use:
+
+### Interactive Target Selection
+
+The `slic use` command now provides an interactive Terminal User Interface (TUI) when called without arguments:
+
+```bash
+slic use
+```
+
+This opens an interactive menu that allows you to browse all available targets, see the current one, and select a new one.
+
+You can also directly specify a target to skip the interactive menu:
 
 ```bash
 slic use event-tickets
