@@ -237,6 +237,7 @@ $help_advanced_message_template = <<< HELP
   <light_cyan>cache</light_cyan>          Activates and deactivates object cache support, returns the current object cache status.
   <light_cyan>cc</light_cyan>             Runs a Codeception command in the stack, the equivalent of <light_cyan>'codecept ...'</light_cyan>.
   <light_cyan>cli</light_cyan>            Runs a wp-cli command or opens a `wp-cli shell` in the stack; alias of `wp`.
+  <light_cyan>completion</light_cyan>     Manage shell completion (install, show, cache-clear).
   <light_cyan>composer-cache</light_cyan> Sets or shows the composer cache directory.
   <light_cyan>config</light_cyan>         Prints the stack configuration as interpolated from the environment.
   <light_cyan>debug</light_cyan>          Activates or deactivates {$cli_name} debug output or returns the current debug status.

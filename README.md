@@ -20,6 +20,7 @@ The slic (**S**tellarWP **L**ocal **I**nteractive **C**ontainers) CLI command pr
 * [Advanced topics](#advanced-topics)
     * [Defaults for your project with `slic.json`](/docs/slicjson.md)
     * [Managing PHP Versions](#managing-php-versions)
+    * [Shell Completion](#shell-completion)
     * [Making composer installs faster](#making-composer-installs-faster)
     * [Changing your composer version](#changing-your-composer-version)
     * [Customizing `slic`'s `.env` file](#customizing-slics-env-file)
@@ -843,6 +844,98 @@ To reset slic to the default PHP version (7.4):
 ```bash
 slic php-version reset
 ```
+
+### Shell Completion
+
+`slic` provides tab completion for bash, zsh, and fish shells. This makes it faster to use `slic` by allowing you to press Tab to autocomplete commands, targets, branches, and options.
+
+#### Quick Installation
+
+The easiest way to set up completions is:
+
+```bash
+slic completion install
+```
+
+This auto-detects your shell and installs the appropriate completion script. You'll be prompted to confirm before any files are modified.
+
+#### What Gets Completed
+
+Once installed, you can tab-complete:
+
+- **Commands**: `slic <TAB>` shows all available commands
+- **Targets**: `slic use <TAB>` shows all valid plugins/themes
+- **Subcommands**: `slic stack <TAB>` shows `list`, `stop`, `info`
+- **Git branches**: `slic worktree add <TAB>` shows available branches
+- **Stack paths**: `slic --stack=<TAB>` shows registered stack paths
+- **Toggle options**: `slic xdebug <TAB>` shows `on`, `off`, `status`, etc.
+- **PHP versions**: `slic php-version set <TAB>` shows `7.4`, `8.0`, `8.1`, `8.2`, `8.3`
+
+#### Manual Installation
+
+If you prefer manual installation or the automatic installation doesn't work:
+
+**Bash** - Add to `~/.bashrc` or `~/.bash_profile`:
+
+```bash
+# slic completions
+if command -v slic &> /dev/null; then
+    _slic_path=$(command -v slic)
+    if [[ -L "$_slic_path" ]]; then
+        _slic_path=$(realpath "$_slic_path" 2>/dev/null || readlink -f "$_slic_path" 2>/dev/null || readlink "$_slic_path")
+    fi
+    source "$(dirname "$_slic_path")/completions/bash/slic.bash"
+    unset _slic_path
+fi
+```
+
+**Zsh** - Add to `~/.zshrc`:
+
+```zsh
+# slic completions
+if command -v slic &> /dev/null; then
+    _slic_path=$(command -v slic)
+    if [[ -L "$_slic_path" ]]; then
+        _slic_path=$(realpath "$_slic_path" 2>/dev/null || readlink -f "$_slic_path" 2>/dev/null || readlink "$_slic_path")
+    fi
+    fpath=("$(dirname "$_slic_path")/completions/zsh" $fpath)
+    autoload -Uz compinit && compinit
+    unset _slic_path
+fi
+```
+
+**Fish** - Create a symlink:
+
+```fish
+mkdir -p ~/.config/fish/completions
+ln -sf /path/to/slic/completions/fish/slic.fish ~/.config/fish/completions/slic.fish
+```
+
+#### Other Completion Commands
+
+```bash
+# Show installation instructions for your shell
+slic completion
+
+# Display the completion script content (for inspection or manual setup)
+slic completion show [bash|zsh|fish]
+
+# Clear the completion cache (useful if completions seem stale)
+slic completion cache-clear
+```
+
+#### How It Works
+
+The completion system uses a two-layer architecture:
+
+1. **Shell scripts** (bash/zsh/fish) - Thin wrappers that capture the command line context
+2. **PHP backend** - Generates completions dynamically based on your slic configuration
+
+Completions are cached for performance:
+- Commands list: 24 hours
+- Targets: 5 minutes
+- Git branches: 2 minutes
+- Stack paths: 1 minute
 
 ### Making composer installs faster
 
