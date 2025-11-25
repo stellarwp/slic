@@ -9,7 +9,7 @@ volumes:
 services:
 
   db:
-    image: ${SLIC_DB_IMAGE:-mariadb:10.7.8}
+    image: ${SLIC_DB_IMAGE:-mariadb:11.8.3}
     # Not specifying a platform will ignore the setting and use the current platform.
     platform: ${SLIC_DB_PLATFORM:-}
     networks:
@@ -19,8 +19,8 @@ services:
     environment:
       MYSQL_DATABASE: test
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
-    healthcheck: # The `test` db should exist.
-      test: mysqlshow -u root -p${MYSQL_ROOT_PASSWORD:-root} test
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       start_period: 5s
       interval: 1s
       timeout: 3s
