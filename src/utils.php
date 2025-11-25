@@ -284,7 +284,13 @@ function is_ci() {
 	return false;
 }
 
-// Whether the current run context is a `slic` binary one or not.
+/**
+ * Returns whether the current run context is a slic binary one or not.
+ *
+ * Checks environment variables to determine if the code is running in a slic context.
+ *
+ * @return bool Whether the current run context is a slic binary one or not.
+ */
 function is_slic() {
 	$env_vars = [
 		'STELLAR_SLIC',
