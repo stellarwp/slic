@@ -19,6 +19,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New `slic completion` command with subcommands to install bash/zsh/fish completions
 - Shell completion support for bash, zsh, and fish shells with dynamic completions for commands, targets, git branches, stack paths, and options
 
+# [2.1.3] - 2025-11-26
+
+- Change - Update MariadDB version from version `10.7.8` to version `11.8.3`.
+- Fixed - Error "Failed to get current SQL modes. Reason: ERROR 2026 (HY000)" due to lower MariaDB image.
+
 # [2.1.2] - 2025-11-13
 - Change - GitHub Actions workflows now use native ARM64 runners (`ubuntu-24.04-arm`) instead of QEMU emulation for multi-platform builds, to reduce build times.
 - Change - Optimized Dockerfile layer ordering to improve cache hit rates - local config files moved to end to prevent invalidating heavy system installation layers.
