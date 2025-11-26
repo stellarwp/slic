@@ -640,7 +640,8 @@ function slic_stacks_read_ports_from_docker($stack_id) {
 
 	// Check if containers are actually running
 	$check_command = "docker ps -q -f label=com.docker.compose.project='$project_name' 2>/dev/null";
-	$container_ids = trim(shell_exec($check_command));
+	$check_command_output = shell_exec( $check_command );
+	$container_ids = $check_command_output ? trim( $check_command_output ) : '';
 
 	if (empty($container_ids)) {
 		// Containers not running
