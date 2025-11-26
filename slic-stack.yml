@@ -20,7 +20,7 @@ services:
       MYSQL_DATABASE: test
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
     healthcheck:
-      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      test: ${SLIC_DB_HEALTHCHECK:-healthcheck.sh --connect --innodb_initialized}
       start_period: 5s
       interval: 1s
       timeout: 3s

@@ -19,6 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New `slic completion` command with subcommands to install bash/zsh/fish completions
 - Shell completion support for bash, zsh, and fish shells with dynamic completions for commands, targets, git branches, stack paths, and options
 
+# [2.1.4] - 2025-11-26
+
+- Fixed - Use `mysqlshow` to check `db` service health when using MySQL 5.5.
+
 # [2.1.3] - 2025-11-26
 
 - Change - Update MariadDB version from version `10.7.8` to version `11.8.3`.

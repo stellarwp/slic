@@ -1994,4 +1994,7 @@ function setup_db_env() {
 	 */
 	putenv( 'SLIC_DB_IMAGE=mysql:5.5.62' );
 	putenv( 'SLIC_DB_PLATFORM=linux/amd64' );
+	// MySQL 5.5 does not have the healthcheck.sh script, use mysqlshow instead.
+	$mysql_root_password = getenv( 'MYSQL_ROOT_PASSWORD' ) ?: 'root';
+	putenv( 'SLIC_DB_HEALTHCHECK=mysqlshow -u root -p' . $mysql_root_password . ' test' );
 }
