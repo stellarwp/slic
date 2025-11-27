@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [2.1.5] - 2025-11-27
+
+- Fixed - Correctly handle the `SLIC_WP_AUTO_UPDATE_CORE` env var: do not print the line at all if emtpy.
+
 # [2.1.4] - 2025-11-26
 
 - Fixed - Use `mysqlshow` to check `db` service health when using MySQL 5.5.
