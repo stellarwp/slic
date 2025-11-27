@@ -92,7 +92,7 @@ services:
         define( 'DISABLE_WP_CRON', ${SLIC_DISABLE_WP_CRON:-true} );
         define( 'WP_HTTP_BLOCK_EXTERNAL', ${SLIC_WP_HTTP_BLOCK_EXTERNAL:-true} );
         ${SLIC_WP_AUTO_UPDATE_CORE:+define( 'WP_AUTO_UPDATE_CORE', ${SLIC_WP_AUTO_UPDATE_CORE} );}
-        define( 'AUTOMATIC_UPDATER_DISABLED', ${SLIC_AUTOMATIC_UPDATER_DISABLED:-true} );
+        ${SLIC_AUTOMATIC_UPDATER_DISABLED:+define( 'AUTOMATIC_UPDATER_DISABLED', ${SLIC_AUTOMATIC_UPDATER_DISABLED} );}
       # Configure this to debug the tests with XDebug.
       # Map the `_wordpress` directory to `/var/www/html' directory in your IDE of choice.
       # Map the `_plugins` directory to `/plugins` directory in your IDE of choice.

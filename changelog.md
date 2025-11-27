@@ -6,7 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 # [2.1.5] - 2025-11-27
 
-- Fixed - Correctly handle the `SLIC_WP_AUTO_UPDATE_CORE` env var: do not print the line at all if emtpy.
+- Fixed - Correctly handle the `SLIC_WP_AUTO_UPDATE_CORE` env var: do not print the line at all if empty.
+- Fixed - Correctly handle the `SLIC_AUTOMATIC_UPDATER_DISABLED` env var: do not print the line at all if empty.
 
 # [2.1.4] - 2025-11-26
 
