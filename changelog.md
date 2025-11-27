@@ -6,8 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 # [2.1.5] - 2025-11-27
 
-- Fixed - Correctly handle the `SLIC_WP_AUTO_UPDATE_CORE` env var: do not print the line at all if empty.
-- Fixed - Correctly handle the `SLIC_AUTOMATIC_UPDATER_DISABLED` env var: do not print the line at all if empty.
+- Fixed - Ensure to refresh slic env vars before rebuilding the stack.
+- Fixed - Correctly handle the `SLIC_WP_AUTO_UPDATE_CORE`, allow "undefining" this env var with `SLIC_WP_AUTO_UPDATE_CORE=`
+- Fixed - Correctly handle the `SLIC_AUTOMATIC_UPDATER_DISABLED`, allow "undefining" this env var with `SLIC_AUTOMATIC_UPDATER_DISABLED=`
+- Fixed - Correctly handle the `SLIC_WP_HTTP_BLOCK_EXTERNAL`, allow "undefining" this env var with `SLIC_WP_HTTP_BLOCK_EXTERNAL=`
 
 # [2.1.4] - 2025-11-26
 
