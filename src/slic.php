@@ -785,6 +785,9 @@ function rebuild_stack() {
 		putenv( 'SLIC_WORDPRESS_DOCKERFILE=Dockerfile.base' );
 	}
 
+	// Force Refresh env vars so they are accurate before building.
+	setup_slic_env( root(), true );
+
 	slic_realtime()( [ 'build' ] );
 	write_build_version();
 	echo light_cyan( PHP_EOL . "Stack images built." . PHP_EOL . PHP_EOL );
