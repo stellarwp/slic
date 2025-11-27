@@ -89,13 +89,23 @@ function read_env_file( $env_file ) {
 		exit( 1 );
 	}
 
-	$lines     = array_filter( explode( "\n", file_get_contents( $env_file ) ) );
+	$lines     = explode( "\n", file_get_contents( $env_file ) );
 	$env_lines = [];
 	foreach ( $lines as $env_line ) {
+		// Trim whitespace.
+		$env_line = trim( $env_line );
+
+		// Skip empty lines and comments.
+		if ( empty( $env_line ) || strpos( $env_line, '#' ) === 0 ) {
+			continue;
+		}
+
 		if ( ! preg_match( '/^(?<key>[^=]+)=(?<value>.*)$/', $env_line, $m ) ) {
 			continue;
 		}
-		$env_lines[ $m['key'] ] = $m['value'];
+
+		// Don't trim value to preserve intentional spaces.
+		$env_lines[ trim( $m['key'] ) ] = $m['value'];
 	}
 
 	return $env_lines;
