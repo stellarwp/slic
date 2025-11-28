@@ -178,9 +178,6 @@ function slic_stack_array( $filenames_only = false ) {
 function docker_compose_process( array $options = [], $is_realtime = true ) {
 	setup_id();
 
-	// Force refresh env vars so they are accurate before running any docker commands.
-	setup_slic_env( root(), true );
-
 	$is_ci = is_ci();
 
 	$host_ip = false;
@@ -221,6 +218,9 @@ function docker_compose_process( array $options = [], $is_realtime = true ) {
 			// Disable XDebug in CI context to speed up the builds.
 			$command = 'XDE=0 ' . $command;
 		}
+
+		// Force refresh env vars so they are accurate before running any docker commands.
+		setup_slic_env( root(), true );
 
 		return $is_realtime ? process_realtime( $command ) : process_passive( $command, $prefix );
 	};
