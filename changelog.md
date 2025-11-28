@@ -6,7 +6,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 # [2.1.5] - 2025-11-27
 
-- Fixed - Ensure to refresh slic env vars before running docker compose commands.
 - Fixed - Handling of the project in the `use` command to guarantee that project specific override files will apply to all operations performed during the handling of the `use` command, including possible spin up of the stack.
 - Fixed - Correctly handle the `SLIC_WP_AUTO_UPDATE_CORE`, allow "undefining" this env var with `SLIC_WP_AUTO_UPDATE_CORE=`
 - Fixed - Correctly handle the `SLIC_AUTOMATIC_UPDATER_DISABLED`, allow "undefining" this env var with `SLIC_AUTOMATIC_UPDATER_DISABLED=`
