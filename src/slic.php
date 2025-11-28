@@ -379,7 +379,6 @@ function slic_set_php_version( $version, $require_confirm = false, $skip_rebuild
 
 	rebuild_stack();
 	update_stack_images();
-	load_env_file( root() . '/.env.slic.run' );
 	restart_php_services( true );
 }
 
