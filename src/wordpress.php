@@ -106,6 +106,24 @@ function get_allowed_use_subdirectories(): array {
 }
 
 /**
+ * Get the arguments to install WordPress with wp-cli.
+ *
+ * @return string[]
+ */
+function get_wp_cli_install_args(): array {
+	return [
+		'core',
+		'install',
+		'--url=http://wordpress.test',
+		'--title=Slic',
+		'--admin_user=admin',
+		'--admin_password=password',
+		'--admin_email=admin@wordpress.test',
+		'--skip-email',
+	];
+}
+
+/**
  * Ensures WordPress is correctly installed.
  *
  * @return bool Always `true` to indicate WordPress is
@@ -118,17 +136,7 @@ function ensure_wordpress_installed(): bool {
 		return true;
 	}
 
-	$install = [
-		'core',
-		'install',
-		'--url=http://wordpress.test',
-		'--title=Slic',
-		'--admin_user=admin',
-		'--admin_password=password',
-		'--admin_email=admin@wordpress.test',
-		'--skip-email',
-	];
-	if ( slic_realtime()( cli_command( $install ) ) !== 0 ) {
+	if ( slic_realtime()( cli_command( get_wp_cli_install_args() ) ) !== 0 ) {
 		// There will be debug detailing the issue.
 		echo magenta( "Failed to install WordPress." );
 		exit( 1 );
