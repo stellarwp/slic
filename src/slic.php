@@ -272,6 +272,20 @@ function setup_slic_env( $root_dir, $reset = false ) {
 		load_env_file( $root_dir . '/.env.slic.run' );
 	}
 
+	/*
+	 * Special handling of the `use` command.
+	 *
+	 * This has to be detected early to allow for override files in the `use` target to apply.
+	 * If the user called `slic use some-plugin`, then this will set the `SLIC_CURRENT_PROJECT` env
+	 * var to `some-plugin`. This will, in turn, affect all the functions that use the information of the
+	 * project path like the `get_project_local_path()` one in the context of the handling of the `use` command.
+	 */
+	global $argc, $argv;
+	if ( $argc >= 3 && $argv[1] === 'use' && ! empty( $argv[2] ) ) {
+		$target = (string) ensure_valid_target( $argv[2] );
+		putenv( "SLIC_CURRENT_PROJECT={$target}" );
+	}
+
 	$target_path = get_project_local_path();
 	if( ! empty( $target_path ) ) {
 		// Load the local overrides from the target.
