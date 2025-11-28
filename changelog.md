@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed - Correctly handle the `SLIC_AUTOMATIC_UPDATER_DISABLED`, allow "undefining" this env var with `SLIC_AUTOMATIC_UPDATER_DISABLED=`
 - Fixed - Correctly handle the `SLIC_WP_HTTP_BLOCK_EXTERNAL`, allow "undefining" this env var with `SLIC_WP_HTTP_BLOCK_EXTERNAL=`
 - Changed - `update-dump` command now validates dump file existence before processing, provides clearer progress messages, and properly restores the original WordPress version after testing with a specific version.
+- Fixed - `read_env_file()` no longer reads commented out env vars, e.g. `# SOME_VAR=test` would previously be set.
 
 # [2.1.4] - 2025-11-26
 
