@@ -68,3 +68,79 @@ In this `launch.json` file, there are two `pathMappings` entries:
 
 1. The first one maps the `slic` plugins directory (left side) to your local WP's plugins directory (right side).
 2. The second one is technically optional, but it assumes you've added the `slic` directory to your VSCode workspace and maps the `slic` WP root (left side) to your local `slic` directory's WP root (right side).
+
+## WSL2
+
+When using slic on WSL2 (Windows Subsystem for Linux), the default `host.docker.internal` configuration may not work correctly because Docker containers need to connect to the WSL2 host where your code editor is running, not the Windows host.
+
+**Important:** All commands in this section should be run in your WSL2/Ubuntu terminal, not in Windows PowerShell or Command Prompt.
+
+### Step 1: Find your WSL2 IP address
+
+First, identify your WSL2 IP address:
+
+```bash
+hostname -I | awk '{print $1}'
+```
+
+This will output your WSL2 IP address (e.g., `172.24.206.58`).
+
+### Step 2: Configure Xdebug to use the WSL2 IP
+
+Configure slic's Xdebug to use your WSL2 IP address instead of the default `host.docker.internal`:
+
+```bash
+slic xdebug host $(hostname -I | awk '{print $1}')
+```
+
+Or manually set it if you know your WSL2 IP:
+
+```bash
+slic xdebug host 172.24.206.58
+```
+
+**Note:** WSL2 IP addresses can change after restarting WSL2 or Windows, though they often remain stable. If breakpoints stop working, check if your IP has changed and reconfigure if necessary (see [Troubleshooting](#troubleshooting) below).
+
+### Step 3: Restart slic containers
+
+After changing the Xdebug host, restart the slic containers to apply the changes:
+
+```bash
+slic restart
+slic xdebug on
+```
+
+### Step 4: Verify the configuration
+
+Verify that Xdebug is configured correctly:
+
+```bash
+slic xdebug status
+```
+
+You should see your WSL2 IP address in the "Remote host" field.
+
+### Troubleshooting
+
+If breakpoints still don't work:
+
+1. **Check if your WSL2 IP changed**: WSL2 IP addresses can change after restarting WSL2 or Windows (though they often remain stable). If breakpoints stop working, verify your current IP and reconfigure if it has changed:
+   ```bash
+   slic xdebug host $(hostname -I | awk '{print $1}')
+   slic restart
+   slic xdebug on
+   ```
+   
+   You can verify your current WSL2 IP with:
+   ```bash
+   hostname -I | awk '{print $1}'
+   ```
+
+2. **Verify your editor is listening**: Check your editor's debug console to see if there are any connection attempts from Xdebug. In VS Code, go to View → Output → Debug Console. In PHPStorm, check the Debug tool window.
+
+3. **Check Xdebug is enabled**: Make sure Xdebug is enabled in slic:
+   ```bash
+   slic xdebug on
+   ```
+
+4. **Verify the port**: Ensure port 9001 is not blocked by a firewall and that your code editor is listening on that port.
