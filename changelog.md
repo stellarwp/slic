@@ -19,6 +19,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New `slic completion` command with subcommands to install bash/zsh/fish completions
 - Shell completion support for bash, zsh, and fish shells with dynamic completions for commands, targets, git branches, stack paths, and options
 
+# [2.1.5] - 2025-11-28
+
+- Fixed - Handling of the project in the `use` command to guarantee that project specific override files will apply to all operations performed during the handling of the `use` command, including possible spin up of the stack.
+- Fixed - Correctly handle the `SLIC_WP_AUTO_UPDATE_CORE`, allow "undefining" this env var with `SLIC_WP_AUTO_UPDATE_CORE=`
+- Fixed - Correctly handle the `SLIC_AUTOMATIC_UPDATER_DISABLED`, allow "undefining" this env var with `SLIC_AUTOMATIC_UPDATER_DISABLED=`
+- Fixed - Correctly handle the `SLIC_WP_HTTP_BLOCK_EXTERNAL`, allow "undefining" this env var with `SLIC_WP_HTTP_BLOCK_EXTERNAL=`
+- Changed - `update-dump` command now validates dump file existence before processing, provides clearer progress messages, and properly restores the original WordPress version after testing with a specific version.
+- Fixed - `read_env_file()` no longer reads commented out env vars, e.g. `# SOME_VAR=test` would previously be set.
+
 # [2.1.4] - 2025-11-26
 
 - Fixed - Use `mysqlshow` to check `db` service health when using MySQL 5.5.

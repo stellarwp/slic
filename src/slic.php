@@ -322,6 +322,20 @@ function setup_slic_env( $root_dir, $reset = false, $stack_id = null ) {
 	// Set up XDebug environment variables from stack registry
 	xdebug_setup_env_vars( $effective_stack_id );
 
+	/*
+	 * Special handling of the `use` command.
+	 *
+	 * This has to be detected early to allow for override files in the `use` target to apply.
+	 * If the user called `slic use some-plugin`, then this will set the `SLIC_CURRENT_PROJECT` env
+	 * var to `some-plugin`. This will, in turn, affect all the functions that use the information of the
+	 * project path like the `get_project_local_path()` one in the context of the handling of the `use` command.
+	 */
+	global $argc, $argv;
+	if ( $argc >= 3 && $argv[1] === 'use' && ! empty( $argv[2] ) ) {
+		$target = (string) ensure_valid_target( $argv[2] );
+		putenv( "SLIC_CURRENT_PROJECT={$target}" );
+	}
+
 	$target_path = get_project_local_path();
 	if ( ! empty( $target_path ) ) {
 		// Load the local overrides from the target.
@@ -399,7 +413,7 @@ function setup_slic_env( $root_dir, $reset = false, $stack_id = null ) {
 
 				// Check if target is a plugin or theme
 				// Plugins are in SLIC_PLUGINS_DIR, themes are in SLIC_THEMES_DIR
-				$plugins_dir = getenv( 'SLIC_PLUGINS_DIR' );
+                $plugins_dir = getenv( 'SLIC_PLUGINS_DIR' );
 				$themes_dir  = getenv( 'SLIC_THEMES_DIR' );
 
 				$container_path = null;
@@ -493,7 +507,6 @@ function slic_set_php_version( $version, $require_confirm = false, $skip_rebuild
 
 	rebuild_stack();
 	update_stack_images();
-	load_env_file( root() . '/.env.slic.run' );
 	restart_php_services( true );
 }
 
