@@ -1,9 +1,29 @@
 <?php
+
+// Load the color functions.
+require_once __DIR__ . '/src/utils.php';
+
+// Detect if uopz extension is intercepting exit() calls, which breaks command execution flow.
+if ( extension_loaded( 'uopz' ) && ! ini_get( 'uopz.exit' ) ) {
+	echo \StellarWP\Slic\red( 'Error: The uopz extension is preventing exit() from working.' . PHP_EOL );
+	echo \StellarWP\Slic\red( 'Set uopz.exit=1 in your php.ini or run: php -d uopz.exit=1 slic' . PHP_EOL );
+	echo \StellarWP\Slic\red( 'See: https://www.php.net/manual/en/uopz.configuration.php#ini.uopz.exit' . PHP_EOL );
+
+	// Re-enable exit for this process, then terminate.
+	if ( PHP_VERSION_ID < 80400 ) {
+		uopz_allow_exit( true );
+	} else {
+		uopz_unset_return( 'exit' );
+		uopz_unset_return( 'die' );
+	}
+
+	exit( 1 );
+}
+
 // Requires the function files we might need.
 require_once __DIR__ . '/includes/polyfills.php';
 require_once __DIR__ . '/src/classes/Cache.php';
 require_once __DIR__ . '/src/cache.php';
-require_once __DIR__ . '/src/utils.php';
 require_once __DIR__ . '/src/scaffold.php';
 require_once __DIR__ . '/src/slic.php';
 require_once __DIR__ . '/src/docker.php';
@@ -34,7 +54,7 @@ $args = args( [
 ] );
 
 $cli_name = 'slic';
-const CLI_VERSION = '2.1.5';
+const CLI_VERSION = '2.1.6';
 
 // If the run-time option `-q`, for "quiet", is specified, then do not print the header.
 if ( in_array( '-q', $argv, true ) || ( in_array( 'exec', $argv, true ) && ! in_array( 'help', $argv, true ) ) ) {
