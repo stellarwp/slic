@@ -19,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New `slic completion` command with subcommands to install bash/zsh/fish completions
 - Shell completion support for bash, zsh, and fish shells with dynamic completions for commands, targets, git branches, stack paths, and options
 
+# [2.1.6] - 2025-12-03
+- Added - Prevent running slic if the `uopz` extension is enabled with `uopz.exit=0`.
+
 # [2.1.5] - 2025-11-28
 
 - Fixed - Handling of the project in the `use` command to guarantee that project specific override files will apply to all operations performed during the handling of the `use` command, including possible spin up of the stack.
