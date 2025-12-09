@@ -259,4 +259,21 @@ function project_apply_php_version( $slic_env_local, $slic_json, $composer_json 
 		project_show_php_version_message( $project_version, 'auto-detected from project', 'success' );
 		slic_set_php_version( $project_version );
 	}
+
+	// Switch to the PHP version detected from the stack's env file, if any.
+	$stack_id = slic_current_stack();
+	if ( $stack_id !== null ) {
+		$stack_env_file       = slic_stacks_get_state_file( $stack_id );
+		$stack_env_file_lines = read_env_file( $stack_env_file );
+
+		if ( isset( $stack_env_file_lines['SLIC_PHP_VERSION'] ) ) {
+			$local = normalize_php_version( $stack_env_file_lines['SLIC_PHP_VERSION'] );
+
+			if ( $local && $local !== $effective ) {
+				project_show_php_version_message( $local, 'from stack\'s file', 'switch' );
+				project_maybe_show_version_mismatch_message( $local, $project_version );
+				slic_set_php_version( $local );
+			}
+		}
+	}
 }
