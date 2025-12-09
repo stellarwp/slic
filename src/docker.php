@@ -233,8 +233,6 @@ function docker_compose_process( array $options = [], $is_realtime = true, $stac
 		$host_ip = host_ip( 'Linux' );
 	}
 
-	$stack_id = slic_current_stack();
-
 	return static function ( array $command = [], $prefix = null ) use ( $options, $host_ip, $is_ci, $is_realtime, $stack_id ) {
 		if ( $is_ci || ! is_interactive() ) {
 			$no_tty_map = [
