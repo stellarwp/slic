@@ -481,7 +481,18 @@ function slic_set_php_version( $version, $require_confirm = false, $skip_rebuild
 		$message = $staged_message;
 	}
 
-	$run_settings_file = root( '/.env.slic.run' );
+	$stack = slic_current_stack();
+
+	if ( $stack !== null ) {
+		// We should update the stack settings, not all the stacks.
+		$run_settings_file = slic_stacks_get_state_file( $stack );
+		$message        .= PHP_EOL . "The PHP version will be set for <yellow>the current</yellow> stack.";
+	} else {
+		// Apply this version to all the stacks.
+		$run_settings_file = root( '/.env.slic.run' );
+		$message        .= PHP_EOL . "The PHP version will be set for <yellow>all</yellow> stacks.";
+	}
+
 	write_env_file( $run_settings_file, $data, true );
 
 	echo colorize( $message . PHP_EOL );
@@ -505,7 +516,7 @@ function slic_set_php_version( $version, $require_confirm = false, $skip_rebuild
 		return;
 	}
 
-	rebuild_stack();
+	rebuild_stack( $stack );
 	update_stack_images();
 	restart_php_services( true );
 }
@@ -1054,13 +1065,21 @@ function teardown_stack( $passive = false, $stack_id = null ) {
 
 /**
  * Rebuilds the slic stack.
+ *
+ * @param string|null $stack_id The stack to rebuild. If null, it rebuilds the main stack.
  */
-function rebuild_stack() {
+function rebuild_stack( string $stack_id = null ): void {
 	echo "Building the stack images..." . PHP_EOL . PHP_EOL;
 
 	if ( is_ci() ) {
 		// In CI context do NOT build the image with XDebug and waste time on unused features.
 		putenv( 'SLIC_WORDPRESS_DOCKERFILE=Dockerfile.base' );
+	}
+
+	if ( $stack_id !== null ) {
+		// Load the stack env file.
+		$stack_file = slic_stacks_get_state_file( $stack_id );
+		load_env_file( $stack_file );
 	}
 
 	slic_realtime()( [ 'build' ] );
