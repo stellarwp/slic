@@ -293,34 +293,25 @@ function setup_slic_env( $root_dir, $reset = false, $stack_id = null ) {
 	// Load the current session configuration file.
 	// If a stack_id is provided, load that stack's state file.
 	// Otherwise, try to determine the current stack or fall back to .env.slic.run.
-	if ( null !== $stack_id ) {
-		$run_file = get_stack_env_file( $stack_id );
-	} else if ( function_exists( 'slic_current_stack' ) || is_file( __DIR__ . '/stacks.php' ) ) {
+	if ( ! $stack_id ) {
 		if ( ! function_exists( 'slic_current_stack' ) ) {
 			require_once __DIR__ . '/stacks.php';
 		}
 
-		$current_stack = slic_current_stack();
+		$stack_id = slic_current_stack();
 
-		if ( null !== $current_stack ) {
-			$stack_run_file = get_stack_env_file( $current_stack );
-
-			if ( null !== $stack_run_file && file_exists( $stack_run_file ) ) {
-				load_env_file( $stack_run_file );
-			}
+		if ( $stack_id ) {
+			/*
+			 * Set stack-specific configuration.
+			 * This needs to happen after loading the run file but before loading target overrides
+			 * so that .env.slic.local in the target can still override if needed
+			 */
+			$stack_run_file = get_stack_env_file( $stack_id );
+			load_env_file( $stack_run_file );
+			// Load XDebug configuration for the stack.
+			xdebug_setup_env_vars( $stack_id );
 		}
 	}
-
-	// Set stack-specific XDebug configuration
-	// This needs to happen after loading the run file but before loading target overrides
-	// so that .env.slic.local in the target can still override if needed
-	$effective_stack_id = $stack_id;
-	if ( null === $effective_stack_id && function_exists( 'slic_current_stack' ) ) {
-		$effective_stack_id = slic_current_stack();
-	}
-
-	// Set up XDebug environment variables from stack registry
-	xdebug_setup_env_vars( $effective_stack_id );
 
 	/*
 	 * Special handling of the `use` command.
@@ -385,18 +376,8 @@ function setup_slic_env( $root_dir, $reset = false, $stack_id = null ) {
 	// WORKTREE SUPPORT: Set worktree-specific environment variables
 	// These variables are used by slic-stack.worktree.yml to mount the worktree directory
 	// into the correct container path, shadowing the base stack's version.
-	$current_stack = null;
-	if ( null !== $stack_id ) {
-		$current_stack = $stack_id;
-	} else {
-		if ( ! function_exists( 'slic_current_stack' ) ) {
-			require_once __DIR__ . '/stacks.php';
-		}
-		$current_stack = slic_current_stack();
-	}
-
-	if ( null !== $current_stack && slic_stacks_is_worktree( $current_stack ) ) {
-		$parsed = slic_stacks_parse_worktree_id( $current_stack );
+	if ( $stack_id && slic_stacks_is_worktree( $stack_id ) ) {
+		$parsed = slic_stacks_parse_worktree_id( $stack_id );
 
 		if ( null !== $parsed ) {
 			// Calculate full worktree path
@@ -407,7 +388,7 @@ function setup_slic_env( $root_dir, $reset = false, $stack_id = null ) {
 			$_ENV['SLIC_WORKTREE_FULL_PATH'] = $worktree_full_path;
 
 			// Determine container path based on target type (plugin or theme)
-			$stack = slic_stacks_get( $current_stack );
+			$stack = slic_stacks_get( $stack_id );
 			if ( null !== $stack && isset( $stack['target'] ) ) {
 				$target = $stack['target'];
 
