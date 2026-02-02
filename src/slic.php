@@ -268,8 +268,19 @@ function setup_slic_env( $root_dir, $reset = false ) {
 	}
 
 	// Load the current session configuration file.
-	if ( file_exists( $root_dir . '/.env.slic.run' ) ) {
-		load_env_file( $root_dir . '/.env.slic.run' );
+	$run_env_file = $root_dir . '/.env.slic.run';
+	$staged_php_version = null;
+
+	if ( file_exists( $run_env_file ) ) {
+		load_env_file( $run_env_file );
+
+		// Read directly from file to check for staged version before a project's .env.slic.local loads.
+		$run_env               = read_env_file($run_env_file);
+		$is_php_version_staged = ($run_env['SLIC_PHP_VERSION_STAGED'] ?? '') === '1';
+
+		if ( $is_php_version_staged && isset( $run_env['SLIC_PHP_VERSION'] ) ) {
+			$staged_php_version = $run_env['SLIC_PHP_VERSION'];
+		}
 	}
 
 	/*
@@ -300,6 +311,9 @@ function setup_slic_env( $root_dir, $reset = false ) {
 	if ( $target_version ) {
 		putenv( "SLIC_PHP_VERSION=$target_version" );
 		putenv( "SLIC_PHP_CLI_VERSION=$target_version" );
+	} elseif ( $staged_php_version !== null ) {
+		// A PHP version was staged, restore it (project's .env.slic.local may have overwritten it to the wrong version).
+		putenv( "SLIC_PHP_VERSION=$staged_php_version" );
 	}
 
 	// All the possible env files have been loaded, time to set the db image depending on the PHP version.
@@ -390,6 +404,9 @@ function slic_set_php_version( $version, $require_confirm = false, $skip_rebuild
 	if ( $skip_rebuild ) {
 		return;
 	}
+
+	// Set the environment variable so docker-compose build/rebuild operations use the correct PHP version.
+	putenv( "SLIC_PHP_VERSION=$version" );
 
 	rebuild_stack();
 	update_stack_images();
