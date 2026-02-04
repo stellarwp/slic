@@ -583,8 +583,15 @@ function slic_stacks_xdebug_server_name($stack_id) {
 	// Use the same hash approach as project names for consistency
 	$hash = substr(md5($stack_id), 0, 8);
 
-	// Build the key from the root defined in the config file, if any.
-	$key_root = getenv('XDK') ?: 'slic';
+	// Read XDK root from config files, not from getenv() which may be
+	// overwritten by xdebug_setup_env_vars() with a full stack-specific key
+	// (e.g. "slic_a1dc6067") instead of just the root "slic".
+	$root = dirname(__DIR__);
+	$config = read_env_file($root . '/.env.slic');
+	if (file_exists($root . '/.env.slic.local')) {
+		$config = array_merge($config, read_env_file($root . '/.env.slic.local'));
+	}
+	$key_root = $config['XDK'] ?? 'slic';
 
 	return $key_root . '_' . $hash;
 }
