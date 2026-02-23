@@ -11,6 +11,57 @@ use function StellarWP\Slic\Env\env_var_backup;
 require_once __DIR__ . '/xdebug.php';
 
 /**
+ * Returns whether the current script is running inside a phar archive.
+ *
+ * @return bool
+ */
+function is_phar() {
+	return strlen( \Phar::running() ) > 0;
+}
+
+/**
+ * Returns the directory to use for writable data files.
+ *
+ * When running as a phar archive, the phar filesystem is read-only, so writable files
+ * (.env.slic.run, .build-version, .remote-version, .cache, etc.) must be stored in a
+ * real filesystem directory. This function returns:
+ * - When phar: the value of SLIC_DATA_DIR env var, or ~/.slic
+ * - When git clone: SLIC_ROOT_DIR (the project root)
+ *
+ * @return string The absolute path to the writable data directory.
+ */
+function slic_data_dir() {
+	if ( ! is_phar() ) {
+		return SLIC_ROOT_DIR;
+	}
+
+	$data_dir = getenv( 'SLIC_DATA_DIR' );
+
+	if ( ! empty( $data_dir ) ) {
+		if ( ! is_dir( $data_dir ) ) {
+			mkdir( $data_dir, 0755, true );
+		}
+
+		return rtrim( $data_dir, '/' );
+	}
+
+	$home = getenv( 'HOME' ) ?: getenv( 'USERPROFILE' );
+
+	if ( empty( $home ) ) {
+		// Fallback: use system temp directory.
+		$home = sys_get_temp_dir();
+	}
+
+	$data_dir = $home . '/.slic';
+
+	if ( ! is_dir( $data_dir ) ) {
+		mkdir( $data_dir, 0755, true );
+	}
+
+	return $data_dir;
+}
+
+/**
  * Get the CLI header.
  *
  * @param string      $cli_name CLI command name.
@@ -287,7 +338,7 @@ function setup_slic_env( $root_dir, $reset = false, $stack_id = null ) {
 	}
 
 	// Start by loading the run file for all stacks, if any.
-	$run_file = $root_dir . '/.env.slic.run';
+	$run_file = slic_data_dir() . '/.env.slic.run';
 	$staged_php_version = null;
 
 	if ( is_file( $run_file ) ) {
@@ -369,11 +420,11 @@ function setup_slic_env( $root_dir, $reset = false, $stack_id = null ) {
 	// Set up XDebug host for Linux
 	xdebug_setup_linux_host();
 
-	$default_wp_dir = root( '/_wordpress' );
+	$default_wp_dir = slic_data_dir() . '/_wordpress';
 	$wp_dir         = getenv( 'SLIC_WP_DIR' );
 
-	if ( $wp_dir === './_wordpress' || $wp_dir === $default_wp_dir ) {
-		// Default WordPress directory, inside slic.
+	if ( $wp_dir === './_wordpress' || $wp_dir === root( '/_wordpress' ) || $wp_dir === $default_wp_dir ) {
+		// Default WordPress directory, inside slic data dir.
 		$wp_dir = ensure_dir( $default_wp_dir );
 	} else if ( ! is_dir( $wp_dir ) ) {
 		// Custom WordPress directory, it falls on the user to have it set up correctly.
@@ -384,12 +435,12 @@ function setup_slic_env( $root_dir, $reset = false, $stack_id = null ) {
 	$wp_themes_dir = $wp_dir . '/wp-content/themes';
 
 	putenv( 'SLIC_WP_DIR=' . $wp_dir );
-	putenv( 'SLIC_PLUGINS_DIR=' . ensure_dir( getenv( 'SLIC_PLUGINS_DIR' ) ?: root( '_plugins' ) ) );
+	putenv( 'SLIC_PLUGINS_DIR=' . ensure_dir( getenv( 'SLIC_PLUGINS_DIR' ) ?: slic_data_dir() . '/_plugins' ) );
 	putenv( 'SLIC_THEMES_DIR=' . ensure_dir( getenv( 'SLIC_THEMES_DIR' ) ?: $wp_themes_dir ) );
 	putenv( 'SLIC_CACHE=' . cache() );
 
 	if ( empty( getenv( 'COMPOSER_CACHE_DIR' ) ) ) {
-		ensure_dir( root( '.cache' ) );
+		ensure_dir( slic_data_dir() . '/.cache' );
 		putenv( 'COMPOSER_CACHE_DIR=' . cache( '/composer' ) );
 	}
 
@@ -490,7 +541,7 @@ function slic_set_php_version( $version, $require_confirm = false, $skip_rebuild
 		$message        .= PHP_EOL . "The PHP version will be set for <yellow>the current</yellow> stack.";
 	} else {
 		// Apply this version to all the stacks.
-		$run_settings_file = root( '/.env.slic.run' );
+		$run_settings_file = slic_data_dir() . '/.env.slic.run';
 		$message        .= PHP_EOL . "The PHP version will be set for <yellow>all</yellow> stacks.";
 	}
 
@@ -533,7 +584,7 @@ function slic_set_php_version( $version, $require_confirm = false, $skip_rebuild
  * @return void
  */
 function slic_clear_staged_php_flag() {
-	$run_settings_file = root( '/.env.slic.run' );
+	$run_settings_file = slic_data_dir() . '/.env.slic.run';
 
 	write_env_file( $run_settings_file, [ 'SLIC_PHP_VERSION_STAGED' => false ], true );
 }
@@ -1088,7 +1139,7 @@ function rebuild_stack(): void {
  * Write the current CLI_VERSION to the build-version file
  */
 function write_build_version() {
-	file_put_contents( SLIC_ROOT_DIR . '/.build-version', CLI_VERSION );
+	file_put_contents( slic_data_dir() . '/.build-version', CLI_VERSION );
 }
 
 /**
@@ -1137,7 +1188,7 @@ function slic_info() {
 	);
 
 	// Read .env.slic.run directly to show runtime state.
-	$run_env_file = root( '/.env.slic.run' );
+	$run_env_file = slic_data_dir() . '/.env.slic.run';
 	$run_env      = [];
 	if ( file_exists( $run_env_file ) ) {
 		$run_env = read_env_file( $run_env_file );
@@ -1150,7 +1201,7 @@ function slic_info() {
 			file_exists( $slic_root . '/.env.slic' ) ? "  - " . $slic_root . '/.env.slic' : null,
 			file_exists( $slic_root . '/.env.slic.local' ) ? "  - " . $slic_root . '/.env.slic.local' : null,
 			file_exists( $target_path . '/.env.slic.local' ) ? "  - " . $target_path . '/.env.slic.local' : null,
-			file_exists( $slic_root . '/.env.slic.run' ) ? "  - " . $slic_root . '/.env.slic.run' : null,
+			file_exists( slic_data_dir() . '/.env.slic.run' ) ? "  - " . slic_data_dir() . '/.env.slic.run' : null,
 		] ) ) . PHP_EOL . PHP_EOL;
 
 	echo colorize( "<yellow>Current configuration:</yellow>" . PHP_EOL );
@@ -1221,7 +1272,7 @@ function composer_cache_status() {
  * @param callable $args The closure that will produce the current interactive request arguments.
  */
 function slic_handle_composer_cache( callable $args ) {
-	$run_settings_file = root( '/.env.slic.run' );
+	$run_settings_file = slic_data_dir() . '/.env.slic.run';
 	$toggle            = $args( 'toggle', 'status' );
 
 	if ( 'status' === $toggle ) {
@@ -1274,7 +1325,7 @@ function build_prompt_status() {
  * @param callable $args The closure that will produce the current interactive request arguments.
  */
 function slic_handle_build_prompt( callable $args ) {
-	$run_settings_file = root( '/.env.slic.run' );
+	$run_settings_file = slic_data_dir() . '/.env.slic.run';
 	$toggle            = $args( 'toggle', 'on' );
 
 	if ( 'status' === $toggle ) {
@@ -1313,7 +1364,7 @@ function is_interactive() {
  * @param callable $args The closure that will produce the current interactive request arguments.
  */
 function slic_handle_interactive( callable $args ) {
-	$run_settings_file = root( '/.env.slic.run' );
+	$run_settings_file = slic_data_dir() . '/.env.slic.run';
 	$toggle            = $args( 'toggle', 'on' );
 
 	if ( 'status' === $toggle ) {
@@ -1666,29 +1717,22 @@ function maybe_prompt_for_repo_update() {
 	$check_date     = null;
 	$cli_version    = CLI_VERSION;
 	$today          = date( 'Y-m-d' );
+	$data_dir       = slic_data_dir();
 
-	if ( is_file( SLIC_ROOT_DIR . '/.remote-version' ) ) {
-		list( $check_date, $remote_version ) = explode( ':', file_get_contents( SLIC_ROOT_DIR . '/.remote-version' ) );
+	if ( is_file( $data_dir . '/.remote-version' ) ) {
+		list( $check_date, $remote_version ) = explode( ':', file_get_contents( $data_dir . '/.remote-version' ) );
 	}
 
 	if ( empty( $remote_version ) || empty( $check_date ) || $today > $check_date ) {
-		$current_dir = getcwd();
-		chdir( SLIC_ROOT_DIR );
+		$remote_version = fetch_latest_remote_version();
 
-		$tags = explode( "\n", shell_exec( 'git ls-remote --tags origin' ) );
-
-		chdir( $current_dir );
-
-		foreach ( $tags as &$tag ) {
-			$tag_parts = explode( '/', $tag );
-			$tag       = array_pop( $tag_parts );
+		if ( null !== $remote_version ) {
+			file_put_contents( $data_dir . '/.remote-version', "{$today}:{$remote_version}" );
 		}
+	}
 
-		natsort( $tags );
-
-		$remote_version = array_pop( $tags );
-
-		file_put_contents( SLIC_ROOT_DIR . '/.remote-version', "{$today}:{$remote_version}" );
+	if ( null === $remote_version ) {
+		return;
 	}
 
 	// If the version of the CLI is the same as the most recently built version, bail.
@@ -1704,18 +1748,75 @@ function maybe_prompt_for_repo_update() {
 }
 
 /**
+ * Fetches the latest remote version from git tags or GitHub Releases API.
+ *
+ * @return string|null The latest remote version, or null on failure.
+ */
+function fetch_latest_remote_version() {
+	if ( is_phar() ) {
+		return fetch_latest_github_release_version();
+	}
+
+	$current_dir = getcwd();
+	chdir( SLIC_ROOT_DIR );
+
+	$tags = explode( "\n", shell_exec( 'git ls-remote --tags origin' ) );
+
+	chdir( $current_dir );
+
+	foreach ( $tags as &$tag ) {
+		$tag_parts = explode( '/', $tag );
+		$tag       = array_pop( $tag_parts );
+	}
+
+	natsort( $tags );
+
+	return array_pop( $tags );
+}
+
+/**
+ * Fetches the latest release version from the GitHub Releases API.
+ *
+ * @return string|null The latest version tag, or null on failure.
+ */
+function fetch_latest_github_release_version() {
+	$context = stream_context_create( [
+		'http' => [
+			'method'  => 'GET',
+			'header'  => "User-Agent: slic-cli\r\nAccept: application/vnd.github.v3+json\r\n",
+			'timeout' => 5,
+		],
+	] );
+
+	$response = @file_get_contents( 'https://api.github.com/repos/stellarwp/slic/releases/latest', false, $context );
+
+	if ( false === $response ) {
+		return null;
+	}
+
+	$data = json_decode( $response, true );
+
+	if ( ! is_array( $data ) || empty( $data['tag_name'] ) ) {
+		return null;
+	}
+
+	return ltrim( $data['tag_name'], 'v' );
+}
+
+/**
  * If slic stack is out of date, prompt for an execution of slic update.
  */
 function maybe_prompt_for_stack_update() {
 	$build_version = '0.0.1';
 	$cli_version   = CLI_VERSION;
+	$data_dir      = slic_data_dir();
 
-	if ( is_file( SLIC_ROOT_DIR . '/.build-version' ) ) {
-		$build_version = file_get_contents( SLIC_ROOT_DIR . '/.build-version' );
+	if ( is_file( $data_dir . '/.build-version' ) ) {
+		$build_version = file_get_contents( $data_dir . '/.build-version' );
 	}
 
 	// If there isn't a .env.slic.run, this is likely a fresh install. Bail.
-	if ( ! file_exists( SLIC_ROOT_DIR . '/.env.slic.run' ) ) {
+	if ( ! file_exists( $data_dir . '/.env.slic.run' ) ) {
 		return;
 	}
 
@@ -1743,7 +1844,7 @@ function maybe_prompt_for_stack_update() {
  * @param callable $args The closure that will produce the current subdirectories build arguments.
  */
 function slic_handle_build_subdir( callable $args ) {
-	$run_settings_file = root( '/.env.slic.run' );
+	$run_settings_file = slic_data_dir() . '/.env.slic.run';
 	$toggle            = $args( 'toggle', 'on' );
 
 	if ( 'status' === $toggle ) {
@@ -1889,8 +1990,9 @@ function collect_target_suites() {
  * @return bool Whether the current system is ARM-based, or not.
  */
 function is_arm64() {
-	$arm64_architecture_file = __DIR__ . '/../.architecture_arm64';
-	$x86_architecture_file   = __DIR__ . '/../.architecture_x86';
+	$data_dir                = slic_data_dir();
+	$arm64_architecture_file = $data_dir . '/.architecture_arm64';
+	$x86_architecture_file   = $data_dir . '/.architecture_x86';
 
 	if ( is_file( $arm64_architecture_file ) ) {
 		return true;
@@ -1951,7 +2053,7 @@ function setup_architecture_env() {
  * @return string The absolute path to the created directory or file.
  */
 function cache( $path = '/', $create = true ) {
-	$cache_root_dir = __DIR__ . '/../.cache';
+	$cache_root_dir = slic_data_dir() . '/.cache';
 
 	if ( ! is_dir( $cache_root_dir ) && ! mkdir( $cache_root_dir, 0755, true ) && ! is_dir( $cache_root_dir ) ) {
 		echo magenta( "Failed to create cache root directory {$cache_root_dir}." );

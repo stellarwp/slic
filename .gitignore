@@ -44,3 +44,6 @@ _plugins
 
 # PHPUnit cache
 .phpunit.result.cache
+
+# Phar build artifacts
+*.phar
