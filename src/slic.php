@@ -1497,7 +1497,7 @@ function build_command_pool( $base_command, array $command, array $sub_directori
 				 * When this happens, the return status of the command will be a `1`.
 				 * We iterate until the status is a `0`.
 				 */
-				$network_rm_status = (int) process( "docker network rm {$network_name}_slic {$network_name}_default" )( 'status' );
+				$network_rm_status = (int) process( docker_bin() . " network rm {$network_name}_slic {$network_name}_default" )( 'status' );
 			} while ( $network_rm_status !== 0 );
 		}
 

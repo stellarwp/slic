@@ -646,7 +646,7 @@ function slic_stacks_read_ports_from_docker($stack_id) {
 	$project_name = slic_stacks_get_project_name($stack_id);
 
 	// Check if containers are actually running
-	$check_command = "docker ps -q -f label=com.docker.compose.project='$project_name' 2>/dev/null";
+	$check_command = docker_bin() . " ps -q -f label=com.docker.compose.project='$project_name' 2>/dev/null";
 	$check_command_output = shell_exec( $check_command );
 	$container_ids = $check_command_output ? trim( $check_command_output ) : '';
 
@@ -668,7 +668,7 @@ function slic_stacks_read_ports_from_docker($stack_id) {
 		list($port_key, $container_port) = $info;
 
 		// Get the container ID for this service
-		$get_id_command = "docker ps -q -f label=com.docker.compose.project='$project_name' " .
+		$get_id_command = docker_bin() . " ps -q -f label=com.docker.compose.project='$project_name' " .
 		                  "-f label=com.docker.compose.service=$service_name 2>/dev/null";
 		$service_id = trim(shell_exec($get_id_command));
 
@@ -677,7 +677,7 @@ function slic_stacks_read_ports_from_docker($stack_id) {
 		}
 
 		// Get the port mapping for this container
-		$port_command = "docker port $service_id $container_port 2>/dev/null | grep '0.0.0.0' | cut -d: -f2";
+		$port_command = docker_bin() . " port $service_id $container_port 2>/dev/null | grep '0.0.0.0' | cut -d: -f2";
 		$host_port = trim(shell_exec($port_command));
 
 		if (!empty($host_port) && is_numeric($host_port)) {
@@ -718,7 +718,7 @@ function slic_stacks_is_running($stack_id) {
 	}
 
 	// Check if containers are actually running
-    $check_command = "{$timeout_prefix}docker ps -q -f label=com.docker.compose.project='$project_name' 2>/dev/null";
+    $check_command = "{$timeout_prefix}" . docker_bin() . " ps -q -f label=com.docker.compose.project='$project_name' 2>/dev/null";
     $check_command_output = shell_exec($check_command);
 	$container_ids = $check_command_output ? trim($check_command_output) : null;
 

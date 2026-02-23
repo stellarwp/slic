@@ -47,7 +47,7 @@ $cli_command = reset( $command );
 // If the command is `bash` or `ssh` or is empty, then open a shell in the `cli` service.
 if ( empty( $cli_command ) || in_array( $cli_command, [ 'bash', 'ssh' ], true ) ) {
 	// @todo replace from ssh command.
-	$command = sprintf( 'docker exec -it --user "%d:%d" --workdir %s %s bash -c "wp shell"',
+	$command = sprintf( docker_bin() . ' exec -it --user "%d:%d" --workdir %s %s bash -c "wp shell"',
 		getenv( 'SLIC_UID' ),
 		getenv( 'SLIC_GID' ),
 		escapeshellarg( get_project_container_path() ),
