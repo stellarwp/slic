@@ -41,3 +41,6 @@ _plugins
 
 # slic own cache directory
 .cache
+
+# PHPUnit cache
+.phpunit.result.cache
