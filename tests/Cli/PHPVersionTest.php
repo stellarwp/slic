@@ -1,10 +1,8 @@
 <?php
 
-namespace StellarWP\Slic\Test\Cli\php_version;
+namespace StellarWP\Slic\Test\Cli;
 
-use StellarWP\Slic\Test\Cli\BaseTestCase;
-
-class DefaultTest extends BaseTestCase {
+class PHPVersionTest extends BaseTestCase {
 	public function test_default_php_version_is_7_4(): void {
 		// Create a temporary directory.
 		$dir = sys_get_temp_dir() . '/slic-test-' . uniqid( '', true );
