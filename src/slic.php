@@ -284,8 +284,10 @@ function setup_slic_env( $root_dir, $reset = false, $stack_id = null ) {
 		load_env_file( $root_dir . '/.env.slic.local' );
 	}
 
-	// Start by loadind the run file for all stacks, if any.
+	// Start by loading the run file for all stacks, if any.
 	$run_file = $root_dir . '/.env.slic.run';
+	$staged_php_version = null;
+
 	if ( is_file( $run_file ) ) {
 		load_env_file( $run_file );
 	}
@@ -310,6 +312,19 @@ function setup_slic_env( $root_dir, $reset = false, $stack_id = null ) {
 			load_env_file( $stack_run_file );
 			// Load XDebug configuration for the stack.
 			xdebug_setup_env_vars( $stack_id );
+		}
+	}
+
+	// Read the staged PHP version before a project's .env.slic.local can overwrite it.
+	// The staged version may come from the global run file or a stack-specific state file.
+	$staged_env_file = ! empty( $stack_run_file ) && is_file( $stack_run_file ) ? $stack_run_file : $run_file;
+
+	if ( is_file( $staged_env_file ) ) {
+		$staged_env                = read_env_file( $staged_env_file );
+		$is_php_version_staged     = ( $staged_env['SLIC_PHP_VERSION_STAGED'] ?? '' ) === '1';
+
+		if ( $is_php_version_staged && isset( $staged_env['SLIC_PHP_VERSION'] ) ) {
+			$staged_php_version = $staged_env['SLIC_PHP_VERSION'];
 		}
 	}
 
@@ -341,6 +356,9 @@ function setup_slic_env( $root_dir, $reset = false, $stack_id = null ) {
 	if ( $target_version ) {
 		putenv( "SLIC_PHP_VERSION=$target_version" );
 		putenv( "SLIC_PHP_CLI_VERSION=$target_version" );
+	} elseif ( $staged_php_version !== null ) {
+		// A PHP version was staged; restore it since the project's .env.slic.local may have overwritten it.
+		putenv( "SLIC_PHP_VERSION=$staged_php_version" );
 	}
 
 	// All the possible env files have been loaded, time to set the db image depending on the PHP version.
