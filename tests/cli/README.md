@@ -98,6 +98,61 @@ echo $output;
 %s3.0.0%s
 ```
 
+## slic Environment Variables
+
+The following environment variables can be used to control slic behavior. In `.phpt` tests, set them
+via the `--ENV--` section.
+
+### Binary Overrides
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SLIC_DOCKER_BIN` | `docker` | Path to the `docker` binary. |
+| `SLIC_DOCKER_COMPOSE_BIN` | `<SLIC_DOCKER_BIN> compose` | Path to the `docker compose` binary. Defaults to `docker compose` derived from `SLIC_DOCKER_BIN`. |
+
+### Output Control
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `NO_COLOR` | _(unset)_ | When set (any value), disables ANSI color codes and the ASCII art banner. See [no-color.org](https://no-color.org/). |
+
+### Stack and Project Configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SLIC_PHP_VERSION` | `7.4` | PHP version used in the stack containers. |
+| `SLIC_COMPOSER_VERSION` | _(auto)_ | Composer version to use in the stack. |
+| `SLIC_PLUGINS_DIR` | `./_plugins` | Path to the plugins directory. |
+| `SLIC_THEMES_DIR` | `./_wordpress/wp-content/themes` | Path to the themes directory. |
+| `SLIC_WP_DIR` | `./_wordpress` | Path to the WordPress installation. |
+| `SLIC_HERE_DIR` | _(unset)_ | Path set by the `here` command for the current working directory. |
+| `SLIC_CURRENT_PROJECT` | _(unset)_ | The currently active project (set via `use`). |
+| `SLIC_CURRENT_PROJECT_SUBDIR` | _(unset)_ | Subdirectory within the current project. |
+| `SLIC_STACK` | _(unset)_ | Path to a specific stack to target. |
+| `SLIC_SCRIPTS` | `./containers/scripts` | Path to container scripts. |
+
+### Runtime Settings
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SLIC_INTERACTIVE` | `1` | Whether slic runs in interactive mode. |
+| `SLIC_BUILD_PROMPT` | `1` | Whether to prompt before builds. |
+| `SLIC_BUILD_SUBDIR` | `1` | Whether to build subdirectories. |
+| `SLIC_UID` | _(auto)_ | UID used for container user mapping. |
+| `SLIC_GID` | _(auto)_ | GID used for container user mapping. |
+| `SLIC_HOST` | _(auto)_ | Host IP address for container networking. |
+| `SLIC_TEST_SUBNET` | `28` | Subnet used for test networking. |
+| `SLIC_DB_LOCALHOST_PORT` | `9906` | Localhost port for the database service. |
+
+### WordPress Settings
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SLIC_WP_HTTP_BLOCK_EXTERNAL` | `true` | Block external HTTP requests in WordPress. |
+| `SLIC_DISABLE_WP_CRON` | `true` | Disable WP-Cron in the test environment. |
+| `SLIC_WP_AUTO_UPDATE_CORE` | `false` | Control WordPress core auto-updates. |
+| `SLIC_AUTOMATIC_UPDATER_DISABLED` | `true` | Disable the WordPress automatic updater. |
+
 ## Tips
 
 - Always include the closing `?>` tag in `--FILE--` sections.
