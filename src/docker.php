@@ -299,6 +299,17 @@ function docker_compose_realtime( array $options = [], $stack_id = null ) {
 }
 
 /**
+ * Returns the path to the docker binary.
+ *
+ * Unless the `SLIC_DOCKER_BIN` environment variable is set, we'll use the default `docker` command.
+ *
+ * @return string
+ */
+function docker_bin(): string {
+	return (string) getenv( 'SLIC_DOCKER_BIN' ) ?: 'docker';
+}
+
+/**
  * Returns the path to the docker compose binary.
  *
  * Newer versions of Docker include the `docker compose` command instead of a separate `docker-compose`.
@@ -309,7 +320,7 @@ function docker_compose_realtime( array $options = [], $stack_id = null ) {
  * @return string
  */
 function docker_compose_bin(): string {
-	return (string) getenv( 'SLIC_DOCKER_COMPOSE_BIN' ) ?: 'docker compose';
+	return (string) getenv( 'SLIC_DOCKER_COMPOSE_BIN' ) ?: docker_bin() . ' compose';
 }
 
 /**

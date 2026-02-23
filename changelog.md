@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Interactive Terminal User Interface (TUI) for the `slic use` command. Running `slic use` without arguments now opens an interactive selection menu with fuzzy search and current selection indicator.
 - New `slic completion` command with subcommands to install bash/zsh/fish completions
 - Shell completion support for bash, zsh, and fish shells with dynamic completions for commands, targets, git branches, stack paths, and options
+- CLI PHPUnit test suite in the `tests/Cli` directory
 
 # [2.1.6] - 2025-12-03
 - Added - Prevent running slic if the `uopz` extension is enabled with `uopz.exit=0`.

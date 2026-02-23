@@ -147,12 +147,12 @@ function get_service_id( string $service, $stack_id = null ) {
 	if ( null === $stack_id ) {
 		// No stack found, fall back to old behavior (working_dir)
 		$root = root();
-		$command = "docker ps -f label=com.docker.compose.project.working_dir='$root' " .
+		$command = docker_bin() . " ps -f label=com.docker.compose.project.working_dir='$root' " .
 		           "-f label=com.docker.compose.service=$service --format '{{.ID}}'";
 	} else {
 		// Use project name for filtering
 		$project_name = slic_stacks_get_project_name( $stack_id );
-		$command = "docker ps -f label=com.docker.compose.project='$project_name' " .
+		$command = docker_bin() . " ps -f label=com.docker.compose.project='$project_name' " .
 		           "-f label=com.docker.compose.service=$service --format '{{.ID}}'";
 	}
 

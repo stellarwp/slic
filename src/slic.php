@@ -20,14 +20,16 @@ require_once __DIR__ . '/xdebug.php';
  * @return string
  */
 function cli_header( $cli_name, $full = false, $extra = null ) {
+	$compact = ! $full || no_color();
+
 	$header_parts = [
 		light_cyan( $cli_name ) . ' version ' . light_cyan( CLI_VERSION ),
-		$full ? PHP_EOL : ' - ',
+		$compact ? ' - ' : PHP_EOL,
 		'StellarWP local testing and development tool',
 		PHP_EOL,
 	];
 
-	if ( ! $full ) {
+	if ( $compact ) {
 		return implode( '', $header_parts ) . PHP_EOL;
 	}
 
@@ -1495,7 +1497,7 @@ function build_command_pool( $base_command, array $command, array $sub_directori
 				 * When this happens, the return status of the command will be a `1`.
 				 * We iterate until the status is a `0`.
 				 */
-				$network_rm_status = (int) process( "docker network rm {$network_name}_slic {$network_name}_default" )( 'status' );
+				$network_rm_status = (int) process( docker_bin() . " network rm {$network_name}_slic {$network_name}_default" )( 'status' );
 			} while ( $network_rm_status !== 0 );
 		}
 
