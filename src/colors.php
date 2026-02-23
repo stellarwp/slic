@@ -11,11 +11,28 @@ namespace StellarWP\Slic;
  * @param string $string     The string to colorize.
  * @param int    $color_code The string color, or style code, to apply to the string.
  *
- * @return string The style string.
+ * @return string The style string. Returns the unmodified string when the NO_COLOR
+ *                 environment variable is set.
  *
  * @see https://misc.flogisoft.com/bash/tip_colors_and_formatting
+ * @see https://no-color.org/
  */
+/**
+ * Returns whether color output is disabled via the NO_COLOR environment variable.
+ *
+ * @return bool
+ *
+ * @see https://no-color.org/
+ */
+function no_color() {
+	return getenv( 'NO_COLOR' ) !== false || isset( $_SERVER['NO_COLOR'] );
+}
+
 function style( $string, $color_code ) {
+	if ( no_color() ) {
+		return $string;
+	}
+
 	return "\033[" . $color_code . "m" . $string . "\033[0m";
 }
 

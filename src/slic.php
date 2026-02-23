@@ -20,14 +20,16 @@ require_once __DIR__ . '/xdebug.php';
  * @return string
  */
 function cli_header( $cli_name, $full = false, $extra = null ) {
+	$compact = ! $full || no_color();
+
 	$header_parts = [
 		light_cyan( $cli_name ) . ' version ' . light_cyan( CLI_VERSION ),
-		$full ? PHP_EOL : ' - ',
+		$compact ? ' - ' : PHP_EOL,
 		'StellarWP local testing and development tool',
 		PHP_EOL,
 	];
 
-	if ( ! $full ) {
+	if ( $compact ) {
 		return implode( '', $header_parts ) . PHP_EOL;
 	}
 
