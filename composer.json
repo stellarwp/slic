@@ -4,9 +4,10 @@
     "type": "project",
     "license": "GPL-2.0-or-later",
     "require": {
-        "php": ">=8.2"
+        "php": ">=7.4"
     },
     "require-dev": {
+        "php": ">=8.2",
         "phpunit/phpunit": "^11.0"
     },
     "autoload-dev": {
