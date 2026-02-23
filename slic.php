@@ -48,7 +48,7 @@ use function StellarWP\Slic\root;
 use function StellarWP\Slic\setup_slic_env;
 
 $cli_name = 'slic';
-const CLI_VERSION = '3.0.0';
+require_once __DIR__ . '/version.php';
 
 /*
  * Parse global flags BEFORE argument parsing to avoid them being treated as commands.
