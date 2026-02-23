@@ -5,7 +5,7 @@
 >
     <testsuites>
         <testsuite name="CLI Tests">
-            <directory suffix="Test.php">tests/cli</directory>
+            <directory suffix="Test.php">tests/Cli</directory>
         </testsuite>
     </testsuites>
 </phpunit>
