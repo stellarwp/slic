@@ -2,22 +2,14 @@
 
 namespace StellarWP\Slic\Test\Cli;
 
+use StellarWP\Slic\Test\Support\Factories\Directory;
+
 class PHPVersionTest extends BaseTestCase {
 	public function test_default_php_version_is_7_4(): void {
-		// Create a temporary directory.
-		$dir = sys_get_temp_dir() . '/slic-test-' . uniqid( '', true );
-
-		// In the temp directory create a plugin.
-		mkdir( $dir . '/00-default', 0777, true );
-		file_put_contents(
-			$dir . '/00-default/plugin.php',
-			'/**
-     * Plugin Name: Test Plugin
-     */'
-		);
-
-		// Change to the directory.
-		chdir( $dir );
+		$pluginsDir = Directory::createTemp()
+		                       ->createPlugin( 'test-plugin' )
+		                       ->getAbsolutePath();
+		chdir( $pluginsDir );
 
 		// Set the directory as slic root.
 		$this->slicExec( 'here' );
@@ -30,7 +22,7 @@ class PHPVersionTest extends BaseTestCase {
 		);
 
 		// Set the target to the plugin.
-		$this->slicExec( 'use 00-default', true );
+		$this->slicExec( 'use test-plugin', true );
 
 		// Check the plugin PHP version.
 		$this->assertStringContainsString(

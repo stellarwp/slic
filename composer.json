@@ -11,7 +11,8 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "StellarWP\\Slic\\Test\\": "tests/"
+            "StellarWP\\Slic\\Test\\": "tests/",
+          "StellarWP\\Slic\\Test\\Support\\": "tests/_support"
         }
     },
     "config": {
