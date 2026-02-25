@@ -20,6 +20,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Shell completion support for bash, zsh, and fish shells with dynamic completions for commands, targets, git branches, stack paths, and options
 - CLI PHPUnit test suite in the `tests/Cli` directory
 
+# [2.1.7] - 2026-02-02
+- Fixed - Preserve staged PHP versions (from `slic php-version set X.Y --skip-rebuild`) when a project's `.env.slic.local` file would otherwise override them. Staged versions now correctly take precedence over project-specific PHP version overrides.
+
 # [2.1.6] - 2025-12-03
 - Added - Prevent running slic if the `uopz` extension is enabled with `uopz.exit=0`.
 
