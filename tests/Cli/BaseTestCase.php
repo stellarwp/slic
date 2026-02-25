@@ -16,10 +16,12 @@ abstract class BaseTestCase extends TestCase {
 	private array $createdStackIds = [];
 
 	private static string $dockerMockBin = '';
+	private static string $gitMockDir = '';
 
 	public static function setUpBeforeClass(): void {
 		parent::setUpBeforeClass();
 		self::$dockerMockBin = dirname( __DIR__ ) . '/_support/bin/docker-mock';
+		self::$gitMockDir = dirname( __DIR__ ) . '/_support/bin/git-mock-dir';
 	}
 
 	public function setUp(): void {
@@ -52,6 +54,7 @@ abstract class BaseTestCase extends TestCase {
 	 */
 	protected function slicExec( string $command, array $env = [] ): string {
 		$env['NO_COLOR'] = '1';
+		$env['SLIC_INTERACTIVE'] = '0';
 
 		$envString = '';
 		foreach ( $env as $key => $value ) {
@@ -60,8 +63,8 @@ abstract class BaseTestCase extends TestCase {
 
 		$commandString = $envString . 'php ' . escapeshellarg( dirname( __DIR__, 2 ) . '/slic.php' ) . ' ' . $command;
 
-		// Redirect stderr to stdout to capture all output.
-		return (string) shell_exec( $commandString . ' 2>&1' );
+		// Close stdin to prevent interactive prompts from blocking, and redirect stderr to stdout.
+		return (string) shell_exec( $commandString . ' </dev/null 2>&1' );
 	}
 
 	/**
@@ -73,6 +76,19 @@ abstract class BaseTestCase extends TestCase {
 		return [
 			'SLIC_DOCKER_BIN'         => self::$dockerMockBin,
 			'SLIC_DOCKER_COMPOSE_BIN' => self::$dockerMockBin,
+		];
+	}
+
+	/**
+	 * Returns env vars that replace git with a mock that always fails.
+	 *
+	 * Prevents real git clone calls from hanging on SSH authentication prompts.
+	 *
+	 * @return array<string,string>
+	 */
+	protected function gitMockEnv(): array {
+		return [
+			'PATH' => self::$gitMockDir . ':' . getenv( 'PATH' ),
 		];
 	}
 
