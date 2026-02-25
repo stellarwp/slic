@@ -65,7 +65,13 @@ class CompletionTest extends BaseTestCase {
 	}
 
 	public function test_completion_no_args_shows_instructions(): void {
-		$output = $this->slicExec( 'completion' );
+		// Use a clean HOME so is_installed() returns false, ensuring install instructions are shown.
+		$tempHome = sys_get_temp_dir() . '/slic-test-home-' . uniqid( '', true );
+		mkdir( $tempHome, 0777, true );
+
+		$output = $this->slicExec( 'completion', [ 'HOME' => $tempHome ] );
+
+		@rmdir( $tempHome );
 
 		$this->assertStringContainsString(
 			'Detected shell:',
@@ -74,9 +80,9 @@ class CompletionTest extends BaseTestCase {
 		);
 
 		$this->assertStringContainsString(
-			'completion cache-clear',
+			'completion install',
 			$output,
-			'The output should mention the cache-clear subcommand.'
+			'The output should mention the completion install subcommand.'
 		);
 	}
 }

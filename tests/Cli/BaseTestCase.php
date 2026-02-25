@@ -17,6 +17,7 @@ abstract class BaseTestCase extends TestCase {
 
 	private static string $dockerMockBin = '';
 	private static string $gitMockDir = '';
+	private string $slicCacheDir = '';
 
 	public static function setUpBeforeClass(): void {
 		parent::setUpBeforeClass();
@@ -27,6 +28,8 @@ abstract class BaseTestCase extends TestCase {
 	public function setUp(): void {
 		parent::setUp();
 		$this->initialDir = getcwd();
+		$this->slicCacheDir = sys_get_temp_dir() . '/slic-test-cache-' . uniqid( '', true );
+		mkdir( $this->slicCacheDir . '/completions', 0777, true );
 	}
 
 	public function tearDown(): void {
@@ -39,6 +42,11 @@ abstract class BaseTestCase extends TestCase {
 				'stack stop ' . escapeshellarg( $stackId ),
 				$this->dockerMockEnv()
 			);
+		}
+
+		// Remove the temporary cache directory.
+		if ( $this->slicCacheDir !== '' && is_dir( $this->slicCacheDir ) ) {
+			$this->removeDirectory( $this->slicCacheDir );
 		}
 
 		parent::tearDown();
@@ -55,6 +63,14 @@ abstract class BaseTestCase extends TestCase {
 	protected function slicExec( string $command, array $env = [] ): string {
 		$env['NO_COLOR'] = '1';
 		$env['SLIC_INTERACTIVE'] = '0';
+		// Provide a dummy SSH_AUTH_SOCK to prevent setup_id() from exiting in CI.
+		if ( ! isset( $env['SSH_AUTH_SOCK'] ) && empty( getenv( 'SSH_AUTH_SOCK' ) ) ) {
+			$env['SSH_AUTH_SOCK'] = '/tmp/fake-ssh-agent.sock';
+		}
+		// Use a temporary cache directory to avoid polluting the real cache.
+		if ( ! isset( $env['SLIC_CACHE_DIR'] ) && $this->slicCacheDir !== '' ) {
+			$env['SLIC_CACHE_DIR'] = $this->slicCacheDir;
+		}
 
 		$envString = '';
 		foreach ( $env as $key => $value ) {
@@ -112,5 +128,18 @@ abstract class BaseTestCase extends TestCase {
 		$this->createdStackIds[] = realpath( $pluginsDir );
 
 		return $pluginsDir;
+	}
+
+	private function removeDirectory( string $dir ): void {
+		$items = new \RecursiveIteratorIterator(
+			new \RecursiveDirectoryIterator( $dir, \FilesystemIterator::SKIP_DOTS ),
+			\RecursiveIteratorIterator::CHILD_FIRST
+		);
+
+		foreach ( $items as $item ) {
+			$item->isDir() ? rmdir( $item->getPathname() ) : unlink( $item->getPathname() );
+		}
+
+		rmdir( $dir );
 	}
 }
