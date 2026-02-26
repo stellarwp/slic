@@ -19,6 +19,13 @@ abstract class BaseTestCase extends TestCase {
 	private static string $gitMockDir = '';
 	private string $slicCacheDir = '';
 
+	/**
+	 * Temporary directories created during the test, removed in tearDown.
+	 *
+	 * @var string[]
+	 */
+	private array $tempDirs = [];
+
 	public static function setUpBeforeClass(): void {
 		parent::setUpBeforeClass();
 		self::$dockerMockBin = dirname( __DIR__ ) . '/_support/bin/docker-mock';
@@ -49,18 +56,29 @@ abstract class BaseTestCase extends TestCase {
 			$this->removeDirectory( $this->slicCacheDir );
 		}
 
+		// Remove any temporary directories created during the test.
+		foreach ( $this->tempDirs as $dir ) {
+			if ( is_dir( $dir ) ) {
+				$this->removeDirectory( $dir );
+			}
+		}
+
 		parent::tearDown();
 	}
 
 	/**
 	 * Execute a slic command and return the output.
 	 *
+	 * When `$stdin` is provided, `proc_open()` is used to pipe the content to the process's stdin
+	 * and `SLIC_INTERACTIVE` is set to `'1'`. This path is intended for small payloads only; for
+	 * commands that produce more than ~64 KB of combined output, the sequential read of stdout then
+	 * stderr could deadlock.
+	 *
 	 * @param string               $command The command to execute, escaped if required.
 	 * @param array<string,string> $env     Optional environment variables to set for the command.
-	 * @param string|null          $stdin   Optional stdin content to pipe to the process. When provided,
-	 *                                      SLIC_INTERACTIVE is set to '1' and proc_open is used.
+	 * @param string|null          $stdin   Optional stdin content to pipe to the process.
 	 *
-	 * @return string The command output.
+	 * @return string The command output (stdout and stderr merged).
 	 */
 	protected function slicExec( string $command, array $env = [], ?string $stdin = null ): string {
 		$env['NO_COLOR'] = '1';
@@ -85,17 +103,25 @@ abstract class BaseTestCase extends TestCase {
 			$descriptors = [
 				0 => [ 'pipe', 'r' ],
 				1 => [ 'pipe', 'w' ],
-				2 => [ 'pipe', 'w' ],
 			];
-			$process = proc_open( $commandString, $descriptors, $pipes );
-			fwrite( $pipes[0], $stdin );
+			// Redirect stderr to stdout so output ordering matches the shell_exec path.
+			$process = proc_open( $commandString . ' 2>&1', $descriptors, $pipes );
+
+			if ( ! is_resource( $process ) ) {
+				$this->fail( "proc_open() failed for command: $commandString" );
+			}
+
+			$written = fwrite( $pipes[0], $stdin );
+			if ( $written === false || $written < strlen( $stdin ) ) {
+				fclose( $pipes[0] );
+				$this->fail( "fwrite() to stdin pipe failed or wrote only $written of " . strlen( $stdin ) . " bytes for command: $commandString" );
+			}
 			fclose( $pipes[0] );
-			$output = stream_get_contents( $pipes[1] ) . stream_get_contents( $pipes[2] );
+			$output = stream_get_contents( $pipes[1] );
 			fclose( $pipes[1] );
-			fclose( $pipes[2] );
 			proc_close( $process );
 
-			return $output;
+			return (string) $output;
 		}
 
 		// Close stdin to prevent interactive prompts from blocking, and redirect stderr to stdout.
@@ -147,6 +173,19 @@ abstract class BaseTestCase extends TestCase {
 		$this->createdStackIds[] = realpath( $pluginsDir );
 
 		return $pluginsDir;
+	}
+
+	/**
+	 * Creates a temporary directory that is automatically cleaned up in tearDown.
+	 *
+	 * @return string The absolute path to the created directory.
+	 */
+	protected function createTempDir(): string {
+		$dir = sys_get_temp_dir() . '/slic-test-' . uniqid( '', true );
+		mkdir( $dir, 0777, true );
+		$this->tempDirs[] = $dir;
+
+		return $dir;
 	}
 
 	private function removeDirectory( string $dir ): void {

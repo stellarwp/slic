@@ -66,12 +66,9 @@ class CompletionTest extends BaseTestCase {
 
 	public function test_completion_no_args_shows_instructions(): void {
 		// Use a clean HOME so is_installed() returns false, ensuring install instructions are shown.
-		$tempHome = sys_get_temp_dir() . '/slic-test-home-' . uniqid( '', true );
-		mkdir( $tempHome, 0777, true );
+		$tempHome = $this->createTempDir();
 
 		$output = $this->slicExec( 'completion', [ 'HOME' => $tempHome ] );
-
-		@rmdir( $tempHome );
 
 		$this->assertStringContainsString(
 			'Detected shell:',
@@ -83,6 +80,81 @@ class CompletionTest extends BaseTestCase {
 			'completion install',
 			$output,
 			'The output should mention the completion install subcommand.'
+		);
+	}
+
+	public function test_completion_install_confirm_writes_config(): void {
+		$tempHome = $this->createTempDir();
+		file_put_contents( $tempHome . '/.bashrc', '' );
+
+		$output = $this->slicExec(
+			'completion install bash',
+			[ 'HOME' => $tempHome ],
+			"yes\n"
+		);
+
+		$bashrc = file_get_contents( $tempHome . '/.bashrc' );
+
+		$this->assertStringContainsString(
+			'Continue with installation?',
+			$output,
+			'The install flow should prompt for confirmation.'
+		);
+		$this->assertStringContainsString(
+			'completions installed successfully',
+			$output,
+			'The output should confirm successful installation.'
+		);
+		$this->assertStringContainsString(
+			'slic completions',
+			$bashrc,
+			'The .bashrc file should contain the slic completions block.'
+		);
+	}
+
+	public function test_completion_install_decline_cancels(): void {
+		$tempHome = $this->createTempDir();
+		file_put_contents( $tempHome . '/.bashrc', '' );
+
+		$output = $this->slicExec(
+			'completion install bash',
+			[ 'HOME' => $tempHome ],
+			"no\n"
+		);
+
+		$bashrc = file_get_contents( $tempHome . '/.bashrc' );
+
+		$this->assertStringContainsString(
+			'Installation cancelled.',
+			$output,
+			'Declining the prompt should cancel installation.'
+		);
+		$this->assertEmpty(
+			$bashrc,
+			'The .bashrc file should remain untouched after cancellation.'
+		);
+	}
+
+	public function test_completion_install_fish_confirm_creates_symlink(): void {
+		$tempHome = $this->createTempDir();
+		mkdir( $tempHome . '/.config/fish/completions', 0777, true );
+
+		$output = $this->slicExec(
+			'completion install fish',
+			[ 'HOME' => $tempHome ],
+			"yes\n"
+		);
+
+		$symlinkPath = $tempHome . '/.config/fish/completions/slic.fish';
+
+		$this->assertStringContainsString(
+			'completions installed successfully',
+			$output,
+			'The output should confirm successful fish installation.'
+		);
+		$this->assertTrue(
+			is_link( $symlinkPath ),
+			'A symlink should be created for the fish completion script.'
 		);
 	}
 }

@@ -26,7 +26,7 @@ class TargetTest extends BaseTestCase {
 		);
 	}
 
-	public function test_target_interactive_collects_targets_and_commands(): void {
+	public function test_target_interactive_flow(): void {
 		$this->setUpPluginsDir();
 
 		// Pipe: target "test-plugin", end targets, command "info", end commands, confirm.
@@ -34,50 +34,27 @@ class TargetTest extends BaseTestCase {
 		$output = $this->slicExec( 'target', $this->dockerMockEnv(), $stdin );
 
 		$this->assertStringContainsString(
-			'Target',
+			'Target (return when done):',
 			$output,
 			'The interactive target flow should prompt for targets.'
 		);
 		$this->assertStringContainsString(
-			'test-plugin',
-			$output,
-			'The output should echo the entered target name.'
-		);
-		$this->assertStringContainsString(
-			'Command',
-			$output,
-			'The interactive target flow should prompt for commands.'
-		);
-	}
-
-	public function test_target_interactive_shows_collected_targets(): void {
-		$this->setUpPluginsDir( 'plugin-a' );
-
-		// Enter one target, end targets loop, enter a command, end commands, confirm.
-		$stdin  = "plugin-a\n\ninfo\n\n\n";
-		$output = $this->slicExec( 'target', $this->dockerMockEnv(), $stdin );
-
-		$this->assertStringContainsString(
 			'Targets:',
 			$output,
-			'The output should display the "Targets:" label.'
+			'The output should display the "Targets:" label after collecting targets.'
 		);
 		$this->assertStringContainsString(
-			'plugin-a',
+			'test-plugin',
 			$output,
 			'The output should include the collected target name.'
 		);
-	}
-
-	public function test_target_interactive_prompts_confirmation(): void {
-		$this->setUpPluginsDir();
-
-		// Enter target, end targets, enter command, end commands, confirm.
-		$stdin  = "test-plugin\n\ninfo\n\n\n";
-		$output = $this->slicExec( 'target', $this->dockerMockEnv(), $stdin );
-
 		$this->assertStringContainsString(
-			'Are you sure',
+			'Command (return when done):',
+			$output,
+			'The interactive target flow should prompt for commands.'
+		);
+		$this->assertStringContainsString(
+			'Are you sure you want to run these commands on',
 			$output,
 			'The interactive target flow should prompt for confirmation before executing.'
 		);
