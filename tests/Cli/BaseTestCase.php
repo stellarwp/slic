@@ -57,12 +57,14 @@ abstract class BaseTestCase extends TestCase {
 	 *
 	 * @param string               $command The command to execute, escaped if required.
 	 * @param array<string,string> $env     Optional environment variables to set for the command.
+	 * @param string|null          $stdin   Optional stdin content to pipe to the process. When provided,
+	 *                                      SLIC_INTERACTIVE is set to '1' and proc_open is used.
 	 *
 	 * @return string The command output.
 	 */
-	protected function slicExec( string $command, array $env = [] ): string {
+	protected function slicExec( string $command, array $env = [], ?string $stdin = null ): string {
 		$env['NO_COLOR'] = '1';
-		$env['SLIC_INTERACTIVE'] = '0';
+		$env['SLIC_INTERACTIVE'] = $stdin !== null ? '1' : '0';
 		// Provide a dummy SSH_AUTH_SOCK to prevent setup_id() from exiting in CI.
 		if ( ! isset( $env['SSH_AUTH_SOCK'] ) && empty( getenv( 'SSH_AUTH_SOCK' ) ) ) {
 			$env['SSH_AUTH_SOCK'] = '/tmp/fake-ssh-agent.sock';
@@ -78,6 +80,23 @@ abstract class BaseTestCase extends TestCase {
 		}
 
 		$commandString = $envString . 'php ' . escapeshellarg( dirname( __DIR__, 2 ) . '/slic.php' ) . ' ' . $command;
+
+		if ( $stdin !== null ) {
+			$descriptors = [
+				0 => [ 'pipe', 'r' ],
+				1 => [ 'pipe', 'w' ],
+				2 => [ 'pipe', 'w' ],
+			];
+			$process = proc_open( $commandString, $descriptors, $pipes );
+			fwrite( $pipes[0], $stdin );
+			fclose( $pipes[0] );
+			$output = stream_get_contents( $pipes[1] ) . stream_get_contents( $pipes[2] );
+			fclose( $pipes[1] );
+			fclose( $pipes[2] );
+			proc_close( $process );
+
+			return $output;
+		}
 
 		// Close stdin to prevent interactive prompts from blocking, and redirect stderr to stdout.
 		return (string) shell_exec( $commandString . ' </dev/null 2>&1' );
