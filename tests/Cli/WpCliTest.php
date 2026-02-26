@@ -92,4 +92,27 @@ class WpCliTest extends BaseTestCase {
 			'The site-cli command should not produce an unknown command error.'
 		);
 	}
+
+	public function test_site_cli_install_decline_exits_without_running(): void {
+		$this->setUpPluginsDir();
+
+		$this->slicExec( 'use test-plugin', $this->dockerMockEnv() );
+
+		$output = $this->slicExec(
+			'site-cli _install',
+			$this->dockerMockEnv(),
+			"no\n"
+		);
+
+		$this->assertStringContainsString(
+			'Do you really want to run it?',
+			$output,
+			'The _install subcommand should prompt for confirmation.'
+		);
+		$this->assertStringNotContainsString(
+			'--admin_user=admin',
+			$output,
+			'Declining should prevent the install command from running.'
+		);
+	}
 }
