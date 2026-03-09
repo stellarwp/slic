@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-      - "[0-9]+.[0-9]+.[0-9]+"
+      - '[0-9]+.[0-9]+.[0-9]+'
   release:
     types: [published]
 
@@ -18,66 +18,66 @@ jobs:
       matrix:
         include:
           # WordPress 6.2 with PHP 8.0, 8.1, 8.2 - both architectures
-          - wp_version: "6.2"
-            php_version: "8.0"
+          - wp_version: '6.2'
+            php_version: '8.0'
             runner: ubuntu-latest
             platform: linux/amd64
             arch: amd64
-          - wp_version: "6.2"
-            php_version: "8.0"
+          - wp_version: '6.2'
+            php_version: '8.0'
             runner: ubuntu-24.04-arm
             platform: linux/arm64
             arch: arm64
-          - wp_version: "6.2"
-            php_version: "8.1"
+          - wp_version: '6.2'
+            php_version: '8.1'
             runner: ubuntu-latest
             platform: linux/amd64
             arch: amd64
-          - wp_version: "6.2"
-            php_version: "8.1"
+          - wp_version: '6.2'
+            php_version: '8.1'
             runner: ubuntu-24.04-arm
             platform: linux/arm64
             arch: arm64
-          - wp_version: "6.2"
-            php_version: "8.2"
+          - wp_version: '6.2'
+            php_version: '8.2'
             runner: ubuntu-latest
             platform: linux/amd64
             arch: amd64
-          - wp_version: "6.2"
-            php_version: "8.2"
+          - wp_version: '6.2'
+            php_version: '8.2'
             runner: ubuntu-24.04-arm
             platform: linux/arm64
             arch: arm64
           # WordPress 5.9 with PHP 7.3 - both architectures
-          - wp_version: "5.9"
-            php_version: "7.3"
+          - wp_version: '5.9'
+            php_version: '7.3'
             runner: ubuntu-latest
             platform: linux/amd64
             arch: amd64
-          - wp_version: "5.9"
-            php_version: "7.3"
+          - wp_version: '5.9'
+            php_version: '7.3'
             runner: ubuntu-24.04-arm
             platform: linux/arm64
             arch: arm64
           # WordPress 6.1.1 with PHP 7.4 - both architectures
-          - wp_version: "6.1.1"
-            php_version: "7.4"
+          - wp_version: '6.1.1'
+            php_version: '7.4'
             runner: ubuntu-latest
             platform: linux/amd64
             arch: amd64
-          - wp_version: "6.1.1"
-            php_version: "7.4"
+          - wp_version: '6.1.1'
+            php_version: '7.4'
             runner: ubuntu-24.04-arm
             platform: linux/arm64
             arch: arm64
           # WordPress 6.5 with PHP 8.3 - both architectures
-          - wp_version: "6.5"
-            php_version: "8.3"
+          - wp_version: '6.5'
+            php_version: '8.3'
             runner: ubuntu-latest
             platform: linux/amd64
             arch: amd64
-          - wp_version: "6.5"
-            php_version: "8.3"
+          - wp_version: '6.5'
+            php_version: '8.3'
             runner: ubuntu-24.04-arm
             platform: linux/arm64
             arch: arm64
@@ -141,13 +141,12 @@ jobs:
       matrix:
         # Match the unique combinations from the build matrix
         include:
-          - php_version: "8.0"
-          - php_version: "8.1"
-          - php_version: "8.2"
-          - php_version: "7.3"
-          - php_version: "7.4"
-          - php_version: "8.3"
-          - php_version: "8.4"
+          - php_version: '8.0'
+          - php_version: '8.1'
+          - php_version: '8.2'
+          - php_version: '7.3'
+          - php_version: '7.4'
+          - php_version: '8.3'
     steps:
       - name: Log in to the Container registry
         uses: docker/login-action@v3
@@ -155,7 +154,7 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
+      
       - name: Create and push multi-arch manifest
         run: |
           # Determine the tag based on the event type
@@ -166,9 +165,9 @@ jobs:
           else
             TAG="${GITHUB_REF#refs/heads/}"
           fi
-
+          
           IMAGE_BASE="ghcr.io/${{ github.repository }}-wordpress-php${{ matrix.php_version }}"
-
+          
           # Create multi-arch manifest
           docker buildx imagetools create -t "${IMAGE_BASE}:${TAG}" \
             "${IMAGE_BASE}:${TAG}-amd64" \
