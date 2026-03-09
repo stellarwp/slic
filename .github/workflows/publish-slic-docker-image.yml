@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-      - '[0-9]+.[0-9]+.[0-9]+'
+      - "[0-9]+.[0-9]+.[0-9]+"
   release:
     types: [published]
 
@@ -17,8 +17,8 @@ jobs:
     strategy:
       matrix:
         # The php_version is the docker tag from https://hub.docker.com/_/php/tags
-        php_version: [ '7.3', '7.4', '8.0', '8.1', '8.2', '8.3' ]
-        arch: [ 'amd64', 'arm64' ]
+        php_version: ["7.3", "7.4", "8.0", "8.1", "8.2", "8.3", "8.4"]
+        arch: ["amd64", "arm64"]
         # Add runner and platform info for each architecture
         include:
           - arch: amd64
@@ -86,7 +86,7 @@ jobs:
       packages: write
     strategy:
       matrix:
-        php_version: [ '7.3', '7.4', '8.0', '8.1', '8.2', '8.3' ]
+        php_version: ["7.3", "7.4", "8.0", "8.1", "8.2", "8.3", "8.4"]
     steps:
       - name: Log in to the Container registry
         uses: docker/login-action@v3
@@ -105,9 +105,9 @@ jobs:
           else
             TAG="${GITHUB_REF#refs/heads/}"
           fi
-          
+
           IMAGE_BASE="ghcr.io/${{ github.repository }}-php${{ matrix.php_version }}"
-          
+
           # Create multi-arch manifest
           docker buildx imagetools create -t "${IMAGE_BASE}:${TAG}" \
             "${IMAGE_BASE}:${TAG}-amd64" \
