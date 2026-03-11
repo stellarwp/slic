@@ -34,7 +34,7 @@ RUN chmod a+rx /usr/local/bin/wp /usr/local/bin/install-php-extensions
 # PHP extensions (heavy compilation step with cache mount)
 # -------------------------------
 RUN --mount=type=cache,target=/tmp/ipe-cache,sharing=locked \
-    install-php-extensions xdebug pdo pdo_mysql mysqli zip uopz pcntl sockets intl exif gd
+    install-php-extensions xdebug pdo pdo_mysql mysqli zip uopz pcntl sockets intl exif gd igbinary redis
 
 # -------------------------------
 # System dependencies (with cache mount for speed)
