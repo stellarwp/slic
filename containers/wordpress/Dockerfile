@@ -21,7 +21,7 @@ ADD https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar /u
 RUN --mount=type=cache,target=/tmp/ipe-cache,sharing=locked \
     chmod a+x /usr/local/bin/install-php-extensions && \
     chmod a+rx /usr/local/bin/wp && \
-    install-php-extensions xdebug
+    install-php-extensions xdebug igbinary redis
 
 # -------------------------------
 # WordPress version update (PHP 7.4)
