@@ -65,7 +65,7 @@ if ( in_array( $sub_command, [ 'set', 'reset' ] ) ) {
 }
 
 // Read .env.slic.run to get runtime value.
-$run_env_file    = root( '/.env.slic.run' );
+$run_env_file    = slic_data_dir() . '/.env.slic.run';
 $runtime_version = null;
 if ( file_exists( $run_env_file ) ) {
 	$run_env         = read_env_file( $run_env_file );

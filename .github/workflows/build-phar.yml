@@ -1,0 +1,64 @@
+name: Build and test phar
+
+on:
+  push:
+    branches:
+      - main
+      - '[0-9]+.[0-9]+.[0-9]+'
+  pull_request:
+
+jobs:
+  build-phar:
+    name: Build and test phar (PHP ${{ matrix.php-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        php-version: ['7.4', '8.1', '8.2']
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP for building
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          tools: composer:v2
+          extensions: phar
+          ini-values: phar.readonly=0
+
+      - name: Install humbug/box
+        run: composer global require humbug/box:^4.0
+
+      - name: Build phar
+        run: box compile
+
+      - name: Setup PHP ${{ matrix.php-version }} for testing
+        if: matrix.php-version != '8.1'
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          extensions: phar
+
+      - name: Verify phar boots
+        run: php slic.phar help
+
+      - name: Verify phar version output
+        run: php slic.phar help 2>&1 | grep -q "version"
+
+      - name: Verify phar upgrade check
+        run: php slic.phar upgrade
+
+      - name: Verify no test files in phar
+        run: |
+          php -r "
+          foreach (new RecursiveIteratorIterator(new Phar('slic.phar')) as \$f) {
+            \$path = (string) \$f;
+            if (preg_match('#/(tests|docs|\.github)/#', \$path)) {
+              echo 'FAIL: found excluded file: ' . \$path . PHP_EOL;
+              exit(1);
+            }
+          }
+          echo 'OK: no test/docs/.github files in phar' . PHP_EOL;
+          "

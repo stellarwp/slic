@@ -38,7 +38,7 @@ $targets = $args( '...' );
 
 quietly_tear_down_stack();
 
-$run_settings_file = root( '/.env.slic.run' );
+$run_settings_file = slic_data_dir() . '/.env.slic.run';
 echo "Removing {$run_settings_file} ... ";
 echo ( ! file_exists( $run_settings_file ) || unlink( $run_settings_file ) ) ?
 	light_cyan( 'done' )

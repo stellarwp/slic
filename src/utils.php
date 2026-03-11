@@ -733,7 +733,7 @@ function normalize_php_version( $version ) {
  */
 function get_stack_env_file( $stack_id = null ) {
 	if ( null === $stack_id ) {
-		return root( '.env.slic.run' );
+		return slic_data_dir() . '/.env.slic.run';
 	}
 
 	// Load stacks.php functions if not already loaded
