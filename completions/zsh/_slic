@@ -1,0 +1,65 @@
+#compdef slic
+# Zsh completion script for slic
+#
+# This script provides tab completion for the slic CLI tool.
+# It delegates completion generation to a PHP script.
+#
+# Installation:
+#   Add this to ~/.zshrc:
+#   fpath=(/path/to/slic/completions/zsh $fpath)
+#   autoload -Uz compinit && compinit
+#
+# Or use: slic completion install zsh
+
+_slic() {
+    local slic_cmd slic_dir completions
+
+    # Find the slic command
+    slic_cmd=$(command -v slic 2>/dev/null)
+
+    if [[ -z "$slic_cmd" ]]; then
+        return 0
+    fi
+
+    # Resolve symlinks to get the actual slic directory
+    if [[ -L "$slic_cmd" ]]; then
+        # macOS uses readlink differently than GNU
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            # On macOS, try to use greadlink if available, otherwise use a while loop
+            if command -v greadlink >/dev/null 2>&1; then
+                slic_cmd=$(greadlink -f "$slic_cmd")
+            else
+                # Follow symlinks manually with protection against circular links
+                local iterations=0
+                local max_iterations=10
+                while [[ -L "$slic_cmd" ]] && (( iterations < max_iterations )); do
+                    local link_target
+                    link_target=$(readlink "$slic_cmd")
+                    if [[ "$link_target" == /* ]]; then
+                        slic_cmd="$link_target"
+                    else
+                        slic_cmd="$(dirname "$slic_cmd")/$link_target"
+                    fi
+                    (( iterations++ ))
+                done
+            fi
+        else
+            slic_cmd=$(readlink -f "$slic_cmd" 2>/dev/null)
+        fi
+    fi
+
+    slic_dir=$(dirname "$slic_cmd")
+
+    # Call the PHP completion script
+    completions=($(php "${slic_dir}/src/completions/complete.php" \
+        --line="${BUFFER}" \
+        --point="${CURSOR}" \
+        --words="${words[*]}" \
+        --cword="${CURRENT}" 2>/dev/null))
+
+    if [[ ${#completions[@]} -gt 0 ]]; then
+        _describe 'slic commands' completions
+    fi
+}
+
+_slic "$@"

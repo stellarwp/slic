@@ -37,7 +37,7 @@ ensure_services_running( [ 'wordpress', 'slic' ] );
 
 setup_id();
 
-$command = sprintf( 'docker exec -it --user "%d:%d" --workdir %s %s bash',
+$command = sprintf( docker_bin() . ' exec -it --user "%d:%d" --workdir %s %s bash',
 	getenv( 'SLIC_UID' ),
 	getenv( 'SLIC_GID' ),
 	escapeshellarg( get_project_container_path() ),

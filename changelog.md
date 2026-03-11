@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [3.0.0] - TBD
+
+### Changed
+- Breaking Change - The `slic here` command will now create a new stack for the current path instead of changing the context of the previously only stack to the path.
+- Breaking Change - The `XDK` configuration variable (`slic` by default) is now used as **root** for each stack IDE key. An `XDK` of `slic` will create stack IDE keys like `slic_<stack_hash>` and not just `slic` as it was before.
+- Extend `-y, --yes` flag support for all commands that might require confirmation
+
+### Added
+- Multiple, isolated Docker Compose projects per path 
+- Git worktree multi-stack support for concurrent development workflows
+- New `slic worktree` command leveraging dedicated stacks for each worktree
+- Interactive Terminal User Interface (TUI) for the `slic use` command. Running `slic use` without arguments now opens an interactive selection menu with fuzzy search and current selection indicator.
+- New `slic completion` command with subcommands to install bash/zsh/fish completions
+- Shell completion support for bash, zsh, and fish shells with dynamic completions for commands, targets, git branches, stack paths, and options
+- CLI PHPUnit test suite in the `tests/Cli` directory
+
 # [2.1.8] - 2026-03-11
 - Fixed - Add missing `igbinary` and `redis` PHP extensions to the slic and WordPress Dockerfiles.
 

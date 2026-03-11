@@ -102,7 +102,7 @@ if ( ! $open_bash_shell ) {
 	// Do not run the wp-cli container as `root` to avoid a number of file mode issues, run as `www-data` instead.
 	$user   = empty( $user ) ? 'www-data' : $user;
 
-	$command = sprintf( 'docker exec -it --user "%d:%d" --workdir %s %s bash -c "wp shell"',
+	$command = sprintf( docker_bin() . ' exec -it --user "%d:%d" --workdir %s %s bash -c "wp shell"',
 		getenv( 'SLIC_UID' ),
 		getenv( 'SLIC_GID' ),
 		escapeshellarg( get_project_container_path() ),
