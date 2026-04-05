@@ -383,7 +383,17 @@ Agent Skills-compatible tools discover the skill automatically when working insi
 For manual installation in other projects, use the [skills CLI](https://agentskills.io):
 
 ```bash
+# Install globally (available to all projects):
+npx skills add stellarwp/slic -g
+
+# Install for a specific project:
 npx skills add stellarwp/slic
+
+# Install for a specific agent:
+npx skills add stellarwp/slic --agent cursor
+
+# List available skills before installing:
+npx skills add stellarwp/slic --list
 ```
 
 ## Update Guide
