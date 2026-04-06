@@ -101,11 +101,25 @@ function get_cwd_dir_name() {
 }
 
 /**
+ * Returns true when slic here was run from a themes directory (SLIC_HERE_DIR matches SLIC_THEMES_DIR).
+ * In this mode themes are valid targets even though slic_here_is_site() is false.
+ *
+ * @return bool
+ */
+function slic_here_is_themes() {
+	$here_dir   = realpath( getenv( 'SLIC_HERE_DIR' ) );
+	$themes_dir = realpath( getenv( 'SLIC_THEMES_DIR' ) );
+
+	return $here_dir && $themes_dir && $here_dir === $themes_dir;
+}
+
+/**
  * Gets all valid targets.
  *
  * Valid targets are:
  *   - Anything in the plugins directory.
- *   - If slic here was done on the site level, "site" is also a valid target.
+ *   - If slic here was done at the site level, "site" is also a valid target and themes are included.
+ *   - If slic here was done at the themes directory level, themes are also valid targets.
  *
  * @param bool $as_array Whether to output as an array. If falsy, will output as a formatted string, including
  *                       headings, line breaks, and indentation.
@@ -121,12 +135,16 @@ function get_valid_targets( $as_array = true ) {
 	$themes = array_keys( dev_themes() );
 	sort( $themes, SORT_NATURAL );
 
+	$include_themes = slic_here_is_site() || slic_here_is_themes();
+
 	$targets = $plugins;
 
 	if ( slic_here_is_site() ) {
 		$targets     = array_merge( [ 'site' ], $plugins, $themes );
 		$targets_str .= PHP_EOL . '  Site:' . PHP_EOL;
 		$targets_str .= '    - site';
+	} elseif ( slic_here_is_themes() ) {
+		$targets = array_merge( $themes, $plugins );
 	}
 
 	$targets_str .= PHP_EOL . "  Plugins:" . PHP_EOL;
@@ -138,7 +156,7 @@ function get_valid_targets( $as_array = true ) {
 		)
 	);
 
-	if ( slic_here_is_site() && $themes ) {
+	if ( $include_themes && $themes ) {
 		$targets_str .= PHP_EOL . "  Themes:" . PHP_EOL;
 		$targets_str .= implode(
 			PHP_EOL, array_map(
@@ -1226,7 +1244,8 @@ function dir_has_req_build_file( $base_command, $path ) {
  */
 function maybe_build_install_command_pool( $base_command, $target, array $sub_directories = [] ) {
 	// Only prompt if the target itself has has been identified as available to build. If any subs need to build, will auto-try.
-	if ( dir_has_req_build_file( $base_command, slic_plugins_dir( $target ) ) ) {
+	// Use get_project_local_path() so that theme targets resolve to SLIC_THEMES_DIR instead of SLIC_PLUGINS_DIR.
+	if ( dir_has_req_build_file( $base_command, get_project_local_path() ) ) {
 		$run = ask(
 			PHP_EOL . yellow( $target . ':' ) . " Would you like to run the {$base_command} install processes for this plugin?",
 			'yes'
@@ -1271,7 +1290,8 @@ function build_command_pool( $base_command, array $command, array $sub_directori
 	$targets     = [];
 
 	// If applicable, include target plugin before subdirectory plugins.
-	$path = $using === 'site' ? slic_wp_dir() : slic_plugins_dir( slic_target() );
+	// Use get_project_local_path() so that theme targets resolve to SLIC_THEMES_DIR.
+	$path = get_project_local_path();
 	if ( dir_has_req_build_file( $base_command, $path ) ) {
 		$targets[] = 'target';
 	}

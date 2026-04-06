@@ -118,9 +118,41 @@ slic here
 
 ![slic here](docs/images/slic-here.gif)
 
-#### 2. WordPress Directory
+#### 2. Themes Directory
 
-The second option is to navigate to the root of your site (likely where `wp-config.php` lives) and run the `slic here`
+If you are developing a **theme**, run `slic here` from your themes directory. `slic` will detect that it is pointed at a themes directory and correctly:
+
+- Mount the directory as `wp-content/themes/` in the Docker stack so your theme is available to WordPress as a real theme.
+- Keep a separate plugins directory (`SLIC_PLUGINS_DIR`) so dependencies like WooCommerce install into `wp-content/plugins/` and not into your themes directory.
+- Run Codeception from within the correct `wp-content/themes/<theme>` path inside the container.
+
+Example:
+
+```bash
+# Change to your themes directory
+cd /path/to/your/wp-content/themes
+
+slic here
+slic use my-theme
+slic run wpunit
+```
+
+> **WPLoader suite config:** When testing a theme, activate it via the WPLoader `theme:` key rather than listing it under `plugins`/`activatePlugins`. WordPress will then load the theme (including its `functions.php`) automatically.
+>
+> ```yaml
+> modules:
+>   config:
+>     WPLoader:
+>       plugins:
+>         - woocommerce/woocommerce.php
+>       activatePlugins:
+>         - woocommerce/woocommerce.php
+>       theme: my-theme   # ← activates the theme under test
+> ```
+
+#### 3. WordPress Directory
+
+The third option is to navigate to the root of your site (likely where `wp-config.php` lives) and run the `slic here`
 command.
 
 > Note: This is an opinionated option and there are some assumptions that are made:
