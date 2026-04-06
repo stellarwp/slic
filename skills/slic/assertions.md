@@ -10,20 +10,20 @@ Factories create WordPress objects (posts, users, terms, comments, attachments) 
 
 ```php
 // Create and return the ID.
-$post_id = static::factory()->post->create( [
+$post_id = $this->factory()->post->create( [
 	'post_title'  => 'My Post',
 	'post_status' => 'publish',
 	'post_type'   => 'post',
 ] );
 
 // Create and return the full WP_Post object.
-$post = static::factory()->post->create_and_get( [
+$post = $this->factory()->post->create_and_get( [
 	'post_title'  => 'My Post',
 	'post_status' => 'publish',
 ] );
 
 // Create multiple — returns array of IDs.
-$post_ids = static::factory()->post->create_many( 5, [
+$post_ids = $this->factory()->post->create_many( 5, [
 	'post_status' => 'publish',
 ] );
 ```
@@ -32,20 +32,20 @@ $post_ids = static::factory()->post->create_many( 5, [
 
 | Factory | Creates | Common args |
 |---------|---------|-------------|
-| `static::factory()->post` | `WP_Post` | `post_title`, `post_status`, `post_type`, `post_author`, `post_content`, `post_date` |
-| `static::factory()->user` | `WP_User` | `role`, `user_login`, `user_email`, `display_name` |
-| `static::factory()->term` | `WP_Term` | `taxonomy`, `name`, `slug`, `parent`, `description` |
-| `static::factory()->comment` | `WP_Comment` | `comment_post_ID`, `user_id`, `comment_content`, `comment_approved` |
-| `static::factory()->attachment` | Attachment `WP_Post` | `file`, `post_parent`, `post_mime_type` |
-| `static::factory()->category` | Category `WP_Term` | `name`, `slug`, `parent` |
-| `static::factory()->tag` | Tag `WP_Term` | `name`, `slug` |
+| `$this->factory()->post` | `WP_Post` | `post_title`, `post_status`, `post_type`, `post_author`, `post_content`, `post_date` |
+| `$this->factory()->user` | `WP_User` | `role`, `user_login`, `user_email`, `display_name` |
+| `$this->factory()->term` | `WP_Term` | `taxonomy`, `name`, `slug`, `parent`, `description` |
+| `$this->factory()->comment` | `WP_Comment` | `comment_post_ID`, `user_id`, `comment_content`, `comment_approved` |
+| `$this->factory()->attachment` | Attachment `WP_Post` | `file`, `post_parent`, `post_mime_type` |
+| `$this->factory()->category` | Category `WP_Term` | `name`, `slug`, `parent` |
+| `$this->factory()->tag` | Tag `WP_Term` | `name`, `slug` |
 
 ### Common factory recipes
 
 **Post with meta:**
 
 ```php
-$post_id = static::factory()->post->create( [
+$post_id = $this->factory()->post->create( [
 	'post_type' => 'product',
 ] );
 update_post_meta( $post_id, '_price', '29.99' );
@@ -55,7 +55,7 @@ update_post_meta( $post_id, '_sku', 'WIDGET-001' );
 **User with specific role and meta:**
 
 ```php
-$user_id = static::factory()->user->create( [
+$user_id = $this->factory()->user->create( [
 	'role'       => 'editor',
 	'user_email' => 'editor@example.com',
 ] );
@@ -65,11 +65,11 @@ update_user_meta( $user_id, 'preferred_language', 'en' );
 **Term hierarchy:**
 
 ```php
-$parent_id = static::factory()->term->create( [
+$parent_id = $this->factory()->term->create( [
 	'taxonomy' => 'category',
 	'name'     => 'Parent Category',
 ] );
-$child_id = static::factory()->term->create( [
+$child_id = $this->factory()->term->create( [
 	'taxonomy' => 'category',
 	'name'     => 'Child Category',
 	'parent'   => $parent_id,
@@ -79,8 +79,8 @@ $child_id = static::factory()->term->create( [
 **Post with terms assigned:**
 
 ```php
-$post_id = static::factory()->post->create();
-$term_id = static::factory()->term->create( [
+$post_id = $this->factory()->post->create();
+$term_id = $this->factory()->term->create( [
 	'taxonomy' => 'category',
 	'name'     => 'News',
 ] );
@@ -111,7 +111,7 @@ $this->assertSame( 'Input cannot be empty.', $result->get_error_message() );
 ### Post meta assertions
 
 ```php
-$post_id = static::factory()->post->create();
+$post_id = $this->factory()->post->create();
 update_post_meta( $post_id, '_my_key', 'expected_value' );
 
 // Assert meta value.
@@ -124,7 +124,7 @@ $this->assertEmpty( get_post_meta( $post_id, '_nonexistent_key', true ) );
 ### User and user meta assertions
 
 ```php
-$user_id = static::factory()->user->create( [ 'role' => 'editor' ] );
+$user_id = $this->factory()->user->create( [ 'role' => 'editor' ] );
 $user    = get_userdata( $user_id );
 
 // Assert the role.
@@ -225,7 +225,7 @@ public function it_should_render_widget_html(): void {
  */
 public function it_should_return_items_via_rest(): void {
 	// Arrange — create test data.
-	static::factory()->post->create_many( 3, [ 'post_status' => 'publish' ] );
+	$this->factory()->post->create_many( 3, [ 'post_status' => 'publish' ] );
 
 	// Act — dispatch a REST request internally (no HTTP needed).
 	$request  = new \WP_REST_Request( 'GET', '/my-plugin/v1/items' );
@@ -266,7 +266,7 @@ use Codeception\TestCase\WPTestCase;
 use lucatume\WPBrowser\TestCase\WPTestCase;
 ```
 
-The factory API remains the same (`static::factory()->post->create()`, etc.). The key difference is the import path. Check your project's `composer.json` for which version is installed:
+The factory API remains the same (`$this->factory()->post->create()`, etc.). The key difference is the import path. Check your project's `composer.json` for which version is installed:
 
 ```bash
 slic composer show lucatume/wp-browser | grep versions

@@ -68,7 +68,7 @@ This generates three files in the plugin root:
 slic run                              # all suites, sequentially
 slic run wpunit                       # one suite
 slic run tests/wpunit/FooTest.php     # one file
-slic run tests/wpunit/FooTest.php:test_something  # one method
+slic run tests/wpunit/FooTest::test_something  # one method
 ```
 
 ### 5. Interactive shell (optional)
@@ -87,7 +87,7 @@ When creating or modifying a test file, follow these rules:
 2. **Use the AAA pattern** — Arrange, Act, Assert. Keep each section visually distinct.
 3. **Name clearly** — file: `<DescriptiveName>Test.php`; methods: `test_<what_it_verifies>` or use `@test`.
 4. **Isolate** — every test must pass in any order. Clean up in `tearDown()`.
-5. **Use factories** — prefer `static::factory()->post->create()` over raw SQL or `wp_insert_post()` in test setup.
+5. **Use factories** — prefer `$this->factory()->post->create()` over raw SQL or `wp_insert_post()` in test setup.
 6. **Follow WordPress coding standards** — tabs for indentation, spaces inside parentheses.
 
 See [test-anatomy.md](test-anatomy.md) for the complete file skeleton and naming rules.

@@ -49,21 +49,16 @@ use Codeception\TestCase\WPTestCase;
  */
 class FooTest extends WPTestCase {
 
-	/**
-	 * A reusable fixture — set in setUp(), cleaned in tearDown().
-	 *
-	 * @var int
-	 */
-	private $post_id;
+	private int $post_id;
 
 	/**
 	 * Runs before every test method.
 	 */
-	public function setUp(): void {
+	protected function setUp(): void {
 		parent::setUp();
 
 		// Arrange shared fixtures.
-		$this->post_id = static::factory()->post->create( [
+		$this->post_id = $this->factory()->post->create( [
 			'post_title'  => 'Test Post',
 			'post_status' => 'publish',
 		] );
@@ -72,7 +67,7 @@ class FooTest extends WPTestCase {
 	/**
 	 * Runs after every test method.
 	 */
-	public function tearDown(): void {
+	protected function tearDown(): void {
 		// Clean up anything not handled by factories.
 
 		parent::tearDown();
@@ -115,7 +110,7 @@ Every test method should follow Arrange, Act, Assert:
 ```php
 public function test_discount_is_applied(): void {
 	// Arrange — set up the conditions.
-	$product_id = static::factory()->post->create( [
+	$product_id = $this->factory()->post->create( [
 		'post_type' => 'product',
 	] );
 	update_post_meta( $product_id, '_price', '100' );
@@ -190,6 +185,50 @@ public function status_provider(): array {
 - Method must be `public` and return an `array` (or `Generator`).
 - Use descriptive string keys — they appear in test output on failure.
 - The provider method name goes in the `@dataProvider` annotation.
+
+## Setting up composer.json test namespaces
+
+Tests should follow PSR-4 autoloading, configured in `composer.json`. Each suite gets its own namespace:
+
+```json
+{
+    "autoload-dev": {
+        "psr-4": {
+            "My_Plugin\\Tests\\Unit\\": "tests/unit/",
+            "My_Plugin\\Tests\\WPUnit\\": "tests/wpunit/",
+            "My_Plugin\\Tests\\Functional\\": "tests/functional/",
+            "My_Plugin\\Tests\\Acceptance\\": "tests/acceptance/"
+        }
+    }
+}
+```
+
+**Key rules:**
+
+- Each suite directory maps to its own namespace root.
+- Test file namespaces must match the directory structure under the suite root (PSR-4).
+- Run `slic composer dump-autoload` after modifying `autoload-dev` to regenerate the autoloader.
+
+**Example mapping:**
+
+| File path | Namespace |
+|-----------|-----------|
+| `tests/wpunit/FooTest.php` | `My_Plugin\Tests\WPUnit` |
+| `tests/wpunit/Admin/SettingsTest.php` | `My_Plugin\Tests\WPUnit\Admin` |
+| `tests/unit/HelperTest.php` | `My_Plugin\Tests\Unit` |
+
+The namespace in `codeception.dist.yml` must match:
+
+```yaml
+suites:
+  wpunit:
+    actor: WpunitTester
+    path: wpunit
+    namespace: My_Plugin\Tests\WPUnit
+    modules:
+      enabled:
+        - WPLoader
+```
 
 ## Generating test files with slic
 

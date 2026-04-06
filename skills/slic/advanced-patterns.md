@@ -9,21 +9,18 @@ Test REST endpoints without making actual HTTP requests by using `rest_do_reques
 ```php
 class REST_Items_Test extends \Codeception\TestCase\WPTestCase {
 
-	/**
-	 * @var int
-	 */
-	private $admin_id;
+	private int $admin_id;
 
-	public function setUp(): void {
+	protected function setUp(): void {
 		parent::setUp();
 
-		$this->admin_id = static::factory()->user->create( [ 'role' => 'administrator' ] );
+		$this->admin_id = $this->factory()->user->create( [ 'role' => 'administrator' ] );
 
 		// Register routes if your plugin registers them on rest_api_init.
 		do_action( 'rest_api_init' );
 	}
 
-	public function tearDown(): void {
+	protected function tearDown(): void {
 		parent::tearDown();
 	}
 
@@ -33,7 +30,7 @@ class REST_Items_Test extends \Codeception\TestCase\WPTestCase {
 	public function it_should_return_items_for_authenticated_user(): void {
 		// Arrange.
 		wp_set_current_user( $this->admin_id );
-		static::factory()->post->create_many( 3, [
+		$this->factory()->post->create_many( 3, [
 			'post_type'   => 'post',
 			'post_status' => 'publish',
 		] );
@@ -157,13 +154,13 @@ When your plugin creates custom tables, tests need to create and drop them to ma
 ```php
 class Custom_Table_Test extends \Codeception\TestCase\WPTestCase {
 
-	public function setUp(): void {
+	protected function setUp(): void {
 		parent::setUp();
 
 		$this->create_custom_table();
 	}
 
-	public function tearDown(): void {
+	protected function tearDown(): void {
 		$this->drop_custom_table();
 
 		parent::tearDown();
@@ -301,7 +298,7 @@ public function it_should_unschedule_on_deactivate(): void {
 If your test needs a custom post type that isn't registered by the plugin's bootstrap, register it in setUp and unregister in tearDown:
 
 ```php
-public function setUp(): void {
+protected function setUp(): void {
 	parent::setUp();
 
 	register_post_type( 'event', [
@@ -310,7 +307,7 @@ public function setUp(): void {
 	] );
 }
 
-public function tearDown(): void {
+protected function tearDown(): void {
 	unregister_post_type( 'event' );
 
 	parent::tearDown();
@@ -320,7 +317,7 @@ public function tearDown(): void {
  * @test
  */
 public function it_should_query_events(): void {
-	static::factory()->post->create_many( 2, [
+	$this->factory()->post->create_many( 2, [
 		'post_type'   => 'event',
 		'post_status' => 'publish',
 	] );
@@ -338,7 +335,7 @@ public function it_should_query_events(): void {
 Some plugins use static properties or singletons that persist across tests because they live in PHP memory, not the database.
 
 ```php
-public function tearDown(): void {
+protected function tearDown(): void {
 	// Reset a singleton instance.
 	$property = new \ReflectionProperty( \My_Plugin\Container::class, 'instance' );
 	$property->setAccessible( true );

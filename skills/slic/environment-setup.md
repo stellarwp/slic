@@ -9,11 +9,11 @@ Use when your test only needs WordPress loaded and makes assertions against buil
 ```php
 class SimpleTest extends \Codeception\TestCase\WPTestCase {
 
-	public function setUp(): void {
+	protected function setUp(): void {
 		parent::setUp();
 	}
 
-	public function tearDown(): void {
+	protected function tearDown(): void {
 		parent::tearDown();
 	}
 
@@ -47,32 +47,29 @@ Use when your test creates posts, users, terms, or other WordPress objects. Fact
 ```php
 class PostFeatureTest extends \Codeception\TestCase\WPTestCase {
 
-	/**
-	 * @var int
-	 */
-	private $editor_id;
+	private int $editor_id;
 
 	/**
 	 * @var int[]
 	 */
-	private $post_ids;
+	private array $post_ids;
 
-	public function setUp(): void {
+	protected function setUp(): void {
 		parent::setUp();
 
 		// Create a user with the editor role.
-		$this->editor_id = static::factory()->user->create( [
+		$this->editor_id = $this->factory()->user->create( [
 			'role' => 'editor',
 		] );
 
 		// Create 3 published posts authored by the editor.
-		$this->post_ids = static::factory()->post->create_many( 3, [
+		$this->post_ids = $this->factory()->post->create_many( 3, [
 			'post_author' => $this->editor_id,
 			'post_status' => 'publish',
 		] );
 	}
 
-	public function tearDown(): void {
+	protected function tearDown(): void {
 		// Factory-created data is cleaned up by the transaction rollback.
 		// Only clean non-transactional side effects here.
 
@@ -106,15 +103,15 @@ class PostFeatureTest extends \Codeception\TestCase\WPTestCase {
 
 ```php
 // Single objects — returns ID.
-$post_id = static::factory()->post->create( [ 'post_title' => 'Hello' ] );
-$user_id = static::factory()->user->create( [ 'role' => 'subscriber' ] );
-$term_id = static::factory()->term->create( [ 'taxonomy' => 'category', 'name' => 'News' ] );
+$post_id = $this->factory()->post->create( [ 'post_title' => 'Hello' ] );
+$user_id = $this->factory()->user->create( [ 'role' => 'subscriber' ] );
+$term_id = $this->factory()->term->create( [ 'taxonomy' => 'category', 'name' => 'News' ] );
 
 // Get the full object instead of just the ID.
-$post = static::factory()->post->create_and_get( [ 'post_title' => 'Hello' ] );
+$post = $this->factory()->post->create_and_get( [ 'post_title' => 'Hello' ] );
 
 // Create multiple — returns array of IDs.
-$post_ids = static::factory()->post->create_many( 5, [ 'post_status' => 'publish' ] );
+$post_ids = $this->factory()->post->create_many( 5, [ 'post_status' => 'publish' ] );
 ```
 
 All factory-created data lives inside the test's database transaction and is rolled back automatically.
@@ -131,12 +128,9 @@ class FullIsolationTest extends \Codeception\TestCase\WPTestCase {
 	 */
 	private $original_option;
 
-	/**
-	 * @var callable The HTTP mock filter callback (stored for removal).
-	 */
-	private $http_filter;
+	private \Closure $http_filter;
 
-	public function setUp(): void {
+	protected function setUp(): void {
 		parent::setUp();
 
 		// Save and override an option.
@@ -158,7 +152,7 @@ class FullIsolationTest extends \Codeception\TestCase\WPTestCase {
 		add_action( 'my_plugin_event', [ $this, 'track_event' ] );
 	}
 
-	public function tearDown(): void {
+	protected function tearDown(): void {
 		// Restore the original option value.
 		if ( false === $this->original_option ) {
 			delete_option( 'my_plugin_setting' );
@@ -200,16 +194,13 @@ For expensive operations that don't change between tests (e.g., importing a larg
 ```php
 class ExpensiveSetupTest extends \Codeception\TestCase\WPTestCase {
 
-	/**
-	 * @var int Shared fixture — created once for all tests in this class.
-	 */
-	private static $fixture_page_id;
+	private static int $fixture_page_id;
 
 	public static function setUpBeforeClass(): void {
 		parent::setUpBeforeClass();
 
 		// Expensive one-time setup.
-		self::$fixture_page_id = static::factory()->post->create( [
+		self::$fixture_page_id = $this->factory()->post->create( [
 			'post_type'   => 'page',
 			'post_title'  => 'Fixture Page',
 			'post_status' => 'publish',
@@ -223,18 +214,96 @@ class ExpensiveSetupTest extends \Codeception\TestCase\WPTestCase {
 		parent::tearDownAfterClass();
 	}
 
-	public function setUp(): void {
+	protected function setUp(): void {
 		parent::setUp();
 		// Per-test setup can reference self::$fixture_page_id.
 	}
 
-	public function tearDown(): void {
+	protected function tearDown(): void {
 		parent::tearDown();
 	}
 }
 ```
 
 **Important**: Data created in `setUpBeforeClass()` lives outside the per-test transaction. You must clean it up explicitly in `tearDownAfterClass()`.
+
+## Custom base TestCase with Container integration
+
+For projects that use a Dependency Injection container (e.g., di52, lucatume/di52, or PHP-DI), create a base test class that gives all your tests easy access to the container:
+
+```php
+<?php
+
+namespace My_Plugin\Tests\WPUnit;
+
+use Codeception\TestCase\WPTestCase;
+use My_Plugin\Container;
+
+/**
+ * Base test case for integration tests.
+ *
+ * Provides container access and common utilities for all test classes.
+ */
+abstract class TestCase extends WPTestCase {
+
+	/**
+	 * The DI container instance.
+	 */
+	protected Container $container;
+
+	protected function setUp(): void {
+		parent::setUp();
+
+		// Get a fresh container instance for each test.
+		$this->container = tribe( Container::class );
+		// Or however your plugin exposes its container, e.g.:
+		// $this->container = my_plugin()->container();
+	}
+
+	protected function tearDown(): void {
+		unset( $this->container );
+
+		parent::tearDown();
+	}
+}
+```
+
+Then extend your custom base class instead of `WPTestCase` directly:
+
+```php
+<?php
+
+namespace My_Plugin\Tests\WPUnit;
+
+class Payment_Gateway_Test extends TestCase {
+
+	/**
+	 * @test
+	 */
+	public function it_should_resolve_gateway_from_container(): void {
+		$gateway = $this->container->get( \My_Plugin\Gateway::class );
+
+		$this->assertInstanceOf( \My_Plugin\Gateway::class, $gateway );
+	}
+
+	/**
+	 * @test
+	 */
+	public function it_should_process_payment(): void {
+		$processor = $this->container->get( \My_Plugin\Payment_Processor::class );
+
+		$result = $processor->charge( 100, 'USD' );
+
+		$this->assertTrue( $result->is_successful() );
+	}
+}
+```
+
+**Benefits:**
+
+- Every test gets a consistent container reference via `$this->container`.
+- Shared setup logic (container initialization, common fixtures) lives in one place.
+- Adding new shared utilities (helper methods, additional fixtures) only requires updating the base class.
 
 ## Common pitfalls
 

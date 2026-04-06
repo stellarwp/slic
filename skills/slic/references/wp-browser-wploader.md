@@ -94,7 +94,7 @@ modules:
 | `dbHost` | string | Database host (`db` in slic) |
 | `dbUser` | string | Database user (`root` in slic) |
 | `dbPassword` | string | Database password (from `MYSQL_ROOT_PASSWORD`) |
-| `tablePrefix` | string | WordPress table prefix (`wp_`) |
+| `tablePrefix` | string | WordPress table prefix (`wp_`). **Important:** Use different prefixes for each suite (e.g., `wp_` for wpunit, `acc_` for acceptance) to prevent table collisions when running suites in parallel or sequentially. |
 | `domain` | string | WordPress domain (`wordpress.test`) |
 | `adminEmail` | string | Admin email for the test installation |
 | `plugins` | array | Plugin files to load (relative to plugins dir) |
@@ -147,12 +147,12 @@ slic composer show lucatume/wp-browser | grep versions
 
 ### Lifecycle methods
 
-| Method | When it runs | What it does |
-|--------|-------------|--------------|
-| `setUp(): void` | Before each test method | Starts database transaction, resets global state, clears caches |
-| `tearDown(): void` | After each test method | Rolls back transaction, restores state |
-| `setUpBeforeClass(): void` | Before the first test in the class | One-time class-level setup (static) |
-| `tearDownAfterClass(): void` | After the last test in the class | One-time class-level cleanup (static) |
+| Method | Visibility | When it runs | What it does |
+|--------|-----------|-------------|--------------|
+| `setUp(): void` | `protected` | Before each test method | Starts database transaction, resets global state, clears caches |
+| `tearDown(): void` | `protected` | After each test method | Rolls back transaction, restores state |
+| `setUpBeforeClass(): void` | `public static` | Before the first test in the class | One-time class-level setup (static) |
+| `tearDownAfterClass(): void` | `public static` | After the last test in the class | One-time class-level cleanup (static) |
 
 **Critical rules:**
 
@@ -163,19 +163,19 @@ slic composer show lucatume/wp-browser | grep versions
 
 ### Factory methods
 
-Access factories via `static::factory()`:
+Access factories via `$this->factory()`:
 
 ```php
-static::factory()->post->create( $args );         // returns int (ID)
-static::factory()->post->create_and_get( $args );  // returns WP_Post
-static::factory()->post->create_many( $count, $args ); // returns int[]
+$this->factory()->post->create( $args );         // returns int (ID)
+$this->factory()->post->create_and_get( $args );  // returns WP_Post
+$this->factory()->post->create_many( $count, $args ); // returns int[]
 
-static::factory()->user->create( $args );          // returns int (ID)
-static::factory()->term->create( $args );           // returns int (ID)
-static::factory()->comment->create( $args );        // returns int (ID)
-static::factory()->attachment->create( $args );     // returns int (ID)
-static::factory()->category->create( $args );       // returns int (ID)
-static::factory()->tag->create( $args );             // returns int (ID)
+$this->factory()->user->create( $args );          // returns int (ID)
+$this->factory()->term->create( $args );           // returns int (ID)
+$this->factory()->comment->create( $args );        // returns int (ID)
+$this->factory()->attachment->create( $args );     // returns int (ID)
+$this->factory()->category->create( $args );       // returns int (ID)
+$this->factory()->tag->create( $args );             // returns int (ID)
 ```
 
 Factory-created objects live inside the test's database transaction and are automatically removed when the transaction rolls back.
@@ -268,7 +268,7 @@ The factory API remains the same in v4:
 
 ```php
 // Same in both v3 and v4:
-static::factory()->post->create( [...] );
+$this->factory()->post->create( [ ... ] );
 ```
 
 ### Migration notes

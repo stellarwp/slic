@@ -22,12 +22,9 @@ Use the `pre_http_request` filter to short-circuit `wp_remote_get()`, `wp_remote
 ```php
 class ApiClientTest extends \Codeception\TestCase\WPTestCase {
 
-	/**
-	 * @var callable
-	 */
-	private $mock_filter;
+	private \Closure $mock_filter;
 
-	public function setUp(): void {
+	protected function setUp(): void {
 		parent::setUp();
 
 		// Return a fake 200 response for all HTTP requests.
@@ -49,7 +46,7 @@ class ApiClientTest extends \Codeception\TestCase\WPTestCase {
 		add_filter( 'pre_http_request', $this->mock_filter, 10, 3 );
 	}
 
-	public function tearDown(): void {
+	protected function tearDown(): void {
 		remove_filter( 'pre_http_request', $this->mock_filter, 10 );
 
 		parent::tearDown();
@@ -123,17 +120,11 @@ Sometimes you need to verify that your code sends the right HTTP request (correc
 ```php
 class WebhookSenderTest extends \Codeception\TestCase\WPTestCase {
 
-	/**
-	 * @var array<int, array{url: string, args: array}> Captured requests.
-	 */
-	private $captured_requests = [];
+	private array $captured_requests = [];
 
-	/**
-	 * @var callable
-	 */
-	private $capture_filter;
+	private \Closure $capture_filter;
 
-	public function setUp(): void {
+	protected function setUp(): void {
 		parent::setUp();
 
 		$this->captured_requests = [];
@@ -156,7 +147,7 @@ class WebhookSenderTest extends \Codeception\TestCase\WPTestCase {
 		add_filter( 'pre_http_request', $this->capture_filter, 10, 3 );
 	}
 
-	public function tearDown(): void {
+	protected function tearDown(): void {
 		remove_filter( 'pre_http_request', $this->capture_filter, 10 );
 
 		parent::tearDown();
@@ -199,17 +190,11 @@ When the code under test makes multiple sequential HTTP requests and you need ea
 ```php
 class PaginatedFetcherTest extends \Codeception\TestCase\WPTestCase {
 
-	/**
-	 * @var array<int, array> Queue of responses to return in order.
-	 */
-	private $response_queue = [];
+	private array $response_queue = [];
 
-	/**
-	 * @var callable
-	 */
-	private $queue_filter;
+	private \Closure $queue_filter;
 
-	public function setUp(): void {
+	protected function setUp(): void {
 		parent::setUp();
 
 		$this->queue_filter = function ( $preempt, $parsed_args, $url ) {
@@ -223,7 +208,7 @@ class PaginatedFetcherTest extends \Codeception\TestCase\WPTestCase {
 		add_filter( 'pre_http_request', $this->queue_filter, 10, 3 );
 	}
 
-	public function tearDown(): void {
+	protected function tearDown(): void {
 		remove_filter( 'pre_http_request', $this->queue_filter, 10 );
 
 		parent::tearDown();

@@ -68,7 +68,7 @@ After generating files, slic prompts to run `composer install` and `npm install`
 
 ## Testing
 
-### `slic run [suite] [file] [method]`
+### `slic run [suite] [file_path_no_ext]::[method]`
 
 Runs Codeception tests. Wraps `vendor/bin/codecept run`.
 
@@ -76,7 +76,7 @@ Runs Codeception tests. Wraps `vendor/bin/codecept run`.
 slic run                                  # all suites, sequentially
 slic run wpunit                           # one suite
 slic run tests/wpunit/FooTest.php         # one file
-slic run tests/wpunit/FooTest.php:test_bar  # one method
+slic run tests/wpunit/FooTest::test_bar    # one method
 slic run wpunit -- --debug                # pass flags to codecept
 ```
 
@@ -95,6 +95,7 @@ Runs any Codeception command (not just `run`). Wraps `vendor/bin/codecept`.
 slic cc generate:wpunit wpunit "FooTest"
 slic cc generate:wpunit wpunit "Admin/SettingsTest"
 slic cc run wpunit --coverage
+slic cc clean
 slic cc build
 ```
 
@@ -122,9 +123,12 @@ Inside the slic shell, shorthand commands are available:
 
 Runs Playwright commands in the stack for browser-based testing.
 
+> **Note:** Available since slic 2.x. Requires Playwright to be installed in the target project (`slic playwright install`).
+
 ```bash
-slic playwright test
-slic playwright test --headed
+slic playwright install                   # install Playwright + Chromium
+slic playwright test                      # run all Playwright tests
+slic playwright test tests/e2e/my-test.spec.ts  # run a specific test file
 ```
 
 ## Stack management
