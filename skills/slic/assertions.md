@@ -142,10 +142,7 @@ $this->assertEquals( 42, get_user_meta( $user_id, 'score', true ) );
 ### Hook assertions (actions and filters)
 
 ```php
-/**
- * @test
- */
-public function it_should_fire_custom_action(): void {
+public function test_it_should_fire_custom_action(): void {
 	$fired = false;
 	add_action( 'my_plugin_after_save', static function () use ( &$fired ) {
 		$fired = true;
@@ -156,10 +153,7 @@ public function it_should_fire_custom_action(): void {
 	$this->assertTrue( $fired, 'Expected my_plugin_after_save to fire.' );
 }
 
-/**
- * @test
- */
-public function it_should_count_action_calls(): void {
+public function test_it_should_count_action_calls(): void {
 	$call_count = did_action( 'my_plugin_init' );
 
 	my_plugin_initialize();
@@ -171,10 +165,7 @@ public function it_should_count_action_calls(): void {
 	);
 }
 
-/**
- * @test
- */
-public function it_should_apply_title_filter(): void {
+public function test_it_should_apply_title_filter(): void {
 	add_filter( 'my_plugin_title', static function ( $title ) {
 		return 'Filtered: ' . $title;
 	} );
@@ -188,10 +179,7 @@ public function it_should_apply_title_filter(): void {
 ### Option assertions
 
 ```php
-/**
- * @test
- */
-public function it_should_save_settings_to_options(): void {
+public function test_it_should_save_settings_to_options(): void {
 	my_plugin_save_settings( [ 'color' => 'blue' ] );
 
 	$saved = get_option( 'my_plugin_settings' );
@@ -203,10 +191,7 @@ public function it_should_save_settings_to_options(): void {
 ### HTML output assertions
 
 ```php
-/**
- * @test
- */
-public function it_should_render_widget_html(): void {
+public function test_it_should_render_widget_html(): void {
 	ob_start();
 	my_plugin_render_widget( [ 'title' => 'Hello' ] );
 	$html = ob_get_clean();
@@ -220,10 +205,7 @@ public function it_should_render_widget_html(): void {
 ### REST response assertions
 
 ```php
-/**
- * @test
- */
-public function it_should_return_items_via_rest(): void {
+public function test_it_should_return_items_via_rest(): void {
 	// Arrange — create test data.
 	$this->factory()->post->create_many( 3, [ 'post_status' => 'publish' ] );
 
@@ -243,10 +225,7 @@ public function it_should_return_items_via_rest(): void {
 ### Exception assertions
 
 ```php
-/**
- * @test
- */
-public function it_should_throw_on_invalid_input(): void {
+public function test_it_should_throw_on_invalid_input(): void {
 	$this->expectException( \InvalidArgumentException::class );
 	$this->expectExceptionMessage( 'ID must be positive' );
 

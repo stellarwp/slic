@@ -17,10 +17,7 @@ class SimpleTest extends \Codeception\TestCase\WPTestCase {
 		parent::tearDown();
 	}
 
-	/**
-	 * @test
-	 */
-	public function it_should_return_site_title(): void {
+	public function test_it_should_return_site_title(): void {
 		$this->assertNotEmpty( get_bloginfo( 'name' ) );
 	}
 }
@@ -76,10 +73,7 @@ class PostFeatureTest extends \Codeception\TestCase\WPTestCase {
 		parent::tearDown();
 	}
 
-	/**
-	 * @test
-	 */
-	public function it_should_return_posts_by_editor(): void {
+	public function test_it_should_return_posts_by_editor(): void {
 		$query = new \WP_Query( [
 			'author'      => $this->editor_id,
 			'post_status' => 'publish',
@@ -88,10 +82,7 @@ class PostFeatureTest extends \Codeception\TestCase\WPTestCase {
 		$this->assertSame( 3, $query->found_posts );
 	}
 
-	/**
-	 * @test
-	 */
-	public function it_should_set_correct_author(): void {
+	public function test_it_should_set_correct_author(): void {
 		$post = get_post( $this->post_ids[0] );
 
 		$this->assertEquals( $this->editor_id, $post->post_author );
@@ -277,19 +268,13 @@ namespace My_Plugin\Tests\WPUnit;
 
 class Payment_Gateway_Test extends TestCase {
 
-	/**
-	 * @test
-	 */
-	public function it_should_resolve_gateway_from_container(): void {
+	public function test_it_should_resolve_gateway_from_container(): void {
 		$gateway = $this->container->get( \My_Plugin\Gateway::class );
 
 		$this->assertInstanceOf( \My_Plugin\Gateway::class, $gateway );
 	}
 
-	/**
-	 * @test
-	 */
-	public function it_should_process_payment(): void {
+	public function test_it_should_process_payment(): void {
 		$processor = $this->container->get( \My_Plugin\Payment_Processor::class );
 
 		$result = $processor->charge( 100, 'USD' );

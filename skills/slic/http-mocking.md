@@ -52,10 +52,7 @@ class ApiClientTest extends \Codeception\TestCase\WPTestCase {
 		parent::tearDown();
 	}
 
-	/**
-	 * @test
-	 */
-	public function it_should_parse_api_response(): void {
+	public function test_it_should_parse_api_response(): void {
 		// Act — this calls wp_remote_get() internally.
 		$result = my_plugin_fetch_items();
 
@@ -153,10 +150,7 @@ class WebhookSenderTest extends \Codeception\TestCase\WPTestCase {
 		parent::tearDown();
 	}
 
-	/**
-	 * @test
-	 */
-	public function it_should_send_webhook_with_correct_payload(): void {
+	public function test_it_should_send_webhook_with_correct_payload(): void {
 		// Arrange.
 		$event_data = [ 'event' => 'order.completed', 'order_id' => 42 ];
 
@@ -214,10 +208,7 @@ class PaginatedFetcherTest extends \Codeception\TestCase\WPTestCase {
 		parent::tearDown();
 	}
 
-	/**
-	 * @test
-	 */
-	public function it_should_fetch_all_pages(): void {
+	public function test_it_should_fetch_all_pages(): void {
 		// Arrange — queue two pages of results.
 		$this->response_queue = [
 			// Page 1.

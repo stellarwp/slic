@@ -96,7 +96,6 @@ slic cc generate:wpunit wpunit "FooTest"
 slic cc generate:wpunit wpunit "Admin/SettingsTest"
 slic cc run wpunit --coverage
 slic cc clean
-slic cc clean
 slic cc build
 ```
 

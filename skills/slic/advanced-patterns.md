@@ -24,10 +24,7 @@ class REST_Items_Test extends \Codeception\TestCase\WPTestCase {
 		parent::tearDown();
 	}
 
-	/**
-	 * @test
-	 */
-	public function it_should_return_items_for_authenticated_user(): void {
+	public function test_it_should_return_items_for_authenticated_user(): void {
 		// Arrange.
 		wp_set_current_user( $this->admin_id );
 		$this->factory()->post->create_many( 3, [
@@ -45,10 +42,7 @@ class REST_Items_Test extends \Codeception\TestCase\WPTestCase {
 		$this->assertCount( 3, $response->get_data() );
 	}
 
-	/**
-	 * @test
-	 */
-	public function it_should_reject_unauthenticated_requests(): void {
+	public function test_it_should_reject_unauthenticated_requests(): void {
 		// Arrange — no user set (logged out).
 		wp_set_current_user( 0 );
 
@@ -60,10 +54,7 @@ class REST_Items_Test extends \Codeception\TestCase\WPTestCase {
 		$this->assertSame( 401, $response->get_status() );
 	}
 
-	/**
-	 * @test
-	 */
-	public function it_should_create_an_item_via_post(): void {
+	public function test_it_should_create_an_item_via_post(): void {
 		// Arrange.
 		wp_set_current_user( $this->admin_id );
 
@@ -109,10 +100,7 @@ class REST_Items_Test extends \Codeception\TestCase\WPTestCase {
 Use Reflection only when there's no reasonable way to test behavior through the public API. Prefer testing through public methods whenever possible.
 
 ```php
-/**
- * @test
- */
-public function it_should_format_price_correctly(): void {
+public function test_it_should_format_price_correctly(): void {
 	$instance = new \My_Plugin\Pricing();
 
 	// Access a private method via Reflection.
@@ -124,10 +112,7 @@ public function it_should_format_price_correctly(): void {
 	$this->assertSame( '$1,234.50', $result );
 }
 
-/**
- * @test
- */
-public function it_should_have_correct_default_config(): void {
+public function test_it_should_have_correct_default_config(): void {
 	$instance = new \My_Plugin\Settings();
 
 	// Access a private property via Reflection.
@@ -188,10 +173,7 @@ class Custom_Table_Test extends \Codeception\TestCase\WPTestCase {
 		$wpdb->query( "DROP TABLE IF EXISTS {$table_name}" );
 	}
 
-	/**
-	 * @test
-	 */
-	public function it_should_insert_a_log_entry(): void {
+	public function test_it_should_insert_a_log_entry(): void {
 		global $wpdb;
 
 		my_plugin_log( 'Something happened', 'warning' );
@@ -221,10 +203,7 @@ private function create_custom_table(): void {
 Sometimes you need to test how code behaves when options or filters change during execution:
 
 ```php
-/**
- * @test
- */
-public function it_should_respect_feature_flag_toggle(): void {
+public function test_it_should_respect_feature_flag_toggle(): void {
 	// Start with feature disabled.
 	update_option( 'my_plugin_feature_x', false );
 	$this->assertFalse( my_plugin_is_feature_x_enabled() );
@@ -238,10 +217,7 @@ public function it_should_respect_feature_flag_toggle(): void {
 	// plugin caches the value in a static property, you must reset that.
 }
 
-/**
- * @test
- */
-public function it_should_allow_filter_override(): void {
+public function test_it_should_allow_filter_override(): void {
 	// Default behavior.
 	$default = my_plugin_get_limit();
 	$this->assertSame( 10, $default );
@@ -262,10 +238,7 @@ public function it_should_allow_filter_override(): void {
 ## Testing cron schedules and events
 
 ```php
-/**
- * @test
- */
-public function it_should_schedule_daily_sync(): void {
+public function test_it_should_schedule_daily_sync(): void {
 	// Act.
 	my_plugin_activate();
 
@@ -277,10 +250,7 @@ public function it_should_schedule_daily_sync(): void {
 	$this->assertSame( 'daily', $schedule );
 }
 
-/**
- * @test
- */
-public function it_should_unschedule_on_deactivate(): void {
+public function test_it_should_unschedule_on_deactivate(): void {
 	// Arrange — schedule the event first.
 	wp_schedule_event( time(), 'daily', 'my_plugin_daily_sync' );
 
@@ -313,10 +283,7 @@ protected function tearDown(): void {
 	parent::tearDown();
 }
 
-/**
- * @test
- */
-public function it_should_query_events(): void {
+public function test_it_should_query_events(): void {
 	$this->factory()->post->create_many( 2, [
 		'post_type'   => 'event',
 		'post_status' => 'publish',

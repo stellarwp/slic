@@ -85,7 +85,7 @@ When creating or modifying a test file, follow these rules:
 
 1. **Extend `WPTestCase`** — every WPUnit test class extends `\Codeception\TestCase\WPTestCase` (wp-browser v3) or `lucatume\WPBrowser\TestCase\WPTestCase` (wp-browser v4).
 2. **Use the AAA pattern** — Arrange, Act, Assert. Keep each section visually distinct.
-3. **Name clearly** — file: `<DescriptiveName>Test.php`; methods: `test_<what_it_verifies>` or use `@test`.
+3. **Name clearly** — file: `<DescriptiveName>Test.php`; methods: `test_<what_it_verifies>` (preferred over `@test` annotations).
 4. **Isolate** — every test must pass in any order. Clean up in `tearDown()`.
 5. **Use factories** — prefer `$this->factory()->post->create()` over raw SQL or `wp_insert_post()` in test setup.
 6. **Follow WordPress coding standards** — tabs for indentation, spaces inside parentheses.

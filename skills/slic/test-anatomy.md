@@ -73,10 +73,7 @@ class FooTest extends WPTestCase {
 		parent::tearDown();
 	}
 
-	/**
-	 * @test
-	 */
-	public function it_should_return_the_post_title(): void {
+	public function test_it_should_return_the_post_title(): void {
 		// Act.
 		$title = get_the_title( $this->post_id );
 
@@ -84,10 +81,7 @@ class FooTest extends WPTestCase {
 		$this->assertSame( 'Test Post', $title );
 	}
 
-	/**
-	 * @test
-	 */
-	public function it_should_have_publish_status(): void {
+	public function test_it_should_have_publish_status(): void {
 		// Act.
 		$post = get_post( $this->post_id );
 
@@ -130,7 +124,15 @@ Keep each section visually separated with a comment. If Arrange is complex, cons
 
 Two styles are accepted. Pick one and stay consistent within a file:
 
-### Style 1: `@test` annotation (preferred for readability)
+### Style 1: `test_` prefix (preferred)
+
+```php
+public function test_it_should_create_a_user(): void {
+	// ...
+}
+```
+
+### Style 2: `@test` annotation
 
 ```php
 /**
@@ -141,15 +143,7 @@ public function it_should_create_a_user(): void {
 }
 ```
 
-### Style 2: `test_` prefix
-
-```php
-public function test_it_should_create_a_user(): void {
-	// ...
-}
-```
-
-Both are equivalent to Codeception/PHPUnit. The `@test` style allows more natural method names.
+Both are equivalent to Codeception/PHPUnit. The `test_` prefix is preferred — it's less noise and avoids needing a docblock just for the annotation.
 
 ## Data providers
 
@@ -157,10 +151,9 @@ Use data providers to run the same test logic with multiple inputs:
 
 ```php
 /**
- * @test
  * @dataProvider status_provider
  */
-public function it_should_accept_valid_statuses( string $status, bool $expected ): void {
+public function test_it_should_accept_valid_statuses( string $status, bool $expected ): void {
 	$result = my_plugin_is_valid_status( $status );
 
 	$this->assertSame( $expected, $result );
