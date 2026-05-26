@@ -75,8 +75,21 @@ if ( $has_wp_config ) {
 } else {
 	$env_values['SLIC_HERE_DIR']     = $here_dir;
 	$env_values['SLIC_WP_DIR']       = $wp_dir;
-	$env_values['SLIC_PLUGINS_DIR']  = $here_dir;
-	$env_values['SLIC_THEMES_DIR']   = $themes_dir;
+
+	// Auto-detect a themes directory: the current directory is named `themes` and has a sibling
+	// `plugins` directory. This covers both standard WordPress (`wp-content/themes` beside
+	// `wp-content/plugins`) and Bedrock-style (`content/themes` beside `content/plugins`) layouts.
+	// In that case point SLIC_THEMES_DIR at the current directory so SLIC_HERE_DIR === SLIC_THEMES_DIR
+	// and get_project_type() resolves theme targets correctly, while SLIC_PLUGINS_DIR keeps pointing at
+	// the sibling plugins directory so dependencies still install into wp-content/plugins.
+	$sibling_plugins_dir = realpath( dirname( $here_dir ) . '/plugins' );
+	if ( basename( $here_dir ) === 'themes' && $sibling_plugins_dir && is_dir( $sibling_plugins_dir ) ) {
+		$env_values['SLIC_PLUGINS_DIR'] = $sibling_plugins_dir;
+		$env_values['SLIC_THEMES_DIR']  = $here_dir;
+	} else {
+		$env_values['SLIC_PLUGINS_DIR'] = $here_dir;
+		$env_values['SLIC_THEMES_DIR']  = $themes_dir;
+	}
 }
 
 // When changing the here target, clear the currently selected project.
