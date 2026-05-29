@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added - First-class theme support for `slic here`, `slic use`, `slic using`, and `slic run`, including auto-detection when running `slic here` from a `themes` directory with a sibling `plugins` directory.
 - Added - Agent Skills documentation in `skills/slic/` for AI-assisted WordPress integration test creation, debugging, and slic workflow guidance.
 - Fixed - Theme targets now resolve to `SLIC_THEMES_DIR` when running tests and build/install prompts instead of assuming all targets live in `SLIC_PLUGINS_DIR`.
+- Fixed - `slic run` now repairs stale or incomplete WordPress `.htaccess` rewrite blocks in the configured `SLIC_WP_DIR`, preventing Apache-level 404s for pretty REST API URLs.
 
 # [2.1.8] - 2026-03-11
 - Fixed - Add missing `igbinary` and `redis` PHP extensions to the slic and WordPress Dockerfiles.

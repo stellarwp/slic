@@ -10,17 +10,38 @@ use FilesystemIterator;
 use SplFileInfo;
 
 /**
- * Generates a .htaccess file in the WP root if missing.
+ * Ensures the WP root .htaccess contains the WordPress rewrite fallback.
  */
 function maybe_generate_htaccess() {
-	$htaccess_path = root( '_wordpress/.htaccess' );
-	$htaccess      = is_file( $htaccess_path ) && file_get_contents( $htaccess_path );
+	$htaccess_path = slic_wp_dir( '.htaccess' );
+	$htaccess      = is_file( $htaccess_path ) ? file_get_contents( $htaccess_path ) : '';
+	$rewrite_block = wordpress_htaccess_rewrite_block();
 
-	if ( $htaccess ) {
+	if ( ! $htaccess ) {
+		file_put_contents( $htaccess_path, $rewrite_block );
 		return;
 	}
 
-	$htaccess = <<< HTACCESS
+	if ( preg_match( '/RewriteRule\s+\.\s+\/index\.php\s+\[L\]/', $htaccess ) ) {
+		return;
+	}
+
+	if ( preg_match( '/# BEGIN WordPress.*?# END WordPress/s', $htaccess ) ) {
+		$htaccess = preg_replace( '/# BEGIN WordPress.*?# END WordPress/s', rtrim( $rewrite_block ), $htaccess, 1 );
+	} else {
+		$htaccess = rtrim( $htaccess ) . PHP_EOL . PHP_EOL . $rewrite_block;
+	}
+
+	file_put_contents( $htaccess_path, $htaccess );
+}
+
+/**
+ * Returns the default WordPress .htaccess rewrite block used by slic.
+ *
+ * @return string The WordPress rewrite rules needed to route pretty URLs through index.php.
+ */
+function wordpress_htaccess_rewrite_block() {
+	return <<< HTACCESS
 # BEGIN WordPress
 
 RewriteEngine On
@@ -32,8 +53,6 @@ RewriteRule . /index.php [L]
 
 # END WordPress
 HTACCESS;
-
-	file_put_contents( $htaccess_path, $htaccess );
 }
 
 /**
