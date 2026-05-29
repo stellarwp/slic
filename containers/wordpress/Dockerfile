@@ -1,8 +1,8 @@
-ARG WORDPRESS_IMAGE_VERSION=wordpress/apache
+ARG WORDPRESS_IMAGE_REPOSITORY=public.ecr.aws/docker/library/wordpress
 ARG PHP_VERSION=7.4
 ARG WP_VERSION=6.1
 
-FROM wordpress:${WP_VERSION}-php${PHP_VERSION}-apache
+FROM ${WORDPRESS_IMAGE_REPOSITORY}:${WP_VERSION}-php${PHP_VERSION}-apache
 
 # -------------------------------
 # Environment variables

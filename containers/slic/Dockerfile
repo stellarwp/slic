@@ -1,10 +1,11 @@
 ARG PHP_VERSION=7.4
+ARG PHP_IMAGE_REPOSITORY=public.ecr.aws/docker/library/php
 
 # Source Composer 1 and 2 from the respective images, multi-stage builds.
 FROM ghcr.io/composer/docker:1 AS composer1
 FROM ghcr.io/composer/docker:2 AS composer2
 
-FROM php:${PHP_VERSION}
+FROM ${PHP_IMAGE_REPOSITORY}:${PHP_VERSION}
 
 ARG NODE_VERSION=18.17.0
 ARG NVM_VERSION=v0.40.1
