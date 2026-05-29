@@ -24,7 +24,7 @@ if ( $is_help ) {
 }
 
 $using = slic_target();
-$target_path = slic_plugins_dir( $using );
+$target_path = get_project_local_path();
 if ( empty( $using ) ) {
 	echo magenta( "Currently not using any target, commands requiring a target will fail." . PHP_EOL );
 	return;
