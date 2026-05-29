@@ -24,6 +24,7 @@ The slic (**S**tellarWP **L**ocal **I**nteractive **C**ontainers) CLI command pr
     * [Xdebug and `slic`](#xdebug-and-slic)
     * [Configuring IDEs for Xdebug](/docs/xdebug.md)
     * [Releasing a new version of `slic`](/CONTRIBUTING.md)
+* [Agent Skills (AI-assisted testing)](#agent-skills-ai-assisted-testing)
 * [Update guide](#update-guide)
   * [From 1.0 to 2.0](#from-10-to-20)
 
@@ -118,9 +119,41 @@ slic here
 
 ![slic here](docs/images/slic-here.gif)
 
-#### 2. WordPress Directory
+#### 2. Themes Directory
 
-The second option is to navigate to the root of your site (likely where `wp-config.php` lives) and run the `slic here`
+If you are developing a **theme**, run `slic here` from your themes directory. `slic` will detect that it is pointed at a themes directory and correctly:
+
+- Mount the directory as `wp-content/themes/` in the Docker stack so your theme is available to WordPress as a real theme.
+- Keep a separate plugins directory (`SLIC_PLUGINS_DIR`) so dependencies like WooCommerce install into `wp-content/plugins/` and not into your themes directory.
+- Run Codeception from within the correct `wp-content/themes/<theme>` path inside the container.
+
+Example:
+
+```bash
+# Change to your themes directory
+cd /path/to/your/wp-content/themes
+
+slic here
+slic use my-theme
+slic run wpunit
+```
+
+> **WPLoader suite config:** When testing a theme, activate it via the WPLoader `theme:` key rather than listing it under `plugins`/`activatePlugins`. WordPress will then load the theme (including its `functions.php`) automatically.
+>
+> ```yaml
+> modules:
+>   config:
+>     WPLoader:
+>       plugins:
+>         - woocommerce/woocommerce.php
+>       activatePlugins:
+>         - woocommerce/woocommerce.php
+>       theme: my-theme   # ← activates the theme under test
+> ```
+
+#### 3. WordPress Directory
+
+The third option is to navigate to the root of your site (likely where `wp-config.php` lives) and run the `slic here`
 command.
 
 > Note: This is an opinionated option and there are some assumptions that are made:
@@ -358,6 +391,42 @@ When using these commands, `slic` will prompt you to restart the containers.
 **Within `slic shell`** (takes effect immediately, no restart needed):
 - `xon` - Enable Xdebug
 - `xoff` - Disable Xdebug
+
+## Agent Skills (AI-assisted testing)
+
+This repository includes an [Agent Skill](https://agentskills.io) in `skills/slic/` that teaches AI coding assistants (Claude Code, Cursor, Copilot, Gemini CLI, and [30+ other tools](https://agentskills.io)) how to create and run WordPress integration tests with slic.
+
+### What it provides
+
+The skill gives agents structured context about:
+
+- The slic CLI workflow (`here`, `use`, `init`, `run`, `shell`)
+- WPUnit test structure, naming conventions, and namespaces
+- `setUp()` / `tearDown()` environment tiers (minimal, standard, full isolation)
+- HTTP mocking patterns for WordPress (`pre_http_request` filter)
+- Assertion helpers and WordPress test factories
+- Advanced patterns (REST API dispatch, Reflection, custom tables)
+- An 11-item test isolation checklist for preventing flaky tests
+
+### How agents discover it
+
+Agent Skills-compatible tools discover the skill automatically when working inside this repository or any project that references it. The entry point is `skills/slic/SKILL.md`, which links to detailed sub-documents that agents load on demand.
+
+For manual installation in other projects, use the [skills CLI](https://agentskills.io):
+
+```bash
+# Install globally (available to all projects):
+npx skills add stellarwp/slic -g
+
+# Install for a specific project:
+npx skills add stellarwp/slic
+
+# Install for a specific agent:
+npx skills add stellarwp/slic --agent cursor
+
+# List available skills before installing:
+npx skills add stellarwp/slic --list
+```
 
 ## Update Guide
 

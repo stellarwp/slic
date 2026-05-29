@@ -70,14 +70,36 @@ jobs:
             runner: ubuntu-24.04-arm
             platform: linux/arm64
             arch: arm64
-          # WordPress 6.5 with PHP 8.3 - both architectures
-          - wp_version: '6.5'
+          # WordPress 7.0.0 with PHP 8.3 - both architectures
+          - wp_version: '7.0.0'
             php_version: '8.3'
             runner: ubuntu-latest
             platform: linux/amd64
             arch: amd64
-          - wp_version: '6.5'
+          - wp_version: '7.0.0'
             php_version: '8.3'
+            runner: ubuntu-24.04-arm
+            platform: linux/arm64
+            arch: arm64
+          # WordPress 7.0.0 with PHP 8.4 - both architectures
+          - wp_version: '7.0.0'
+            php_version: '8.4'
+            runner: ubuntu-latest
+            platform: linux/amd64
+            arch: amd64
+          - wp_version: '7.0.0'
+            php_version: '8.4'
+            runner: ubuntu-24.04-arm
+            platform: linux/arm64
+            arch: arm64
+          # WordPress 7.0.0 with PHP 8.5 - both architectures
+          - wp_version: '7.0.0'
+            php_version: '8.5'
+            runner: ubuntu-latest
+            platform: linux/amd64
+            arch: amd64
+          - wp_version: '7.0.0'
+            php_version: '8.5'
             runner: ubuntu-24.04-arm
             platform: linux/arm64
             arch: arm64
@@ -147,6 +169,8 @@ jobs:
           - php_version: '7.3'
           - php_version: '7.4'
           - php_version: '8.3'
+          - php_version: '8.4'
+          - php_version: '8.5'
     steps:
       - name: Log in to the Container registry
         uses: docker/login-action@v3

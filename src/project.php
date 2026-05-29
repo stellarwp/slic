@@ -18,24 +18,115 @@ function get_project_type() {
 	return $is_theme ? 'theme' : 'plugin';
 }
 
-function get_project_local_path() {
-	switch ( get_project_type() ) {
+/**
+ * Returns the WordPress content type for a target.
+ *
+ * Resolution is target-aware: explicit site targets resolve to site, existing plugin directories resolve to plugin,
+ * existing theme directories resolve to theme, and legacy plugins-directory mode falls back to plugin for unresolved
+ * targets.
+ *
+ * @param string|null $target The target to resolve. Defaults to the current slic target.
+ *
+ * @return string The resolved target content type: 'site', 'plugin', or 'theme'.
+ */
+function get_target_content_type( $target = null ) {
+	$target = $target ?: slic_target();
+
+	if ( empty( $target ) ) {
+		return get_project_type();
+	}
+
+	if ( 'site' === $target ) {
+		return 'site';
+	}
+
+	$base_target = explode( '/', $target )[0];
+	$is_plugin   = is_dir( slic_plugins_dir( $base_target ) );
+	$is_theme    = is_dir( slic_themes_dir( $base_target ) );
+
+	if ( $is_plugin && $is_theme ) {
+		echo magenta( "Ambiguous target '{$base_target}' exists as both a plugin and a theme." . PHP_EOL );
+		exit( 1 );
+	}
+
+	if ( $is_plugin ) {
+		return 'plugin';
+	}
+
+	if ( $is_theme ) {
+		return 'theme';
+	}
+
+	$here_dir    = realpath( getenv( 'SLIC_HERE_DIR' ) );
+	$plugins_dir = realpath( getenv( 'SLIC_PLUGINS_DIR' ) );
+
+	// Backwards compatibility: in legacy plugins-directory mode, unresolved targets are plugins.
+	if ( $here_dir && $plugins_dir && $here_dir === $plugins_dir ) {
+		return 'plugin';
+	}
+
+	echo magenta( "Unable to resolve target '{$target}' as a plugin, theme, or site." . PHP_EOL );
+	exit( 1 );
+}
+
+/**
+ * Returns the local filesystem path for a target.
+ *
+ * @param string|null $target The target to resolve. Defaults to the current slic target.
+ *
+ * @return string The local target path.
+ */
+function get_project_local_path( $target = null ) {
+	$target = $target ?: slic_target();
+
+	if ( empty( $target ) ) {
+		switch ( get_project_type() ) {
+			case 'plugin':
+				return slic_plugins_dir();
+			case 'theme':
+				return slic_themes_dir();
+			default:
+				return realpath( getenv( 'SLIC_HERE_DIR' ) );
+		}
+	}
+
+	switch ( get_target_content_type( $target ) ) {
 		case 'plugin':
-			return realpath( getenv( 'SLIC_PLUGINS_DIR' ) ) . DIRECTORY_SEPARATOR . slic_target();
+			return slic_plugins_dir( $target );
 		case 'theme':
-			return realpath( getenv( 'SLIC_THEMES_DIR' ) ) . DIRECTORY_SEPARATOR . slic_target();
-		default:
-			return realpath( getenv( 'SLIC_HERE_DIR' ) );
+			return slic_themes_dir( $target );
+		case 'site':
+			return realpath( getenv( 'SLIC_HERE_DIR' ) ) ?: slic_wp_dir();
 	}
 }
 
-function get_project_container_path() {
-	switch ( get_project_type() ) {
+/**
+ * Returns the container path for a target.
+ *
+ * @param string|null $target The target to resolve. Defaults to the current slic target.
+ *
+ * @return string The container target path.
+ */
+function get_project_container_path( $target = null ) {
+	$target = $target ?: slic_target();
+
+	if ( empty( $target ) ) {
+		switch ( get_project_type() ) {
+			case 'plugin':
+				return '/var/www/html/wp-content/plugins';
+			case 'theme':
+				return '/var/www/html/wp-content/themes';
+			default:
+				return '/var/www/html';
+		}
+	}
+
+	switch ( get_target_content_type( $target ) ) {
 		case 'plugin':
-			return '/var/www/html/wp-content/plugins' . '/' . slic_target();
+			return '/var/www/html/wp-content/plugins/' . $target;
 		case 'theme':
-			return '/var/www/html/wp-content/themes' . '/' . slic_target();
-		default:
+			return '/var/www/html/wp-content/themes/' . $target;
+		case 'site':
 			return '/var/www/html';
 	}
 }
