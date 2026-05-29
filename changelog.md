@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [2.2.0] - 2026-05-29
+- Added - First-class theme support for `slic here`, `slic use`, `slic using`, and `slic run`, including auto-detection when running `slic here` from a `themes` directory with a sibling `plugins` directory.
+- Added - Agent Skills documentation in `skills/slic/` for AI-assisted WordPress integration test creation, debugging, and slic workflow guidance.
+- Fixed - Theme targets now resolve to `SLIC_THEMES_DIR` when running tests and build/install prompts instead of assuming all targets live in `SLIC_PLUGINS_DIR`.
+
 # [2.1.8] - 2026-03-11
 - Fixed - Add missing `igbinary` and `redis` PHP extensions to the slic and WordPress Dockerfiles.
 

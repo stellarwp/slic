@@ -76,14 +76,14 @@ if ( $has_wp_config ) {
 	$env_values['SLIC_HERE_DIR']     = $here_dir;
 	$env_values['SLIC_WP_DIR']       = $wp_dir;
 
-	// Auto-detect a themes directory: the current directory is named `themes` and has a sibling
-	// `plugins` directory. This covers both standard WordPress (`wp-content/themes` beside
-	// `wp-content/plugins`) and Bedrock-style (`content/themes` beside `content/plugins`) layouts.
+	// Auto-detect a themes directory: the current directory is named `themes`. This covers both standard WordPress
+	// (`wp-content/themes` beside `wp-content/plugins`) and Bedrock-style (`content/themes` beside `content/plugins`)
+	// layouts.
 	// In that case point SLIC_THEMES_DIR at the current directory so SLIC_HERE_DIR === SLIC_THEMES_DIR
-	// and get_project_type() resolves theme targets correctly, while SLIC_PLUGINS_DIR keeps pointing at
-	// the sibling plugins directory so dependencies still install into wp-content/plugins.
-	$sibling_plugins_dir = realpath( dirname( $here_dir ) . '/plugins' );
-	if ( basename( $here_dir ) === 'themes' && $sibling_plugins_dir && is_dir( $sibling_plugins_dir ) ) {
+	// and get_project_type() resolves theme targets correctly, while SLIC_PLUGINS_DIR points at the sibling plugins
+	// directory so dependencies still install into wp-content/plugins.
+	$sibling_plugins_dir = dirname( $here_dir ) . '/plugins';
+	if ( basename( $here_dir ) === 'themes' ) {
 		$env_values['SLIC_PLUGINS_DIR'] = $sibling_plugins_dir;
 		$env_values['SLIC_THEMES_DIR']  = $here_dir;
 	} else {
@@ -93,8 +93,10 @@ if ( $has_wp_config ) {
 }
 
 // When changing the here target, clear the currently selected project.
-$env_values['SLIC_CURRENT_PROJECT']               = '';
-$env_values['SLIC_CURRENT_PROJECT_RELATIVE_PATH'] = '';
+$env_values['SLIC_CURRENT_PROJECT']                = '';
+$env_values['SLIC_CURRENT_PROJECT_CONTAINER_PATH'] = '';
+$env_values['SLIC_CURRENT_PROJECT_RELATIVE_PATH']  = '';
+$env_values['SLIC_CURRENT_PROJECT_SUBDIR']         = '';
 
 write_env_file( $run_settings_file, $env_values, true );
 

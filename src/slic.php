@@ -365,6 +365,10 @@ function setup_slic_env( $root_dir, $reset = false ) {
 	putenv( 'SLIC_THEMES_DIR=' . ensure_dir( getenv( 'SLIC_THEMES_DIR' ) ?: $wp_themes_dir ) );
 	putenv( 'SLIC_CACHE=' . cache() );
 
+	if ( getenv( 'SLIC_CURRENT_PROJECT' ) ) {
+		putenv( 'SLIC_CURRENT_PROJECT_CONTAINER_PATH=' . get_project_container_path() );
+	}
+
 	if ( empty( getenv( 'COMPOSER_CACHE_DIR' ) ) ) {
 		ensure_dir( root( '.cache' ) );
 		putenv( 'COMPOSER_CACHE_DIR=' . cache( '/composer' ) );
@@ -488,9 +492,10 @@ function slic_switch_target( $target ) {
 	}
 
 	$env_values = [
-		'SLIC_CURRENT_PROJECT'               => $target,
-		'SLIC_CURRENT_PROJECT_RELATIVE_PATH' => $target_relative_path,
-		'SLIC_CURRENT_PROJECT_SUBDIR'        => $subdir,
+		'SLIC_CURRENT_PROJECT'                => $target,
+		'SLIC_CURRENT_PROJECT_CONTAINER_PATH' => get_project_container_path( $target . ( $subdir ? '/' . $subdir : '' ) ),
+		'SLIC_CURRENT_PROJECT_RELATIVE_PATH'  => $target_relative_path,
+		'SLIC_CURRENT_PROJECT_SUBDIR'         => $subdir,
 	];
 
 	write_env_file( $run_settings_file, $env_values, true );
@@ -861,6 +866,7 @@ function slic_info() {
 		'SLIC_PHP_VERSION_STAGED',
 		'SLIC_COMPOSER_VERSION',
 		'SLIC_CURRENT_PROJECT',
+		'SLIC_CURRENT_PROJECT_CONTAINER_PATH',
 		'SLIC_CURRENT_PROJECT_RELATIVE_PATH',
 		'SLIC_CURRENT_PROJECT_SUBDIR',
 		'SLIC_HOST',
@@ -1245,7 +1251,7 @@ function dir_has_req_build_file( $base_command, $path ) {
 function maybe_build_install_command_pool( $base_command, $target, array $sub_directories = [] ) {
 	// Only prompt if the target itself has has been identified as available to build. If any subs need to build, will auto-try.
 	// Use get_project_local_path() so that theme targets resolve to SLIC_THEMES_DIR instead of SLIC_PLUGINS_DIR.
-	if ( dir_has_req_build_file( $base_command, get_project_local_path() ) ) {
+	if ( dir_has_req_build_file( $base_command, get_project_local_path( $target ) ) ) {
 		$run = ask(
 			PHP_EOL . yellow( $target . ':' ) . " Would you like to run the {$base_command} install processes for this plugin?",
 			'yes'
@@ -1258,9 +1264,10 @@ function maybe_build_install_command_pool( $base_command, $target, array $sub_di
 	}
 
 	$subdirs_to_build = array_reduce( $sub_directories, static function ( array $buffer, $sub_directory ) use (
-		$base_command
+		$base_command,
+		$target
 	) {
-		$subdir_path = target_absolute_path( $sub_directory );
+		$subdir_path = get_project_local_path( "{$target}/{$sub_directory}" );
 		if ( dir_has_req_build_file( $base_command, $subdir_path ) ) {
 			$buffer[] = $sub_directory;
 		}
@@ -1268,7 +1275,7 @@ function maybe_build_install_command_pool( $base_command, $target, array $sub_di
 		return $buffer;
 	}, [] );
 
-	return count( $subdirs_to_build ) ? build_command_pool( $base_command, [ 'install' ], $sub_directories ) : [];
+	return count( $subdirs_to_build ) ? build_command_pool( $base_command, [ 'install' ], $sub_directories, $target ) : [];
 }
 
 /**
@@ -1291,7 +1298,7 @@ function build_command_pool( $base_command, array $command, array $sub_directori
 
 	// If applicable, include target plugin before subdirectory plugins.
 	// Use get_project_local_path() so that theme targets resolve to SLIC_THEMES_DIR.
-	$path = get_project_local_path();
+	$path = get_project_local_path( $using );
 	if ( dir_has_req_build_file( $base_command, $path ) ) {
 		$targets[] = 'target';
 	}
@@ -1303,7 +1310,7 @@ function build_command_pool( $base_command, array $command, array $sub_directori
 
 			$question = PHP_EOL . yellow( $sub_target . ':' ) . " Would you like to run the {$base_command} command against {$sub_target}?";
 			if (
-				dir_has_req_build_file( $base_command, slic_plugins_dir( $sub_target ) )
+				dir_has_req_build_file( $base_command, get_project_local_path( $sub_target ) )
 				&& ask( $question, 'yes' )
 			) {
 				$targets[] = $dir;
@@ -1312,8 +1319,9 @@ function build_command_pool( $base_command, array $command, array $sub_directori
 	}
 
 	// Build the command process.
-	$command_process = static function ( $target, $subnet = '' ) use ( $using, $using_alias, $base_command, $command, $sub_directories ) {
+	$command_process = static function ( $target, $subnet = '' ) use ( $using, $using_alias, $base_command, $command ) {
 		$target_name = $using_alias ?: $target;
+		$workdir_target = $using;
 
 		// If the command is wrapped in a bash -c "", then let's not spit out the bash -c "" part.
 		if ( preg_match( '/bash -c "(.*)"/', $base_command, $results ) ) {
@@ -1332,7 +1340,8 @@ function build_command_pool( $base_command, array $command, array $sub_directori
 
 		// Execute command as the parent.
 		if ( 'target' !== $target ) {
-			slic_switch_target( "{$using}/{$target}" );
+			$workdir_target = "{$using}/{$target}";
+			slic_switch_target( $workdir_target );
 			$sub_target_name = $using_alias ? "{$using_alias}/{$target}" : $target;
 			$prefix          = "{$friendly_base_command}:" . yellow( $sub_target_name );
 		}
@@ -1346,7 +1355,7 @@ function build_command_pool( $base_command, array $command, array $sub_directori
 			'--user',
 			sprintf( '"%s:%s"', getenv( 'SLIC_UID' ), getenv( 'SLIC_GID' ) ),
 			'--workdir',
-			escapeshellarg( get_project_container_path() ),
+			escapeshellarg( get_project_container_path( $workdir_target ) ),
 			$network_name,
 			$base_command
 		], $command ), $prefix );
@@ -1712,9 +1721,8 @@ function slic_target_or_fail( $reason = null ) {
  * @return string The absolute path to the current target.
  */
 function target_absolute_path( $append_path = null ) {
-	$here_abs_path    = rtrim( getenv( 'SLIC_HERE_DIR' ), '\\/' );
-	$target_rel_path  = '/' . trim( slic_target(), '\\/' );
-	$full_target_path = $here_abs_path . $target_rel_path;
+	$full_target_path = get_project_local_path();
+
 	if ( empty( $append_path ) ) {
 		return $full_target_path;
 	}
