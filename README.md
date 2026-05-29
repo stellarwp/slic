@@ -24,6 +24,7 @@ The slic (**S**tellarWP **L**ocal **I**nteractive **C**ontainers) CLI command pr
     * [Xdebug and `slic`](#xdebug-and-slic)
     * [Configuring IDEs for Xdebug](/docs/xdebug.md)
     * [Releasing a new version of `slic`](/CONTRIBUTING.md)
+* [Agent Skills (AI-assisted testing)](#agent-skills-ai-assisted-testing)
 * [Update guide](#update-guide)
   * [From 1.0 to 2.0](#from-10-to-20)
 
@@ -358,6 +359,42 @@ When using these commands, `slic` will prompt you to restart the containers.
 **Within `slic shell`** (takes effect immediately, no restart needed):
 - `xon` - Enable Xdebug
 - `xoff` - Disable Xdebug
+
+## Agent Skills (AI-assisted testing)
+
+This repository includes an [Agent Skill](https://agentskills.io) in `skills/slic/` that teaches AI coding assistants (Claude Code, Cursor, Copilot, Gemini CLI, and [30+ other tools](https://agentskills.io)) how to create and run WordPress integration tests with slic.
+
+### What it provides
+
+The skill gives agents structured context about:
+
+- The slic CLI workflow (`here`, `use`, `init`, `run`, `shell`)
+- WPUnit test structure, naming conventions, and namespaces
+- `setUp()` / `tearDown()` environment tiers (minimal, standard, full isolation)
+- HTTP mocking patterns for WordPress (`pre_http_request` filter)
+- Assertion helpers and WordPress test factories
+- Advanced patterns (REST API dispatch, Reflection, custom tables)
+- An 11-item test isolation checklist for preventing flaky tests
+
+### How agents discover it
+
+Agent Skills-compatible tools discover the skill automatically when working inside this repository or any project that references it. The entry point is `skills/slic/SKILL.md`, which links to detailed sub-documents that agents load on demand.
+
+For manual installation in other projects, use the [skills CLI](https://agentskills.io):
+
+```bash
+# Install globally (available to all projects):
+npx skills add stellarwp/slic -g
+
+# Install for a specific project:
+npx skills add stellarwp/slic
+
+# Install for a specific agent:
+npx skills add stellarwp/slic --agent cursor
+
+# List available skills before installing:
+npx skills add stellarwp/slic --list
+```
 
 ## Update Guide
 
