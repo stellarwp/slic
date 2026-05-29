@@ -53,8 +53,10 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 RUN --mount=type=cache,target=/tmp/ipe-cache,sharing=locked \
     install-php-extensions xdebug pdo pdo_mysql mysqli zip pcntl sockets intl exif gd igbinary redis && \
     if php -r 'exit(PHP_VERSION_ID >= 80400 ? 0 : 1);'; then \
-        git clone --depth 1 --branch "${UOPZ_SOURCE_REF}" https://github.com/krakjoe/uopz.git /tmp/uopz-src && \
+        git clone --depth 1 https://github.com/krakjoe/uopz.git /tmp/uopz-src && \
         cd /tmp/uopz-src && \
+        git fetch --depth 1 origin "${UOPZ_SOURCE_REF}" && \
+        git checkout --detach FETCH_HEAD && \
         phpize && \
         ./configure && \
         make -j"$(nproc)" && \
