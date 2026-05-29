@@ -358,7 +358,8 @@ function setup_slic_env( $root_dir, $reset = false ) {
 		exit( 1 );
 	}
 
-	$wp_themes_dir = $wp_dir . '/wp-content/themes';
+	$wp_content_dir = ensure_dir( $wp_dir . '/wp-content' );
+	$wp_themes_dir  = $wp_content_dir . '/themes';
 
 	putenv( 'SLIC_WP_DIR=' . $wp_dir );
 	putenv( 'SLIC_PLUGINS_DIR=' . ensure_dir( getenv( 'SLIC_PLUGINS_DIR' ) ?: root( '_plugins' ) ) );
