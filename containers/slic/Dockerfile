@@ -9,6 +9,7 @@ FROM php:${PHP_VERSION}
 ARG NODE_VERSION=18.17.0
 ARG NVM_VERSION=v0.40.1
 ARG IPE_GD_WITHOUTAVIF=1
+ARG UOPZ_SOURCE_REF=14c8fc2d6eff14ec9acd926b9cab85d6961c64ac
 ARG TARGETPLATFORM
 
 SHELL ["/bin/bash", "-eou", "pipefail", "-c"]
@@ -31,12 +32,6 @@ ADD https://github.com/mlocati/docker-php-extension-installer/releases/latest/do
 RUN chmod a+rx /usr/local/bin/wp /usr/local/bin/install-php-extensions
 
 # -------------------------------
-# PHP extensions (heavy compilation step with cache mount)
-# -------------------------------
-RUN --mount=type=cache,target=/tmp/ipe-cache,sharing=locked \
-    install-php-extensions xdebug pdo pdo_mysql mysqli zip uopz pcntl sockets intl exif gd igbinary redis
-
-# -------------------------------
 # System dependencies (with cache mount for speed)
 # -------------------------------
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
@@ -51,6 +46,23 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         libpango-1.0-0 libcairo2 libasound2 less default-mysql-client && \
     mkdir -p $NVM_DIR/cache /cache /composer-cache && \
     chmod a+rwx $NVM_DIR/cache /cache /composer-cache
+
+# -------------------------------
+# PHP extensions (heavy compilation step with cache mount)
+# -------------------------------
+RUN --mount=type=cache,target=/tmp/ipe-cache,sharing=locked \
+    install-php-extensions xdebug pdo pdo_mysql mysqli zip pcntl sockets intl exif gd igbinary redis && \
+    if php -r 'exit(PHP_VERSION_ID >= 80400 ? 0 : 1);'; then \
+        git clone --depth 1 --branch "${UOPZ_SOURCE_REF}" https://github.com/krakjoe/uopz.git /tmp/uopz-src && \
+        cd /tmp/uopz-src && \
+        phpize && \
+        ./configure && \
+        make -j"$(nproc)" && \
+        make install && \
+        rm -rf /tmp/uopz-src; \
+    else \
+        install-php-extensions uopz; \
+    fi
 
 # -------------------------------
 # Install NVM

@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 # [2.2.0] - 2026-05-29
 - Added - First-class theme support for `slic here`, `slic use`, `slic using`, and `slic run`, including auto-detection when running `slic here` from a `themes` directory with a sibling `plugins` directory.
 - Added - Agent Skills documentation in `skills/slic/` for AI-assisted WordPress integration test creation, debugging, and slic workflow guidance.
+- Added - PHP 8.4 Docker image support for slic and WordPress 7.0, compiling `uopz` from source for PHP 8.4+ because the PECL release does not build against PHP 8.4.
+- Changed - PHP 8.3 WordPress images now use WordPress 7.0.0.
 - Fixed - Theme targets now resolve to `SLIC_THEMES_DIR` when running tests and build/install prompts instead of assuming all targets live in `SLIC_PLUGINS_DIR`.
 - Fixed - `slic run` now repairs stale or incomplete WordPress `.htaccess` rewrite blocks in the configured `SLIC_WP_DIR`, preventing Apache-level 404s for pretty REST API URLs.
 
