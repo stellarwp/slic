@@ -47,7 +47,7 @@ if ( '--pretty' === end( $command ) ) {
 		exit( $status );
 	}
 
-	if ( ! file_exists( slic_plugins_dir( "{$using}/common" ) ) ) {
+	if ( ! file_exists( get_project_local_path( "{$using}/common" ) ) ) {
 		return;
 	}
 

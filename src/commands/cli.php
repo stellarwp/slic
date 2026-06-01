@@ -50,7 +50,7 @@ if ( empty( $cli_command ) || in_array( $cli_command, [ 'bash', 'ssh' ], true ) 
 	$command = sprintf( docker_bin() . ' exec -it --user "%d:%d" --workdir %s %s bash -c "wp shell"',
 		getenv( 'SLIC_UID' ),
 		getenv( 'SLIC_GID' ),
-		escapeshellarg( get_project_container_path() ),
+		escapeshellarg( get_project_container_path( 'site' ) ),
 		get_service_id( 'slic' )
 	);
 	$status = process_realtime( $command );

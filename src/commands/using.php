@@ -48,7 +48,7 @@ if ( $is_worktree ) {
 
 $target_path = $is_worktree && ! empty( $worktree_info['full_path'] )
 	? $worktree_info['full_path']
-	: slic_plugins_dir( $using );
+	: get_project_local_path();
 
 if ( empty( $using ) ) {
 	echo magenta( "Currently not using any target, commands requiring a target will fail." . PHP_EOL );

@@ -54,12 +54,9 @@ setup_id();
 maybe_generate_htaccess();
 
 // Run the command in the Codeception container.
-$root = slic_plugins_dir( slic_target( true ) );
-
-// If target is site, set the root to the wp dir.
-if ( 'site' === slic_target() ) {
-	$root = slic_wp_dir();
-}
+// Use get_project_local_path() so that theme targets resolve to SLIC_THEMES_DIR
+// rather than always falling back to SLIC_PLUGINS_DIR.
+$root = get_project_local_path();
 
 // Object-cache is disruptive in the context of tests; remove the object cache drop-in before running the tests.
 $object_cache_dropin = slic_wp_dir( 'wp-content/object-cache.php' );

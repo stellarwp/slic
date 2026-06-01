@@ -114,4 +114,4 @@ if ( null !== $stack && isset( $stack['ports']['wp'] ) ) {
 	echo colorize( "WordPress URL: <yellow>http://localhost:{$stack['ports']['wp']}</yellow>" . PHP_EOL );
 }
 
-project_apply_config( get_target_relative_path( $target ) );
+project_apply_config( get_project_local_path( $target ) );

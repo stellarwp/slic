@@ -166,8 +166,8 @@ services:
       # On Linux set the host machine IP address before calling the stack:
       # XDH=$(ip route | grep docker0 | awk '{print $9}') docker compose ...
       XDEBUG_CONFIG: "idekey=${XDK:-slic} remote_enable=${XDE:-1} remote_host=${XDH:-host.docker.internal} remote_port=${XDP:-9001} client_host=${XDH:-host.docker.internal} client_port=${XDP:-9001}"
-      # Move to the target directory before running the command from the plugins directory.
-      CODECEPTION_PROJECT_DIR: /var/www/html/wp-content/plugins/${SLIC_CURRENT_PROJECT:-test}/${SLIC_CURRENT_PROJECT_SUBDIR:-}
+      # Move to the target directory before running Codeception commands.
+      CODECEPTION_PROJECT_DIR: ${SLIC_CURRENT_PROJECT_CONTAINER_PATH:-/var/www/html/wp-content/plugins/test}
       # When running the container in shell mode (using the slic `shell` command), then use this CC configuration.
       CODECEPTION_SHELL_CONFIG: "-c codeception.slic.yml"
       # Whether to disable the XDebug extension in the Codeception container completely or not.
