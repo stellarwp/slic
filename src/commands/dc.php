@@ -7,8 +7,7 @@
  * @var string  $cli_name The current name of the `slic` CLI application.
  */
 
-use function StellarWP\Slic\colorize;
-use function StellarWP\Slic\slic_realtime;
+namespace StellarWP\Slic;
 
 if ( $is_help ) {
 	$help = <<< HELP
