@@ -1,0 +1,4 @@
+#!/bin/bash
+# A mock git binary that always fails. Used to prevent real git clone calls from hanging in tests.
+echo "fatal: mock git failure" >&2
+exit 128

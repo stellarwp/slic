@@ -21,6 +21,8 @@ if ( $is_help ) {
 		<yellow>{$cli_name} {$subcommand}</yellow>
 	HELP;
 
+	echo colorize( $help );
+
 	return;
 }
 
