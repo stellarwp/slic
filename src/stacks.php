@@ -11,7 +11,7 @@ namespace StellarWP\Slic;
  * @return string The absolute path to the .env.slic.stacks file.
  */
 function slic_stacks_registry_file() {
-	return dirname(__DIR__) . '/.env.slic.stacks';
+	return slic_data_dir() . '/.env.slic.stacks';
 }
 
 /**
@@ -497,7 +497,7 @@ function slic_stacks_get_project_name($stack_id) {
  */
 function slic_stacks_get_state_file($stack_id) {
 	$hash = substr(md5($stack_id), 0, 8);
-	return dirname(__DIR__) . '/.env.slic.run.' . $hash;
+	return slic_data_dir() . '/.env.slic.run.' . $hash;
 }
 
 /**
@@ -918,7 +918,7 @@ function slic_stacks_detect_worktree($path) {
  * @return bool True if migration was performed, false otherwise.
  */
 function slic_stacks_migrate_legacy() {
-	$root_dir = dirname( __DIR__ );
+	$root_dir = slic_data_dir();
 	$legacy_run_file = $root_dir . '/.env.slic.run';
 	$registry_file = slic_stacks_registry_file();
 

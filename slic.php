@@ -291,7 +291,7 @@ $original_subcommand = $args( 'subcommand' );
 $subcommand          = $args( 'subcommand', 'help' );
 
 // Both these variables will be used by commands.
-$run_settings_file = root( '/.env.slic.run' );
+$run_settings_file = \StellarWP\Slic\slic_data_dir() . '/.env.slic.run';
 $cli_name          = basename( $argv[0] );
 
 if ( 'help' !== $subcommand ) {

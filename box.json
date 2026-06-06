@@ -1,0 +1,36 @@
+{
+    "main": "slic.php",
+    "output": "slic.phar",
+    "shebang": "#!/usr/bin/env php",
+    "directories": [
+        "src",
+        "includes",
+        "containers",
+        "completions"
+    ],
+    "files": [
+        "slic.php",
+        "version.php",
+        ".env.slic",
+        "slic-stack.yml",
+        "slic-stack.site.yml",
+        "slic-stack.worktree.yml"
+    ],
+    "blacklist": [
+        "tests",
+        "docs",
+        "vendor",
+        ".github",
+        ".git",
+        "_wordpress",
+        "_plugins",
+        ".cache",
+        ".idea",
+        ".data"
+    ],
+    "compactors": [
+        "KevinGH\\Box\\Compactor\\Php"
+    ],
+    "compression": "NONE",
+    "chmod": "0755"
+}

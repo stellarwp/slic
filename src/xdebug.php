@@ -208,7 +208,7 @@ function slic_handle_xdebug( callable $args ) {
 		$run_settings_file = get_stack_env_file( $stack_id );
 	} else {
 		// Fall back to legacy file if no stack
-		$run_settings_file = root( '/.env.slic.run' );
+		$run_settings_file = slic_data_dir() . '/.env.slic.run';
 	}
 	$toggle = $args( 'toggle', 'on' );
 

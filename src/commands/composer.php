@@ -58,7 +58,7 @@ if ( in_array( $sub_command, [ 'set-version', 'get-version', 'reset-version' ] )
 				echo magenta( "Error: set-version requires a Composer version number, either 1 or 2." . PHP_EOL );
 				exit( 1 );
 			}
-			$run_settings_file = root( '/.env.slic.run' );
+			$run_settings_file = slic_data_dir() . '/.env.slic.run';
 			write_env_file( $run_settings_file, [ 'SLIC_COMPOSER_VERSION' => (int) $version ], true );
 			echo colorize( "Composer version set to $version\n" );
 
@@ -69,7 +69,7 @@ if ( in_array( $sub_command, [ 'set-version', 'get-version', 'reset-version' ] )
 			exit( slic_realtime()( [ 'exec', 'slic', $composer_bin, '--version' ] ) );
 		case 'reset-version':
 			$version = 2;
-			$run_settings_file = root( '/.env.slic.run' );
+			$run_settings_file = slic_data_dir() . '/.env.slic.run';
 			write_env_file( $run_settings_file, [ 'SLIC_COMPOSER_VERSION' => (int) $version ], true );
 			echo colorize( "Composer version reset to default: $default_version\n" );
 
