@@ -122,6 +122,18 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Resolve release Docker tag
+        id: release-docker-tag
+        shell: bash
+        run: |
+          TAG=""
+          if [[ "$GITHUB_REF" == refs/heads/release/* ]]; then
+            TAG="${GITHUB_REF#refs/heads/}"
+            TAG="${TAG#release/}"
+          fi
+
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v5
@@ -130,7 +142,7 @@ jobs:
           tags: |
             type=edge,branch=main
             type=ref,event=branch,enable=${{ !startsWith(github.ref, 'refs/heads/release/') }}
-            type=match,pattern=release/(.*),group=1,enable=${{ startsWith(github.ref, 'refs/heads/release/') }}
+            type=raw,value=${{ steps.release-docker-tag.outputs.tag }},enable=${{ startsWith(github.ref, 'refs/heads/release/') }}
             type=ref,event=tag
             type=semver,pattern={{raw}}
           flavor: |
