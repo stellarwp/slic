@@ -21,7 +21,7 @@ ADD https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar /u
 RUN --mount=type=cache,target=/tmp/ipe-cache,sharing=locked \
     chmod a+x /usr/local/bin/install-php-extensions && \
     chmod a+rx /usr/local/bin/wp && \
-    install-php-extensions xdebug igbinary redis
+    install-php-extensions xdebug pcov igbinary redis
 
 # -------------------------------
 # WordPress version update (PHP 7.4)
@@ -33,15 +33,23 @@ RUN if echo "${PHP_VERSION}" | grep -q '^7.4'; then \
     wp --allow-root --path=/usr/src/wordpress core download --version=6.2 --force; \
     fi
 
+RUN mv /usr/local/bin/apache2-foreground /usr/local/bin/apache2-foreground-original
+
 # -------------------------------
 # Local config files (moved late for better caching)
 # -------------------------------
 COPY xdebug-on.sh /usr/local/bin/xdebug-on
 COPY xdebug-off.sh /usr/local/bin/xdebug-off
+COPY pcov-on.sh /usr/local/bin/pcov-on
+COPY pcov-off.sh /usr/local/bin/pcov-off
+COPY apache2-foreground /usr/local/bin/apache2-foreground
 
 # -------------------------------
 # Final permissions & setup
 # -------------------------------
-RUN chmod a+x /usr/local/bin/xdebug-on /usr/local/bin/xdebug-off && \
+RUN chmod a+x /usr/local/bin/xdebug-on /usr/local/bin/xdebug-off \
+             /usr/local/bin/pcov-on /usr/local/bin/pcov-off \
+             /usr/local/bin/apache2-foreground && \
     chmod -R a+rwx /usr/local/etc/php/conf.d && \
-    xdebug-off
+    xdebug-off && \
+    pcov-off

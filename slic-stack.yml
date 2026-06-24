@@ -104,6 +104,8 @@ services:
       XDEBUG_CONFIG: "idekey=${XDK:-slic} remote_enable=${XDE:-1} remote_host=${XDH:-host.docker.internal} remote_port=${XDP:-9001} client_host=${XDH:-host.docker.internal} client_port=${XDP:-9001}"
       # Whether to disable the XDebug extension in the Codeception container completely or not.
       XDEBUG_DISABLE: "${XDEBUG_DISABLE:-0}"
+      # Whether PCOV should be enabled for coverage collection.
+      PCOV_ENABLED: "${PCOV_ENABLED:-0}"
     volumes:
       # Paths are relative to the directory that contains this file, NOT the current working directory.
       - ${SLIC_WP_DIR}:/var/www/html
@@ -172,6 +174,8 @@ services:
       CODECEPTION_SHELL_CONFIG: "-c codeception.slic.yml"
       # Whether to disable the XDebug extension in the Codeception container completely or not.
       XDEBUG_DISABLE: "${XDEBUG_DISABLE:-0}"
+      # Whether PCOV should be enabled for coverage collection.
+      PCOV_ENABLED: "${PCOV_ENABLED:-0}"
       # Declare that we are in a slic context so plugins can set custom test configs.
       STELLAR_SLIC: 1
       # Backwards compatibility
