@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - '[0-9]+.[0-9]+.[0-9]+'
+      - 'release/[0-9]+.[0-9]+.[0-9]+'
   release:
     types: [published]
 
@@ -128,7 +129,8 @@ jobs:
           images: ghcr.io/${{ github.repository }}-wordpress-php${{ matrix.php_version }}
           tags: |
             type=edge,branch=main
-            type=ref,event=branch
+            type=ref,event=branch,enable=${{ !startsWith(github.ref, 'refs/heads/release/') }}
+            type=match,pattern=release/(.*),group=1,enable=${{ startsWith(github.ref, 'refs/heads/release/') }}
             type=ref,event=tag
             type=semver,pattern={{raw}}
           flavor: |
@@ -188,6 +190,9 @@ jobs:
             TAG="${GITHUB_REF#refs/tags/}"
           else
             TAG="${GITHUB_REF#refs/heads/}"
+            if [[ "$TAG" == release/* ]]; then
+              TAG="${TAG#release/}"
+            fi
           fi
           
           IMAGE_BASE="ghcr.io/${{ github.repository }}-wordpress-php${{ matrix.php_version }}"
