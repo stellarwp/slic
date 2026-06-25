@@ -17,12 +17,18 @@ if ( $is_help ) {
 
 	USAGE:
 
-		<yellow>{$cli_name} pcov (on|off|status)</yellow>
+		<yellow>{$cli_name} pcov [on|off|status] [--yes|-y]</yellow>
 
 	EXAMPLES:
 
+		<light_cyan>{$cli_name} pcov</light_cyan>
+		Gets the PCOV status.
+
 		<light_cyan>{$cli_name} pcov on</light_cyan>
-		Turns PCOV on in the running stack.
+		Turns PCOV on in the running stack. If Xdebug is enabled, slic will prompt to disable it first.
+
+		<light_cyan>{$cli_name} pcov on --yes</light_cyan>
+		Turns PCOV on and automatically disables Xdebug if needed.
 
 		<light_cyan>{$cli_name} pcov off</light_cyan>
 		Turns PCOV off in the running stack.
@@ -35,6 +41,8 @@ if ( $is_help ) {
 	return;
 }
 
-$pcov_args = args( [ 'toggle' ], $args( '...' ), 0 );
+$command   = $args( '...' );
+$confirm   = in_array( '--yes', $command, true ) || in_array( '-y', $command, true );
+$pcov_args = args( [ 'toggle' ], $command, 0 );
 
-slic_handle_pcov( $pcov_args );
+slic_handle_pcov( $pcov_args, $confirm );
