@@ -883,6 +883,7 @@ function slic_info() {
 		'SLIC_BUILD_PROMPT',
 		'SLIC_BUILD_SUBDIR',
 		'TERM',
+		'PCOV_ENABLED',
 		'XDK',
 		'XDE',
 		'XDH',
@@ -1146,11 +1147,37 @@ function xdebug_status() {
 }
 
 /**
+ * Returns whether Xdebug is enabled in slic configuration or in a running PHP service.
+ *
+ * @return bool Whether Xdebug is enabled.
+ */
+function xdebug_is_enabled() {
+	if ( (int) getenv( 'XDE' ) === 1 ) {
+		return true;
+	}
+
+	foreach ( [ 'slic', 'wordpress' ] as $service ) {
+		if ( ! service_running( $service ) ) {
+			continue;
+		}
+
+		$modules = slic_process()( [ 'exec', '-T', $service, 'php', '-m' ] );
+
+		if ( 0 === $modules( 'status' ) && preg_match( '/^xdebug$/mi', $modules( 'string_output' ) ) ) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/**
  * Handles the XDebug command request.
  *
- * @param callable $args The closure that will produce the current XDebug request arguments.
+ * @param callable $args    The closure that will produce the current XDebug request arguments.
+ * @param bool     $confirm Whether to auto-confirm disabling PCOV when enabling Xdebug.
  */
-function slic_handle_xdebug( callable $args ) {
+function slic_handle_xdebug( callable $args, $confirm = false ) {
 	$run_settings_file = root( '/.env.slic.run' );
 	$toggle            = $args( 'toggle', 'on' );
 
@@ -1175,6 +1202,21 @@ function slic_handle_xdebug( callable $args ) {
 	}
 
 	$value = 'on' === $toggle ? 1 : 0;
+
+	if ( 1 === $value && pcov_is_enabled() ) {
+		echo magenta( 'Xdebug cannot be enabled while PCOV is enabled.' ) . PHP_EOL;
+		$disable_pcov = $confirm || ask( 'Disable PCOV and enable Xdebug?', 'yes' );
+
+		if ( ! $disable_pcov ) {
+			echo magenta( 'Xdebug was not enabled. Run `slic pcov off` first, then run `slic xdebug on`.' ) . PHP_EOL;
+			exit( 1 );
+		}
+
+		slic_handle_pcov( static function ( $key, $default = null ) {
+			return 'toggle' === $key ? 'off' : $default;
+		} );
+	}
+
 	echo 'XDebug status: ' . ( $value ? light_cyan( 'on' ) : magenta( 'off' ) ) . PHP_EOL;
 
 	if ( $value !== (int) getenv( 'XDE' ) ) {
@@ -1197,6 +1239,100 @@ function slic_handle_xdebug( callable $args ) {
 			echo colorize( "Disabling XDebug in <light_cyan>{$service}</light_cyan>..." );
 			// Disable XDebug in the service.
 			slic_realtime()( [ 'exec', $service, 'xdebug-off' ] );
+		}
+	}
+}
+
+/**
+ * Prints the current PCOV status to screen.
+ */
+function pcov_status() {
+	$enabled = getenv( 'PCOV_ENABLED' ) === '1';
+
+	echo 'PCOV status is: ' . ( $enabled ? light_cyan( 'on' ) : magenta( 'off' ) ) . PHP_EOL;
+}
+
+/**
+ * Returns whether PCOV is enabled in slic configuration or in a running PHP service.
+ *
+ * @return bool Whether PCOV is enabled.
+ */
+function pcov_is_enabled() {
+	if ( (int) getenv( 'PCOV_ENABLED' ) === 1 ) {
+		return true;
+	}
+
+	foreach ( [ 'slic', 'wordpress' ] as $service ) {
+		if ( ! service_running( $service ) ) {
+			continue;
+		}
+
+		$modules = slic_process()( [ 'exec', '-T', $service, 'php', '-m' ] );
+
+		if ( 0 === $modules( 'status' ) && preg_match( '/^pcov$/mi', $modules( 'string_output' ) ) ) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/**
+ * Handles the PCOV command request.
+ *
+ * @param callable $args    The closure that will produce the current PCOV request arguments.
+ * @param bool     $confirm Whether to auto-confirm disabling Xdebug when enabling PCOV.
+ */
+function slic_handle_pcov( callable $args, $confirm = false ) {
+	$run_settings_file = root( '/.env.slic.run' );
+	$toggle            = $args( 'toggle', 'status' );
+
+	if ( ! in_array( $toggle, [ 'on', 'off', 'status' ], true ) ) {
+		echo magenta( "Invalid PCOV option: {$toggle}. Expected one of: on, off, status." ) . PHP_EOL;
+		exit( 1 );
+	}
+
+	if ( 'status' === $toggle ) {
+		pcov_status();
+
+		return;
+	}
+
+	$value = 'on' === $toggle ? 1 : 0;
+
+	if ( 1 === $value && xdebug_is_enabled() ) {
+		echo magenta( 'PCOV cannot be enabled while Xdebug is enabled.' ) . PHP_EOL;
+		$disable_xdebug = $confirm || ask( 'Disable Xdebug and enable PCOV?', 'yes' );
+
+		if ( ! $disable_xdebug ) {
+			echo magenta( 'PCOV was not enabled. Run `slic xdebug off` first, then run `slic pcov on`.' ) . PHP_EOL;
+			exit( 1 );
+		}
+
+		slic_handle_xdebug( static function ( $key, $default = null ) {
+			return 'toggle' === $key ? 'off' : $default;
+		} );
+	}
+
+	echo 'PCOV status: ' . ( $value ? light_cyan( 'on' ) : magenta( 'off' ) ) . PHP_EOL;
+
+	if ( $value !== (int) getenv( 'PCOV_ENABLED' ) ) {
+		write_env_file( $run_settings_file, [ 'PCOV_ENABLED' => $value ], true );
+	}
+
+	foreach ( [ 'slic', 'wordpress' ] as $service ) {
+		if ( ! service_running( $service ) ) {
+			continue;
+		}
+
+		echo PHP_EOL;
+
+		if ( $value === 1 ) {
+			echo colorize( "Enabling PCOV in <light_cyan>{$service}</light_cyan>..." );
+			slic_realtime()( [ 'exec', $service, 'pcov-on' ] );
+		} else {
+			echo colorize( "Disabling PCOV in <light_cyan>{$service}</light_cyan>..." );
+			slic_realtime()( [ 'exec', $service, 'pcov-off' ] );
 		}
 	}
 }

@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [2.3.0] - 2026-06-25
+- Added - PCOV support to the slic and WordPress containers to make code coverage generation faster than Xdebug-backed coverage.
+- Added - The `slic pcov on|off|status` command to configure PCOV and apply it to running containers and checks if xdebug is running and asks the user if they want to disable it.
+- Updated - The `slic xdebug on` command now checks if PCOV is enabled and asks the user if they want to disable it.
+- Added - `pcovon` and `pcovoff` helpers inside `slic shell`.
+- Changed - WordPress containers now apply configured PCOV state through the `apache2-foreground` command path while preserving the upstream WordPress image entrypoint.
+- Updated - GitHub actions versions.
+
 # [2.2.0] - 2026-05-29
 - Added - First-class theme support for `slic here`, `slic use`, `slic using`, and `slic run`, including auto-detection when running `slic here` from a `themes` directory with a sibling `plugins` directory.
 - Added - Agent Skills documentation in `skills/slic/` for AI-assisted WordPress integration test creation, debugging, and slic workflow guidance.

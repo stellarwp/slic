@@ -54,7 +54,7 @@ $args = args( [
 ] );
 
 $cli_name = 'slic';
-const CLI_VERSION = '2.2.0';
+const CLI_VERSION = '2.3.0';
 
 // If the run-time option `-q`, for "quiet", is specified, then do not print the header.
 if ( in_array( '-q', $argv, true ) || ( in_array( 'exec', $argv, true ) && ! in_array( 'help', $argv, true ) ) ) {
@@ -100,6 +100,7 @@ Available commands:
   <light_cyan>using</light_cyan>          Returns the current <light_cyan>use</light_cyan> target.
   <light_cyan>wp</light_cyan>             Runs a wp-cli command or opens a `wp-cli shell` in the stack.
   <light_cyan>xdebug</light_cyan>         Activates and deactivates XDebug in the stack, returns the current XDebug status or sets its values.
+  <light_cyan>pcov</light_cyan>           Activates and deactivates PCOV in the stack, or returns the current PCOV status.
   <light_cyan>playwright</light_cyan>     Runs Playwright commands in the stack.
 
 Type <light_cyan>{$cli_name} <command> help</light_cyan> for info about each command.

@@ -19,12 +19,15 @@ if ( $is_help ) {
 
 	USAGE:
 
-		<yellow>{$cli_name} xdebug (on|off|status|port|host|key) [<value>]</yellow>
+		<yellow>{$cli_name} xdebug (on|off|status|port|host|key) [<value>] [--yes|-y]</yellow>
 
 	EXAMPLES:
 
 		<light_cyan>{$cli_name} xdebug on</light_cyan>
-		Turns xdebug on.
+		Turns xdebug on. If PCOV is enabled, slic will prompt to disable it first.
+
+		<light_cyan>{$cli_name} xdebug on --yes</light_cyan>
+		Turns xdebug on and automatically disables PCOV if needed.
 
 		<light_cyan>{$cli_name} xdebug status</light_cyan>
 		Gets the xdebug status.
@@ -40,6 +43,8 @@ if ( $is_help ) {
 	return;
 }
 
-$xdebug_args = args( [ 'toggle', 'value' ], $args( '...' ), 0 );
+$command     = $args( '...' );
+$confirm     = in_array( '--yes', $command, true ) || in_array( '-y', $command, true );
+$xdebug_args = args( [ 'toggle', 'value' ], $command, 0 );
 
-slic_handle_xdebug( $xdebug_args );
+slic_handle_xdebug( $xdebug_args, $confirm );

@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - '[0-9]+.[0-9]+.[0-9]+'
+      - 'release/[0-9]+.[0-9]+.[0-9]+'
   release:
     types: [published]
 
@@ -106,39 +107,52 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
       - name: Log in to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
 
       - name: Log in to the Container registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Resolve release Docker tag
+        id: release-docker-tag
+        shell: bash
+        run: |
+          TAG=""
+          if [[ "$GITHUB_REF" == refs/heads/release/* ]]; then
+            TAG="${GITHUB_REF#refs/heads/}"
+            TAG="${TAG#release/}"
+          fi
+
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+
       - name: Extract metadata (tags, labels) for Docker
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ghcr.io/${{ github.repository }}-wordpress-php${{ matrix.php_version }}
           tags: |
             type=edge,branch=main
-            type=ref,event=branch
+            type=ref,event=branch,enable=${{ !startsWith(github.ref, 'refs/heads/release/') }}
+            type=raw,value=${{ steps.release-docker-tag.outputs.tag }},enable=${{ startsWith(github.ref, 'refs/heads/release/') }}
             type=ref,event=tag
             type=semver,pattern={{raw}}
           flavor: |
             suffix=-${{ matrix.arch }},onlatest=true
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: containers/wordpress
           file: containers/wordpress/Dockerfile
@@ -173,7 +187,7 @@ jobs:
           - php_version: '8.5'
     steps:
       - name: Log in to the Container registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -188,6 +202,9 @@ jobs:
             TAG="${GITHUB_REF#refs/tags/}"
           else
             TAG="${GITHUB_REF#refs/heads/}"
+            if [[ "$TAG" == release/* ]]; then
+              TAG="${TAG#release/}"
+            fi
           fi
           
           IMAGE_BASE="ghcr.io/${{ github.repository }}-wordpress-php${{ matrix.php_version }}"
