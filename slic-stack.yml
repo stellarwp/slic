@@ -70,6 +70,7 @@ services:
       # Allow reaching the site at `http://localhost:8888`.
       # The port, in the container, is not the default `80` to allow non root users to bind (listen) to it.
       - "${WORDPRESS_HTTP_PORT:-8888}:80"
+    command: ["apache2-slic-foreground"]
     environment:
       COMPOSER_CACHE_DIR: "/composer-cache"
       WORDPRESS_DB_USER: root
