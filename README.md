@@ -173,6 +173,13 @@ slic here
 By running `slic here` at the site level, this allows you to set plugins, themes, or the site itself as the location
 from which to run tests. This also has the benefit of running tests within the WP version that your site uses.
 
+`slic here` mounts the complete site root at `/var/www/html`. WordPress core remains at `/var/www/html/wp` when the
+project installs it in `wp/`, while root installations remain at `/var/www/html`. The detected `content/` or
+`wp-content/` directory is mounted at the matching container path.
+
+`slic here` also disables subdirectory builds for sites and enables them for plugin and theme directories. You can
+override the detected setting with `slic build-subdir on|off`.
+
 ![slic here](docs/images/slic-here-wp.gif)
 
 ### Preparing your project

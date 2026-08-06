@@ -29,7 +29,7 @@ In PHPStorm settings:
 5. Set the `Host` to whatever `slic xdebug status` returns. (typically `http://localhost:8888` ... yes, put the whole thing in the `Host` field)
 6. Set the `Port` to `80`
 7. Check the `Use path mappings` checkbox
-8. Find the `wp-content/plugins` directory and set the `Absolute path on the server` to `/var/www/html/wp-content/plugins`
+8. Find the plugins directory and set the `Absolute path on the server` to the path reported by `slic xdebug status`
 9. If you've added the `slic` directory to your workspace, find the `slic/_wordpress` directory and set the `Absolute path on the server` to `/var/www/html`
 
 Screenshot from PhpStorm's video:

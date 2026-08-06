@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [2.4.0] - 2026-08-06
+- Added - First-class support for site-mode projects that use `content/` instead of `wp-content/`, including plugin and theme container paths.
+- Changed - `slic here` now mounts the complete project root for every WordPress site, including projects that install core into `wp/`.
+- Changed - `slic here` now disables subdirectory builds for sites and enables them for plugin and theme directories.
+- Fixed - Site mode no longer creates an unused `wp-content/` directory when the project uses a custom content directory.
+- Fixed - Test containers now disable the object-cache drop-in without modifying the project file.
+- Fixed - Airplane mode now uses and creates the configured must-use plugin directory.
+
 # [2.3.0] - 2026-06-25
 - Added - PCOV support to the slic and WordPress containers to make code coverage generation faster than Xdebug-backed coverage.
 - Added - The `slic pcov on|off|status` command to configure PCOV and apply it to running containers and checks if xdebug is running and asks the user if they want to disable it.

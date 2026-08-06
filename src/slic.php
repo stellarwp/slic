@@ -358,8 +358,7 @@ function setup_slic_env( $root_dir, $reset = false ) {
 		exit( 1 );
 	}
 
-	$wp_content_dir = ensure_dir( $wp_dir . '/wp-content' );
-	$wp_themes_dir  = $wp_content_dir . '/themes';
+	$wp_themes_dir = $wp_dir . '/wp-content/themes';
 
 	putenv( 'SLIC_WP_DIR=' . $wp_dir );
 	putenv( 'SLIC_PLUGINS_DIR=' . ensure_dir( getenv( 'SLIC_PLUGINS_DIR' ) ?: root( '_plugins' ) ) );
@@ -654,7 +653,7 @@ function slic_mu_plugins_dir( $path = '' ) {
  *
  */
 function slic_content_type_dir( $content_type = 'plugins', $path = '' ) {
-	$content_type_dir = getenv( 'SLIC_' . strtoupper( $content_type ) . '_DIR' );
+	$content_type_dir = getenv( 'SLIC_' . str_replace( '-', '_', strtoupper( $content_type ) ) . '_DIR' );
 	$root_dir         = root();
 
 	if ( 'plugins' === $content_type ) {
@@ -668,7 +667,7 @@ function slic_content_type_dir( $content_type = 'plugins', $path = '' ) {
 	if ( empty( $content_type_dir ) ) {
 		// Use the default directory in slic repository.
 		$dir = $root_dir . $default_path;
-	} elseif ( is_dir( $content_type_dir ) ) {
+	} elseif ( is_dir( $content_type_dir ) || 0 === strpos( $content_type_dir, '/' ) ) {
 		// Use the specified directory.
 		$dir = $content_type_dir;
 	} else {
@@ -876,6 +875,8 @@ function slic_info() {
 		'SLIC_GIT_DOMAIN',
 		'SLIC_GIT_HANDLE',
 		'SLIC_HERE_DIR',
+		'SLIC_MU_PLUGINS_DIR',
+		'SLIC_WP_CONTENT_CONTAINER_DIR',
 		'SLIC_PLUGINS_DIR',
 		'SLIC_THEMES_DIR',
 		'SLIC_WP_DIR',
@@ -1122,7 +1123,9 @@ function xdebug_status() {
 	echo 'Host: ' . light_cyan( 'http://localhost' . ( $localhost_port === '80' ? '' : ':' . $localhost_port ) ) . PHP_EOL;
 	echo colorize( 'Path mapping (host => server): <light_cyan>'
 	               . slic_plugins_dir()
-	               . '</light_cyan> => <light_cyan>/var/www/html/wp-content/plugins</light_cyan>' ) . PHP_EOL;
+	               . '</light_cyan> => <light_cyan>'
+	               . ( getenv( 'SLIC_WP_CONTENT_CONTAINER_DIR' ) ?: '/var/www/html/wp-content' )
+	               . '/plugins</light_cyan>' ) . PHP_EOL;
 	echo colorize( 'Path mapping (host => server): <light_cyan>'
 	               . slic_wp_dir()
 	               . '</light_cyan> => <light_cyan>/var/www/html</light_cyan>' );

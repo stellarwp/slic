@@ -35,9 +35,10 @@ if ( $is_help ) {
 $sub_args    = args( [ 'reset' ], $args( '...' ), 0 );
 $reset       = $sub_args( 'reset', false );
 
-$wp_dir      = SLIC_ROOT_DIR . '/_wordpress';
-$plugins_dir = SLIC_ROOT_DIR . '/_plugins';
-$themes_dir  = SLIC_ROOT_DIR . '/_wordpress/wp-content/themes';
+$wp_dir         = SLIC_ROOT_DIR . '/_wordpress';
+$plugins_dir    = SLIC_ROOT_DIR . '/_plugins';
+$mu_plugins_dir = SLIC_ROOT_DIR . '/_wordpress/wp-content/mu-plugins';
+$themes_dir     = SLIC_ROOT_DIR . '/_wordpress/wp-content/themes';
 
 if ( empty( $reset ) ) {
 	$here_dir = getcwd();
@@ -50,7 +51,11 @@ if ( empty( $reset ) ) {
 }
 
 $has_wp_config = dir_has_wp_config( $here_dir );
-$env_values    = [];
+$env_values    = [
+	'SLIC_BUILD_SUBDIR'             => 1,
+	'SLIC_MU_PLUGINS_DIR'           => $mu_plugins_dir,
+	'SLIC_WP_CONTENT_CONTAINER_DIR' => '/var/www/html/wp-content',
+];
 
 if ( $has_wp_config ) {
 	if ( file_exists( "{$here_dir}/wp-content" ) ) {
@@ -58,20 +63,18 @@ if ( $has_wp_config ) {
 	} elseif ( file_exists( "{$here_dir}/content" ) ) {
 		$wp_content_dir = "{$here_dir}/content";
 	} else {
-		echo magenta( "Cannot locate the wp-content directory. If you have a custom wp-content location, you will need to set the SLIC_WP_DIR, SLIC_PLUGINS_DIR, and SLIC_THEMES_DIR manually in slic's .env.slic.run file." );
+		echo magenta( "Cannot locate the WordPress content directory." );
 		exit( 1 );
 	}
 
 	$env_values['SLIC_HERE_DIR'] = $here_dir;
 
-	// Support WP skeleton.
-	if ( file_exists( "{$here_dir}/wp" ) ) {
-		$here_dir .= '/wp';
-	}
-
-	$env_values['SLIC_WP_DIR']       = $here_dir;
-	$env_values['SLIC_PLUGINS_DIR']  = "{$wp_content_dir}/plugins";
-	$env_values['SLIC_THEMES_DIR']   = "{$wp_content_dir}/themes";
+	$env_values['SLIC_BUILD_SUBDIR']              = 0;
+	$env_values['SLIC_MU_PLUGINS_DIR']            = "{$wp_content_dir}/mu-plugins";
+	$env_values['SLIC_PLUGINS_DIR']              = "{$wp_content_dir}/plugins";
+	$env_values['SLIC_THEMES_DIR']               = "{$wp_content_dir}/themes";
+	$env_values['SLIC_WP_DIR']                    = $here_dir;
+	$env_values['SLIC_WP_CONTENT_CONTAINER_DIR'] = '/var/www/html/' . basename( $wp_content_dir );
 } else {
 	$env_values['SLIC_HERE_DIR']     = $here_dir;
 	$env_values['SLIC_WP_DIR']       = $wp_dir;
