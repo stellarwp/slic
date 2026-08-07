@@ -177,6 +177,12 @@ from which to run tests. This also has the benefit of running tests within the W
 project installs it in `wp/`, while root installations remain at `/var/www/html`. The detected `content/` or
 `wp-content/` directory is mounted at the matching container path.
 
+When a project installs WordPress in `wp/`, selecting an individual plugin or theme uses Slic's isolated WordPress
+installation instead. This preserves existing component test configurations that expect core at `/var/www/html`.
+Plugin targets use Slic's bundled default themes, while theme targets mount the project's themes directory. Selecting
+`site` switches back to the complete project root. Slic recreates running PHP containers when these mounts change and
+leaves the database and other services running.
+
 `slic here` also disables subdirectory builds for sites and enables them for plugin and theme directories. You can
 override the detected setting with `slic build-subdir on|off`.
 

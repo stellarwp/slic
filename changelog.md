@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Changed - `slic here` now mounts the complete project root for every WordPress site, including projects that install core into `wp/`.
 - Changed - `slic here` now disables subdirectory builds for sites and enables them for plugin and theme directories.
 - Fixed - Site mode no longer creates an unused `wp-content/` directory when the project uses a custom content directory.
+- Fixed - Plugin and theme targets in projects that install WordPress in `wp/` continue to use Slic's isolated WordPress installation.
+- Fixed - Switching between site and isolated component targets recreates only the running PHP containers so changed mounts take effect without resetting the test database.
+- Fixed - Site theme discovery remains stable while plugin and theme targets use their required theme mounts.
+- Fixed - Target-local mount overrides remain authoritative when Slic selects a site layout.
+- Changed - Multi-target commands reject mixed site, plugin, and theme targets when their WordPress mounts are incompatible.
+- Changed - Multi-target commands reject targets with different target-local bind-mount settings.
+- Fixed - Target-local Composer cache and Slic scripts bind mounts now recreate running PHP containers and persist their runtime state.
+- Fixed - Target switching now stops without persisting new mount state when Docker cannot determine which services are running.
 - Fixed - Test containers now disable the object-cache drop-in without modifying the project file.
 - Fixed - Airplane mode now uses and creates the configured must-use plugin directory.
 

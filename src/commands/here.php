@@ -54,6 +54,8 @@ $has_wp_config = dir_has_wp_config( $here_dir );
 $env_values    = [
 	'SLIC_BUILD_SUBDIR'             => 1,
 	'SLIC_MU_PLUGINS_DIR'           => $mu_plugins_dir,
+	'SLIC_SITE_PLUGINS_DIR'         => '',
+	'SLIC_SITE_THEMES_DIR'          => '',
 	'SLIC_WP_CONTENT_CONTAINER_DIR' => '/var/www/html/wp-content',
 ];
 
@@ -72,6 +74,8 @@ if ( $has_wp_config ) {
 	$env_values['SLIC_BUILD_SUBDIR']              = 0;
 	$env_values['SLIC_MU_PLUGINS_DIR']            = "{$wp_content_dir}/mu-plugins";
 	$env_values['SLIC_PLUGINS_DIR']              = "{$wp_content_dir}/plugins";
+	$env_values['SLIC_SITE_PLUGINS_DIR']         = "{$wp_content_dir}/plugins";
+	$env_values['SLIC_SITE_THEMES_DIR']          = "{$wp_content_dir}/themes";
 	$env_values['SLIC_THEMES_DIR']               = "{$wp_content_dir}/themes";
 	$env_values['SLIC_WP_DIR']                    = $here_dir;
 	$env_values['SLIC_WP_CONTENT_CONTAINER_DIR'] = '/var/www/html/' . basename( $wp_content_dir );
@@ -92,6 +96,12 @@ if ( $has_wp_config ) {
 	} else {
 		$env_values['SLIC_PLUGINS_DIR'] = $here_dir;
 		$env_values['SLIC_THEMES_DIR']  = $themes_dir;
+	}
+}
+
+foreach ( slic_target_mount_base_keys() as $key => $base_key ) {
+	if ( array_key_exists( $key, $env_values ) ) {
+		$env_values[ $base_key ] = $env_values[ $key ];
 	}
 }
 
