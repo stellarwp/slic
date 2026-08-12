@@ -71,13 +71,13 @@ if ( $has_wp_config ) {
 
 	$env_values['SLIC_HERE_DIR'] = $here_dir;
 
-	$env_values['SLIC_BUILD_SUBDIR']              = 0;
-	$env_values['SLIC_MU_PLUGINS_DIR']            = "{$wp_content_dir}/mu-plugins";
+	$env_values['SLIC_BUILD_SUBDIR']             = 0;
+	$env_values['SLIC_MU_PLUGINS_DIR']           = "{$wp_content_dir}/mu-plugins";
 	$env_values['SLIC_PLUGINS_DIR']              = "{$wp_content_dir}/plugins";
 	$env_values['SLIC_SITE_PLUGINS_DIR']         = "{$wp_content_dir}/plugins";
 	$env_values['SLIC_SITE_THEMES_DIR']          = "{$wp_content_dir}/themes";
 	$env_values['SLIC_THEMES_DIR']               = "{$wp_content_dir}/themes";
-	$env_values['SLIC_WP_DIR']                    = $here_dir;
+	$env_values['SLIC_WP_DIR']                   = $here_dir;
 	$env_values['SLIC_WP_CONTENT_CONTAINER_DIR'] = '/var/www/html/' . basename( $wp_content_dir );
 } else {
 	$env_values['SLIC_HERE_DIR']     = $here_dir;
