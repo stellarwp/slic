@@ -673,10 +673,10 @@ function slic_site_target_environment( $target ) {
 	$themes_dir  = getenv( 'SLIC_SITE_THEMES_DIR' ) ?: dirname( $plugins_dir ) . '/themes';
 
 	if ( $isolated ) {
-		$wp_dir        = ensure_dir( root( '/_wordpress' ) );
+		$wp_dir         = ensure_dir( root( '/_wordpress' ) );
 		$wp_content_dir = ensure_dir( $wp_dir . '/wp-content' );
-		$content_path  = '/var/www/html/wp-content';
-		$themes_dir    = 'plugin' === $target_type ? ensure_dir( $wp_content_dir . '/themes' ) : $themes_dir;
+		$content_path   = '/var/www/html/wp-content';
+		$themes_dir     = 'plugin' === $target_type ? ensure_dir( $wp_content_dir . '/themes' ) : $themes_dir;
 	} else {
 		$wp_dir         = $site_dir;
 		$wp_content_dir = dirname( $plugins_dir );
