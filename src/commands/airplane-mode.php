@@ -47,8 +47,8 @@ $ensure_airplane_mode_plugin_present = static function () {
 	$plugin_dir     = $mu_plugins_dir . DIRECTORY_SEPARATOR . 'airplane-mode';
 
 	if (
-		! is_dir( dirname( $mu_plugins_dir ) )
-		&& ! mkdir( $concurrentDirectory = dirname( $mu_plugins_dir ), 0755, true )
+		! is_dir( $mu_plugins_dir )
+		&& ! mkdir( $concurrentDirectory = $mu_plugins_dir, 0755, true )
 		&& ! is_dir( $concurrentDirectory )
 	) {
 		echo magenta( "Failed to create mu-plugins directory {$mu_plugins_dir}." );

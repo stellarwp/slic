@@ -110,8 +110,9 @@ services:
     volumes:
       # Paths are relative to the directory that contains this file, NOT the current working directory.
       - ${SLIC_WP_DIR}:/var/www/html
-      - ${SLIC_PLUGINS_DIR}:/var/www/html/wp-content/plugins
-      - ${SLIC_THEMES_DIR}:/var/www/html/wp-content/themes
+      - ${SLIC_PLUGINS_DIR}:${SLIC_WP_CONTENT_CONTAINER_DIR}/plugins
+      - ${SLIC_THEMES_DIR}:${SLIC_WP_CONTENT_CONTAINER_DIR}/themes
+      - ./containers/wordpress/disable-object-cache.php:/slic-disable-object-cache.php:ro
       - ${COMPOSER_CACHE_DIR:-./.cache}:/composer-cache
       - ./containers/wordpress/php.ini:/usr/local/etc/php/conf.d/zz-docker.ini
     healthcheck: # Apache service should be running correctly.
@@ -170,7 +171,7 @@ services:
       # XDH=$(ip route | grep docker0 | awk '{print $9}') docker compose ...
       XDEBUG_CONFIG: "idekey=${XDK:-slic} remote_enable=${XDE:-1} remote_host=${XDH:-host.docker.internal} remote_port=${XDP:-9001} client_host=${XDH:-host.docker.internal} client_port=${XDP:-9001}"
       # Move to the target directory before running Codeception commands.
-      CODECEPTION_PROJECT_DIR: ${SLIC_CURRENT_PROJECT_CONTAINER_PATH:-/var/www/html/wp-content/plugins/test}
+      CODECEPTION_PROJECT_DIR: ${SLIC_CURRENT_PROJECT_CONTAINER_PATH:-${SLIC_WP_CONTENT_CONTAINER_DIR}/plugins/test}
       # When running the container in shell mode (using the slic `shell` command), then use this CC configuration.
       CODECEPTION_SHELL_CONFIG: "-c codeception.slic.yml"
       # Whether to disable the XDebug extension in the Codeception container completely or not.
@@ -194,9 +195,11 @@ services:
       # Paths are relative to the directory that contains this file, NOT the current working directory.
       # Share the WordPress core installation files in the `_wordpress` directory.
       - ${SLIC_WP_DIR}:/var/www/html
-      # Share the plugins in the `/var/www/hmtl/wp-content/plugins` directory.
-      - ${SLIC_PLUGINS_DIR}:/var/www/html/wp-content/plugins
-      - ${SLIC_THEMES_DIR}:/var/www/html/wp-content/themes
+      # Share plugins and themes in the configured WordPress content directory.
+      - ${SLIC_PLUGINS_DIR}:${SLIC_WP_CONTENT_CONTAINER_DIR}/plugins
+      - ${SLIC_THEMES_DIR}:${SLIC_WP_CONTENT_CONTAINER_DIR}/themes
+      # Disable the project's persistent object-cache drop-in without modifying the host file.
+      - ./containers/wordpress/disable-object-cache.php:/slic-disable-object-cache.php:ro
       # In some plugins we use function-mocker and set it up to cache in `/tmp/function-mocker`.
       # To avoid a long re-caching on each run, let's cache in a docker volume, caching on the host
       # filesystem would be a worse cure than the disease.

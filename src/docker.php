@@ -159,7 +159,7 @@ function slic_stack_array( $filenames_only = false ) {
 	$base_stack  = stack();
 	$stack_array = [ $file_prefix, $quote . $base_stack . $quote ];
 
-	if ( slic_here_is_site() ) {
+	if ( slic_uses_site_root() ) {
 		$stack_array[] = $file_prefix;
 		$stack_array[] = $quote . stack( '.site' ) . $quote;
 	}
@@ -260,4 +260,3 @@ function docker_compose_realtime( array $options = [] ) {
 function docker_compose_bin(): string {
 	return (string) getenv( 'SLIC_DOCKER_COMPOSE_BIN' ) ?: 'docker compose';
 }
-

@@ -76,10 +76,27 @@ function cli_header( $cli_name, $full = false, $extra = null ) {
  * @return bool
  */
 function slic_here_is_site() {
-	$env_wp_dir = getenv( 'SLIC_WP_DIR' );
+	$here_dir = getenv( 'SLIC_HERE_DIR' );
 
-	return SLIC_ROOT_DIR . '/_wordpress' !== $env_wp_dir
-	       && './_wordpress' !== $env_wp_dir;
+	if ( empty( $here_dir ) ) {
+		return false;
+	}
+
+	$here_dir    = realpath( $here_dir );
+	$plugins_dir = realpath( getenv( 'SLIC_SITE_PLUGINS_DIR' ) ?: getenv( 'SLIC_PLUGINS_DIR' ) );
+	$themes_dir  = realpath( getenv( 'SLIC_SITE_THEMES_DIR' ) ?: getenv( 'SLIC_THEMES_DIR' ) );
+
+	return $here_dir && $here_dir !== $plugins_dir && $here_dir !== $themes_dir;
+}
+
+/**
+ * Returns whether the complete site root is mounted as WordPress.
+ *
+ * @return bool
+ */
+function slic_uses_site_root() {
+	return slic_here_is_site()
+	       && realpath( getenv( 'SLIC_HERE_DIR' ) ) === realpath( getenv( 'SLIC_WP_DIR' ) );
 }
 
 /**
@@ -229,8 +246,8 @@ function get_target_relative_path( $target ) {
 		return '';
 	}
 
-	$plugin_dir = getenv( 'SLIC_PLUGINS_DIR' );
-	$theme_dir  = getenv( 'SLIC_THEMES_DIR' );
+	$plugin_dir = slic_plugins_dir();
+	$theme_dir  = slic_themes_dir();
 
 	if ( file_exists( "{$plugin_dir}/{$target}" ) ) {
 		$parent_path = $plugin_dir;
@@ -285,9 +302,16 @@ function setup_slic_env( $root_dir, $reset = false ) {
 		load_env_file( $root_dir . '/.env.slic.local' );
 	}
 
+	$configured_mounts = [];
+	foreach ( slic_target_mount_base_keys() as $key => $base_key ) {
+		$configured_mounts[ $key ] = getenv( $key );
+	}
+	$configured_mounts['COMPOSER_CACHE_DIR'] = $configured_mounts['COMPOSER_CACHE_DIR'] ?: cache( '/composer' );
+
 	// Load the current session configuration file.
 	$run_env_file = $root_dir . '/.env.slic.run';
 	$staged_php_version = null;
+	$run_env = [];
 
 	if ( file_exists( $run_env_file ) ) {
 		load_env_file( $run_env_file );
@@ -299,6 +323,26 @@ function setup_slic_env( $root_dir, $reset = false ) {
 		if ( $is_php_version_staged && isset( $run_env['SLIC_PHP_VERSION'] ) ) {
 			$staged_php_version = $run_env['SLIC_PHP_VERSION'];
 		}
+	}
+
+	// Restore target-overridable mounts to their global values before loading the selected target's overrides.
+	foreach ( slic_target_mount_base_keys() as $key => $base_key ) {
+		if ( 'SLIC_SCRIPTS' === $key ) {
+			$base_value = $configured_mounts[ $key ];
+		} elseif ( 'COMPOSER_CACHE_DIR' === $key ) {
+			$legacy_cache = ! isset( $run_env[ $base_key ] )
+				&& isset( $run_env[ $key ] )
+				&& ! array_key_exists( 'SLIC_COMPOSER_CACHE_IS_EXPLICIT', $run_env );
+			$explicit_cache = '1' === ( $run_env['SLIC_COMPOSER_CACHE_IS_EXPLICIT'] ?? '' );
+			$base_value = $explicit_cache || $legacy_cache
+				? ( $run_env[ $base_key ] ?? $run_env[ $key ] )
+				: $configured_mounts[ $key ];
+			putenv( 'SLIC_COMPOSER_CACHE_IS_EXPLICIT=' . ( $explicit_cache || $legacy_cache ? '1' : '0' ) );
+		} else {
+			$base_value = $run_env[ $base_key ] ?? $run_env[ $key ] ?? $configured_mounts[ $key ];
+		}
+		putenv( "{$base_key}={$base_value}" );
+		putenv( "{$key}={$base_value}" );
 	}
 
 	/*
@@ -313,6 +357,10 @@ function setup_slic_env( $root_dir, $reset = false ) {
 	if ( $argc >= 3 && $argv[1] === 'use' && ! empty( $argv[2] ) ) {
 		$target = (string) ensure_valid_target( $argv[2] );
 		putenv( "SLIC_CURRENT_PROJECT={$target}" );
+	}
+
+	if ( slic_here_is_site() && getenv( 'SLIC_CURRENT_PROJECT' ) ) {
+		slic_site_target_environment( getenv( 'SLIC_CURRENT_PROJECT' ) );
 	}
 
 	$target_path = get_project_local_path();
@@ -352,14 +400,14 @@ function setup_slic_env( $root_dir, $reset = false ) {
 	if ( $wp_dir === './_wordpress' || $wp_dir === $default_wp_dir ) {
 		// Default WordPress directory, inside slic.
 		$wp_dir = ensure_dir( $default_wp_dir );
+		ensure_dir( $wp_dir . '/wp-content' );
 	} else if ( ! is_dir( $wp_dir ) ) {
 		// Custom WordPress directory, it falls on the user to have it set up correctly.
 		echo magenta( "WordPress directory $wp_dir does not exist; is it initialized?" );
 		exit( 1 );
 	}
 
-	$wp_content_dir = ensure_dir( $wp_dir . '/wp-content' );
-	$wp_themes_dir  = $wp_content_dir . '/themes';
+	$wp_themes_dir = $wp_dir . '/wp-content/themes';
 
 	putenv( 'SLIC_WP_DIR=' . $wp_dir );
 	putenv( 'SLIC_PLUGINS_DIR=' . ensure_dir( getenv( 'SLIC_PLUGINS_DIR' ) ?: root( '_plugins' ) ) );
@@ -474,7 +522,40 @@ function slic_target( $require = true ) {
 }
 
 /**
- * Switches the current `use` target.
+ * Returns environment variables whose values determine target-specific bind mounts.
+ *
+ * @return string[] Bind-mount environment variable names.
+ */
+function slic_target_mount_keys() {
+	return [
+		'SLIC_WP_DIR',
+		'SLIC_PLUGINS_DIR',
+		'SLIC_THEMES_DIR',
+		'SLIC_WP_CONTENT_CONTAINER_DIR',
+		'COMPOSER_CACHE_DIR',
+		'SLIC_COMPOSER_CACHE_IS_EXPLICIT',
+		'SLIC_SCRIPTS',
+	];
+}
+
+/**
+ * Returns target-overridable bind mounts that must restore a global value when targets change.
+ *
+ * @return array<string,string> Effective variable names mapped to their runtime base variable names.
+ */
+function slic_target_mount_base_keys() {
+	return [
+		'SLIC_WP_DIR'                   => 'SLIC_BASE_WP_DIR',
+		'SLIC_PLUGINS_DIR'              => 'SLIC_BASE_PLUGINS_DIR',
+		'SLIC_THEMES_DIR'               => 'SLIC_BASE_THEMES_DIR',
+		'SLIC_WP_CONTENT_CONTAINER_DIR' => 'SLIC_BASE_WP_CONTENT_CONTAINER_DIR',
+		'COMPOSER_CACHE_DIR'            => 'SLIC_BASE_COMPOSER_CACHE_DIR',
+		'SLIC_SCRIPTS'                  => 'SLIC_BASE_SCRIPTS',
+	];
+}
+
+/**
+ * Switches the active target and recreates running PHP services when its bind mounts differ.
  *
  * @param string $target Target to switch to.
  */
@@ -483,6 +564,29 @@ function slic_switch_target( $target ) {
 	$run_settings_file    = "{$root}/.env.slic.run";
 	$target_relative_path = '';
 	$subdir               = '';
+	$full_target          = $target;
+	$run_environment      = is_file( $run_settings_file ) ? read_env_file( $run_settings_file ) : [];
+	$mount_keys           = slic_target_mount_keys();
+	$previous_mounts      = [];
+	$base_mounts          = [];
+
+	foreach ( $mount_keys as $key ) {
+		$previous_mounts[ $key ] = $run_environment[ $key ] ?? getenv( $key );
+	}
+
+	foreach ( slic_target_mount_base_keys() as $key => $base_key ) {
+		$base_value = getenv( $base_key );
+		if (
+			! in_array( $key, [ 'COMPOSER_CACHE_DIR', 'SLIC_SCRIPTS' ], true )
+			|| ( 'COMPOSER_CACHE_DIR' === $key && '1' === getenv( 'SLIC_COMPOSER_CACHE_IS_EXPLICIT' ) )
+		) {
+			$base_mounts[ $base_key ] = $base_value;
+			if ( 'COMPOSER_CACHE_DIR' === $key ) {
+				$base_mounts['SLIC_COMPOSER_CACHE_IS_EXPLICIT'] = 1;
+			}
+		}
+		putenv( "{$key}={$base_value}" );
+	}
 
 	if ( slic_here_is_site() ) {
 		$target_relative_path = get_target_relative_path( $target );
@@ -492,16 +596,134 @@ function slic_switch_target( $target ) {
 		list( $target, $subdir ) = explode( '/', $target );
 	}
 
-	$env_values = [
+	$env_values = slic_site_target_environment( $target );
+	$target_path = get_project_local_path( $full_target );
+
+	// Automatic site-layout values are defaults; target-local configuration remains authoritative.
+	if ( file_exists( $target_path . '/.env.slic.local' ) ) {
+		load_env_file( $target_path . '/.env.slic.local' );
+	}
+
+	foreach ( $mount_keys as $key ) {
+		$env_values[ $key ] = getenv( $key );
+	}
+
+	$env_values = array_merge( $env_values, $base_mounts, [
 		'SLIC_CURRENT_PROJECT'                => $target,
 		'SLIC_CURRENT_PROJECT_CONTAINER_PATH' => get_project_container_path( $target . ( $subdir ? '/' . $subdir : '' ) ),
 		'SLIC_CURRENT_PROJECT_RELATIVE_PATH'  => $target_relative_path,
 		'SLIC_CURRENT_PROJECT_SUBDIR'         => $subdir,
-	];
+	] );
+
+	foreach ( $env_values as $key => $value ) {
+		putenv( "{$key}={$value}" );
+	}
+
+	/*
+	 * Site, plugin, and theme targets in `wp/` skeletons can require different WordPress and theme bind mounts. Docker
+	 * cannot apply those changes with a normal container restart, so recreate only the PHP services that are already
+	 * running. `--no-deps` keeps the database and the rest of the stack intact.
+	 */
+	$current_mounts = [];
+	foreach ( $mount_keys as $key ) {
+		$current_mounts[ $key ] = getenv( $key );
+	}
+
+	if ( $previous_mounts !== $current_mounts ) {
+		$running_services = array_values( array_filter( array_keys( php_services() ), static function ( $service ) {
+			return service_running( $service );
+		} ) );
+
+		if ( $running_services ) {
+			if ( 0 !== slic_realtime()( array_merge( [ 'rm', '--stop', '--force' ], $running_services ) ) ) {
+				echo magenta( 'Could not remove the PHP services after their bind mounts changed.' . PHP_EOL );
+				exit( 1 );
+			}
+
+			if ( 0 !== slic_realtime()( array_merge( [ 'up', '--wait', '--no-deps' ], $running_services ) ) ) {
+				echo magenta( 'Could not recreate the PHP services with their new bind mounts.' . PHP_EOL );
+				exit( 1 );
+			}
+		}
+	}
 
 	write_env_file( $run_settings_file, $env_values, true );
+}
 
-	setup_slic_env( $root );
+/**
+ * Selects the WordPress mount used by a site target.
+ *
+ * Plugins and themes in a site that installs WordPress below its root retain Slic's isolated WordPress installation;
+ * their existing WPLoader configurations expect core at `/var/www/html`. The site target still mounts the complete
+ * project so its root configuration and custom content directory remain available.
+ *
+ * @param string $target Target to switch to.
+ *
+ * @return array<string,string> Environment values to persist.
+ */
+function slic_site_target_environment( $target ) {
+	if ( ! slic_here_is_site() ) {
+		return [];
+	}
+
+	$site_dir    = realpath( getenv( 'SLIC_HERE_DIR' ) );
+	$target_type = get_target_content_type( $target );
+	$isolated    = 'site' !== $target_type && site_wordpress_is_in_subdirectory( $site_dir );
+	$plugins_dir = getenv( 'SLIC_SITE_PLUGINS_DIR' ) ?: getenv( 'SLIC_PLUGINS_DIR' );
+	$themes_dir  = getenv( 'SLIC_SITE_THEMES_DIR' ) ?: dirname( $plugins_dir ) . '/themes';
+
+	if ( $isolated ) {
+		$wp_dir         = ensure_dir( root( '/_wordpress' ) );
+		$wp_content_dir = ensure_dir( $wp_dir . '/wp-content' );
+		$content_path   = '/var/www/html/wp-content';
+		$themes_dir     = 'plugin' === $target_type ? ensure_dir( $wp_content_dir . '/themes' ) : $themes_dir;
+	} else {
+		$wp_dir         = $site_dir;
+		$wp_content_dir = dirname( $plugins_dir );
+		$content_path   = '/var/www/html/' . basename( $wp_content_dir );
+	}
+
+	$env_values = [
+		'SLIC_MU_PLUGINS_DIR'           => $wp_content_dir . '/mu-plugins',
+		'SLIC_PLUGINS_DIR'              => $plugins_dir,
+		'SLIC_WP_CONTENT_CONTAINER_DIR' => $content_path,
+		'SLIC_WP_DIR'                   => $wp_dir,
+		'SLIC_THEMES_DIR'               => $themes_dir,
+	];
+
+	foreach ( $env_values as $key => $value ) {
+		putenv( "{$key}={$value}" );
+	}
+
+	return $env_values;
+}
+
+/**
+ * Returns whether a site installs WordPress below its project root.
+ *
+ * @param string $site_dir Site root directory.
+ *
+ * @return bool
+ */
+function site_wordpress_is_in_subdirectory( $site_dir ) {
+	if ( file_exists( $site_dir . '/wp-load.php' ) ) {
+		return false;
+	}
+
+	if ( file_exists( $site_dir . '/wp/wp-load.php' ) ) {
+		return true;
+	}
+
+	try {
+		$composer_json = project_get_composer( $site_dir );
+	} catch ( \Exception $e ) {
+		return false;
+	}
+
+	$requires_wordpress = ! empty( $composer_json['require']['johnpbloch/wordpress-core'] );
+	$install_dir        = $composer_json['extra']['wordpress-install-dir'] ?? '';
+
+	return $requires_wordpress && is_string( $install_dir ) && '' !== trim( $install_dir, './\\' );
 }
 
 /**
@@ -619,6 +841,12 @@ function start_all_services() {
  *
  */
 function slic_plugins_dir( $path = '' ) {
+	if ( slic_here_is_site() ) {
+		$plugins_dir = getenv( 'SLIC_SITE_PLUGINS_DIR' ) ?: slic_content_type_dir( 'plugins' );
+
+		return empty( $path ) ? $plugins_dir : $plugins_dir . '/' . ltrim( $path, '\\/' );
+	}
+
 	return slic_content_type_dir( 'plugins', $path );
 }
 
@@ -631,6 +859,12 @@ function slic_plugins_dir( $path = '' ) {
  *
  */
 function slic_themes_dir( $path = '' ) {
+	if ( slic_here_is_site() ) {
+		$themes_dir = getenv( 'SLIC_SITE_THEMES_DIR' ) ?: dirname( slic_plugins_dir() ) . '/themes';
+
+		return empty( $path ) ? $themes_dir : $themes_dir . '/' . ltrim( $path, '\\/' );
+	}
+
 	return slic_content_type_dir( 'themes', $path );
 }
 
@@ -654,7 +888,7 @@ function slic_mu_plugins_dir( $path = '' ) {
  *
  */
 function slic_content_type_dir( $content_type = 'plugins', $path = '' ) {
-	$content_type_dir = getenv( 'SLIC_' . strtoupper( $content_type ) . '_DIR' );
+	$content_type_dir = getenv( 'SLIC_' . str_replace( '-', '_', strtoupper( $content_type ) ) . '_DIR' );
 	$root_dir         = root();
 
 	if ( 'plugins' === $content_type ) {
@@ -668,7 +902,7 @@ function slic_content_type_dir( $content_type = 'plugins', $path = '' ) {
 	if ( empty( $content_type_dir ) ) {
 		// Use the default directory in slic repository.
 		$dir = $root_dir . $default_path;
-	} elseif ( is_dir( $content_type_dir ) ) {
+	} elseif ( is_dir( $content_type_dir ) || 0 === strpos( $content_type_dir, '/' ) ) {
 		// Use the specified directory.
 		$dir = $content_type_dir;
 	} else {
@@ -861,6 +1095,12 @@ function slic_info() {
 		'CI',
 		'TRAVIS_CI',
 		'COMPOSER_CACHE_DIR',
+		'SLIC_BASE_COMPOSER_CACHE_DIR',
+		'SLIC_BASE_PLUGINS_DIR',
+		'SLIC_BASE_SCRIPTS',
+		'SLIC_BASE_THEMES_DIR',
+		'SLIC_BASE_WP_CONTENT_CONTAINER_DIR',
+		'SLIC_BASE_WP_DIR',
 		'CONTINUOUS_INTEGRATION',
 		'GITHUB_ACTION',
 		'SLIC_PHP_VERSION',
@@ -876,6 +1116,11 @@ function slic_info() {
 		'SLIC_GIT_DOMAIN',
 		'SLIC_GIT_HANDLE',
 		'SLIC_HERE_DIR',
+		'SLIC_MU_PLUGINS_DIR',
+		'SLIC_SITE_PLUGINS_DIR',
+		'SLIC_SITE_THEMES_DIR',
+		'SLIC_SCRIPTS',
+		'SLIC_WP_CONTENT_CONTAINER_DIR',
 		'SLIC_PLUGINS_DIR',
 		'SLIC_THEMES_DIR',
 		'SLIC_WP_DIR',
@@ -996,9 +1241,16 @@ function slic_handle_composer_cache( callable $args ) {
 	if ( 'unset' === $toggle ) {
 		// Pick it up from env, if possible, or use the default one.
 		$value = env_var_backup( 'COMPOSER_CACHE_DIR', cache( '/composer' ) );
-
-		write_env_file( $run_settings_file, [ 'COMPOSER_CACHE_DIR' => $value ], true );
 	}
+	$explicit = 'unset' !== $toggle;
+
+	write_env_file( $run_settings_file, [
+		'COMPOSER_CACHE_DIR'                 => $value,
+		'SLIC_BASE_COMPOSER_CACHE_DIR'       => $value,
+		'SLIC_COMPOSER_CACHE_IS_EXPLICIT'    => $explicit ? 1 : 0,
+	], true );
+	putenv( "SLIC_BASE_COMPOSER_CACHE_DIR={$value}" );
+	putenv( 'SLIC_COMPOSER_CACHE_IS_EXPLICIT=' . ( $explicit ? '1' : '0' ) );
 
 	echo 'Composer cache directory: ' . ( $value ? light_cyan( $value ) : magenta( 'not set' ) );
 
@@ -1122,7 +1374,9 @@ function xdebug_status() {
 	echo 'Host: ' . light_cyan( 'http://localhost' . ( $localhost_port === '80' ? '' : ':' . $localhost_port ) ) . PHP_EOL;
 	echo colorize( 'Path mapping (host => server): <light_cyan>'
 	               . slic_plugins_dir()
-	               . '</light_cyan> => <light_cyan>/var/www/html/wp-content/plugins</light_cyan>' ) . PHP_EOL;
+	               . '</light_cyan> => <light_cyan>'
+	               . ( getenv( 'SLIC_WP_CONTENT_CONTAINER_DIR' ) ?: '/var/www/html/wp-content' )
+	               . '/plugins</light_cyan>' ) . PHP_EOL;
 	echo colorize( 'Path mapping (host => server): <light_cyan>'
 	               . slic_wp_dir()
 	               . '</light_cyan> => <light_cyan>/var/www/html</light_cyan>' );
