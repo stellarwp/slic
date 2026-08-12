@@ -687,8 +687,8 @@ function slic_site_target_environment( $target ) {
 		'SLIC_MU_PLUGINS_DIR'           => $wp_content_dir . '/mu-plugins',
 		'SLIC_PLUGINS_DIR'              => $plugins_dir,
 		'SLIC_WP_CONTENT_CONTAINER_DIR' => $content_path,
-		'SLIC_WP_DIR'                    => $wp_dir,
-		'SLIC_THEMES_DIR'                => $themes_dir,
+		'SLIC_WP_DIR'                   => $wp_dir,
+		'SLIC_THEMES_DIR'               => $themes_dir,
 	];
 
 	foreach ( $env_values as $key => $value ) {
