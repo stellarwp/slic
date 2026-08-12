@@ -545,12 +545,12 @@ function slic_target_mount_keys() {
  */
 function slic_target_mount_base_keys() {
 	return [
-		'SLIC_WP_DIR'                    => 'SLIC_BASE_WP_DIR',
-		'SLIC_PLUGINS_DIR'               => 'SLIC_BASE_PLUGINS_DIR',
-		'SLIC_THEMES_DIR'                => 'SLIC_BASE_THEMES_DIR',
+		'SLIC_WP_DIR'                   => 'SLIC_BASE_WP_DIR',
+		'SLIC_PLUGINS_DIR'              => 'SLIC_BASE_PLUGINS_DIR',
+		'SLIC_THEMES_DIR'               => 'SLIC_BASE_THEMES_DIR',
 		'SLIC_WP_CONTENT_CONTAINER_DIR' => 'SLIC_BASE_WP_CONTENT_CONTAINER_DIR',
-		'COMPOSER_CACHE_DIR'             => 'SLIC_BASE_COMPOSER_CACHE_DIR',
-		'SLIC_SCRIPTS'                   => 'SLIC_BASE_SCRIPTS',
+		'COMPOSER_CACHE_DIR'            => 'SLIC_BASE_COMPOSER_CACHE_DIR',
+		'SLIC_SCRIPTS'                  => 'SLIC_BASE_SCRIPTS',
 	];
 }
 
