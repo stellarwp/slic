@@ -19,8 +19,6 @@
  * `WP_Object_Cache` implementation instead.
  */
 $GLOBALS['wp_filter']['enable_loading_object_cache_dropin'][10][] = [
-	'function'      => static function () {
-		return false;
-	},
+	'function'      => '__return_false',
 	'accepted_args' => 0,
 ];
