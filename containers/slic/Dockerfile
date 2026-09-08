@@ -38,6 +38,14 @@ RUN chmod a+rx /usr/local/bin/wp /usr/local/bin/install-php-extensions
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     rm -f /etc/apt/apt.conf.d/docker-clean && \
+    # Debian 11 (bullseye) backs the PHP 7.3, 7.4 and 8.0 base images and left LTS on
+    # 2026-08-31. deb.debian.org still serves an expired bullseye-security index, which
+    # fails `apt-get update` outright, and has already purged that suite's pool, so
+    # anything resolved from it 404s. The archive carries every package this image needs
+    # and bullseye-security is not mirrored there, so point at the archive and drop it.
+    if [ "$(. /etc/os-release && echo "$VERSION_CODENAME")" = bullseye ]; then \
+        echo 'deb http://archive.debian.org/debian bullseye main' > /etc/apt/sources.list; \
+    fi && \
     apt-get update && \
     apt-get install -yqq --no-install-recommends \
         ca-certificates curl git zip unzip iproute2 \
