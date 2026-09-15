@@ -327,12 +327,9 @@ function setup_slic_env( $root_dir, $reset = false, $stack_id = null ) {
 	}
 	$configured_mounts['COMPOSER_CACHE_DIR'] = $configured_mounts['COMPOSER_CACHE_DIR'] ?: cache( '/composer' );
 
-	// Load the current session configuration file.
-	$run_env_file = $root_dir . '/.env.slic.run';
 	// Start by loading the run file for all stacks, if any.
 	$run_file = $root_dir . '/.env.slic.run';
 	$staged_php_version = null;
-	$run_env = [];
 
 	if ( is_file( $run_file ) ) {
 		load_env_file( $run_file );
@@ -363,15 +360,31 @@ function setup_slic_env( $root_dir, $reset = false, $stack_id = null ) {
 
 	// Read the staged PHP version before a project's .env.slic.local can overwrite it.
 	// The staged version may come from the global run file or a stack-specific state file.
-	$staged_env_file = ! empty( $stack_run_file ) && is_file( $stack_run_file ) ? $stack_run_file : $run_file;
+	$run_env_file = ! empty( $stack_run_file ) && is_file( $stack_run_file ) ? $stack_run_file : $run_file;
+	$run_env      = is_file( $run_env_file ) ? read_env_file( $run_env_file ) : [];
 
-	if ( is_file( $staged_env_file ) ) {
-		$staged_env                = read_env_file( $staged_env_file );
-		$is_php_version_staged     = ( $staged_env['SLIC_PHP_VERSION_STAGED'] ?? '' ) === '1';
+	if ( ( $run_env['SLIC_PHP_VERSION_STAGED'] ?? '' ) === '1' && isset( $run_env['SLIC_PHP_VERSION'] ) ) {
+		$staged_php_version = $run_env['SLIC_PHP_VERSION'];
+	}
 
-		if ( $is_php_version_staged && isset( $staged_env['SLIC_PHP_VERSION'] ) ) {
-			$staged_php_version = $staged_env['SLIC_PHP_VERSION'];
+	// Restore target-overridable mounts to their global values before loading the selected target's overrides.
+	foreach ( slic_target_mount_base_keys() as $key => $base_key ) {
+		if ( 'SLIC_SCRIPTS' === $key ) {
+			$base_value = $configured_mounts[ $key ];
+		} elseif ( 'COMPOSER_CACHE_DIR' === $key ) {
+			$legacy_cache = ! isset( $run_env[ $base_key ] )
+				&& isset( $run_env[ $key ] )
+				&& ! array_key_exists( 'SLIC_COMPOSER_CACHE_IS_EXPLICIT', $run_env );
+			$explicit_cache = '1' === ( $run_env['SLIC_COMPOSER_CACHE_IS_EXPLICIT'] ?? '' );
+			$base_value = $explicit_cache || $legacy_cache
+				? ( $run_env[ $base_key ] ?? $run_env[ $key ] )
+				: $configured_mounts[ $key ];
+			putenv( 'SLIC_COMPOSER_CACHE_IS_EXPLICIT=' . ( $explicit_cache || $legacy_cache ? '1' : '0' ) );
+		} else {
+			$base_value = $run_env[ $base_key ] ?? $run_env[ $key ] ?? $configured_mounts[ $key ];
 		}
+		putenv( "{$base_key}={$base_value}" );
+		putenv( "{$key}={$base_value}" );
 	}
 
 	/*
@@ -745,7 +758,40 @@ function slic_current_stack_or_fail( $reason = null ) {
 }
 
 /**
- * Switches the current `use` target.
+ * Returns environment variables whose values determine target-specific bind mounts.
+ *
+ * @return string[] Bind-mount environment variable names.
+ */
+function slic_target_mount_keys() {
+	return [
+		'SLIC_WP_DIR',
+		'SLIC_PLUGINS_DIR',
+		'SLIC_THEMES_DIR',
+		'SLIC_WP_CONTENT_CONTAINER_DIR',
+		'COMPOSER_CACHE_DIR',
+		'SLIC_COMPOSER_CACHE_IS_EXPLICIT',
+		'SLIC_SCRIPTS',
+	];
+}
+
+/**
+ * Returns target-overridable bind mounts that must restore a global value when targets change.
+ *
+ * @return array<string,string> Effective variable names mapped to their runtime base variable names.
+ */
+function slic_target_mount_base_keys() {
+	return [
+		'SLIC_WP_DIR'                   => 'SLIC_BASE_WP_DIR',
+		'SLIC_PLUGINS_DIR'              => 'SLIC_BASE_PLUGINS_DIR',
+		'SLIC_THEMES_DIR'               => 'SLIC_BASE_THEMES_DIR',
+		'SLIC_WP_CONTENT_CONTAINER_DIR' => 'SLIC_BASE_WP_CONTENT_CONTAINER_DIR',
+		'COMPOSER_CACHE_DIR'            => 'SLIC_BASE_COMPOSER_CACHE_DIR',
+		'SLIC_SCRIPTS'                  => 'SLIC_BASE_SCRIPTS',
+	];
+}
+
+/**
+ * Switches the active target and recreates running PHP services when its bind mounts differ.
  *
  * @param string      $target   Target to switch to.
  * @param string|null $stack_id The stack to switch target for. If null, uses current stack.
@@ -755,7 +801,6 @@ function slic_switch_target( $target, $stack_id = null ) {
 	$target_relative_path = '';
 	$subdir               = '';
 	$full_target          = $target;
-	$run_environment      = is_file( $run_settings_file ) ? read_env_file( $run_settings_file ) : [];
 	$mount_keys           = slic_target_mount_keys();
 	$previous_mounts      = [];
 	$base_mounts          = [];
@@ -767,6 +812,25 @@ function slic_switch_target( $target, $stack_id = null ) {
 
 	// Get the stack-specific state file
 	$run_settings_file = get_stack_env_file( $stack_id );
+	$run_environment   = is_file( $run_settings_file ) ? read_env_file( $run_settings_file ) : [];
+
+	foreach ( $mount_keys as $key ) {
+		$previous_mounts[ $key ] = $run_environment[ $key ] ?? getenv( $key );
+	}
+
+	foreach ( slic_target_mount_base_keys() as $key => $base_key ) {
+		$base_value = getenv( $base_key );
+		if (
+			! in_array( $key, [ 'COMPOSER_CACHE_DIR', 'SLIC_SCRIPTS' ], true )
+			|| ( 'COMPOSER_CACHE_DIR' === $key && '1' === getenv( 'SLIC_COMPOSER_CACHE_IS_EXPLICIT' ) )
+		) {
+			$base_mounts[ $base_key ] = $base_value;
+			if ( 'COMPOSER_CACHE_DIR' === $key ) {
+				$base_mounts['SLIC_COMPOSER_CACHE_IS_EXPLICIT'] = 1;
+			}
+		}
+		putenv( "{$key}={$base_value}" );
+	}
 
 	if ( slic_here_is_site() ) {
 		$target_relative_path = get_target_relative_path( $target );
@@ -828,7 +892,6 @@ function slic_switch_target( $target, $stack_id = null ) {
 	}
 
 	write_env_file( $run_settings_file, $env_values, true );
-}
 
 	// Update the stack registry with the target so worktree commands can access it
 	require_once __DIR__ . '/stacks.php';
@@ -838,6 +901,54 @@ function slic_switch_target( $target, $stack_id = null ) {
 	}
 
 	setup_slic_env( $root, false, $stack_id );
+}
+
+/**
+ * Selects the WordPress mount used by a site target.
+ *
+ * Plugins and themes in a site that installs WordPress below its root retain Slic's isolated WordPress installation;
+ * their existing WPLoader configurations expect core at `/var/www/html`. The site target still mounts the complete
+ * project so its root configuration and custom content directory remain available.
+ *
+ * @param string $target Target to switch to.
+ *
+ * @return array<string,string> Environment values to persist.
+ */
+function slic_site_target_environment( $target ) {
+	if ( ! slic_here_is_site() ) {
+		return [];
+	}
+
+	$site_dir    = realpath( getenv( 'SLIC_HERE_DIR' ) );
+	$target_type = get_target_content_type( $target );
+	$isolated    = 'site' !== $target_type && site_wordpress_is_in_subdirectory( $site_dir );
+	$plugins_dir = getenv( 'SLIC_SITE_PLUGINS_DIR' ) ?: getenv( 'SLIC_PLUGINS_DIR' );
+	$themes_dir  = getenv( 'SLIC_SITE_THEMES_DIR' ) ?: dirname( $plugins_dir ) . '/themes';
+
+	if ( $isolated ) {
+		$wp_dir         = ensure_dir( root( '/_wordpress' ) );
+		$wp_content_dir = ensure_dir( $wp_dir . '/wp-content' );
+		$content_path   = '/var/www/html/wp-content';
+		$themes_dir     = 'plugin' === $target_type ? ensure_dir( $wp_content_dir . '/themes' ) : $themes_dir;
+	} else {
+		$wp_dir         = $site_dir;
+		$wp_content_dir = dirname( $plugins_dir );
+		$content_path   = '/var/www/html/' . basename( $wp_content_dir );
+	}
+
+	$env_values = [
+		'SLIC_MU_PLUGINS_DIR'           => $wp_content_dir . '/mu-plugins',
+		'SLIC_PLUGINS_DIR'              => $plugins_dir,
+		'SLIC_WP_CONTENT_CONTAINER_DIR' => $content_path,
+		'SLIC_WP_DIR'                   => $wp_dir,
+		'SLIC_THEMES_DIR'               => $themes_dir,
+	];
+
+	foreach ( $env_values as $key => $value ) {
+		putenv( "{$key}={$value}" );
+	}
+
+	return $env_values;
 }
 
 /**
@@ -1246,6 +1357,12 @@ function slic_info() {
 			'CI',
 			'TRAVIS_CI',
 			'COMPOSER_CACHE_DIR',
+			'SLIC_BASE_COMPOSER_CACHE_DIR',
+			'SLIC_BASE_PLUGINS_DIR',
+			'SLIC_BASE_SCRIPTS',
+			'SLIC_BASE_THEMES_DIR',
+			'SLIC_BASE_WP_CONTENT_CONTAINER_DIR',
+			'SLIC_BASE_WP_DIR',
 			'CONTINUOUS_INTEGRATION',
 			'GITHUB_ACTION',
 			'SLIC_PHP_VERSION',
@@ -1260,6 +1377,11 @@ function slic_info() {
 			'SLIC_GIT_DOMAIN',
 			'SLIC_GIT_HANDLE',
 			'SLIC_HERE_DIR',
+			'SLIC_MU_PLUGINS_DIR',
+			'SLIC_SITE_PLUGINS_DIR',
+			'SLIC_SITE_THEMES_DIR',
+			'SLIC_SCRIPTS',
+			'SLIC_WP_CONTENT_CONTAINER_DIR',
 			'SLIC_PLUGINS_DIR',
 			'SLIC_THEMES_DIR',
 			'SLIC_WP_DIR',
@@ -1267,6 +1389,7 @@ function slic_info() {
 			'SLIC_BUILD_PROMPT',
 			'SLIC_BUILD_SUBDIR',
 			'TERM',
+			'PCOV_ENABLED',
 		],
 		xdebug_get_info_vars(),
 		[
