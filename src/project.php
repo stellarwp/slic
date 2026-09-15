@@ -108,14 +108,15 @@ function get_project_local_path( $target = null ) {
  * @return string The container target path.
  */
 function get_project_container_path( $target = null ) {
-	$target = $target ?: slic_target();
+	$target      = $target ?: slic_target();
+	$content_dir = getenv( 'SLIC_WP_CONTENT_CONTAINER_DIR' ) ?: '/var/www/html/wp-content';
 
 	if ( empty( $target ) ) {
 		switch ( get_project_type() ) {
 			case 'plugin':
-				return '/var/www/html/wp-content/plugins';
+				return $content_dir . '/plugins';
 			case 'theme':
-				return '/var/www/html/wp-content/themes';
+				return $content_dir . '/themes';
 			default:
 				return '/var/www/html';
 		}
@@ -123,9 +124,9 @@ function get_project_container_path( $target = null ) {
 
 	switch ( get_target_content_type( $target ) ) {
 		case 'plugin':
-			return '/var/www/html/wp-content/plugins/' . $target;
+			return $content_dir . '/plugins/' . $target;
 		case 'theme':
-			return '/var/www/html/wp-content/themes/' . $target;
+			return $content_dir . '/themes/' . $target;
 		case 'site':
 			return '/var/www/html';
 	}

@@ -38,6 +38,14 @@ RUN chmod a+rx /usr/local/bin/wp /usr/local/bin/install-php-extensions
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     rm -f /etc/apt/apt.conf.d/docker-clean && \
+    # Debian 11 (bullseye) backs the PHP 7.3, 7.4 and 8.0 base images and left LTS on
+    # 2026-08-31. deb.debian.org still serves an expired bullseye-security index, which
+    # fails `apt-get update` outright, and has already purged that suite's pool, so
+    # anything resolved from it 404s. The archive carries every package this image needs
+    # and bullseye-security is not mirrored there, so point at the archive and drop it.
+    if [ "$(. /etc/os-release && echo "$VERSION_CODENAME")" = bullseye ]; then \
+        echo 'deb http://archive.debian.org/debian bullseye main' > /etc/apt/sources.list; \
+    fi && \
     apt-get update && \
     apt-get install -yqq --no-install-recommends \
         ca-certificates curl git zip unzip iproute2 \
@@ -52,7 +60,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 # PHP extensions (heavy compilation step with cache mount)
 # -------------------------------
 RUN --mount=type=cache,target=/tmp/ipe-cache,sharing=locked \
-    install-php-extensions xdebug pdo pdo_mysql mysqli zip pcntl sockets intl exif gd igbinary redis && \
+    install-php-extensions xdebug pcov pdo pdo_mysql mysqli zip pcntl sockets intl exif gd igbinary redis && \
     if php -r 'exit(PHP_VERSION_ID >= 80400 ? 0 : 1);'; then \
         git clone --depth 1 https://github.com/krakjoe/uopz.git /tmp/uopz-src && \
         cd /tmp/uopz-src && \
@@ -116,6 +124,8 @@ COPY --from=composer2 /usr/bin/composer /usr/local/bin/composer
 COPY ./docker-php-ext-uopz.ini /usr/local/etc/php/conf.d/docker-php-ext-uopz.ini
 COPY ./xdebug-on.sh /usr/local/bin/xdebug-on
 COPY ./xdebug-off.sh /usr/local/bin/xdebug-off
+COPY ./pcov-on.sh /usr/local/bin/pcov-on
+COPY ./pcov-off.sh /usr/local/bin/pcov-off
 COPY ./fixuid.yml /etc/fixuid/config.yml
 COPY ./.bashrc /home/slic/.bashrc
 COPY ./.bashrc /root/.bashrc
@@ -126,11 +136,13 @@ COPY ./slic-entrypoint.sh /usr/local/bin/slic-entrypoint.sh
 # Final permissions & setup
 # -------------------------------
 RUN chmod a+x /usr/local/bin/xdebug-on /usr/local/bin/xdebug-off \
+             /usr/local/bin/pcov-on /usr/local/bin/pcov-off \
              /usr/local/bin/composer /usr/local/bin/composer1 \
              /usr/local/bin/slic-entrypoint.sh && \
     chmod -R a+rwx /usr/local/etc/php/conf.d && \
     chown -R slic:slic $NVM_DIR && \
-    xdebug-off
+    xdebug-off && \
+    pcov-off
 
 ENTRYPOINT ["/usr/local/bin/slic-entrypoint.sh"]
 

@@ -290,6 +290,16 @@ slic xdebug port <port>     # set port (default 9001)
 slic xdebug key <key>       # set IDE key (default slic)
 ```
 
+### `slic pcov`
+
+Manages PCOV in the stack for faster coverage collection.
+
+```bash
+slic pcov on                # enable PCOV in running containers
+slic pcov off               # disable PCOV in running containers
+slic pcov status            # show current state
+```
+
 ### `slic debug`
 
 Toggles debug output for slic commands.

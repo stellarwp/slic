@@ -140,8 +140,8 @@ slic loads environment files in this order (later files override earlier ones):
 |-------|------|----------|---------|
 | 1 | `.env.slic` | slic repo root | Default configuration (version-controlled, do not edit) |
 | 2 | `.env.slic.local` | slic repo root | Machine-specific overrides for all projects |
-| 3 | `.env.slic.local` | Target plugin/theme root | Project-specific overrides |
-| 4 | `.env.slic.run` | slic repo root | Runtime state (set by slic commands, auto-generated) |
+| 3 | `.env.slic.run` | slic repo root | Runtime state (set by slic commands, auto-generated) |
+| 4 | `.env.slic.local` | Target plugin/theme root | Project-specific overrides |
 
 ### Key environment variables
 
@@ -153,6 +153,7 @@ slic loads environment files in this order (later files override earlier ones):
 | `WORDPRESS_HTTP_PORT` | `8888` | WordPress HTTP port on localhost |
 | `SLIC_GIT_HANDLE` | (none) | GitHub handle for cloning plugins |
 | `XDEBUG_DISABLE` | `0` | Set to `1` to disable Xdebug extension |
+| `PCOV_ENABLED` | `0` | Set to `1` to enable PCOV for coverage collection |
 | `SLIC_WP_DIR` | slic's `_wordpress/` | Path to WordPress installation |
 | `SLIC_PLUGINS_DIR` | slic's `_plugins/` | Path to plugins directory |
 

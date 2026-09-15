@@ -20,6 +20,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Shell completion support for bash, zsh, and fish shells with dynamic completions for commands, targets, git branches, stack paths, and options
 - CLI PHPUnit test suite in the `tests/Cli` directory
 
+# [2.4.2] - 2026-09-08
+- Fixed - The PHP 7.3, 7.4 and 8.0 images install system packages from the Debian archive, so they can be built and `slic playwright install` works again now that Debian 11 has left LTS.
+
+# [2.4.1] - 2026-08-18
+- Fixed - The object-cache drop-in filter now uses a serializable callback so PHPUnit suites can back up global state.
+
+# [2.4.0] - 2026-08-06
+- Added - First-class support for site-mode projects that use `content/` instead of `wp-content/`, including plugin and theme container paths.
+- Changed - `slic here` now mounts the complete project root for every WordPress site, including projects that install core into `wp/`.
+- Changed - `slic here` now disables subdirectory builds for sites and enables them for plugin and theme directories.
+- Fixed - Site mode no longer creates an unused `wp-content/` directory when the project uses a custom content directory.
+- Fixed - Plugin and theme targets in projects that install WordPress in `wp/` continue to use Slic's isolated WordPress installation.
+- Fixed - Switching between site and isolated component targets recreates only the running PHP containers so changed mounts take effect without resetting the test database.
+- Fixed - Site theme discovery remains stable while plugin and theme targets use their required theme mounts.
+- Fixed - Target-local mount overrides remain authoritative when Slic selects a site layout.
+- Changed - Multi-target commands reject mixed site, plugin, and theme targets when their WordPress mounts are incompatible.
+- Changed - Multi-target commands reject targets with different target-local bind-mount settings.
+- Fixed - Target-local Composer cache and Slic scripts bind mounts now recreate running PHP containers and persist their runtime state.
+- Fixed - Target switching now stops without persisting new mount state when Docker cannot determine which services are running.
+- Fixed - Test containers now disable the object-cache drop-in without modifying the project file.
+- Fixed - Airplane mode now uses and creates the configured must-use plugin directory.
+
+# [2.3.0] - 2026-06-25
+- Added - PCOV support to the slic and WordPress containers to make code coverage generation faster than Xdebug-backed coverage.
+- Added - The `slic pcov on|off|status` command to configure PCOV and apply it to running containers and checks if xdebug is running and asks the user if they want to disable it.
+- Updated - The `slic xdebug on` command now checks if PCOV is enabled and asks the user if they want to disable it.
+- Added - `pcovon` and `pcovoff` helpers inside `slic shell`.
+- Changed - WordPress containers now apply configured PCOV state through the `apache2-foreground` command path while preserving the upstream WordPress image entrypoint.
+- Updated - GitHub actions versions.
+
 # [2.2.0] - 2026-05-29
 - Added - First-class theme support for `slic here`, `slic use`, `slic using`, and `slic run`, including auto-detection when running `slic here` from a `themes` directory with a sibling `plugins` directory.
 - Added - Agent Skills documentation in `skills/slic/` for AI-assisted WordPress integration test creation, debugging, and slic workflow guidance.

@@ -175,7 +175,7 @@ function slic_stack_array( $filenames_only = false, $stack_id = null ) {
 	$base_stack  = stack();
 	$stack_array = [ $file_prefix, $quote . $base_stack . $quote ];
 
-	if ( slic_here_is_site() ) {
+	if ( slic_uses_site_root() ) {
 		$stack_array[] = $file_prefix;
 		$stack_array[] = $quote . stack( '.site' ) . $quote;
 	}

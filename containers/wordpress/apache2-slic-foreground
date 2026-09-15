@@ -1,0 +1,16 @@
+#!/bin/sh
+
+# Apply slic's PCOV state before Apache starts, while leaving the upstream
+# WordPress image's apache2-foreground command intact.
+if ! command -v apache2-foreground > /dev/null 2>&1; then
+  echo "apache2-foreground not found; upstream WordPress image layout changed." >&2
+  exit 1
+fi
+
+if [ "${PCOV_ENABLED:-0}" = "1" ]; then
+  pcov-on > /dev/null || exit 1
+else
+  pcov-off > /dev/null || exit 1
+fi
+
+exec apache2-foreground "$@"

@@ -19,10 +19,10 @@ export PATH=$PATH:path/to/slic
 
 When we prep a release, we follow these steps:
 
-1. Create a branch with the version number of the release, e.g. `1.0.0`
+1. Create a branch named for the release, e.g. `release/1.0.0`
 2. Merge changes into that branch. This will trigger the Docker images to build.
 3. Ensure that the `CLI_VERSION` has been updated in `slic.php` to reflect the version number of the release.
 4. Ensure that the `changelog.md` file has been updated.
 5. Merge the release branch into `main`.
 6. Delete the release branch.
-7. Tag the release with the changelog.md contents for that release. This will trigger the final Docker images to build.
+7. Publish a GitHub Release using the changelog contents for that release. This will trigger the final Docker images to build.

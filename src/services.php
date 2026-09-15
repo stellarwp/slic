@@ -98,7 +98,8 @@ function service_running( string $service ) {
 		$ps        = slic_process()( [ 'ps', '--services', '--filter', '"status=running"' ] );
 		$ps_status = $ps( 'status' );
 		if ( $ps_status !== 0 ) {
-			return false;
+			echo magenta( 'Could not determine which Slic services are running.' . PHP_EOL );
+			exit( 1 );
 		}
 		$running_services = explode( "\n", $ps( 'string_output' ) );
 		slic_cache_set( 'running_services', $running_services );

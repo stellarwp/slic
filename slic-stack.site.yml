@@ -11,4 +11,4 @@ services:
   slic:
     environment:
       # Move to the target directory before running the command from the plugins directory.
-      CODECEPTION_PROJECT_DIR: /var/www/html
+      CODECEPTION_PROJECT_DIR: ${SLIC_CURRENT_PROJECT_CONTAINER_PATH:-/var/www/html}

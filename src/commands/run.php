@@ -58,17 +58,6 @@ maybe_generate_htaccess();
 // rather than always falling back to SLIC_PLUGINS_DIR.
 $root = get_project_local_path();
 
-// Object-cache is disruptive in the context of tests; remove the object cache drop-in before running the tests.
-$object_cache_dropin = slic_wp_dir( 'wp-content/object-cache.php' );
-if ( file_exists( $object_cache_dropin ) ) {
-	echo "Removing the object cache drop-in file before tests..." . PHP_EOL;
-	if ( ! unlink( $object_cache_dropin ) ) {
-		echo magenta( "Failed to remove the {$object_cache_dropin} file." . PHP_EOL );
-		exit( 1 );
-	}
-	echo "Object cache drop-in file removed." . PHP_EOL;
-}
-
 /*
  * Check what configuration files we've got available.
  * Depending on the what we have apply them in this order: dist, local, slic.
