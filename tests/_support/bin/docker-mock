@@ -1,0 +1,3 @@
+#!/bin/bash
+# A mock docker binary that does nothing and exits successfully.
+exit 0

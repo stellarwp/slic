@@ -17,7 +17,6 @@ if ( $is_help ) {
 	return;
 }
 
-$using = slic_target();
 setup_id();
 $status = slic_realtime()( [ 'config' ] );
 
