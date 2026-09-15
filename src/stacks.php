@@ -411,10 +411,11 @@ function slic_stacks_resolve_from_path($path) {
 	}
 
 	// Resolve to absolute path
+	$original_path = $path;
 	$path = realpath($path);
 	if ($path === false) {
 		// Path doesn't exist, try without realpath
-		$path = func_get_arg(0);
+		$path = $original_path;
 		if (strpos($path, '~') === 0) {
 			$home = getenv('HOME') ?: getenv('USERPROFILE');
 			if ($home !== false) {
