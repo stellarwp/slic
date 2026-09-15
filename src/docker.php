@@ -146,7 +146,7 @@ function stack( $postfix = '' ) {
 	$test_dir    = $root_dir . '/test';
 	$run_context = run_context();
 	switch ( $run_context ) {
-		case 'slic';
+		case 'slic':
 			$stack = $root_dir . '/slic-stack' . $postfix . '.yml';
 			break;
 		default:

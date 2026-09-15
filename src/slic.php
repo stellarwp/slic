@@ -1740,7 +1740,7 @@ function build_command_pool( $base_command, array $command, array $sub_directori
 		if ( preg_match( '!\. /slic-scripts/(\..*.sh)!', $friendly_base_command, $results ) ) {
 			$file                  = escapeshellarg( SLIC_ROOT_DIR . '/' . trim( getenv( 'SLIC_SCRIPTS' ),
 					'.' ) . '/' . $results[1] );
-			$friendly_base_command = `tail -n 1 $file`;
+			$friendly_base_command = shell_exec( "tail -n 1 {$file}" );
 		}
 
 		$prefix = "{$friendly_base_command}:" . light_cyan( $target_name );
