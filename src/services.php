@@ -61,7 +61,17 @@ function services_schema() {
  * @return array<string> The services in the stack.
  */
 function get_services() {
-	$services = services_schema();
+	/*
+	 * Services in a profile, like `playwright`, are only started by the commands that use them.
+	 * Docker compose enables a service's profile when the service is named on the command line, and
+	 * the callers of this function start each service by name, so they have to be left out here.
+	 */
+	$services = array_filter(
+		services_schema(),
+		static function ( $service ) {
+			return empty( $service['profiles'] );
+		}
+	);
 	$services = array_keys( $services );
 	sort( $services );
 
