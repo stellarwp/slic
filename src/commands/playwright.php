@@ -13,16 +13,17 @@ if ( $is_help ) {
 	$help = <<< HELP
 	SUMMARY:
 
-		This command requires a use target set using the <light_cyan>use</light_cyan> command.
+		Runs Playwright commands in the stack. This command requires a use target set using the <light_cyan>use</light_cyan> command.
+
+		Playwright runs in the <light_cyan>mcr.microsoft.com/playwright</light_cyan> image, which already contains the browser.
+		The image tag is read from the <light_cyan>@playwright/test</light_cyan> version in the target's <light_cyan>package.json</light_cyan>.
+		Set <light_cyan>SLIC_PLAYWRIGHT_VERSION</light_cyan> to use a different version, or <light_cyan>SLIC_PLAYWRIGHT_IMAGE</light_cyan> to use a different image.
 
 	USAGE:
 
 		<yellow>{$cli_name} playwright [...<commands>]</yellow>
 
 	EXAMPLES:
-
-		<light_cyan>{$cli_name} playwright install</light_cyan>
-		Install Playwright dependencies in the current <light_cyan>use</light_cyan> target.
 
 		<light_cyan>{$cli_name} playwright test</light_cyan>
 		Run all Playwright tests following the Playwright configuration in the current <light_cyan>use</light_cyan> target.
@@ -40,48 +41,39 @@ if ( $is_help ) {
 $using = slic_target_or_fail();
 echo light_cyan( "Using {$using}" . PHP_EOL );
 
-ensure_service_running( 'slic' );
+$playwright_args = $args( '...' );
+
+if ( $playwright_args === [ 'install' ] ) {
+	// The browser used to be downloaded into the slic container; the Playwright image already contains it.
+	echo colorize( 'The <light_cyan>playwright</light_cyan> service image already contains the browser, there is nothing to install.' . PHP_EOL );
+
+	exit( 0 );
+}
+
+if ( ! getenv( 'SLIC_PLAYWRIGHT_IMAGE' ) ) {
+	$version = getenv( 'SLIC_PLAYWRIGHT_VERSION' ) ?: get_target_playwright_version();
+
+	if ( empty( $version ) ) {
+		echo magenta( "Could not read the @playwright/test version from the package.json file of {$using}." . PHP_EOL );
+		echo magenta( 'Add @playwright/test to its dependencies, or set SLIC_PLAYWRIGHT_VERSION.' . PHP_EOL );
+
+		exit( 1 );
+	}
+
+	putenv( 'SLIC_PLAYWRIGHT_IMAGE=mcr.microsoft.com/playwright:v' . ltrim( $version, 'v' ) );
+}
+
+echo colorize( 'Playwright image: <light_cyan>' . getenv( 'SLIC_PLAYWRIGHT_IMAGE' ) . '</light_cyan>' . PHP_EOL );
 
 setup_id();
-$playwright_args = $args( '...' );
-$is_install_command = $playwright_args[0] === 'install';
 
-if ( $is_install_command ) {
-	// Install commands will need to run as root.
-	$user = '0:0';
-} else {
-	// Other commands will run as the current user.
-	$user = sprintf( '"%s:%s"', getenv( 'SLIC_UID' ), getenv( 'SLIC_GID' ) );
-}
-
-if ( $playwright_args === ['install'] ) {
-	// It's exactly the `playwright install` command and nothing more.
-	$command = [
-		'exec',
-		'--user',
-		'0:0',
-		'--workdir',
-		escapeshellarg( get_project_container_path() ),
-		'slic',
-		'node_modules/.bin/playwright install chromium --with-deps',
-	];
-} else {
-	$command = array_merge( [
-		'exec',
-		'--user',
-		$user,
-		'--workdir',
-		escapeshellarg( get_project_container_path() ),
-		'slic',
-		'node_modules/.bin/playwright',
-	], $playwright_args );
-}
-
-$status = slic_realtime()( $command );
-
-// If there is a status other than 0, we have an error. Bail.
-if ( $status ) {
-	exit( $status );
-}
+$status = slic_playwright_realtime()( array_merge( [
+	'run',
+	'--rm',
+	'--workdir',
+	escapeshellarg( get_project_container_path() ),
+	'playwright',
+	'node_modules/.bin/playwright',
+], $playwright_args ) );
 
 exit( $status );

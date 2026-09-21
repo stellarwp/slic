@@ -1043,6 +1043,18 @@ function slic_realtime() {
 }
 
 /**
+ * Runs a process in slic stack, with the `playwright` profile enabled, and returns the exit status.
+ *
+ * The `playwright` service is in a profile so `slic up` does not start it, which means the profile has to be
+ * enabled for docker compose to address the service.
+ *
+ * @return \Closure The process closure to start a real-time process using slic stack.
+ */
+function slic_playwright_realtime() {
+	return docker_compose_realtime( array_merge( slic_stack_array(), [ '--profile', 'playwright' ] ) );
+}
+
+/**
  * Returns the process Closure to start a real-time process using slic stack.
  *
  * @return \Closure The process closure to start a real-time process using slic stack.

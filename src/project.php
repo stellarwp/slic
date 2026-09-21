@@ -133,6 +133,42 @@ function get_project_container_path( $target = null ) {
 }
 
 /**
+ * Returns the Playwright version the target depends on.
+ *
+ * The Playwright image only contains the browser build matching its own tag, and Playwright refuses to run
+ * when the library and the browser build differ, so the version is read from the target's own `package.json`.
+ * Each project upgrades Playwright on its own schedule this way, and a slic release never changes it.
+ *
+ * @param string|null $target The target to read the version from, defaults to the current one.
+ *
+ * @return string|null The version, e.g. `1.60.0`, or `null` if the target does not depend on `@playwright/test`.
+ */
+function get_target_playwright_version( $target = null ) {
+	$project_path = get_project_local_path( $target );
+
+	if ( empty( $project_path ) || ! is_file( $project_path . '/package.json' ) ) {
+		return null;
+	}
+
+	$package_json = json_decode( (string) file_get_contents( $project_path . '/package.json' ), true );
+
+	if ( ! is_array( $package_json ) ) {
+		return null;
+	}
+
+	foreach ( [ 'devDependencies', 'dependencies' ] as $section ) {
+		$version = $package_json[ $section ]['@playwright/test'] ?? null;
+
+		// Strip any range prefix so `^1.60.0` and `1.60.0` resolve to the same image tag.
+		if ( is_string( $version ) && preg_match( '/(\d+\.\d+\.\d+)/', $version, $matches ) ) {
+			return $matches[1];
+		}
+	}
+
+	return null;
+}
+
+/**
  * Returns the .slicrc file as an array.
  *
  * @param string $project_root_path The path to the project root.
