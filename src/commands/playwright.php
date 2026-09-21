@@ -16,7 +16,7 @@ if ( $is_help ) {
 		Runs Playwright commands in the stack. This command requires a use target set using the <light_cyan>use</light_cyan> command.
 
 		Playwright runs in the <light_cyan>mcr.microsoft.com/playwright</light_cyan> image, which already contains the browser.
-		The image tag is read from the <light_cyan>@playwright/test</light_cyan> version in the target's <light_cyan>package.json</light_cyan>.
+		The image tag is the <light_cyan>@playwright/test</light_cyan> version installed in the target's <light_cyan>node_modules</light_cyan>.
 		Set <light_cyan>SLIC_PLAYWRIGHT_VERSION</light_cyan> to use a different version, or <light_cyan>SLIC_PLAYWRIGHT_IMAGE</light_cyan> to use a different image.
 
 	USAGE:
@@ -54,8 +54,8 @@ if ( ! getenv( 'SLIC_PLAYWRIGHT_IMAGE' ) ) {
 	$version = getenv( 'SLIC_PLAYWRIGHT_VERSION' ) ?: get_target_playwright_version();
 
 	if ( empty( $version ) ) {
-		echo magenta( "Could not read the @playwright/test version from the package.json file of {$using}." . PHP_EOL );
-		echo magenta( 'Add @playwright/test to its dependencies, or set SLIC_PLAYWRIGHT_VERSION.' . PHP_EOL );
+		echo magenta( "@playwright/test is not installed in the node_modules directory of {$using}." . PHP_EOL );
+		echo magenta( 'Add it to the project and run its package manager install, or set SLIC_PLAYWRIGHT_VERSION.' . PHP_EOL );
 
 		exit( 1 );
 	}
