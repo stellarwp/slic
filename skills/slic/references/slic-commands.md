@@ -123,7 +123,7 @@ Inside the slic shell, shorthand commands are available:
 
 Runs Playwright commands in the stack for browser-based testing.
 
-Playwright runs in its own `playwright` service on the `mcr.microsoft.com/playwright` image, which already contains the browser. The image tag is the `@playwright/test` version in the target's `package.json`, which has to be pinned to an exact version such as `1.60.0`; a range such as `^1.60.0` is rejected, because it can install a version the image does not match. Set `SLIC_PLAYWRIGHT_VERSION` or `SLIC_PLAYWRIGHT_IMAGE` in the target's `.env.slic.local` to override the image. `slic playwright install` is kept for existing scripts and does nothing.
+Tests and PHP hooks run in the `slic` service. Browser fixtures connect to a temporary server in `mcr.microsoft.com/playwright`, selected from the installed Playwright CLI version. Dependency ranges in `package.json` are supported. `SLIC_PLAYWRIGHT_IMAGE` can override the browser image; its browsers must match the installed CLI. `slic playwright install` (including `install chromium --with-deps`) is unnecessary and exits successfully. Explicit `browserType.launch()` calls still launch locally. See [the remote browser guide](../../../docs/playwright.md) for compatibility details.
 
 ```bash
 slic playwright test                      # run all Playwright tests
