@@ -140,6 +140,39 @@ services:
       retries: 30
     shm_size: "${SLIC_CHROME_CONTAINER_SHM_SIZE:-512m}"
 
+  # Runs the Playwright CLI and the browser it drives.
+  # The `playwright` command sets SLIC_PLAYWRIGHT_IMAGE from the exact `@playwright/test` version pinned in the target's
+  # `package.json` before calling docker compose, so the browser build in the image matches the Playwright version the
+  # project installs.
+  # The suite only reaches the site over HTTP, so this service needs nothing from the `slic` container; it mounts the
+  # same volumes so the project sits at the same container path it does in the rest of the stack.
+  playwright:
+    image: ${SLIC_PLAYWRIGHT_IMAGE:-mcr.microsoft.com/playwright}
+    # The service has no long-running process and is only used through `docker compose run`.
+    # The profile keeps `slic up` from starting it.
+    profiles:
+      - playwright
+    networks:
+      - slic
+    user: "${SLIC_UID:-}:${SLIC_GID:-}"
+    depends_on:
+      wordpress:
+        condition: service_healthy
+    environment:
+      # The image has no home directory for the host user the container runs as.
+      HOME: /tmp
+      # The URL the suite points the browser at; the `wordpress.test` alias is on the `slic` network.
+      WP_URL: "${WP_URL:-http://wordpress.test}"
+      # If we're in CI context, then pass it through.
+      CI: "${CI:-}"
+    volumes:
+      # Paths are relative to the directory that contains this file, NOT the current working directory.
+      - ${SLIC_WP_DIR}:/var/www/html
+      - ${SLIC_PLUGINS_DIR}:${SLIC_WP_CONTENT_CONTAINER_DIR}/plugins
+      - ${SLIC_THEMES_DIR}:${SLIC_WP_CONTENT_CONTAINER_DIR}/themes
+    # Chromium crashes when /dev/shm is the 64m Docker default.
+    shm_size: "${SLIC_PLAYWRIGHT_CONTAINER_SHM_SIZE:-1g}"
+
   slic:
     image: ghcr.io/stellarwp/slic-php${SLIC_PHP_VERSION}:${SLIC_VERSION}
     networks:

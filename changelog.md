@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [Unreleased] - TBD
+- Changed - `slic playwright` now runs Playwright in the `mcr.microsoft.com/playwright` image, whose tag is the `@playwright/test` version in the target's `package.json`. The version has to be an exact version such as `1.60.0`; a range such as `^1.60.0` is rejected. The browser comes with the image, so nothing is downloaded into the slic container and each project upgrades Playwright on its own schedule. Set `SLIC_PLAYWRIGHT_VERSION` or `SLIC_PLAYWRIGHT_IMAGE` to override the image.
+- Changed - `slic playwright install` no longer installs anything, since the image already contains the browser.
+
 # [2.4.2] - 2026-09-08
 - Fixed - The PHP 7.3, 7.4 and 8.0 images install system packages from the Debian archive, so they can be built and `slic playwright install` works again now that Debian 11 has left LTS.
 
