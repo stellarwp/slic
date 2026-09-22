@@ -65,7 +65,10 @@ if ( ! getenv( 'SLIC_PLAYWRIGHT_IMAGE' ) ) {
 		$version = playwright_exact_version( $declared );
 
 		if ( $version === null ) {
-			echo magenta( "@playwright/test must be pinned to an exact version in the package.json file of {$using}, e.g. \"1.60.0\"; found \"{$declared}\"." . PHP_EOL );
+			// The value comes from the project's package.json: strip control characters so it cannot write terminal escape sequences.
+			$shown = preg_replace( '/\p{Cc}/u', '', $declared );
+
+			echo magenta( "@playwright/test must be pinned to an exact version in the package.json file of {$using}, e.g. \"1.60.0\"; found \"{$shown}\"." . PHP_EOL );
 			echo magenta( 'The Playwright image only contains the browser build for its own version, and a range can install a different version.' . PHP_EOL );
 
 			exit( 1 );
