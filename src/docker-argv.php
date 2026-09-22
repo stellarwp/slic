@@ -128,6 +128,28 @@ function docker_compose_binary_argv(): array {
 }
 
 /**
+ * Use the same Docker executable and global options for container management.
+ *
+ * @return string[] The Docker executable and its prefix arguments.
+ */
+function docker_binary_argv(): array {
+	$command = docker_compose_binary_argv();
+
+	// For "docker --context remote compose", remove only the Compose subcommand.
+	// Inspect, logs and removal must address the daemon that created the container.
+	if ( count( $command ) > 1 && end( $command ) === 'compose' ) {
+		array_pop( $command );
+
+		return $command;
+	}
+
+	// Standalone docker-compose and Compose-only wrappers cannot run Docker commands.
+	// Use Docker with the inherited environment, including DOCKER_HOST/DOCKER_CONTEXT.
+	// Wrappers must share those settings; options hidden inside a script cannot be inferred.
+	return [ 'docker' ];
+}
+
+/**
  * Split a configured command prefix, preserving platform-specific path separators.
  *
  * @param string $command The executable and optional quoted prefix arguments.

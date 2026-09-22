@@ -38,7 +38,7 @@ function wait_for_playwright_server( string $name, int $timeout = 30 ): bool {
 	do {
 		// The Docker template returns the health status while running, or "exited"
 		// after the server stops. A running container alone does not mean it is ready.
-		$state  = process_argv( [ 'docker', 'inspect', '--format', '{{if .State.Running}}{{.State.Health.Status}}{{else}}exited{{end}}', $name ] );
+		$state  = process_argv( array_merge( docker_binary_argv(), [ 'inspect', '--format', '{{if .State.Running}}{{.State.Health.Status}}{{else}}exited{{end}}', $name ] ) );
 		$health = trim( $state['stdout'] );
 
 		if ( $state['status'] !== 0 || in_array( $health, [ 'unhealthy', 'exited' ], true ) ) {
@@ -121,7 +121,7 @@ function run_playwright( array $arguments ): int {
 	$cleanup = static function () use ( $name, &$cleaned ) {
 		if ( ! $cleaned ) {
 			$cleaned = true;
-			process_argv( [ 'docker', 'rm', '--force', $name ] );
+			process_argv( array_merge( docker_binary_argv(), [ 'rm', '--force', $name ] ) );
 		}
 	};
 	register_shutdown_function( $cleanup );
@@ -158,7 +158,7 @@ function run_playwright( array $arguments ): int {
 
 		if ( ! wait_for_playwright_server( $name ) ) {
 			echo magenta( "Playwright browser server exited or did not become ready within 30 seconds. Server logs follow:\n" );
-			process_argv_realtime( [ 'docker', 'logs', $name ] );
+			process_argv_realtime( array_merge( docker_binary_argv(), [ 'logs', $name ] ) );
 
 			return 1;
 		}
