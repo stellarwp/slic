@@ -16,7 +16,7 @@ if ( $is_help ) {
 		Runs Playwright commands in the stack. This command requires a use target set using the <light_cyan>use</light_cyan> command.
 
 		Playwright runs in the <light_cyan>mcr.microsoft.com/playwright</light_cyan> image, which already contains the browser.
-		The image tag is the <light_cyan>@playwright/test</light_cyan> version installed in the target's <light_cyan>node_modules</light_cyan>.
+		The image tag is the <light_cyan>@playwright/test</light_cyan> version in the target's <light_cyan>package.json</light_cyan>, which has to be an exact version such as <light_cyan>1.60.0</light_cyan>.
 		Set <light_cyan>SLIC_PLAYWRIGHT_VERSION</light_cyan> to use a different version, or <light_cyan>SLIC_PLAYWRIGHT_IMAGE</light_cyan> to use a different image.
 
 	USAGE:
@@ -51,13 +51,25 @@ if ( $playwright_args === [ 'install' ] ) {
 }
 
 if ( ! getenv( 'SLIC_PLAYWRIGHT_IMAGE' ) ) {
-	$version = getenv( 'SLIC_PLAYWRIGHT_VERSION' ) ?: get_target_playwright_version();
+	$version = getenv( 'SLIC_PLAYWRIGHT_VERSION' );
 
 	if ( empty( $version ) ) {
-		echo magenta( "@playwright/test is not installed in the node_modules directory of {$using}." . PHP_EOL );
-		echo magenta( 'Add it to the project and run its package manager install, or set SLIC_PLAYWRIGHT_VERSION.' . PHP_EOL );
+		$declared = get_target_playwright_dependency();
 
-		exit( 1 );
+		if ( $declared === null ) {
+			echo magenta( "@playwright/test is not a dependency in the package.json file of {$using}." . PHP_EOL );
+
+			exit( 1 );
+		}
+
+		$version = playwright_exact_version( $declared );
+
+		if ( $version === null ) {
+			echo magenta( "@playwright/test must be pinned to an exact version in the package.json file of {$using}, e.g. \"1.60.0\"; found \"{$declared}\"." . PHP_EOL );
+			echo magenta( 'The Playwright image only contains the browser build for its own version, and a range can install a different version.' . PHP_EOL );
+
+			exit( 1 );
+		}
 	}
 
 	putenv( 'SLIC_PLAYWRIGHT_IMAGE=mcr.microsoft.com/playwright:v' . ltrim( $version, 'v' ) );

@@ -141,9 +141,9 @@ services:
     shm_size: "${SLIC_CHROME_CONTAINER_SHM_SIZE:-512m}"
 
   # Runs the Playwright CLI and the browser it drives.
-  # The `playwright` command sets SLIC_PLAYWRIGHT_IMAGE from the `@playwright/test` version installed in the target
-  # before calling docker compose, so the browser build in the image always matches the Playwright version the project
-  # installed.
+  # The `playwright` command sets SLIC_PLAYWRIGHT_IMAGE from the exact `@playwright/test` version pinned in the target's
+  # `package.json` before calling docker compose, so the browser build in the image matches the Playwright version the
+  # project installs.
   # The suite only reaches the site over HTTP, so this service needs nothing from the `slic` container; it mounts the
   # same volumes so the project sits at the same container path it does in the rest of the stack.
   playwright:

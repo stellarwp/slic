@@ -123,7 +123,7 @@ Inside the slic shell, shorthand commands are available:
 
 Runs Playwright commands in the stack for browser-based testing.
 
-Playwright runs in its own `playwright` service on the `mcr.microsoft.com/playwright` image, which already contains the browser. The image tag is the `@playwright/test` version installed in the target's `node_modules`, so run the project's package manager install first. Set `SLIC_PLAYWRIGHT_VERSION` or `SLIC_PLAYWRIGHT_IMAGE` in the target's `.env.slic.local` to override the image. `slic playwright install` is kept for existing scripts and does nothing.
+Playwright runs in its own `playwright` service on the `mcr.microsoft.com/playwright` image, which already contains the browser. The image tag is the `@playwright/test` version in the target's `package.json`, which has to be pinned to an exact version such as `1.60.0`; a range such as `^1.60.0` is rejected, because it can install a version the image does not match. Set `SLIC_PLAYWRIGHT_VERSION` or `SLIC_PLAYWRIGHT_IMAGE` in the target's `.env.slic.local` to override the image. `slic playwright install` is kept for existing scripts and does nothing.
 
 ```bash
 slic playwright test                      # run all Playwright tests

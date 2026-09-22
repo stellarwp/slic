@@ -133,33 +133,51 @@ function get_project_container_path( $target = null ) {
 }
 
 /**
- * Returns the version of `@playwright/test` installed in the target.
- *
- * The Playwright image only contains the browser build matching its own tag, and Playwright refuses to run
- * when the library and the browser build differ, so the version has to be the one actually installed.
- * The range declared in the target's `package.json` is not enough: `^1.60.0` can install `1.60.1`.
- *
- * Every package manager that creates a `node_modules` directory writes the installed package's own
- * `package.json` there, so reading it gives the exact version whichever lockfile format the project uses.
- * `node_modules/.bin/playwright` is the CLI of this package, and it pins `playwright` and `playwright-core`
- * to its own version, which is what the browser build depends on.
+ * Returns the `@playwright/test` version the target declares in its `package.json`, as written.
  *
  * @param string|null $target The target to read the version from, defaults to the current one.
  *
- * @return string|null The version, e.g. `1.60.0`, or `null` if `@playwright/test` is not installed in the target.
+ * @return string|null The declared version, e.g. `1.60.0` or `^1.60.0`, or `null` if the target does not declare
+ *                     `@playwright/test` as a dependency.
  */
-function get_target_playwright_version( $target = null ) {
+function get_target_playwright_dependency( $target = null ) {
 	$project_path = get_project_local_path( $target );
-	$package_file = $project_path . '/node_modules/@playwright/test/package.json';
 
-	if ( empty( $project_path ) || ! is_file( $package_file ) ) {
+	if ( empty( $project_path ) || ! is_file( $project_path . '/package.json' ) ) {
 		return null;
 	}
 
-	$package_json = json_decode( (string) file_get_contents( $package_file ), true );
-	$version      = is_array( $package_json ) ? ( $package_json['version'] ?? null ) : null;
+	$package_json = json_decode( (string) file_get_contents( $project_path . '/package.json' ), true );
 
-	return is_string( $version ) && preg_match( '/^\d+\.\d+\.\d+/', $version ) ? $version : null;
+	if ( ! is_array( $package_json ) ) {
+		return null;
+	}
+
+	foreach ( [ 'devDependencies', 'dependencies' ] as $section ) {
+		$version = $package_json[ $section ]['@playwright/test'] ?? null;
+
+		if ( is_string( $version ) ) {
+			return trim( $version );
+		}
+	}
+
+	return null;
+}
+
+/**
+ * Returns the version if a declared `@playwright/test` version is an exact version.
+ *
+ * The Playwright image only contains the browser build matching its own tag, and Playwright refuses to run
+ * when the library and the browser build differ. A range such as `^1.60.0` can install `1.60.1`, which the
+ * `v1.60.0` image does not match, so only an exact version identifies the image. Package managers install
+ * an exact version as written, whichever lockfile format the project uses.
+ *
+ * @param string $declared The version as declared in `package.json`.
+ *
+ * @return string|null The version, e.g. `1.60.0`, or `null` if the declared version is not an exact version.
+ */
+function playwright_exact_version( string $declared ) {
+	return preg_match( '/^\d+\.\d+\.\d+$/', $declared ) ? $declared : null;
 }
 
 /**
