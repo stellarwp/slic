@@ -21,7 +21,6 @@ services:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
     healthcheck:
       test: ${SLIC_DB_HEALTHCHECK:-healthcheck.sh --connect --innodb_initialized}
-      start_period: 5s
       interval: 1s
       timeout: 3s
       retries: 30
@@ -116,7 +115,6 @@ services:
       - ./containers/wordpress/php.ini:/usr/local/etc/php/conf.d/zz-docker.ini
     healthcheck: # Apache service should be running correctly.
       test: service apache2 status
-      start_period: 5s
       interval: 1s
       timeout: 3s
       retries: 30
