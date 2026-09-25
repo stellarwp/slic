@@ -21,7 +21,6 @@ services:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
     healthcheck:
       test: ${SLIC_DB_HEALTHCHECK:-healthcheck.sh --connect --innodb_initialized}
-      start_period: 5s
       interval: 1s
       timeout: 3s
       retries: 30
@@ -36,7 +35,6 @@ services:
       - "${SLIC_REDIS_LOCALHOST_PORT:-8379}:6379"
     healthcheck: # It should reply PONG to PING
       test: redis-cli ping | grep PONG
-      start_period: 2s
       interval: 1s
       timeout: 3s
       retries: 30
@@ -117,7 +115,6 @@ services:
       - ./containers/wordpress/php.ini:/usr/local/etc/php/conf.d/zz-docker.ini
     healthcheck: # Apache service should be running correctly.
       test: service apache2 status
-      start_period: 5s
       interval: 1s
       timeout: 3s
       retries: 30
@@ -134,11 +131,35 @@ services:
         condition: service_healthy
     healthcheck: # It should reply with a 200 status code to a request to the status endpoint.
       test: curl -f http://localhost:4444/wd/hub/status
-      start_period: 5s
       interval: 1s
       timeout: 3s
       retries: 30
     shm_size: "${SLIC_CHROME_CONTAINER_SHM_SIZE:-512m}"
+
+  # Browser server only. Test code and PHP hooks still execute in slic.
+  # The command selects the image from the installed CLI and starts a uniquely named
+  # one-off container. No ports are published on the host.
+  playwright:
+    image: ${SLIC_PLAYWRIGHT_IMAGE:-mcr.microsoft.com/playwright}
+    profiles:
+      - playwright
+    init: true
+    networks:
+      - slic
+    user: "${SLIC_UID:-}:${SLIC_GID:-}"
+    environment:
+      HOME: /tmp
+    volumes:
+      # Reuse the installed CLI to run the server, with no npm install at startup.
+      - ${SLIC_WP_DIR}:/var/www/html
+      - ${SLIC_PLUGINS_DIR}:${SLIC_WP_CONTENT_CONTAINER_DIR}/plugins
+      - ${SLIC_THEMES_DIR}:${SLIC_WP_CONTENT_CONTAINER_DIR}/themes
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3000/', r => {r.resume(); process.exit(r.statusCode === 200 ? 0 : 1)}).on('error', () => process.exit(1))"]
+      interval: 1s
+      timeout: 2s
+      retries: 20
+    shm_size: "${SLIC_PLAYWRIGHT_CONTAINER_SHM_SIZE:-1g}"
 
   slic:
     image: ghcr.io/stellarwp/slic-php${SLIC_PHP_VERSION}:${SLIC_VERSION}
