@@ -36,7 +36,6 @@ services:
       - "${SLIC_REDIS_LOCALHOST_PORT:-8379}:6379"
     healthcheck: # It should reply PONG to PING
       test: redis-cli ping | grep PONG
-      start_period: 2s
       interval: 1s
       timeout: 3s
       retries: 30
@@ -134,7 +133,6 @@ services:
         condition: service_healthy
     healthcheck: # It should reply with a 200 status code to a request to the status endpoint.
       test: curl -f http://localhost:4444/wd/hub/status
-      start_period: 5s
       interval: 1s
       timeout: 3s
       retries: 30
