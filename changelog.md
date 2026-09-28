@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-# [2.5.0] - TBD
+# [2.5.0] - 2026-09-28
 
 - Breaking Change - Playwright suites that launch browsers directly must use built-in fixtures or explicitly connect to the remote browser. Browser-facing `localhost` URLs and `download.path()` calls may also need changes. See the [migration guidance](docs/playwright.md#update-setup-code-that-launches-a-browser-directly) before upgrading.
 
@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Changed - `slic playwright test` keeps tests and PHP hooks in the slic container and connects browser fixtures to a temporary server in the Microsoft Playwright image. The image follows the installed CLI version, so dependency ranges are supported. Each invocation owns and cleans up its browser container.
 - Changed - `slic playwright install`, including `install chromium --with-deps`, no longer installs browsers or system packages. See [the Playwright guide](docs/playwright.md) for usage examples and help adapting existing suites.
 - Fixed - Playwright browser readiness checks, logs, and cleanup preserve the configured Docker executable and context when using a Docker Compose command prefix.
+- Fixed - Slic and WordPress image publishing workflows try Amazon ECR Public first and fall back to authenticated Docker Hub pulls when the mirror fails, including when ECR download limits are exceeded.
 
 # [2.4.2] - 2026-09-08
 - Fixed - The PHP 7.3, 7.4 and 8.0 images install system packages from the Debian archive, so they can be built and `slic playwright install` works again now that Debian 11 has left LTS.
