@@ -13,16 +13,18 @@ if ( $is_help ) {
 	$help = <<< HELP
 	SUMMARY:
 
-		This command requires a use target set using the <light_cyan>use</light_cyan> command.
+		Runs Playwright commands in the stack. This command requires a use target set using the <light_cyan>use</light_cyan> command.
+
+		Tests and PHP hooks run in <light_cyan>slic</light_cyan>; browser fixtures connect to a temporary Playwright server.
+		The browser image matches the installed Playwright CLI version. Dependency ranges in package.json are supported.
+		Set <light_cyan>SLIC_PLAYWRIGHT_IMAGE</light_cyan> to override the browser image; its browsers must match the installed CLI.
+		Browser installation is unnecessary. Explicit browser.launch() calls still launch locally; see docs/playwright.md.
 
 	USAGE:
 
 		<yellow>{$cli_name} playwright [...<commands>]</yellow>
 
 	EXAMPLES:
-
-		<light_cyan>{$cli_name} playwright install</light_cyan>
-		Install Playwright dependencies in the current <light_cyan>use</light_cyan> target.
 
 		<light_cyan>{$cli_name} playwright test</light_cyan>
 		Run all Playwright tests following the Playwright configuration in the current <light_cyan>use</light_cyan> target.
@@ -40,48 +42,4 @@ if ( $is_help ) {
 $using = slic_target_or_fail();
 echo light_cyan( "Using {$using}" . PHP_EOL );
 
-ensure_service_running( 'slic' );
-
-setup_id();
-$playwright_args = $args( '...' );
-$is_install_command = $playwright_args[0] === 'install';
-
-if ( $is_install_command ) {
-	// Install commands will need to run as root.
-	$user = '0:0';
-} else {
-	// Other commands will run as the current user.
-	$user = sprintf( '"%s:%s"', getenv( 'SLIC_UID' ), getenv( 'SLIC_GID' ) );
-}
-
-if ( $playwright_args === ['install'] ) {
-	// It's exactly the `playwright install` command and nothing more.
-	$command = [
-		'exec',
-		'--user',
-		'0:0',
-		'--workdir',
-		escapeshellarg( get_project_container_path() ),
-		'slic',
-		'node_modules/.bin/playwright install chromium --with-deps',
-	];
-} else {
-	$command = array_merge( [
-		'exec',
-		'--user',
-		$user,
-		'--workdir',
-		escapeshellarg( get_project_container_path() ),
-		'slic',
-		'node_modules/.bin/playwright',
-	], $playwright_args );
-}
-
-$status = slic_realtime()( $command );
-
-// If there is a status other than 0, we have an error. Bail.
-if ( $status ) {
-	exit( $status );
-}
-
-exit( $status );
+exit( run_playwright( $args( '...' ) ) );

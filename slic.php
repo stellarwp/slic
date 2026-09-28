@@ -27,6 +27,9 @@ require_once __DIR__ . '/src/cache.php';
 require_once __DIR__ . '/src/scaffold.php';
 require_once __DIR__ . '/src/slic.php';
 require_once __DIR__ . '/src/docker.php';
+require_once __DIR__ . '/src/process-argv.php';
+require_once __DIR__ . '/src/docker-argv.php';
+require_once __DIR__ . '/src/playwright.php';
 require_once __DIR__ . '/src/notify.php';
 require_once __DIR__ . '/src/plugins.php';
 require_once __DIR__ . '/src/themes.php';
@@ -54,7 +57,7 @@ $args = args( [
 ] );
 
 $cli_name = 'slic';
-const CLI_VERSION = '2.4.2';
+const CLI_VERSION = '2.5.0';
 
 // If the run-time option `-q`, for "quiet", is specified, then do not print the header.
 if ( in_array( '-q', $argv, true ) || ( in_array( 'exec', $argv, true ) && ! in_array( 'help', $argv, true ) ) ) {

@@ -15,6 +15,7 @@ The slic (**S**tellarWP **L**ocal **I**nteractive **C**ontainers) CLI command pr
     * [Preparing your project](#preparing-your-project)
     * [Adding tests](#adding-tests)
     * [Running tests](#running-tests)
+    * [Running Playwright tests](#running-playwright-tests)
 * [Advanced topics](#advanced-topics)
     * [Defaults for your project with `slic.json`](/docs/slicjson.md)
     * [Managing PHP Versions](#managing-php-versions)
@@ -251,6 +252,17 @@ slic shell
 
 > cr wpunit
 ```
+
+### Running Playwright tests
+
+For projects with a Playwright suite, prepare your WordPress test site and run:
+
+```bash
+slic playwright test
+```
+
+See the [Playwright guide](/docs/playwright.md) for dependency installation, test
+examples, and how to adapt existing browser setup hooks to work with Slic.
 
 ## Advanced topics
 
