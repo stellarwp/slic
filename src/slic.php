@@ -1256,18 +1256,35 @@ function slic_handle_composer_cache( callable $args ) {
 
 	echo PHP_EOL . PHP_EOL;
 
+	// Setting the cache before `slic use` must not start containers with the default PHP version.
+	$running_services = array_values( array_filter( array_keys( php_services() ), static function ( string $service ): bool {
+		return service_running( $service );
+	} ) );
+
+	if ( ! $running_services ) {
+		echo 'The cache setting will apply when the PHP services next start.' . PHP_EOL;
+
+		return;
+	}
+
 	$restart_services = ask(
-		'Would you like to restart the WordPress (NOT the database) and Codeception services now?',
+		'Would you like to recreate the running PHP services (' . implode( ', ', $running_services ) . ') to apply the cache setting now?',
 		'yes'
 	);
+
 	if ( $restart_services ) {
 		putenv( "COMPOSER_CACHE_DIR={$value}" );
 
-		// Call for a hard restart to make sure the web-server will restart its php-fpm connection.
-		restart_php_services( true );
+		// Bind mount changes require recreation. Leave stopped services and dependencies alone.
+		$status = slic_realtime()( array_merge( [ 'up', '--wait', '--no-deps', '--force-recreate' ], $running_services ) );
+
+		if ( $status !== 0 ) {
+			echo magenta( 'Could not recreate the PHP services with the new Composer cache directory.' . PHP_EOL );
+			exit( $status );
+		}
 	} else {
 		echo colorize(
-			PHP_EOL . PHP_EOL . "Tear down the stack with <light_cyan>down</light_cyan> and restart it to apply the new settings!" . PHP_EOL
+			PHP_EOL . 'The cache setting is saved. Recreate the PHP services to apply it.' . PHP_EOL
 		);
 	}
 }
