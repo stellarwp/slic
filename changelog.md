@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-# [2.5.1] - TBD
+# [2.5.1] - 2026-10-02
 
 - Fixed - `slic composer-cache set` and `unset` save their settings without starting a stopped stack. When confirmed, only running PHP services are recreated to apply the cache mount, leaving stopped services and dependencies alone. CI can configure the cache before selecting a project's PHP version without starting containers prematurely.
 
