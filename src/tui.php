@@ -235,8 +235,17 @@ function tui_read_key() {
 
 	// Check for escape sequences (arrow keys, etc.)
 	if ( $c === "\033" || $c === "\x1b" ) {
+		// A lone Escape sends nothing after it, and Unix reads block: wait briefly for the rest of a sequence.
+		if ( $platform !== 'windows' ) {
+			$read   = [ STDIN ];
+			$write  = null;
+			$except = null;
+			if ( ! stream_select( $read, $write, $except, 0, 50000 ) ) {
+				return [ 'type' => 'escape', 'value' => null ];
+			}
+		}
+
 		// Try to read next characters for escape sequence
-		// Set a short timeout for reading the rest of the sequence
 		$next = fread( STDIN, 1 );
 
 		if ( $next === '[' || $next === 'O' ) {
