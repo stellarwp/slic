@@ -74,6 +74,11 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
+        with:
+          # Try ECR first; BuildKit falls back to our authenticated Docker Hub login.
+          buildkitd-config-inline: |
+            [registry."docker.io"]
+              mirrors = ["public.ecr.aws/docker"]
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v7
@@ -87,6 +92,7 @@ jobs:
           cache-from: type=registry,ref=ghcr.io/${{ github.repository }}/cache/slic-php${{ matrix.php_version }}-${{ matrix.arch }}
           cache-to: type=registry,ref=ghcr.io/${{ github.repository }}/cache/slic-php${{ matrix.php_version }}-${{ matrix.arch }},mode=max
           build-args: |
+            PHP_IMAGE_REPOSITORY=docker.io/library/php
             PHP_VERSION=${{ matrix.php_version }}
             NODE_VERSION=18.17.0
             NVM_VERSION=v0.40.1

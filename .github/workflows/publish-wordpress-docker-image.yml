@@ -150,6 +150,11 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
+        with:
+          # Try ECR first; BuildKit falls back to our authenticated Docker Hub login.
+          buildkitd-config-inline: |
+            [registry."docker.io"]
+              mirrors = ["public.ecr.aws/docker"]
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v7
@@ -163,6 +168,7 @@ jobs:
           cache-from: type=registry,ref=ghcr.io/${{ github.repository }}/cache/slic-wp-${{ matrix.wp_version }}-${{ matrix.php_version }}-${{ matrix.arch }}
           cache-to: type=registry,ref=ghcr.io/${{ github.repository }}/cache/slic-wp-${{ matrix.wp_version }}-${{ matrix.php_version }}-${{ matrix.arch }},mode=max
           build-args: |
+            WORDPRESS_IMAGE_REPOSITORY=docker.io/library/wordpress
             PHP_VERSION=${{ matrix.php_version }}
             WP_VERSION=${{ matrix.wp_version }}
           platforms: ${{ matrix.platform }}
