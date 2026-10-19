@@ -73,6 +73,8 @@ abstract class BaseTestCase extends TestCase {
 		return [
 			'SLIC_DOCKER_BIN'         => self::$dockerMockBin,
 			'SLIC_DOCKER_COMPOSE_BIN' => self::$dockerMockBin,
+			// slic exits without an SSH agent socket to forward; Docker is mocked, so a placeholder path is enough.
+			'SSH_AUTH_SOCK'           => sys_get_temp_dir() . '/slic-test-ssh-agent.sock',
 		];
 	}
 

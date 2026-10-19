@@ -41,8 +41,10 @@ class ToggleSettingsTest extends BaseTestCase {
 		$this->setUpPluginsDir( 'this-plugin' );
 		$cacheDir = sys_get_temp_dir() . '/slic-composer-cache-' . uniqid();
 		mkdir( $cacheDir );
+		// Setting the cache offers to restart the services: take the default without prompting, against mocked Docker.
+		$this->slicExec( 'interactive off' );
 
-		$this->slicExec( 'composer-cache set ' . escapeshellarg( $cacheDir ) );
+		$this->slicExec( 'composer-cache set ' . escapeshellarg( $cacheDir ), $this->dockerMockEnv() );
 
 		$this->assertStringContainsString(
 			"Composer cache directory: {$cacheDir}",
