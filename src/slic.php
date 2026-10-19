@@ -1072,7 +1072,7 @@ function restart_service( $service, $pretty_name = null, $hard = false ) {
  * Restarts all services in the stack.
  */
 function restart_all_services() {
-	command_stop();
+	command_stop( null, false );
 	start_all_services();
 }
 
