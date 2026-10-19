@@ -26,11 +26,12 @@ function xdebug_status( $stack_id = null ) {
 	}
 
 	$enabled = getenv( 'XDE' );
+	$xdebug_env_vars = xdebug_get_env_vars( $stack_id );
 
 	if ( null !== $stack_id ) {
 		// Use a stack-specific server name if a stack is detected
 		// The XDK env var will be used as root to build an IDE key like `${XDK:-slic}_<stack_hash>`.
-		$ide_key = slic_stacks_xdebug_server_name( $stack_id );
+		$ide_key = $xdebug_env_vars['XDK'] ?? slic_stacks_xdebug_server_name( $stack_id );
 	} else {
 		// Final fallback when no stack is detected
 		$ide_key = 'slic';
@@ -97,7 +98,7 @@ function xdebug_status( $stack_id = null ) {
 
 	echo 'XDebug status is: ' . ( $enabled ? light_cyan( 'on' ) : magenta( 'off' ) ) . PHP_EOL;
 	echo 'Remote host: ' . light_cyan( getenv( 'XDH' ) ) . PHP_EOL;
-	$remote_port = $stack_id ? slic_stacks_xdebug_port($stack_id) : getenv('XDP');
+	$remote_port = $stack_id ? ( $xdebug_env_vars['XDP'] ?? slic_stacks_xdebug_port( $stack_id ) ) : getenv( 'XDP' );
 	echo 'Remote port: ' . light_cyan( $remote_port ) . PHP_EOL;
 
 	echo 'IDE Key (server name): ' . light_cyan( $ide_key ) . PHP_EOL;
@@ -424,13 +425,21 @@ function xdebug_get_env_vars($stack_id = null):array{
 		return [];
 	}
 
+	// Values set with `slic xdebug port|key` are stored in the stack state file and win over the registry defaults.
+	$state_file = get_stack_env_file( $stack_id );
+	$overrides  = is_file( $state_file ) ? read_env_file( $state_file ) : [];
+
 	$env_vars = [];
 
-	if ( isset( $stack['xdebug_port'] ) ) {
+	if ( ! empty( $overrides['XDP'] ) ) {
+		$env_vars['XDP'] = $overrides['XDP'];
+	} elseif ( isset( $stack['xdebug_port'] ) ) {
 		$env_vars['XDP']	 = $stack['xdebug_port'];
 	}
 
-	if ( isset( $stack['xdebug_key'] ) ) {
+	if ( ! empty( $overrides['XDK'] ) ) {
+		$env_vars['XDK'] = $overrides['XDK'];
+	} elseif ( isset( $stack['xdebug_key'] ) ) {
 		$env_vars['XDK']	 = $stack['xdebug_key'];
 	}
 
