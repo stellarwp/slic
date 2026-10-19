@@ -18,7 +18,14 @@ if (!$target) {
 }
 
 // Parse arguments ($_args is passed from worktree.php)
-$branch = $_args[0] ?? null;
+// Filter out flags to get the branch argument
+$branch = null;
+foreach ($_args as $arg) {
+    if ($arg !== '-y' && $arg !== '--yes') {
+        $branch = $arg;
+        break;
+    }
+}
 $force_yes = in_array('-y', $_args) || in_array('--yes', $_args);
 
 if (!$branch) {

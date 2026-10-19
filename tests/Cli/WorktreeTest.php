@@ -40,6 +40,39 @@ class WorktreeTest extends BaseTestCase {
 		);
 	}
 
+	public function test_worktree_add_accepts_the_yes_flag_before_the_branch(): void {
+		$this->setUpGitPluginStack();
+
+		try {
+			$output = $this->slicExec( 'worktree add -y feature-x', $this->dockerMockEnv() );
+		} finally {
+			$this->slicExec( 'worktree remove feature-x -y', $this->dockerMockEnv() );
+		}
+
+		$this->assertStringContainsString(
+			'Branch: feature-x',
+			$output,
+			'The -y flag should not be read as the branch name.'
+		);
+	}
+
+	public function test_worktree_remove_accepts_the_yes_flag_before_the_branch(): void {
+		$this->setUpGitPluginStack();
+		$this->slicExec( 'worktree add feature-x -y', $this->dockerMockEnv() );
+
+		try {
+			$output = $this->slicExec( 'worktree remove -y feature-x', $this->dockerMockEnv() );
+		} finally {
+			$this->slicExec( 'worktree remove feature-x -y', $this->dockerMockEnv() );
+		}
+
+		$this->assertStringContainsString(
+			'Worktree removed successfully.',
+			$output,
+			'The -y flag should not be read as the branch name.'
+		);
+	}
+
 	public function test_worktree_add_rejects_a_detached_worktree_in_the_branch_directory(): void {
 		$pluginDir = $this->setUpGitPluginStack();
 		shell_exec( 'git -C ' . escapeshellarg( $pluginDir ) . ' worktree add -q --detach ../test-plugin-feature-x' );
