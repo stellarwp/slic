@@ -703,8 +703,7 @@ function slic_current_stack() {
 				'worktree_full_path' => $detected['full_path'],
 				'project_name'       => slic_stacks_get_project_name( $worktree_stack_id ),
 				'state_file'         => slic_stacks_get_state_file( $worktree_stack_id ),
-				'xdebug_port'        => slic_stacks_xdebug_port( $worktree_stack_id ),
-				'xdebug_key'         => slic_stacks_xdebug_server_name( $worktree_stack_id ),
+				// XDebug port and key are allocated inside slic_stacks_register() while it holds the registry lock.
 				'target'             => $detected['target'],
 				'status'             => 'created',
 			];

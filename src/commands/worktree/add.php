@@ -202,8 +202,7 @@ $worktree_state = [
     'worktree_full_path' => $worktree_full_path,
     'project_name' => slic_stacks_get_project_name($worktree_stack_id),
     'state_file' => slic_stacks_get_state_file($worktree_stack_id),
-    'xdebug_port' => slic_stacks_xdebug_port($worktree_stack_id),
-    'xdebug_key' => slic_stacks_xdebug_server_name($worktree_stack_id),
+    // XDebug port and key are allocated inside slic_stacks_register() while it holds the registry lock.
     'target' => $target, // Inherit target from base
     'status' => 'created',
 ];
@@ -238,7 +237,7 @@ echo "Stack Details:\n";
 echo "  Stack ID: $worktree_stack_id\n";
 echo "  Directory: $worktree_full_path\n";
 echo "  Branch: $branch\n";
-echo "  XDebug Port: {$worktree_state['xdebug_port']}\n";
+echo "  XDebug Port: " . slic_stacks_get($worktree_stack_id)['xdebug_port'] . "\n";
 echo "  Project Name: {$worktree_state['project_name']}\n";
 echo "\n";
 echo "To start working:\n";
