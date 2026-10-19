@@ -672,7 +672,7 @@ function slic_stacks_read_ports_from_docker($stack_id) {
 		// Get the container ID for this service
 		$get_id_command = docker_bin() . " ps -q -f label=com.docker.compose.project='$project_name' " .
 		                  "-f label=com.docker.compose.service=$service_name 2>/dev/null";
-		$service_id = trim(shell_exec($get_id_command));
+		$service_id = trim((string) shell_exec($get_id_command));
 
 		if (empty($service_id)) {
 			continue;
@@ -680,7 +680,7 @@ function slic_stacks_read_ports_from_docker($stack_id) {
 
 		// Get the port mapping for this container
 		$port_command = docker_bin() . " port $service_id $container_port 2>/dev/null | grep '0.0.0.0' | cut -d: -f2";
-		$host_port = trim(shell_exec($port_command));
+		$host_port = trim((string) shell_exec($port_command));
 
 		if (!empty($host_port) && is_numeric($host_port)) {
 			$ports[$port_key] = (int)$host_port;
@@ -731,8 +731,8 @@ function slic_stacks_is_running($stack_id) {
 }
 
 /**
- * Ensures a stack has port assignments, reading from Docker if needed.
- * Updates the registry with current port assignments if containers are running.
+ * Ensures a stack has port assignments, reading them from Docker when its containers are running.
+ * Updates the registry when the ports Docker reports have changed; otherwise falls back to the stored ports.
  *
  * @param string $stack_id The stack identifier.
  * @return bool True if ports are available, false otherwise.
@@ -744,22 +744,19 @@ function slic_stacks_ensure_ports($stack_id) {
 		return false;
 	}
 
-	// If ports are already set and valid, we're done
-	if (isset($stack['ports']) && is_array($stack['ports']) && count($stack['ports']) === 3) {
-		return true;
-	}
-
-	// Try to read ports from Docker
+	// Docker assigns new host ports whenever the containers are recreated, so read them first
 	$ports = slic_stacks_read_ports_from_docker($stack_id);
 
 	if (null !== $ports) {
 		// Update the registry with the actual ports
-		slic_stacks_update($stack_id, ['ports' => $ports]);
+		if (($stack['ports'] ?? null) !== $ports) {
+			slic_stacks_update($stack_id, ['ports' => $ports]);
+		}
 		return true;
 	}
 
-	// Containers not running yet
-	return false;
+	// Containers not running: fall back to the last ports Docker assigned, if any
+	return isset($stack['ports']) && is_array($stack['ports']) && count($stack['ports']) === 3;
 }
 
 /**
@@ -956,11 +953,8 @@ function slic_stacks_migrate_legacy() {
 		'state_file'   => basename( slic_stacks_get_state_file( $stack_id ) ),
 		'xdebug_port'  => slic_stacks_xdebug_port( $stack_id ),
 		'xdebug_key'   => slic_stacks_xdebug_server_name( $stack_id ),
-		'ports'        => [
-			'wp'    => 8888, // Default legacy port
-			'mysql' => 9006, // Default legacy port
-			'redis' => 8379, // Default legacy port
-		],
+		// Ports are Docker-assigned and read from Docker once the stack is running.
+		'ports'        => null,
 		'created_at'   => date( 'c' ),
 		'status'       => 'migrated',
 	];
