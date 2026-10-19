@@ -385,6 +385,17 @@ function slic_stacks_resolve_from_cwd() {
  * @return string|null The stack ID or null if not found.
  */
 function slic_stacks_resolve_from_path($path) {
+	// Expand ~ to home directory
+	if (strpos($path, '~') === 0) {
+		$home = getenv('HOME');
+		if ($home === false) {
+			$home = getenv('USERPROFILE'); // Windows fallback
+		}
+		if ($home !== false) {
+			$path = $home . substr($path, 1);
+		}
+	}
+
 	// Check if this is already a stack ID with @ format
 	if (strpos($path, '@') !== false) {
 		$stacks = slic_stacks_list();
@@ -395,17 +406,6 @@ function slic_stacks_resolve_from_path($path) {
 		// Not a registered stack ID and not an existing path whose name contains @, treat as invalid
 		if (!file_exists($path)) {
 			return null;
-		}
-	}
-
-	// Expand ~ to home directory
-	if (strpos($path, '~') === 0) {
-		$home = getenv('HOME');
-		if ($home === false) {
-			$home = getenv('USERPROFILE'); // Windows fallback
-		}
-		if ($home !== false) {
-			$path = $home . substr($path, 1);
 		}
 	}
 

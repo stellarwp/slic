@@ -18,6 +18,17 @@ class StackOptionTest extends BaseTestCase {
 		);
 	}
 
+	public function test_stack_variable_expands_the_home_directory_in_a_path_that_contains_an_at_sign(): void {
+		$pluginsDir = $this->setUpPluginsDir( 'test-plugin', '/slic-test-home-' . uniqid( '', true ) . '/project@v2/plugins' );
+		$env        = [ 'HOME' => dirname( $pluginsDir, 2 ), 'SLIC_STACK' => '~/project@v2/plugins' ] + $this->dockerMockEnv();
+
+		$this->assertStringContainsString(
+			'Stack ID: ' . realpath( $pluginsDir ),
+			$this->slicExec( 'stack info', $env ),
+			'A home-relative stack path should resolve even when it contains @.'
+		);
+	}
+
 	public function test_a_stack_in_a_path_that_contains_an_at_sign_is_not_a_worktree(): void {
 		$this->setUpPluginsDir( 'test-plugin', '/slic-test@' . uniqid( '', true ) . '/plugins' );
 
