@@ -76,7 +76,7 @@ function slic_stacks_register($stack_id, array $state) {
 }
 
 /**
- * Writes the state file of a worktree stack, taking the WordPress, plugins and themes directories from its base stack.
+ * Writes the state file of a worktree stack, taking the WordPress, plugins, themes and container content directories from its base stack.
  *
  * @param string $worktree_stack_id The worktree stack identifier.
  * @param string $base_stack_id The base stack identifier.
@@ -93,6 +93,7 @@ function slic_stacks_write_worktree_state_file($worktree_stack_id, $base_stack_i
 		'SLIC_WP_DIR' => $base_env['SLIC_WP_DIR'] ?? getenv('SLIC_WP_DIR'),
 		'SLIC_PLUGINS_DIR' => $base_env['SLIC_PLUGINS_DIR'] ?? getenv('SLIC_PLUGINS_DIR'),
 		'SLIC_THEMES_DIR' => $base_env['SLIC_THEMES_DIR'] ?? getenv('SLIC_THEMES_DIR'),
+		'SLIC_WP_CONTENT_CONTAINER_DIR' => $base_env['SLIC_WP_CONTENT_CONTAINER_DIR'] ?? getenv('SLIC_WP_CONTENT_CONTAINER_DIR'),
 		'SLIC_CURRENT_PROJECT' => $target,
 	]);
 

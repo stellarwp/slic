@@ -13,7 +13,7 @@ abstract class BaseTestCase extends TestCase {
 	 *
 	 * @var string[]
 	 */
-	private array $createdStackIds = [];
+	protected array $createdStackIds = [];
 
 	private static string $dockerMockBin = '';
 

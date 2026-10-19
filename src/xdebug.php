@@ -162,10 +162,11 @@ function xdebug_status( $stack_id = null ) {
 					// Validate target is not empty
 					if ( ! empty( $target ) ) {
 						// Build the container path
+						$content_dir = getenv( 'SLIC_WP_CONTENT_CONTAINER_DIR' ) ?: '/var/www/html/wp-content';
 						if ( $is_plugin ) {
-							$container_path = '/var/www/html/wp-content/plugins/' . $target;
+							$container_path = $content_dir . '/plugins/' . $target;
 						} else {
-							$container_path = '/var/www/html/wp-content/themes/' . $target;
+							$container_path = $content_dir . '/themes/' . $target;
 						}
 
 						// Display the worktree path mapping

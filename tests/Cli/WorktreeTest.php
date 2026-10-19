@@ -3,6 +3,7 @@
 namespace StellarWP\Slic\Test\Cli;
 
 use PHPUnit\Framework\Attributes\DataProvider;
+use StellarWP\Slic\Test\Support\Factories\Directory;
 
 class WorktreeTest extends BaseTestCase {
 
@@ -82,6 +83,42 @@ class WorktreeTest extends BaseTestCase {
 		);
 	}
 
+	public function test_a_worktree_of_a_site_stack_mounts_plugins_where_its_base_stack_does(): void {
+		$site = Directory::createTemp( '/slic-test-site-' . uniqid( '', true ) )
+		                 ->createPlugin( 'content/plugins/test-plugin' )
+		                 ->getAbsolutePath();
+		mkdir( $site . '/content/themes' );
+		touch( $site . '/wp-config.php' );
+		$pluginsDir = $site . '/content/plugins';
+		$this->initGitRepository( $pluginsDir . '/test-plugin' );
+
+		chdir( $site );
+		$this->slicExec( 'here' );
+		$this->createdStackIds[] = realpath( $pluginsDir );
+		chdir( $pluginsDir );
+		$this->slicExec( 'use test-plugin', $this->dockerMockEnv() );
+		$this->slicExec( 'worktree add feature-x -y', $this->dockerMockEnv() );
+
+		chdir( $pluginsDir . '/test-plugin-feature-x' );
+		try {
+			$output = $this->slicExec( 'xdebug status', $this->dockerMockEnv() );
+		} finally {
+			chdir( $pluginsDir );
+			$this->slicExec( 'worktree remove feature-x -y', $this->dockerMockEnv() );
+		}
+
+		$this->assertStringContainsString(
+			'/content/plugins => /var/www/html/content/plugins',
+			$output,
+			'A worktree of a site stack should mount plugins where its base stack does.'
+		);
+		$this->assertStringContainsString(
+			'/test-plugin-feature-x => /var/www/html/content/plugins/test-plugin',
+			$output,
+			'A worktree of a site stack should be mounted over its target in the same content directory.'
+		);
+	}
+
 	public function test_worktree_add_accepts_the_yes_flag_before_the_branch(): void {
 		$this->setUpGitPluginStack();
 
@@ -156,11 +193,20 @@ class WorktreeTest extends BaseTestCase {
 	 */
 	private function setUpGitPluginStack(): string {
 		$pluginDir = $this->setUpPluginsDir() . '/test-plugin';
-		// Fixture commits must not depend on the host git identity or commit signing settings.
-		$git = 'git -C ' . escapeshellarg( $pluginDir ) . ' -c user.name=slic -c user.email=slic@example.com -c commit.gpgsign=false';
-		shell_exec( "{$git} init -q && {$git} add -A && {$git} commit -q -m init" );
+		$this->initGitRepository( $pluginDir );
 		$this->slicExec( 'use test-plugin', $this->dockerMockEnv() );
 
 		return $pluginDir;
+	}
+
+	/**
+	 * Makes a directory a git repository with one commit of its contents.
+	 *
+	 * @param string $dir The absolute path to the directory.
+	 */
+	private function initGitRepository( string $dir ): void {
+		// Fixture commits must not depend on the host git identity or commit signing settings.
+		$git = 'git -C ' . escapeshellarg( $dir ) . ' -c user.name=slic -c user.email=slic@example.com -c commit.gpgsign=false';
+		shell_exec( "{$git} init -q && {$git} add -A && {$git} commit -q -m init" );
 	}
 }
