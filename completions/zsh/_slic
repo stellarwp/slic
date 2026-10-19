@@ -50,12 +50,12 @@ _slic() {
 
     slic_dir=$(dirname "$slic_cmd")
 
-    # Call the PHP completion script
-    completions=($(php "${slic_dir}/src/completions/complete.php" \
+    # Call the PHP completion script; words and completions go one per line so they can contain spaces
+    completions=(${(f)"$(php "${slic_dir}/src/completions/complete.php" \
         --line="${BUFFER}" \
         --point="${CURSOR}" \
-        --words="${words[*]}" \
-        --cword="${CURRENT}" 2>/dev/null))
+        --words="${(F)words}" \
+        --cword="$(( CURRENT - 1 ))" 2>/dev/null)"})
 
     if [[ ${#completions[@]} -gt 0 ]]; then
         _describe 'slic commands' completions

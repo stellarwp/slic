@@ -12,7 +12,12 @@
 
 _slic_completions() {
     local cur prev words cword
-    _init_completion || return
+    # _init_completion comes from the bash-completion package; without it, take the word under the cursor as is.
+    if declare -F _init_completion >/dev/null; then
+        _init_completion || return
+    else
+        cur="${COMP_WORDS[COMP_CWORD]}"
+    fi
 
     # Get the directory where slic is installed
     local slic_cmd
@@ -31,17 +36,21 @@ _slic_completions() {
     local slic_dir
     slic_dir=$(dirname "$slic_cmd")
 
-    # Call the PHP completion script
+    # Call the PHP completion script; words go one per line so a word can contain spaces
     local completions
-    completions=$(php "${slic_dir}/src/completions/complete.php" \
+    completions=$(IFS=$'\n'; php "${slic_dir}/src/completions/complete.php" \
         --line="${COMP_LINE}" \
         --point="${COMP_POINT}" \
         --words="${COMP_WORDS[*]}" \
         --cword="${COMP_CWORD}" 2>/dev/null)
 
-    # Convert space-separated completions to array
+    # Convert the one-per-line completions to an array, escaping each one for the command line
     if [[ -n "$completions" ]]; then
+        local IFS=$'\n' i
         COMPREPLY=($(compgen -W "$completions" -- "$cur"))
+        for i in "${!COMPREPLY[@]}"; do
+            COMPREPLY[i]=$(printf '%q' "${COMPREPLY[i]}")
+        done
     fi
 }
 

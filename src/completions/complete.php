@@ -7,8 +7,10 @@
  * completion suggestions based on the current command line context.
  *
  * Usage:
- *   php complete.php --line="<line>" --point=<point> --words="<words>" --cword=<cword>
- *   php complete.php --shell=fish --words="<words>" --current="<current>"
+ *   php complete.php --line="<line>" --point=<point> --words="<one word per line>" --cword=<cword>
+ *   php complete.php --shell=fish --words="<space-separated words>" --current="<current>"
+ *
+ * Completions are printed one per line.
  *
  * @package StellarWP\Slic\Completions
  */
@@ -52,9 +54,9 @@ if ( $shell === 'fish' ) {
 	// Otherwise, we're completing the last word in the list
 	$current_word_index = empty( $current_word ) ? count( $words ) : count( $words ) - 1;
 } else {
-	// Bash/Zsh format
+	// Bash/Zsh format: one word per line, so a word can contain spaces
 	if ( isset( $options['words'] ) ) {
-		$words = explode( ' ', $options['words'] );
+		$words = explode( "\n", $options['words'] );
 	}
 	$current_word_index = isset( $options['cword'] ) ? (int) $options['cword'] : 0;
 	$current_word = $words[ $current_word_index ] ?? '';
@@ -181,9 +183,9 @@ if ( $completing_stack_option ) {
 	}
 }
 
-// Output completions
+// Output completions, one per line, so a completion can contain spaces
 if ( ! empty( $completions ) ) {
-	echo implode( ' ', $completions );
+	echo implode( "\n", $completions );
 }
 
 exit( 0 );

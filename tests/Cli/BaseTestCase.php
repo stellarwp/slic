@@ -83,12 +83,13 @@ abstract class BaseTestCase extends TestCase {
 	 *
 	 * The created stack is automatically unregistered during tearDown.
 	 *
-	 * @param string $pluginName The name of the plugin directory to create.
+	 * @param string      $pluginName The name of the plugin directory to create.
+	 * @param string|null $path       The plugins directory path relative to the temp directory, or `null` for a random one.
 	 *
 	 * @return string The absolute path to the plugins directory.
 	 */
-	protected function setUpPluginsDir( string $pluginName = 'test-plugin' ): string {
-		$pluginsDir = Directory::createTemp()
+	protected function setUpPluginsDir( string $pluginName = 'test-plugin', ?string $path = null ): string {
+		$pluginsDir = Directory::createTemp( $path )
 		                       ->createPlugin( $pluginName )
 		                       ->getAbsolutePath();
 		chdir( $pluginsDir );
