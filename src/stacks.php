@@ -883,6 +883,11 @@ function slic_stacks_get_base_stack_id($stack_id) {
  * @return array|null Worktree metadata or null if not a worktree.
  */
 function slic_stacks_detect_worktree($path) {
+	// Start from the root of the git checkout the path is in, so a worktree is detected from its subdirectories too.
+	while (!file_exists($path . '/.git') && dirname($path) !== $path) {
+		$path = dirname($path);
+	}
+
 	$git_file = $path . '/.git';
 
 	// Check if .git is a FILE (not directory) - indicates worktree

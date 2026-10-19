@@ -119,6 +119,24 @@ class WorktreeTest extends BaseTestCase {
 		);
 	}
 
+	public function test_a_subdirectory_of_an_unregistered_worktree_offers_to_register_it(): void {
+		if ( '' === trim( (string) shell_exec( 'command -v script' ) ) ) {
+			$this->markTestSkipped( 'script is not installed.' );
+		}
+
+		$pluginDir   = $this->setUpGitPluginStack();
+		$worktreeDir = dirname( $pluginDir ) . '/test-plugin-feature-x';
+		shell_exec( 'git -C ' . escapeshellarg( $pluginDir ) . ' worktree add -q ' . escapeshellarg( $worktreeDir ) . ' -b feature-x 2>&1' );
+		mkdir( $worktreeDir . '/src' );
+		chdir( $worktreeDir . '/src' );
+
+		$this->assertStringContainsString(
+			'Detected unregistered git worktree!',
+			$this->slicExecInTerminal( 'stack info', "n\n" ),
+			'Running slic below the root of an unregistered worktree should offer to register it.'
+		);
+	}
+
 	public function test_worktree_add_accepts_the_yes_flag_before_the_branch(): void {
 		$this->setUpGitPluginStack();
 
@@ -197,6 +215,29 @@ class WorktreeTest extends BaseTestCase {
 		$this->slicExec( 'use test-plugin', $this->dockerMockEnv() );
 
 		return $pluginDir;
+	}
+
+	/**
+	 * Runs a slic command in a pseudo-terminal, where slic asks its interactive questions, and returns the output.
+	 *
+	 * @param string $command The command to execute, escaped if required.
+	 * @param string $input   The answers to type at the prompts.
+	 *
+	 * @return string The command output.
+	 */
+	private function slicExecInTerminal( string $command, string $input ): string {
+		$slic = 'php ' . escapeshellarg( dirname( __DIR__, 2 ) . '/slic.php' ) . ' ' . $command;
+		// util-linux script (Linux) takes the command with -c; BSD script (macOS) takes it as trailing arguments.
+		$inTerminal = str_contains( (string) shell_exec( 'script --version 2>&1' ), 'util-linux' )
+			? 'script -qec ' . escapeshellarg( $slic ) . ' /dev/null'
+			: 'script -q /dev/null ' . $slic;
+
+		$envString = '';
+		foreach ( [ 'NO_COLOR' => '1' ] + $this->dockerMockEnv() as $key => $value ) {
+			$envString .= $key . '=' . escapeshellarg( $value ) . ' ';
+		}
+
+		return (string) shell_exec( 'printf %s ' . escapeshellarg( $input ) . ' | ' . $envString . $inTerminal . ' 2>&1' );
 	}
 
 	/**
