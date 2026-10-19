@@ -2,7 +2,30 @@
 
 namespace StellarWP\Slic\Test\Cli;
 
+use PHPUnit\Framework\Attributes\DataProvider;
+
 class WorktreeTest extends BaseTestCase {
+
+	public static function invalidBranchProvider(): array {
+		return [
+			'leading dash'                => [ '-x' ],
+			'component starting with dot' => [ 'foo/.bar' ],
+			'trailing dot'                => [ 'foo.' ],
+			'component ending in .lock'   => [ 'foo/bar.lock/baz' ],
+			'reflog syntax'               => [ 'a@{b' ],
+		];
+	}
+
+	#[DataProvider( 'invalidBranchProvider' )]
+	public function test_worktree_add_rejects_a_branch_name_git_does_not_allow( string $branch ): void {
+		$this->setUpGitPluginStack();
+
+		$this->assertStringContainsString(
+			"Error: Invalid branch name: {$branch}",
+			$this->slicExec( 'worktree add ' . escapeshellarg( $branch ) . ' -y', $this->dockerMockEnv() ),
+			'Branch names git rejects should fail validation before any git command runs.'
+		);
+	}
 
 	public function test_worktree_remove_stops_the_worktree_stack_with_its_own_xdebug_port(): void {
 		$this->setUpGitPluginStack();

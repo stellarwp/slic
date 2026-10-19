@@ -48,7 +48,9 @@ function slic_worktree_sanitize_dir_name( $name ) {
  * - No "~", "^", ":", "?", "*", "[" (special git characters)
  * - Cannot start or end with "/"
  * - Cannot contain consecutive slashes
+ * - Cannot start with "-" or contain "@{"
  * - Length: 1-250 characters
+ * - Anything else `git check-ref-format --branch` rejects
  *
  * @param string $branch The branch name to validate.
  *
@@ -88,7 +90,20 @@ function slic_worktree_validate_branch( $branch ) {
 		return false;
 	}
 
-	return true;
+	// A name starting with a dash would be read as an option by the git commands it is passed to.
+	if ( $branch[0] === '-' ) {
+		return false;
+	}
+
+	// `--branch` expands the `@{-N}` shorthand to a real branch, so reject the reflog syntax first.
+	if ( strpos( $branch, '@{' ) !== false ) {
+		return false;
+	}
+
+	// Let git apply the rest of its refname rules, such as those for each `/`-separated component.
+	exec( 'git check-ref-format --branch ' . escapeshellarg( $branch ) . ' 2>/dev/null', $output, $status );
+
+	return 0 === $status;
 }
 
 /**
