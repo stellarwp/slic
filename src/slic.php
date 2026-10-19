@@ -663,21 +663,17 @@ function slic_current_stack() {
 		return slic_stacks_resolve_from_path( $env_stack );
 	}
 
-	// 3. Try to resolve from current working directory
-	$cwd_stack = slic_stacks_resolve_from_cwd();
-	if ( null !== $cwd_stack ) {
-		return $cwd_stack;
+	/*
+	 * 3. Auto-detect and offer to register an unregistered worktree.
+	 * This runs before the working directory match because worktrees live inside their base stack's directory, which
+	 * would otherwise always win. Ask once per process, and only in a terminal: completions and scripts must not block.
+	 */
+	static $worktree_prompted = false;
+	$detected = null;
+	if ( ! $worktree_prompted && stream_isatty( STDIN ) && stream_isatty( STDOUT ) ) {
+		$worktree_prompted = true;
+		$detected          = slic_stacks_detect_worktree( getcwd() );
 	}
-
-	// 4. If only one stack exists, use it (backward compatibility)
-	$single_stack_id = slic_stacks_get_single_id();
-	if ( null !== $single_stack_id ) {
-		return $single_stack_id;
-	}
-
-	// 5. Auto-detect and offer to register unregistered worktrees
-	$cwd      = getcwd();
-	$detected = slic_stacks_detect_worktree( $cwd );
 
 	if ( $detected ) {
 		echo "Detected unregistered git worktree!\n";
@@ -709,14 +705,30 @@ function slic_current_stack() {
 				'status'             => 'created',
 			];
 
+			// Write the stack state file before registering, so the registry never points at a missing state file.
+			$state_file = slic_stacks_write_worktree_state_file( $worktree_stack_id, $detected['base_stack_id'], $detected['target'] );
+
 			if ( slic_stacks_register( $worktree_stack_id, $worktree_state ) ) {
 				echo "Registered successfully!\n";
 
 				return $worktree_stack_id;
 			} else {
+				unlink( $state_file );
 				echo "Failed to register stack.\n";
 			}
 		}
+	}
+
+	// 4. Try to resolve from current working directory
+	$cwd_stack = slic_stacks_resolve_from_cwd();
+	if ( null !== $cwd_stack ) {
+		return $cwd_stack;
+	}
+
+	// 5. If only one stack exists, use it (backward compatibility)
+	$single_stack_id = slic_stacks_get_single_id();
+	if ( null !== $single_stack_id ) {
+		return $single_stack_id;
 	}
 
 	return null;

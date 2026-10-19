@@ -217,15 +217,7 @@ $worktree_state = [
 ];
 
 // Write the stack state file before registering, so the registry never points at a missing state file.
-$state_env_vars = [
-    'SLIC_HERE_DIR' => $base_stack_id,
-    'SLIC_WP_DIR' => getenv('SLIC_WP_DIR'),
-    'SLIC_PLUGINS_DIR' => getenv('SLIC_PLUGINS_DIR'),
-    'SLIC_THEMES_DIR' => getenv('SLIC_THEMES_DIR'),
-    'SLIC_CURRENT_PROJECT' => $target,
-];
-
-write_env_file($worktree_state['state_file'], $state_env_vars);
+slic_stacks_write_worktree_state_file($worktree_stack_id, $base_stack_id, $target);
 
 if (!slic_stacks_register($worktree_stack_id, $worktree_state)) {
     unlink($worktree_state['state_file']);

@@ -76,6 +76,30 @@ function slic_stacks_register($stack_id, array $state) {
 }
 
 /**
+ * Writes the state file of a worktree stack, taking the WordPress, plugins and themes directories from its base stack.
+ *
+ * @param string $worktree_stack_id The worktree stack identifier.
+ * @param string $base_stack_id The base stack identifier.
+ * @param string $target The target the worktree is a checkout of.
+ * @return string The path to the written state file.
+ */
+function slic_stacks_write_worktree_state_file($worktree_stack_id, $base_stack_id, $target) {
+	$base_state_file = slic_stacks_get_state_file($base_stack_id);
+	$base_env = is_file($base_state_file) ? read_env_file($base_state_file) : [];
+	$state_file = slic_stacks_get_state_file($worktree_stack_id);
+
+	write_env_file($state_file, [
+		'SLIC_HERE_DIR' => $base_stack_id,
+		'SLIC_WP_DIR' => $base_env['SLIC_WP_DIR'] ?? getenv('SLIC_WP_DIR'),
+		'SLIC_PLUGINS_DIR' => $base_env['SLIC_PLUGINS_DIR'] ?? getenv('SLIC_PLUGINS_DIR'),
+		'SLIC_THEMES_DIR' => $base_env['SLIC_THEMES_DIR'] ?? getenv('SLIC_THEMES_DIR'),
+		'SLIC_CURRENT_PROJECT' => $target,
+	]);
+
+	return $state_file;
+}
+
+/**
  * Unregisters a stack from the registry (thread-safe).
  * Uses file locking to prevent race conditions during concurrent stack operations.
  *
@@ -898,6 +922,11 @@ function slic_stacks_detect_worktree($path) {
 
 		if ($stack_real !== $parent_real) {
 			continue;
+		}
+
+		// A worktree that is already registered needs no detection
+		if (isset($stacks[$stack_id . '@' . $dir_name])) {
+			return null;
 		}
 
 		// Check if directory name matches pattern: {target}-{branch-slug}

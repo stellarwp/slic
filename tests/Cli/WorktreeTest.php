@@ -63,6 +63,25 @@ class WorktreeTest extends BaseTestCase {
 		);
 	}
 
+	public function test_an_added_worktree_stack_knows_where_its_target_is(): void {
+		$pluginsDir = $this->setUpGitPluginStack();
+		$this->slicExec( 'worktree add feature-x -y', $this->dockerMockEnv() );
+
+		chdir( dirname( $pluginsDir ) . '/test-plugin-feature-x' );
+		try {
+			$output = $this->slicExec( 'stack info', $this->dockerMockEnv() );
+		} finally {
+			chdir( dirname( $pluginsDir ) );
+			$this->slicExec( 'worktree remove feature-x -y', $this->dockerMockEnv() );
+		}
+
+		$this->assertStringNotContainsString(
+			'Could not determine container path',
+			$output,
+			'A worktree stack should inherit the directories of its base stack.'
+		);
+	}
+
 	public function test_worktree_add_accepts_the_yes_flag_before_the_branch(): void {
 		$this->setUpGitPluginStack();
 
