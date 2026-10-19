@@ -207,16 +207,7 @@ $worktree_state = [
     'status' => 'created',
 ];
 
-if (!slic_stacks_register($worktree_stack_id, $worktree_state)) {
-    echo "Error: Failed to register stack.\n";
-    echo "The git worktree was created but slic stack registration failed.\n";
-    echo "You may need to manually remove the worktree:\n";
-    echo "  cd $target_full_path\n";
-    echo "  git worktree remove ../$worktree_dir\n";
-    exit(1);
-}
-
-// Write stack state file
+// Write the stack state file before registering, so the registry never points at a missing state file.
 $state_env_vars = [
     'SLIC_HERE_DIR' => $base_stack_id,
     'SLIC_WP_DIR' => getenv('SLIC_WP_DIR'),
@@ -226,6 +217,16 @@ $state_env_vars = [
 ];
 
 write_env_file($worktree_state['state_file'], $state_env_vars);
+
+if (!slic_stacks_register($worktree_stack_id, $worktree_state)) {
+    unlink($worktree_state['state_file']);
+    echo "Error: Failed to register stack.\n";
+    echo "The git worktree was created but slic stack registration failed.\n";
+    echo "You may need to manually remove the worktree:\n";
+    echo "  cd $target_full_path\n";
+    echo "  git worktree remove ../$worktree_dir\n";
+    exit(1);
+}
 
 if ($should_create_worktree) {
     echo "Worktree stack registered successfully!\n";
