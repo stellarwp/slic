@@ -80,6 +80,18 @@ class PHPVersionTest extends BaseTestCase {
 		);
 	}
 
+	public function test_staged_version_is_applied_only_once(): void {
+		$this->setUpPluginsDir();
+		$this->slicExec( 'php-version set 8.2 --skip-rebuild' );
+		$this->slicExec( 'use test-plugin', $this->dockerMockEnv() );
+
+		$this->assertStringNotContainsString(
+			'using staged version',
+			$this->slicExec( 'use test-plugin', $this->dockerMockEnv() ),
+			'A staged version should apply to the next slic use only.'
+		);
+	}
+
 	public function test_auto_detection_from_composer_json(): void {
 		$pluginsDir = $this->setUpPluginsDir();
 

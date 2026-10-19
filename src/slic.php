@@ -596,13 +596,14 @@ function slic_set_php_version( $version, $require_confirm = false, $skip_rebuild
 }
 
 /**
- * Clears the SLIC_PHP_VERSION_STAGED flag from .env.slic.run to signal to no longer switch
+ * Clears the SLIC_PHP_VERSION_STAGED flag from the run file it was staged in to signal to no longer switch
  * PHP versions on the next `slic use <project>`.
  *
  * @return void
  */
 function slic_clear_staged_php_flag() {
-	$run_settings_file = root( '/.env.slic.run' );
+	// The flag is staged in the current stack's state file, or in .env.slic.run when there is no stack.
+	$run_settings_file = slic_toggle_run_file();
 
 	write_env_file( $run_settings_file, [ 'SLIC_PHP_VERSION_STAGED' => false ], true );
 }
