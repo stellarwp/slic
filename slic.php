@@ -119,8 +119,21 @@ if ( null !== $SLIC_STACK_OVERRIDE ) {
 	// Store the original path for error messages
 	$original_stack_path = $SLIC_STACK_OVERRIDE;
 
-	// Check if this is a stack ID with @ format (worktree)
-	$is_stack_id = strpos( $SLIC_STACK_OVERRIDE, '@' ) !== false;
+	// Expand relative paths and handle tilde (~) expansion
+	if ( '~' === $SLIC_STACK_OVERRIDE[0] ) {
+		$home = getenv( 'HOME' );
+		if ( false !== $home ) {
+			$SLIC_STACK_OVERRIDE = $home . substr( $SLIC_STACK_OVERRIDE, 1 );
+		}
+	}
+
+	// Convert to absolute path if relative
+	if ( '/' !== $SLIC_STACK_OVERRIDE[0] ) {
+		$SLIC_STACK_OVERRIDE = getcwd() . '/' . $SLIC_STACK_OVERRIDE;
+	}
+
+	// Check if this is a stack ID with @ format (worktree); an existing path whose name contains @ is a regular path.
+	$is_stack_id = strpos( $SLIC_STACK_OVERRIDE, '@' ) !== false && false === realpath( $SLIC_STACK_OVERRIDE );
 
 	if ( $is_stack_id ) {
 		// Stack ID format: /base/path@worktree-dir
@@ -159,20 +172,7 @@ if ( null !== $SLIC_STACK_OVERRIDE ) {
 			exit( 1 );
 		}
 	} else {
-		// Regular filesystem path - validate as before
-		// Expand relative paths and handle tilde (~) expansion
-		if ( '~' === $SLIC_STACK_OVERRIDE[0] ) {
-			$home = getenv( 'HOME' );
-			if ( false !== $home ) {
-				$SLIC_STACK_OVERRIDE = $home . substr( $SLIC_STACK_OVERRIDE, 1 );
-			}
-		}
-
-		// Convert to absolute path if relative
-		if ( '/' !== $SLIC_STACK_OVERRIDE[0] ) {
-			$SLIC_STACK_OVERRIDE = getcwd() . '/' . $SLIC_STACK_OVERRIDE;
-		}
-
+		// Regular filesystem path
 		// Normalize the path (remove .., ., etc.)
 		$SLIC_STACK_OVERRIDE = realpath( $SLIC_STACK_OVERRIDE );
 
