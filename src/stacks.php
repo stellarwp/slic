@@ -368,8 +368,10 @@ function slic_stacks_resolve_from_path($path) {
 		if (isset($stacks[$path])) {
 			return $path;
 		}
-		// Not a registered stack ID, treat as invalid
-		return null;
+		// Not a registered stack ID and not an existing path whose name contains @, treat as invalid
+		if (!file_exists($path)) {
+			return null;
+		}
 	}
 
 	// Expand ~ to home directory
@@ -767,7 +769,17 @@ function slic_stacks_ensure_ports($stack_id) {
  * @return bool True if worktree.
  */
 function slic_stacks_is_worktree($stack_id) {
-	return strpos($stack_id, '@') !== false;
+	if (strpos($stack_id, '@') === false) {
+		return false;
+	}
+
+	// A base stack's own path can contain @, so trust the registry for registered stacks.
+	$stacks = slic_stacks_list();
+	if (isset($stacks[$stack_id])) {
+		return !empty($stacks[$stack_id]['is_worktree']);
+	}
+
+	return !is_dir($stack_id);
 }
 
 /**
