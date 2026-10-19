@@ -20,6 +20,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Shell completion support for bash, zsh, and fish shells with dynamic completions for commands, targets, git branches, stack paths, and options
 - CLI PHPUnit test suite in the `tests/Cli` directory
 
+### Fixed
+- The `interactive`, `build-prompt`, `build-subdir` and `composer-cache` commands now change the current stack's settings. Before, they wrote a global file that the stack's own settings overrode, or that leaked into every other stack.
+
 # [2.4.2] - 2026-09-08
 - Fixed - The PHP 7.3, 7.4 and 8.0 images install system packages from the Debian archive, so they can be built and `slic playwright install` works again now that Debian 11 has left LTS.
 

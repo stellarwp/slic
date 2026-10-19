@@ -1488,7 +1488,7 @@ function composer_cache_status() {
  * @param callable $args The closure that will produce the current interactive request arguments.
  */
 function slic_handle_composer_cache( callable $args ) {
-	$run_settings_file = root( '/.env.slic.run' );
+	$run_settings_file = slic_toggle_run_file();
 	$toggle            = $args( 'toggle', 'status' );
 
 	if ( 'status' === $toggle ) {
@@ -1548,7 +1548,7 @@ function build_prompt_status() {
  * @param callable $args The closure that will produce the current interactive request arguments.
  */
 function slic_handle_build_prompt( callable $args ) {
-	$run_settings_file = root( '/.env.slic.run' );
+	$run_settings_file = slic_toggle_run_file();
 	$toggle            = $args( 'toggle', 'on' );
 
 	if ( 'status' === $toggle ) {
@@ -1587,7 +1587,7 @@ function is_interactive() {
  * @param callable $args The closure that will produce the current interactive request arguments.
  */
 function slic_handle_interactive( callable $args ) {
-	$run_settings_file = root( '/.env.slic.run' );
+	$run_settings_file = slic_toggle_run_file();
 	$toggle            = $args( 'toggle', 'on' );
 
 	if ( 'status' === $toggle ) {
@@ -2022,7 +2022,7 @@ function maybe_prompt_for_stack_update() {
  * @param callable $args The closure that will produce the current subdirectories build arguments.
  */
 function slic_handle_build_subdir( callable $args ) {
-	$run_settings_file = root( '/.env.slic.run' );
+	$run_settings_file = slic_toggle_run_file();
 	$toggle            = $args( 'toggle', 'on' );
 
 	if ( 'status' === $toggle ) {
