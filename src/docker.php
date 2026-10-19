@@ -58,7 +58,9 @@ function docker_compose( array $options = [], $stack_id = null ) {
 
 	$dc_bin = docker_compose_bin();
 
-	$stack_id = slic_current_stack();
+	if ( null === $stack_id ) {
+		$stack_id = slic_current_stack();
+	}
 
 	return static function ( array $command = [] ) use ( $dc_bin, $options, $host_ip, $is_ci, $stack_id ) {
 		$command = $dc_bin . ' ' . implode( ' ', $options ) . ' ' . implode( ' ', $command );
