@@ -28,6 +28,16 @@ class CompletionTest extends BaseTestCase {
 		);
 	}
 
+	public function test_use_completes_the_plugins_of_the_current_stack(): void {
+		$this->setUpPluginsDir( 'test-plugin' );
+
+		$this->assertContains(
+			'test-plugin',
+			explode( "\n", $this->complete( [ 'slic', 'use', '' ], 2 ) ),
+			'The use command should complete the plugins of the current stack.'
+		);
+	}
+
 	public function test_bash_completes_without_bash_completion_loaded(): void {
 		$this->assertContains(
 			'stack',

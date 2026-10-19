@@ -101,9 +101,15 @@ class UseCompleter {
 	 * @return array List of target names and subdirectories in "plugin/subdir" format.
 	 */
 	private function scan_targets(): array {
-		// Load slic functions
+		// Load slic functions and environment, as the slic command does, so targets come from the current stack.
 		$slic_root = dirname( dirname( dirname( __DIR__ ) ) );
-		require_once $slic_root . '/src/slic.php';
+		require_once $slic_root . '/src/utils.php';
+		require_once $slic_root . '/src/includes.php';
+		require_once $slic_root . '/version.php';
+		// Environment setup can print notices, such as the legacy migration message, that must not become completions.
+		ob_start();
+		\StellarWP\Slic\setup_slic_env( $slic_root );
+		ob_end_clean();
 
 		// Get base targets (plugins, themes, site)
 		$base_targets = \StellarWP\Slic\get_valid_targets( true );

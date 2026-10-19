@@ -21,26 +21,7 @@ if ( extension_loaded( 'uopz' ) && ! ini_get( 'uopz.exit' ) ) {
 }
 
 // Requires the function files we might need.
-require_once __DIR__ . '/includes/polyfills.php';
-require_once __DIR__ . '/src/classes/Cache.php';
-require_once __DIR__ . '/src/cache.php';
-require_once __DIR__ . '/src/scaffold.php';
-require_once __DIR__ . '/src/slic.php';
-require_once __DIR__ . '/src/docker.php';
-require_once __DIR__ . '/src/process-argv.php';
-require_once __DIR__ . '/src/docker-argv.php';
-require_once __DIR__ . '/src/playwright.php';
-require_once __DIR__ . '/src/notify.php';
-require_once __DIR__ . '/src/plugins.php';
-require_once __DIR__ . '/src/themes.php';
-require_once __DIR__ . '/src/scripts.php';
-require_once __DIR__ . '/src/shell.php';
-require_once __DIR__ . '/src/wordpress.php';
-require_once __DIR__ . '/src/services.php';
-require_once __DIR__ . '/src/database.php';
-require_once __DIR__ . '/src/project.php';
-require_once __DIR__ . '/src/env.php';
-require_once __DIR__ . '/src/commands.php';
+require_once __DIR__ . '/src/includes.php';
 
 use StellarWP\Slic\Cache; use function StellarWP\Slic\args;
 use function StellarWP\Slic\cli_header;
