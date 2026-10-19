@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<ruleset name="slic PHP compatibility">
+	<description>Checks slic against every PHP version it declares support for.</description>
+
+	<file>slic.php</file>
+	<file>src</file>
+	<file>tests</file>
+
+	<exclude-pattern>*/vendor/*</exclude-pattern>
+	<exclude-pattern>*/_wordpress/*</exclude-pattern>
+	<exclude-pattern>*/_plugins/*</exclude-pattern>
+
+	<arg name="extensions" value="php"/>
+	<arg name="parallel" value="8"/>
+	<arg value="sp"/>
+
+	<!-- Lower bound matches the "php" constraint in composer.json; raise the upper bound when a new PHP version ships. -->
+	<config name="testVersion" value="7.4-8.5"/>
+
+	<rule ref="PHPCompatibility"/>
+</ruleset>
