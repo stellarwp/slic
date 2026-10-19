@@ -8,11 +8,17 @@ class WorktreeTest extends BaseTestCase {
 		$this->setUpGitPluginStack();
 		preg_match( '/XDebug Port: (\d+)/', $this->slicExec( 'worktree add feature-x -y', $this->dockerMockEnv() ), $matches );
 		$this->assertNotEmpty( $matches[1] ?? null, 'Adding a worktree should report its XDebug port.' );
+		// Debug output prints the docker compose commands with their environment; the setting is global, so restore it.
 		$this->slicExec( 'debug on' );
+		try {
+			$output = $this->slicExec( 'worktree remove feature-x -y', $this->dockerMockEnv() );
+		} finally {
+			$this->slicExec( 'debug off' );
+		}
 
 		$this->assertMatchesRegularExpression(
 			'/Executing command: .*XDP=' . $matches[1] . ' .* stop/',
-			$this->slicExec( 'worktree remove feature-x -y', $this->dockerMockEnv() ),
+			$output,
 			'Stopping the worktree stack should use the worktree XDebug port.'
 		);
 	}
