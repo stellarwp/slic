@@ -27,11 +27,14 @@ _slic_completions() {
         return 0
     fi
 
-    # Resolve symlinks to get the actual slic directory
-    if [[ -L "$slic_cmd" ]]; then
-        # Try realpath first (more portable), then readlink -f (GNU), then readlink (basic)
-        slic_cmd=$(realpath "$slic_cmd" 2>/dev/null || readlink -f "$slic_cmd" 2>/dev/null || readlink "$slic_cmd" 2>/dev/null)
-    fi
+    # Resolve symlinks to get the actual slic directory; a relative link target is relative to the link's directory.
+    # Plain readlink works everywhere, unlike realpath or readlink -f.
+    local slic_link
+    while [[ -L "$slic_cmd" ]]; do
+        slic_link=$(readlink "$slic_cmd")
+        [[ "$slic_link" == /* ]] || slic_link="$(dirname "$slic_cmd")/$slic_link"
+        slic_cmd=$slic_link
+    done
 
     local slic_dir
     slic_dir=$(dirname "$slic_cmd")

@@ -56,6 +56,33 @@ class CompletionTest extends BaseTestCase {
 		);
 	}
 
+	public function test_bash_follows_a_relative_slic_symlink_with_only_a_basic_readlink(): void {
+		$this->assertContains(
+			'stack',
+			$this->completeInBash( [ 'slic', 'st' ], 1, $this->createBinDirWithRelativeLinkAndBasicReadlink() ),
+			'Bash should find slic through a relative symlink without realpath or readlink -f.'
+		);
+	}
+
+	public function test_installed_bash_config_follows_a_relative_slic_symlink_with_only_a_basic_readlink(): void {
+		$home = sys_get_temp_dir() . '/slic-test-home-' . uniqid( '', true );
+		mkdir( $home );
+		touch( $home . '/.bashrc' );
+		// The installer asks for confirmation; answer it so the test never waits on the terminal.
+		shell_exec( "printf 'y\\n' | HOME=" . escapeshellarg( $home ) . ' NO_COLOR=1 php '
+		            . escapeshellarg( dirname( __DIR__, 2 ) . '/slic.php' ) . ' completion install bash 2>&1' );
+
+		$this->assertStringContainsString(
+			'_slic_completions',
+			$this->runInShell(
+				'bash',
+				'source ' . escapeshellarg( $home . '/.bashrc' ) . '; declare -F _slic_completions',
+				$this->createBinDirWithRelativeLinkAndBasicReadlink()
+			),
+			'The installed bash config should load the completions through a relative slic symlink.'
+		);
+	}
+
 	public function test_zsh_completes_the_word_under_the_cursor(): void {
 		if ( '' === trim( (string) shell_exec( 'command -v zsh' ) ) ) {
 			$this->markTestSkipped( 'zsh is not installed.' );
@@ -71,12 +98,13 @@ class CompletionTest extends BaseTestCase {
 	/**
 	 * Runs the bash completion function for a command line and returns its completions.
 	 *
-	 * @param string[] $words The command line words.
-	 * @param int      $cword The index of the word being completed.
+	 * @param string[]    $words  The command line words.
+	 * @param int         $cword  The index of the word being completed.
+	 * @param string|null $binDir The directory that provides `slic` on the PATH, or `null` for the default one.
 	 *
 	 * @return string[] The completions, one per element.
 	 */
-	private function completeInBash( array $words, int $cword ): array {
+	private function completeInBash( array $words, int $cword, ?string $binDir = null ): array {
 		$script = 'source ' . escapeshellarg( dirname( __DIR__, 2 ) . '/completions/bash/slic.bash' )
 		          . '; COMP_WORDS=(' . implode( ' ', array_map( 'escapeshellarg', $words ) ) . ')'
 		          . '; COMP_CWORD=' . $cword
@@ -84,21 +112,45 @@ class CompletionTest extends BaseTestCase {
 		          . '; COMP_POINT=${#COMP_LINE}'
 		          . '; _slic_completions; printf "%s\n" "${COMPREPLY[@]}"';
 
-		return array_values( array_filter( explode( "\n", $this->runInShell( 'bash', $script ) ) ) );
+		return array_values( array_filter( explode( "\n", $this->runInShell( 'bash', $script, $binDir ) ) ) );
+	}
+
+	/**
+	 * Creates a PATH directory where `slic` is a relative symlink, as on a system without `realpath` or `readlink -f`.
+	 *
+	 * @return string The absolute path to the directory.
+	 */
+	private function createBinDirWithRelativeLinkAndBasicReadlink(): string {
+		$binDir = sys_get_temp_dir() . '/slic-completion-bin-' . uniqid( '', true );
+		mkdir( $binDir . '/install', 0777, true );
+		symlink( dirname( __DIR__, 2 ) . '/slic', $binDir . '/install/slic' );
+		symlink( 'install/slic', $binDir . '/slic' );
+
+		// Stand-ins for a system that has neither `realpath` nor `readlink -f`, only the basic `readlink`.
+		$readlink = trim( (string) shell_exec( 'command -v readlink' ) );
+		file_put_contents( $binDir . '/realpath', "#!/bin/sh\nexit 1\n" );
+		file_put_contents( $binDir . '/readlink', "#!/bin/sh\n[ \"\$1\" = -f ] && exit 1\nexec {$readlink} \"\$@\"\n" );
+		chmod( $binDir . '/realpath', 0755 );
+		chmod( $binDir . '/readlink', 0755 );
+
+		return $binDir;
 	}
 
 	/**
 	 * Runs a script in a shell where `slic` resolves to this checkout, as it does once slic is installed.
 	 *
-	 * @param string $shell  The shell binary, e.g. `bash`.
-	 * @param string $script The script to run.
+	 * @param string      $shell  The shell binary, e.g. `bash`.
+	 * @param string      $script The script to run.
+	 * @param string|null $binDir The directory that provides `slic` on the PATH, or `null` to link it directly.
 	 *
 	 * @return string The script output.
 	 */
-	private function runInShell( string $shell, string $script ): string {
-		$binDir = sys_get_temp_dir() . '/slic-completion-bin-' . uniqid( '', true );
-		mkdir( $binDir );
-		symlink( dirname( __DIR__, 2 ) . '/slic', $binDir . '/slic' );
+	private function runInShell( string $shell, string $script, ?string $binDir = null ): string {
+		if ( null === $binDir ) {
+			$binDir = sys_get_temp_dir() . '/slic-completion-bin-' . uniqid( '', true );
+			mkdir( $binDir );
+			symlink( dirname( __DIR__, 2 ) . '/slic', $binDir . '/slic' );
+		}
 
 		$command = 'PATH=' . escapeshellarg( $binDir . ':' . getenv( 'PATH' ) )
 		           . ' SLIC_CACHE_DIR=' . escapeshellarg( $this->cacheDir )

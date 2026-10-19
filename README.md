@@ -940,11 +940,13 @@ If you prefer manual installation or the automatic installation doesn't work:
 # slic completions
 if command -v slic &> /dev/null; then
     _slic_path=$(command -v slic)
-    if [[ -L "$_slic_path" ]]; then
-        _slic_path=$(realpath "$_slic_path" 2>/dev/null || readlink -f "$_slic_path" 2>/dev/null || readlink "$_slic_path")
-    fi
+    while [[ -L "$_slic_path" ]]; do
+        _slic_link=$(readlink "$_slic_path")
+        [[ "$_slic_link" == /* ]] || _slic_link="$(dirname "$_slic_path")/$_slic_link"
+        _slic_path=$_slic_link
+    done
     source "$(dirname "$_slic_path")/completions/bash/slic.bash"
-    unset _slic_path
+    unset _slic_path _slic_link
 fi
 ```
 
@@ -954,12 +956,14 @@ fi
 # slic completions
 if command -v slic &> /dev/null; then
     _slic_path=$(command -v slic)
-    if [[ -L "$_slic_path" ]]; then
-        _slic_path=$(realpath "$_slic_path" 2>/dev/null || readlink -f "$_slic_path" 2>/dev/null || readlink "$_slic_path")
-    fi
+    while [[ -L "$_slic_path" ]]; do
+        _slic_link=$(readlink "$_slic_path")
+        [[ "$_slic_link" == /* ]] || _slic_link="$(dirname "$_slic_path")/$_slic_link"
+        _slic_path=$_slic_link
+    done
     fpath=("$(dirname "$_slic_path")/completions/zsh" $fpath)
     autoload -Uz compinit && compinit
-    unset _slic_path
+    unset _slic_path _slic_link
 fi
 ```
 
