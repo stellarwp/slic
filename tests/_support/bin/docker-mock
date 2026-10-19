@@ -1,3 +1,7 @@
 #!/bin/bash
 # A mock docker binary that does nothing and exits successfully.
+# When SLIC_DOCKER_MOCK_LOG is set, each call's arguments are appended to that file.
+if [ -n "${SLIC_DOCKER_MOCK_LOG:-}" ]; then
+	echo "$*" >> "$SLIC_DOCKER_MOCK_LOG"
+fi
 exit 0
