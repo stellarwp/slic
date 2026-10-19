@@ -102,9 +102,9 @@ function xdebug_status( $stack_id = null ) {
 	echo 'Remote port: ' . light_cyan( $remote_port ) . PHP_EOL;
 
 	echo 'IDE Key (server name): ' . light_cyan( $ide_key ) . PHP_EOL;
-	echo colorize( PHP_EOL . "You can override these values in the <light_cyan>.env.slic.local" .
-	               "</light_cyan> file or by using the " .
-	               "<light_cyan>'xdebug (host|key|port) <value>'</light_cyan> command." ) . PHP_EOL;
+	echo colorize( PHP_EOL . "You can override these values for this stack with the " .
+	               "<light_cyan>'xdebug (host|key|port) <value>'</light_cyan> command; the host can also be set " .
+	               "in the <light_cyan>.env.slic.local</light_cyan> file." ) . PHP_EOL;
 
 
 	echo PHP_EOL . 'Set up, in your IDE, a server with the following parameters to debug PHP requests:' . PHP_EOL;
@@ -418,9 +418,9 @@ function xdebug_get_env_vars($stack_id = null):array{
 
 	$stack = slic_stacks_get( $stack_id );
 
-	// Always set XDebug values from stack registry to ensure stack-specific values are used
-	// These will override default values from .env.slic, but can still be overridden by
-	// .env.slic.local files loaded later
+	// Always set XDebug values from the stack so each stack gets its own port and key.
+	// These override the values in .env.slic and .env.slic.local files; only the
+	// `xdebug port|key` commands, which write the stack state file, override them.
 	if ( null == $stack ) {
 		return [];
 	}
