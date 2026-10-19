@@ -40,14 +40,35 @@ class WorktreeTest extends BaseTestCase {
 		);
 	}
 
+	public function test_worktree_add_rejects_a_detached_worktree_in_the_branch_directory(): void {
+		$pluginDir = $this->setUpGitPluginStack();
+		shell_exec( 'git -C ' . escapeshellarg( $pluginDir ) . ' worktree add -q --detach ../test-plugin-feature-x' );
+
+		try {
+			$output = $this->slicExec( 'worktree add feature-x -y', $this->dockerMockEnv() );
+		} finally {
+			$this->slicExec( 'worktree remove feature-x -y', $this->dockerMockEnv() );
+		}
+
+		$this->assertStringContainsString(
+			'Error: Directory exists as a git worktree but for a different branch.',
+			$output,
+			'A detached worktree should not be registered as the requested branch.'
+		);
+	}
+
 	/**
 	 * Sets up a stack whose `test-plugin` target is a git repository with one commit, and selects it.
+	 *
+	 * @return string The absolute path to the plugin repository.
 	 */
-	private function setUpGitPluginStack(): void {
+	private function setUpGitPluginStack(): string {
 		$pluginDir = $this->setUpPluginsDir() . '/test-plugin';
 		// Fixture commits must not depend on the host git identity or commit signing settings.
 		$git = 'git -C ' . escapeshellarg( $pluginDir ) . ' -c user.name=slic -c user.email=slic@example.com -c commit.gpgsign=false';
 		shell_exec( "{$git} init -q && {$git} add -A && {$git} commit -q -m init" );
 		$this->slicExec( 'use test-plugin', $this->dockerMockEnv() );
+
+		return $pluginDir;
 	}
 }

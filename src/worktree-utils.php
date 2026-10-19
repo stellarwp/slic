@@ -229,13 +229,13 @@ function slic_worktree_is_existing( $target_path, $worktree_path, $expected_bran
 
 		// Check if paths match
 		if ( $wt_real === $worktree_real ) {
-			// If expected branch is specified, verify it matches
-			if ( $expected_branch !== null && ! empty( $wt['branch'] ) ) {
-				if ( $wt['branch'] !== $expected_branch ) {
+			// If expected branch is specified, verify it matches; a detached worktree has no branch and never matches
+			if ( $expected_branch !== null ) {
+				if ( ( $wt['branch'] ?? null ) !== $expected_branch ) {
 					// Worktree exists but for wrong branch
 					return [
 						'path'   => $wt['path'],
-						'branch' => $wt['branch'],
+						'branch' => $wt['branch'] ?? null,
 						'head'   => $wt['head'] ?? null,
 						'error'  => 'branch_mismatch',
 					];

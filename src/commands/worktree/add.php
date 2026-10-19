@@ -111,11 +111,13 @@ if (file_exists($worktree_full_path)) {
     if (!empty($existing_worktree['error']) && $existing_worktree['error'] === 'branch_mismatch') {
         echo "Error: Directory exists as a git worktree but for a different branch.\n";
         echo "  Expected branch: $branch\n";
-        echo "  Actual branch: {$existing_worktree['branch']}\n";
+        echo "  Actual branch: " . ($existing_worktree['branch'] ?? '(detached HEAD)') . "\n";
         echo "  Directory: $worktree_full_path\n";
         echo "\nOptions:\n";
-        echo "  1. Use the existing branch with: slic worktree add {$existing_worktree['branch']}\n";
-        echo "  2. Remove the worktree with: cd $target_full_path && git worktree remove " . escapeshellarg(basename($worktree_full_path)) . "\n";
+        if ($existing_worktree['branch'] !== null) {
+            echo "  - Use the existing branch with: slic worktree add {$existing_worktree['branch']}\n";
+        }
+        echo "  - Remove the worktree with: cd $target_full_path && git worktree remove " . escapeshellarg(basename($worktree_full_path)) . "\n";
         exit(1);
     }
 
