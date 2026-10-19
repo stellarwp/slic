@@ -338,24 +338,27 @@ function setup_slic_env( $root_dir, $reset = false, $stack_id = null ) {
 	// Load the current session configuration file.
 	// If a stack_id is provided, load that stack's state file.
 	// Otherwise, try to determine the current stack or fall back to .env.slic.run.
+	if ( ! function_exists( 'slic_current_stack' ) ) {
+		require_once __DIR__ . '/stacks.php';
+	}
+
 	if ( ! $stack_id ) {
-		if ( ! function_exists( 'slic_current_stack' ) ) {
-			require_once __DIR__ . '/stacks.php';
-		}
-
 		$stack_id = slic_current_stack();
+	}
 
-		if ( $stack_id ) {
-			/*
-			 * Set stack-specific configuration.
-			 * This needs to happen after loading the run file but before loading target overrides
-			 * so that .env.slic.local in the target can still override if needed
-			 */
-			$stack_run_file = get_stack_env_file( $stack_id );
+	if ( $stack_id ) {
+		/*
+		 * Set stack-specific configuration.
+		 * This needs to happen after loading the run file but before loading target overrides
+		 * so that .env.slic.local in the target can still override if needed
+		 */
+		$stack_run_file = get_stack_env_file( $stack_id );
+		// A registered stack whose state file is missing falls back to the global configuration instead of exiting.
+		if ( is_file( $stack_run_file ) ) {
 			load_env_file( $stack_run_file );
-			// Load XDebug configuration for the stack.
-			xdebug_setup_env_vars( $stack_id );
 		}
+		// Load XDebug configuration for the stack.
+		xdebug_setup_env_vars( $stack_id );
 	}
 
 	// Read the staged PHP version before a project's .env.slic.local can overwrite it.
