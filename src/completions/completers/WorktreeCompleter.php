@@ -105,8 +105,11 @@ class WorktreeCompleter {
 	 * @return array List of branch names.
 	 */
 	private function get_branches(): array {
+		// Branches come from the repository in the working directory, so cache them per directory.
+		$cache_key = self::CACHE_KEY . '-' . md5( (string) getcwd() );
+
 		// Try cache first
-		$cached = $this->cache->get( self::CACHE_KEY );
+		$cached = $this->cache->get( $cache_key );
 		if ( null !== $cached && is_array( $cached ) ) {
 			return $cached;
 		}
@@ -115,7 +118,7 @@ class WorktreeCompleter {
 		$branches = $this->scan_branches();
 
 		// Cache the results
-		$this->cache->set( self::CACHE_KEY, $branches, self::CACHE_TTL );
+		$this->cache->set( $cache_key, $branches, self::CACHE_TTL );
 
 		return $branches;
 	}

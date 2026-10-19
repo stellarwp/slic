@@ -73,8 +73,11 @@ class UseCompleter {
 	 * @return array List of target names and subdirectories.
 	 */
 	private function get_targets(): array {
+		// Targets come from the stack the working directory resolves to, so cache them per directory.
+		$cache_key = self::CACHE_KEY . '-' . md5( (string) getcwd() );
+
 		// Try cache first
-		$cached = $this->cache->get( self::CACHE_KEY );
+		$cached = $this->cache->get( $cache_key );
 		if ( null !== $cached && is_array( $cached ) ) {
 			return $cached;
 		}
@@ -83,7 +86,7 @@ class UseCompleter {
 		$targets = $this->scan_targets();
 
 		// Cache the results
-		$this->cache->set( self::CACHE_KEY, $targets, self::CACHE_TTL );
+		$this->cache->set( $cache_key, $targets, self::CACHE_TTL );
 
 		return $targets;
 	}
