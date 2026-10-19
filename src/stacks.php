@@ -101,10 +101,10 @@ function slic_stacks_unregister($stack_id, $cascade = false) {
 			if (!empty($worktrees)) {
 				if (!$cascade) {
 					echo "Warning: Stack has " . count($worktrees) . " worktree(s). ";
-					echo "Use --cascade to remove them.\n";
+					echo "Remove them from this stack first:\n";
 
 					foreach ($worktrees as $wt_id => $wt_state) {
-						echo "  - {$wt_state['worktree_dir']}\n";
+						echo "  slic worktree remove " . ($wt_state['worktree_branch'] ?? $wt_state['worktree_dir']) . "\n";
 					}
 
 					return false;

@@ -57,6 +57,23 @@ class WorktreeTest extends BaseTestCase {
 		);
 	}
 
+	public function test_stopping_a_base_stack_with_worktrees_says_how_to_remove_them(): void {
+		$baseStack = realpath( dirname( $this->setUpGitPluginStack() ) );
+		$this->slicExec( 'worktree add feature-x -y', $this->dockerMockEnv() );
+
+		try {
+			$output = $this->slicExec( 'stack stop ' . escapeshellarg( $baseStack ), $this->dockerMockEnv() );
+		} finally {
+			$this->slicExec( 'worktree remove feature-x -y', $this->dockerMockEnv() );
+		}
+
+		$this->assertStringContainsString(
+			'slic worktree remove feature-x',
+			$output,
+			'The warning should name the command that removes each worktree.'
+		);
+	}
+
 	/**
 	 * Sets up a stack whose `test-plugin` target is a git repository with one commit, and selects it.
 	 *
