@@ -124,9 +124,9 @@ function slic_worktree_create_dir_name( $target, $branch ) {
 		return false;
 	}
 
-	// Convert slashes in branch name to dashes for filesystem safety
-	// e.g., "feature/new-thing" -> "feature-new-thing"
-	$branch_slug = str_replace( '/', '-', $branch );
+	// Convert every character the directory name whitelist rejects to a dash for filesystem safety
+	// e.g., "feature/new-thing" -> "feature-new-thing", "release/3.0.0" -> "release-3-0-0"
+	$branch_slug = preg_replace( '/[^a-zA-Z0-9_-]/', '-', $branch );
 
 	// Combine target and branch slug
 	$dir_name = $sanitized_target . '-' . $branch_slug;

@@ -23,6 +23,23 @@ class WorktreeTest extends BaseTestCase {
 		);
 	}
 
+	public function test_worktree_add_accepts_a_branch_name_with_dots(): void {
+		$this->setUpGitPluginStack();
+
+		try {
+			$output = $this->slicExec( 'worktree add release/3.0.0 -y', $this->dockerMockEnv() );
+		} finally {
+			// A base stack with worktrees is not unregistered on stop, so remove the worktree stack first.
+			$this->slicExec( 'worktree remove release/3.0.0 -y', $this->dockerMockEnv() );
+		}
+
+		$this->assertStringContainsString(
+			'Worktree stack registered successfully!',
+			$output,
+			'A valid git branch name with dots should get a worktree.'
+		);
+	}
+
 	/**
 	 * Sets up a stack whose `test-plugin` target is a git repository with one commit, and selects it.
 	 */
