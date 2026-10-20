@@ -34,7 +34,7 @@ if ( '--pretty' === end( $command ) ) {
 	$command = 'npm ' . implode( ' ', $command );
 	$command = get_script_command( build_npm_script( $command ) );
 
-	$docker_command = sprintf( 'docker exec --user "%d:%d" --workdir %s %s ' . $command,
+	$docker_command = sprintf( docker_bin() . ' exec --user "%d:%d" --workdir %s %s ' . $command,
 		getenv( 'SLIC_UID' ),
 		getenv( 'SLIC_GID' ),
 		escapeshellarg( get_project_container_path() ),
@@ -56,7 +56,7 @@ if ( '--pretty' === end( $command ) ) {
 
 		echo light_cyan( "Temporarily using " . slic_target() . PHP_EOL );
 
-		$docker_command = sprintf( 'docker exec --user "%d:%d" --workdir %s %s ' . $command,
+		$docker_command = sprintf( docker_bin() . ' exec --user "%d:%d" --workdir %s %s ' . $command,
 			getenv( 'SLIC_UID' ),
 			getenv( 'SLIC_GID' ),
 			escapeshellarg( get_project_container_path() ),

@@ -30,7 +30,7 @@ if ( $is_help ) {
 
 $toggle = args( [ 'toggle' ], $args( '...' ), 0 )( 'toggle', 'status' );
 if ( 'status' === $toggle ) {
-	$value = getenv( 'XDE' );
+	$value = getenv( 'CLI_VERBOSITY' );
 	echo 'Debug status is: ' . ( $value ? light_cyan( 'on' ) : magenta( 'off' ) );
 	return;
 }

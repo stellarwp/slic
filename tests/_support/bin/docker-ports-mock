@@ -1,0 +1,25 @@
+#!/bin/bash
+# A mock docker binary for a stack whose containers are running.
+# SLIC_DOCKER_MOCK_PORTS lists the running services and their published host ports, e.g. "wordpress=8080,db=3307".
+# `ps` prints one container ID per listed service, optionally filtered by service label; `port` prints that service's
+# host port. Every other command does nothing and exits successfully.
+case "$1" in
+	ps)
+		service=$(printf '%s\n' "$@" | sed -n 's/^label=com.docker.compose.service=//p')
+		for pair in ${SLIC_DOCKER_MOCK_PORTS//,/ }; do
+			name=${pair%%=*}
+			if [ -z "$service" ] || [ "$service" = "$name" ]; then
+				echo "${name}-container"
+			fi
+		done
+		;;
+	port)
+		name=${2%-container}
+		for pair in ${SLIC_DOCKER_MOCK_PORTS//,/ }; do
+			if [ "${pair%%=*}" = "$name" ]; then
+				echo "0.0.0.0:${pair#*=}"
+			fi
+		done
+		;;
+esac
+exit 0
