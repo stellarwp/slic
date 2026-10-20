@@ -188,5 +188,28 @@ function ensure_service_running( string $service ): int {
 		return 0;
 	}
 	// Wait for the service to be up|healthy, detached mode is implied.
-	return slic_realtime()( [ 'up', '--wait', $service ] );
+	$status = slic_realtime()( [ 'up', '--wait', $service ] );
+
+	if ( $status === 0 ) {
+		restore_content_dirs_owner();
+	}
+
+	return $status;
+}
+
+/**
+ * Gives the mounted plugins and themes directories back to the stack's user when WordPress runs as container root.
+ *
+ * Running as root, WordPress's entrypoint copies core into an empty `_wordpress` with `tar --owner www-data` and
+ * without `--no-overwrite-dir`, so the mount points end up owned by `www-data`. Under rootless Docker, container root
+ * is the user running slic. Any service can start `wordpress` as a dependency; the exec fails harmlessly when it
+ * isn't running.
+ */
+function restore_content_dirs_owner(): void {
+	if ( getenv( 'SLIC_UID' ) !== '0' ) {
+		return;
+	}
+
+	$content_dir = getenv( 'SLIC_WP_CONTENT_CONTAINER_DIR' ) ?: '/var/www/html/wp-content';
+	slic_process()( [ 'exec', '-T', 'wordpress', 'chown', '0:0', "$content_dir/plugins", "$content_dir/themes" ] );
 }
