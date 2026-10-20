@@ -211,5 +211,5 @@ function restore_content_dirs_owner(): void {
 	}
 
 	$content_dir = getenv( 'SLIC_WP_CONTENT_CONTAINER_DIR' ) ?: '/var/www/html/wp-content';
-	slic_process()( [ 'exec', '-T', 'wordpress', 'chown', '0:0', "$content_dir/plugins", "$content_dir/themes" ] );
+	slic_process()( [ 'exec', '-T', 'wordpress', 'chown', '0:0', escapeshellarg( "$content_dir/plugins" ), escapeshellarg( "$content_dir/themes" ) ] );
 }
