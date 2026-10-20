@@ -903,6 +903,10 @@ function slic_switch_target( $target, $stack_id = null ) {
 				echo magenta( 'Could not recreate the PHP services with their new bind mounts.' . PHP_EOL );
 				exit( 1 );
 			}
+
+			if ( in_array( 'wordpress', $running_services, true ) ) {
+				restore_content_dirs_owner();
+			}
 		}
 	}
 

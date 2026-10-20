@@ -2,6 +2,8 @@
 
 namespace StellarWP\Slic\Test\Cli;
 
+use StellarWP\Slic\Test\Support\Factories\Directory;
+
 class ContentDirOwnerTest extends BaseTestCase {
 
 	private function startAs( string $uid ): array {
@@ -47,6 +49,31 @@ class ContentDirOwnerTest extends BaseTestCase {
 			'exec|-T|wordpress|chown|0:0|/var/www/html/my content/plugins|/var/www/html/my content/themes',
 			$this->tails( $calls, 'exec|' ),
 			'Each content-directory path should reach chown as a single argument.'
+		);
+	}
+
+	public function test_switching_a_running_site_to_an_isolated_plugin_gives_the_plugins_directory_back(): void {
+		$siteDir = Directory::createTemp()->getAbsolutePath();
+		mkdir( "$siteDir/wp" );
+		touch( "$siteDir/wp/wp-load.php" );
+		touch( "$siteDir/wp-config.php" );
+		mkdir( "$siteDir/wp-content/themes", 0777, true );
+		mkdir( "$siteDir/wp-content/plugins/my-plugin", 0777, true );
+		file_put_contents( "$siteDir/wp-content/plugins/my-plugin/my-plugin.php", "<?php\n/**\n * Plugin Name: My Plugin\n */\n" );
+		chdir( $siteDir );
+		$this->slicExec( 'here' );
+		$this->createdStackIds[] = realpath( "$siteDir/wp-content/plugins" );
+		$this->slicExec( 'use site', $this->dockerMockEnv() );
+
+		// The isolated plugin target mounts `_wordpress` instead of the site, so WordPress is recreated on it.
+		$calls = $this->tails( $this->runningMockCalls( 'use my-plugin', 'wordpress' ), '' );
+		$up    = array_search( 'up|--wait|--no-deps|wordpress', $this->tails( $calls, 'up|' ), true );
+
+		$this->assertNotFalse( $up, 'The target switch should recreate the running WordPress service.' );
+		$this->assertContains(
+			'exec|-T|wordpress|chown|0:0|/var/www/html/wp-content/plugins|/var/www/html/wp-content/themes',
+			$this->tails( $calls, 'exec|' ),
+			'Recreating WordPress as container root re-owns the mounted plugins directory; slic should give it back.'
 		);
 	}
 
