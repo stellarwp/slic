@@ -47,6 +47,12 @@ slic_target( false );
 
 // Extract the arguments.
 $command = $args( '...' );
+
+if ( empty( $command[0] ) ) {
+	echo magenta( "Missing the dump file to update: run `{$cli_name} {$subcommand} <file> [<wp_version>]`." . PHP_EOL );
+	exit( 1 );
+}
+
 $file    = trim( $command[0] );
 $version = trim( $command[1] ?? '' );
 

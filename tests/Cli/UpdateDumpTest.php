@@ -27,9 +27,14 @@ class UpdateDumpTest extends BaseTestCase {
 		$output = $this->slicExec( 'update-dump', $this->dockerMockEnv() );
 
 		$this->assertStringContainsString(
-			'Undefined array key 0',
+			'Missing the dump file to update',
 			$output,
-			'Running update-dump without a file argument should produce a warning about the missing argument.'
+			'Running update-dump without a file argument should say the file is missing.'
+		);
+		$this->assertStringNotContainsString(
+			'Undefined array key',
+			$output,
+			'Running update-dump without a file argument should not reach the argument it lacks.'
 		);
 	}
 
