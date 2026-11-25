@@ -47,7 +47,8 @@ if ( empty( $reset ) ) {
 		exit( 1 );
 	}
 } else {
-	$here_dir = $plugins_dir;
+	// A fresh install has no default plugins directory until something creates it.
+	$here_dir = ensure_dir( $plugins_dir );
 }
 
 // Normalize to absolute path
