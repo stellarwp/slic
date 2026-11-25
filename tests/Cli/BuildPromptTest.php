@@ -58,9 +58,9 @@ class BuildPromptTest extends BaseTestCase {
 		$output = $this->slicExec( 'build-prompt status' );
 
 		$this->assertStringContainsString(
-			'Interactive status is: off',
+			'Interactive status is: on',
 			$output,
-			'The default build-prompt state should be off.'
+			'The default build-prompt state should be on, as .env.slic sets SLIC_BUILD_PROMPT=1.'
 		);
 	}
 }
