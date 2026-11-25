@@ -1422,11 +1422,12 @@ function slic_info() {
 		]
 	);
 
-	// Read .env.slic.run directly to show runtime state.
-	$run_env_file = root( '/.env.slic.run' );
-	$run_env      = [];
-	if ( file_exists( $run_env_file ) ) {
-		$run_env = read_env_file( $run_env_file );
+	// Runtime state: the global run file, then the current stack's own settings over it.
+	$stack_id      = slic_current_stack();
+	$run_env_files = array_filter( [ root( '/.env.slic.run' ), $stack_id ? get_stack_env_file( $stack_id ) : '' ], 'is_file' );
+	$run_env       = [];
+	foreach ( $run_env_files as $run_env_file ) {
+		$run_env = array_merge( $run_env, read_env_file( $run_env_file ) );
 	}
 
 	echo colorize( "<yellow>Configuration read from the following files:</yellow>" . PHP_EOL );
@@ -1436,8 +1437,11 @@ function slic_info() {
 			file_exists( $slic_root . '/.env.slic' ) ? "  - " . $slic_root . '/.env.slic' : null,
 			file_exists( $slic_root . '/.env.slic.local' ) ? "  - " . $slic_root . '/.env.slic.local' : null,
 			file_exists( $target_path . '/.env.slic.local' ) ? "  - " . $target_path . '/.env.slic.local' : null,
-			file_exists( $slic_root . '/.env.slic.run' ) ? "  - " . $slic_root . '/.env.slic.run' : null,
-		] ) ) . PHP_EOL . PHP_EOL;
+		] ) ) . PHP_EOL;
+	foreach ( $run_env_files as $run_env_file ) {
+		echo "  - " . $run_env_file . PHP_EOL;
+	}
+	echo PHP_EOL;
 
 	echo colorize( "<yellow>Current configuration:</yellow>" . PHP_EOL );
 	foreach ( $config_vars as $key ) {

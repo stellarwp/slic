@@ -4,6 +4,32 @@ namespace StellarWP\Slic\Test\Cli;
 
 class InfoTest extends BaseTestCase {
 
+	public function test_info_shows_the_stack_settings_over_the_global_ones(): void {
+		$this->setUpPluginsDir();
+		$this->slicExec( 'php-version set 8.3 --skip-rebuild' );
+
+		// A stale value in the global run file, as a 2.x install leaves there.
+		$globalRunFile = self::slicRoot() . '/.env.slic.run';
+		$previous      = is_file( $globalRunFile ) ? file_get_contents( $globalRunFile ) : null;
+		file_put_contents( $globalRunFile, "SLIC_PHP_VERSION=8.1\n" );
+		try {
+			$output = $this->slicExec( 'info' );
+		} finally {
+			null === $previous ? unlink( $globalRunFile ) : file_put_contents( $globalRunFile, $previous );
+		}
+
+		$this->assertMatchesRegularExpression(
+			'/- SLIC_PHP_VERSION: 8\.3$/m',
+			$output,
+			'The info command should show the stack\'s own PHP version.'
+		);
+		$this->assertMatchesRegularExpression(
+			'#- \S+/\.env\.slic\.run\.[0-9a-f]+$#m',
+			$output,
+			'The info command should list the stack\'s settings file among the files it read.'
+		);
+	}
+
 	public function test_info_shows_version(): void {
 		$output = $this->slicExec( 'info' );
 
