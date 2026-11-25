@@ -159,7 +159,8 @@ class CompletionTest extends BaseTestCase {
 		// Use a clean HOME so is_installed() returns false, ensuring install instructions are shown.
 		$tempHome = $this->createTempDir();
 
-		$output = $this->slicExec( 'completion', [ 'HOME' => $tempHome ] );
+		// The detected shell comes from SHELL, so set it instead of inheriting the one running the tests.
+		$output = $this->slicExec( 'completion', [ 'HOME' => $tempHome, 'SHELL' => '/bin/bash' ] );
 
 		$this->assertStringContainsString(
 			'Detected shell:',

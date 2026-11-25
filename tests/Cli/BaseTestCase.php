@@ -146,7 +146,9 @@ abstract class BaseTestCase extends TestCase {
 			$envString .= $key . '=' . escapeshellarg( $value ) . ' ';
 		}
 
-		$commandString = $envString . 'php ' . escapeshellarg( self::slicRoot() . '/slic.php' ) . ' ' . $command;
+		// Report every PHP error, as a production php.ini hides deprecations.
+		$commandString = $envString . 'php -d error_reporting=-1 -d display_errors=1 '
+		                 . escapeshellarg( self::slicRoot() . '/slic.php' ) . ' ' . $command;
 
 		if ( $stdin !== null ) {
 			$descriptors = [

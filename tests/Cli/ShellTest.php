@@ -25,7 +25,7 @@ class ShellTest extends BaseTestCase {
 			$output,
 			'The shell command should show the current target.'
 		);
-		$this->assertDockerCalled( '#^exec -it .*--workdir \S*/test-plugin bash$#', 'The shell command should open bash in the target directory.' );
+		$this->assertDockerCalled( '#^exec -it .*--workdir \S*/test-plugin slic-test-container bash$#', 'The shell command should open bash in the target directory.' );
 	}
 
 	public function test_ssh_is_alias_for_shell(): void {
