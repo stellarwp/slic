@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `slic stop` and `slic update` keep the stack registered with its settings; `slic stack stop` is the command that unregisters a stack. Before, both deleted the stack's settings, so `slic upgrade` from 2.x lost the configuration it had just migrated.
 - `slic here reset` works on a fresh install, before the default `_plugins` directory exists.
 - `slic update-dump` without a file argument stops with an error instead of a PHP warning.
+- `slic stack stop` and `slic stack stop all` stop a worktree stack with its own settings from any directory. Before, outside that worktree they gave Docker Compose an empty worktree mount.
 
 # [2.5.1] - 2026-10-02
 

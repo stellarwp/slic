@@ -17,6 +17,9 @@ function command_stop( $stack_id = null, $unregister = true ) : int {
 	// Determine which stack to stop
 	if ( null === $stack_id ) {
 		$stack_id = slic_current_stack();
+	} else {
+		// slic loaded the settings of the stack it runs in: a named stack needs its own, such as its worktree mount.
+		setup_slic_env( root(), true, $stack_id );
 	}
 
 	if ( null === $stack_id ) {

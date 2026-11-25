@@ -273,6 +273,27 @@ class WorktreeTest extends BaseTestCase {
 		);
 	}
 
+	public function test_stopping_a_worktree_stack_from_another_stack_mounts_that_worktree(): void {
+		$pluginDir = $this->setUpGitPluginStack();
+		$this->slicExec( 'worktree add feature-x -y', $this->dockerMockEnv() );
+		$pluginsDir    = realpath( dirname( $pluginDir ) );
+		$worktreeStack = $pluginsDir . '@test-plugin-feature-x';
+
+		// Run from another stack, so slic starts with that stack's settings.
+		$this->setUpPluginsDir( 'other-plugin' );
+		try {
+			$this->slicExec( 'stack stop ' . escapeshellarg( $worktreeStack ) . ' -y', $this->dockerMockLogEnv() );
+		} finally {
+			chdir( $pluginsDir );
+			$this->slicExec( 'worktree remove feature-x -y', $this->dockerMockEnv() );
+		}
+
+		$this->assertDockerCalled(
+			'# down .*\[worktree: ' . preg_quote( $pluginsDir . '/test-plugin-feature-x', '#' ) . '\]$#',
+			'Stopping a worktree stack should give Docker Compose that worktree to mount.'
+		);
+	}
+
 	private function setUpGitPluginStack(): string {
 		$pluginDir = $this->setUpPluginsDir() . '/test-plugin';
 		$this->initGitRepository( $pluginDir );
