@@ -308,8 +308,8 @@ function setup_slic_env( $root_dir, $reset = false, $stack_id = null ) {
 
 	backup_env_var( 'COMPOSER_CACHE_DIR' );
 
-	// If a SLIC_PHP_VERSION env var is already set, back it up.
-	if ( getenv( 'SLIC_PHP_VERSION' ) ) {
+	// Back up a SLIC_PHP_VERSION set on the command line; on a reset, it holds the previously loaded stack's version.
+	if ( ! $reset && getenv( 'SLIC_PHP_VERSION' ) ) {
 		backup_env_var( 'SLIC_PHP_VERSION' );
 	}
 

@@ -196,12 +196,17 @@ abstract class BaseTestCase extends TestCase {
 	/**
 	 * Returns the Docker mock env vars, recording each Docker call for `assertDockerCalled()`.
 	 *
+	 * @param string[] $envNames Environment variables to record with each call, as `[NAME=value]`.
+	 *
 	 * @return array<string,string>
 	 */
-	protected function dockerMockLogEnv(): array {
+	protected function dockerMockLogEnv( array $envNames = [] ): array {
 		$this->dockerMockLog = $this->createTempDir() . '/docker-calls.log';
 
-		return [ 'SLIC_DOCKER_MOCK_LOG' => $this->dockerMockLog ] + $this->dockerMockEnv();
+		return [
+			'SLIC_DOCKER_MOCK_LOG' => $this->dockerMockLog,
+			'SLIC_DOCKER_MOCK_ENV' => implode( ' ', $envNames ),
+		] + $this->dockerMockEnv();
 	}
 
 	/**

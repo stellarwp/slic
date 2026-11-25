@@ -282,14 +282,17 @@ class WorktreeTest extends BaseTestCase {
 		// Run from another stack, so slic starts with that stack's settings.
 		$this->setUpPluginsDir( 'other-plugin' );
 		try {
-			$this->slicExec( 'stack stop ' . escapeshellarg( $worktreeStack ) . ' -y', $this->dockerMockLogEnv() );
+			$this->slicExec(
+				'stack stop ' . escapeshellarg( $worktreeStack ) . ' -y',
+				$this->dockerMockLogEnv( [ 'SLIC_WORKTREE_FULL_PATH' ] )
+			);
 		} finally {
 			chdir( $pluginsDir );
 			$this->slicExec( 'worktree remove feature-x -y', $this->dockerMockEnv() );
 		}
 
 		$this->assertDockerCalled(
-			'# down .*\[worktree: ' . preg_quote( $pluginsDir . '/test-plugin-feature-x', '#' ) . '\]$#',
+			'# down .*\[SLIC_WORKTREE_FULL_PATH=' . preg_quote( $pluginsDir . '/test-plugin-feature-x', '#' ) . '\]$#',
 			'Stopping a worktree stack should give Docker Compose that worktree to mount.'
 		);
 	}

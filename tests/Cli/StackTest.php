@@ -6,6 +6,37 @@ use StellarWP\Slic\Test\Support\Factories\Directory;
 
 class StackTest extends BaseTestCase {
 
+	public function test_stopping_another_stack_uses_its_php_version(): void {
+		$otherStack = realpath( $this->setUpPluginsDir( 'other-plugin' ) );
+		$this->slicExec( 'php-version set 8.3 --skip-rebuild' );
+		// Run from a stack with a different PHP version, so slic starts with that one.
+		$this->setUpPluginsDir();
+		$this->slicExec( 'php-version set 8.2 --skip-rebuild' );
+
+		$this->slicExec( 'stack stop ' . escapeshellarg( $otherStack ), $this->dockerMockLogEnv( [ 'SLIC_PHP_VERSION' ] ) );
+
+		$this->assertDockerCalled(
+			'# down .*\[SLIC_PHP_VERSION=8\.3\]$#',
+			'Stopping another stack should use that stack\'s PHP version.'
+		);
+	}
+
+	public function test_stopping_another_stack_keeps_a_php_version_given_on_the_command_line(): void {
+		$otherStack = realpath( $this->setUpPluginsDir( 'other-plugin' ) );
+		$this->slicExec( 'php-version set 8.3 --skip-rebuild' );
+		$this->setUpPluginsDir();
+
+		$this->slicExec(
+			'stack stop ' . escapeshellarg( $otherStack ),
+			[ 'SLIC_PHP_VERSION' => '8.1' ] + $this->dockerMockLogEnv( [ 'SLIC_PHP_VERSION' ] )
+		);
+
+		$this->assertDockerCalled(
+			'# down .*\[SLIC_PHP_VERSION=8\.1\]$#',
+			'A PHP version given on the command line should override the stopped stack\'s own.'
+		);
+	}
+
 	public function test_stack_list_shows_registered_stacks(): void {
 		$pluginsDir = $this->setUpPluginsDir();
 

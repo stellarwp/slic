@@ -1,9 +1,13 @@
 #!/bin/bash
 # A mock docker binary that does nothing and exits successfully.
 # When SLIC_DOCKER_MOCK_LOG is set, each call's arguments are appended to that file,
-# followed by the worktree it mounts when SLIC_WORKTREE_FULL_PATH is set.
+# followed by `[NAME=value]` for each environment variable named in SLIC_DOCKER_MOCK_ENV.
 if [ -n "${SLIC_DOCKER_MOCK_LOG:-}" ]; then
-	echo "$*${SLIC_WORKTREE_FULL_PATH:+ [worktree: $SLIC_WORKTREE_FULL_PATH]}" >> "$SLIC_DOCKER_MOCK_LOG"
+	line="$*"
+	for name in ${SLIC_DOCKER_MOCK_ENV:-}; do
+		line="$line [$name=${!name-}]"
+	done
+	echo "$line" >> "$SLIC_DOCKER_MOCK_LOG"
 fi
 # Container ID lookups, as `docker ps --format '{{.ID}}'`, find one running container.
 for arg in "$@"; do
