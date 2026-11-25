@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Running a Composer or npm command on a plugin and its sub-directories at once, such as `common`, no longer hangs forever. Each command now runs in the `slic` service.
 - `slic restart` no longer unregisters the stack it restarts.
 - `slic reset` resets the current stack's settings again, such as an XDebug port set with `slic xdebug port`. A worktree stack keeps its base stack directories and target.
+- `slic init` with no target given or selected stops with an error. Before, it wrote `codeception.slic.yml` and `.env.testing.slic` into the plugins directory, then failed with "Ambiguous target ''".
 
 # [2.5.1] - 2026-10-02
 

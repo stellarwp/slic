@@ -5,18 +5,23 @@ namespace StellarWP\Slic\Test\Cli;
 class InitTest extends BaseTestCase {
 
 	public function test_init_without_plugin_shows_error(): void {
+		$pluginsDir = $this->setUpPluginsDir();
+
 		$output = $this->slicExec( 'init', $this->gitMockEnv() );
 
 		$this->assertStringContainsString(
-			'Using',
+			'No target to initialize',
 			$output,
-			'Running init without a plugin name should show the current (empty) target.'
+			'Running init with no target given or selected should say there is nothing to initialize.'
 		);
-
-		$this->assertStringContainsString(
+		$this->assertStringNotContainsString(
 			'Finished initializing',
 			$output,
-			'Running init without a plugin should still finish initializing.'
+			'Running init with no target should stop.'
+		);
+		$this->assertFileDoesNotExist(
+			$pluginsDir . '/codeception.slic.yml',
+			'Running init with no target should not write test configuration into the plugins directory.'
 		);
 	}
 
