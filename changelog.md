@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-# [3.0.0] - TBD
+# [3.0.0] - 2026-11-25
 
 ### Changed
 - Breaking Change - The `slic here` command will now create a new stack for the current path instead of changing the context of the previously only stack to the path.
@@ -15,7 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Multiple, isolated Docker Compose projects per path 
 - Git worktree multi-stack support for concurrent development workflows
-- New `slic worktree` command leveraging dedicated stacks for each worktree
+- New `slic worktree` command, with `add`, `list`, `merge`, `remove` and `sync` subcommands, leveraging dedicated stacks for each worktree
+- New `slic stack` command to `list` the registered stacks, show a stack's `info`, and `stop` one stack or `stop all` of them
+- Support for the `NO_COLOR` environment variable: when it is set, slic prints its output without colors
 - Interactive Terminal User Interface (TUI) for the `slic use` command. Running `slic use` without arguments now opens an interactive selection menu with fuzzy search and current selection indicator.
 - New `slic completion` command with subcommands to install bash/zsh/fish completions
 - Shell completion support for bash, zsh, and fish shells with dynamic completions for commands, targets, git branches, stack paths, and options
@@ -27,6 +29,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `slic restart` no longer unregisters the stack it restarts.
 - `slic reset` resets the current stack's settings again, such as an XDebug port set with `slic xdebug port`. A worktree stack keeps its base stack directories and target.
 - `slic init` with no target given or selected stops with an error. Before, it wrote `codeception.slic.yml` and `.env.testing.slic` into the plugins directory, then failed with "Ambiguous target ''".
+- `slic stop` and `slic update` keep the stack registered with its settings; `slic stack stop` is the command that unregisters a stack. Before, both deleted the stack's settings, so `slic upgrade` from 2.x lost the configuration it had just migrated.
+- `slic here reset` works on a fresh install, before the default `_plugins` directory exists.
+- `slic update-dump` without a file argument stops with an error instead of a PHP warning.
 
 # [2.5.1] - 2026-10-02
 
