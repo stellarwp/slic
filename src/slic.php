@@ -1448,8 +1448,8 @@ function slic_info() {
 		$effective_value = getenv( $key );
 		$runtime_value   = $run_env[ $key ] ?? null;
 
-		// Show runtime value if it exists, otherwise effective value
-		$value = $runtime_value ? print_r( $runtime_value, true ) : print_r( $effective_value, true );
+		// Show runtime value if it exists, otherwise effective value; a runtime `0` is a setting turned off, not a missing one.
+		$value = null !== $runtime_value ? print_r( $runtime_value, true ) : print_r( $effective_value, true );
 
 		if ( $key === 'SLIC_PLUGINS_DIR' && $value !== slic_plugins_dir() ) {
 			// If the configuration is using a relative path, then expose the absolute path.
@@ -1457,7 +1457,7 @@ function slic_info() {
 		}
 
 		// Show if there's a mismatch between effective and runtime (something is overriding).
-		if ( $runtime_value && $runtime_value !== $effective_value ) {
+		if ( null !== $runtime_value && $runtime_value !== $effective_value ) {
 			$value .= colorize( " [runtime] <yellow>⚠ {$effective_value} [configured]</yellow>" );
 		}
 

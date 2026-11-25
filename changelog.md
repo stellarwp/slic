@@ -33,7 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `slic here reset` works on a fresh install, before the default `_plugins` directory exists.
 - `slic update-dump` without a file argument stops with an error instead of a PHP warning.
 - `slic stack stop` and `slic stack stop all` stop a worktree stack with its own settings from any directory. Before, outside that worktree they gave Docker Compose an empty worktree mount.
-- `slic info` reads the current stack's settings file as well as `.env.slic.run`, and lists it among the files it read. Before, a stale value in `.env.slic.run` showed as the runtime value over the stack's own.
+- `slic info` reads the current stack's settings file as well as `.env.slic.run`, and lists it among the files it read. Before, a stale value in `.env.slic.run` showed as the runtime value over the stack's own. It also shows a setting turned off with `0`, and its override, instead of only the override.
 - A worktree stack uses the Composer cache directory set on its base stack with `slic composer-cache set`.
 
 # [2.5.1] - 2026-10-02

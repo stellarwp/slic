@@ -4,6 +4,19 @@ namespace StellarWP\Slic\Test\Cli;
 
 class InfoTest extends BaseTestCase {
 
+	public function test_info_shows_a_stack_setting_turned_off_and_the_override_of_it(): void {
+		$pluginsDir = $this->setUpPluginsDir();
+		$this->slicExec( 'use test-plugin', $this->dockerMockEnv() );
+		$this->slicExec( 'build-prompt off' );
+		file_put_contents( $pluginsDir . '/test-plugin/.env.slic.local', "SLIC_BUILD_PROMPT=1\n" );
+
+		$this->assertMatchesRegularExpression(
+			'/- SLIC_BUILD_PROMPT: 0 \[runtime\] ⚠ 1 \[configured\]$/m',
+			$this->slicExec( 'info' ),
+			'The info command should show the stack\'s setting of 0 and the target override of it.'
+		);
+	}
+
 	public function test_info_shows_the_stack_settings_over_the_global_ones(): void {
 		$this->setUpPluginsDir();
 		$this->slicExec( 'php-version set 8.3 --skip-rebuild' );
