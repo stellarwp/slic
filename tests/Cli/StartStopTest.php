@@ -56,6 +56,25 @@ class StartStopTest extends BaseTestCase {
 		);
 	}
 
+	public function test_stop_keeps_the_stack_and_its_settings(): void {
+		$this->setUpPluginsDir();
+		$this->slicExec( 'use test-plugin', $this->dockerMockEnv() );
+		$this->slicExec( 'xdebug port 9100' );
+
+		$this->slicExec( 'stop', $this->dockerMockEnv() );
+
+		$this->assertStringContainsString(
+			'Using test-plugin',
+			$this->slicExec( 'using', $this->dockerMockEnv() ),
+			'Stopping should keep the stack registered with its target; `stack stop` unregisters it.'
+		);
+		$this->assertStringContainsString(
+			'Remote port: 9100',
+			$this->slicExec( 'xdebug status', $this->dockerMockEnv() ),
+			'Stopping should keep the stack settings.'
+		);
+	}
+
 	public function test_down_is_alias_for_stop(): void {
 		$this->setUpPluginsDir();
 
