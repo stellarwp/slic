@@ -249,13 +249,18 @@ class WorktreeTest extends BaseTestCase {
 		try {
 			$this->slicExec( 'xdebug port 9009' );
 			$this->slicExec( 'reset', $this->dockerMockEnv() );
-			$xdebug = $this->slicExec( 'xdebug status' );
+			$xdebug = $this->slicExec( 'xdebug status', $this->dockerMockEnv() );
 			$using  = $this->slicExec( 'using', $this->dockerMockEnv() );
 		} finally {
 			chdir( dirname( $pluginDir ) );
 			$this->slicExec( 'worktree remove feature-x -y', $this->dockerMockEnv() );
 		}
 
+		$this->assertStringContainsString(
+			'Remote port:',
+			$xdebug,
+			'The xdebug status command should report the worktree stack settings.'
+		);
 		$this->assertStringNotContainsString(
 			'Remote port: 9009',
 			$xdebug,
@@ -285,7 +290,7 @@ class WorktreeTest extends BaseTestCase {
 	 * @return string The command output.
 	 */
 	private function slicExecInTerminal( string $command, string $input ): string {
-		$slic = 'php ' . escapeshellarg( dirname( __DIR__, 2 ) . '/slic.php' ) . ' ' . $command;
+		$slic = 'php ' . escapeshellarg( self::slicRoot() . '/slic.php' ) . ' ' . $command;
 		// util-linux script (Linux) takes the command with -c; BSD script (macOS) takes it as trailing arguments.
 		$inTerminal = str_contains( (string) shell_exec( 'script --version 2>&1' ), 'util-linux' )
 			? 'script -qec ' . escapeshellarg( $slic ) . ' /dev/null'

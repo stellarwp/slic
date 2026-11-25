@@ -2,8 +2,6 @@
 
 namespace StellarWP\Slic\Test\Cli;
 
-use StellarWP\Slic\Test\Support\Factories\Directory;
-
 class HereTest extends BaseTestCase {
 
 	public function test_here_sets_plugins_directory(): void {
@@ -54,7 +52,8 @@ class HereTest extends BaseTestCase {
 		$pluginsDir = $this->setUpPluginsDir();
 
 		chdir( $pluginsDir . '/test-plugin' );
-		$output = $this->slicExec( 'here' );
+		$output                  = $this->slicExec( 'here' );
+		$this->createdStackIds[] = realpath( $pluginsDir . '/test-plugin' );
 
 		$this->assertStringContainsString(
 			realpath( $pluginsDir . '/test-plugin' ),
@@ -67,10 +66,11 @@ class HereTest extends BaseTestCase {
 		// First set up a valid plugins dir so we have a registered stack context.
 		$this->setUpPluginsDir();
 
-		$emptyDir = Directory::createTemp()->getAbsolutePath();
+		$emptyDir = $this->createTempDir();
 		chdir( $emptyDir );
 
-		$output = $this->slicExec( 'here' );
+		$output                  = $this->slicExec( 'here' );
+		$this->createdStackIds[] = realpath( $emptyDir );
 
 		$this->assertStringContainsString(
 			'Stack created successfully',

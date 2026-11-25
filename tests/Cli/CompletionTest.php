@@ -70,7 +70,7 @@ class CompletionTest extends BaseTestCase {
 		touch( $home . '/.bashrc' );
 		// The installer asks for confirmation; answer it so the test never waits on the terminal.
 		shell_exec( "printf 'y\\n' | HOME=" . escapeshellarg( $home ) . ' NO_COLOR=1 php '
-		            . escapeshellarg( dirname( __DIR__, 2 ) . '/slic.php' ) . ' completion install bash 2>&1' );
+		            . escapeshellarg( self::slicRoot() . '/slic.php' ) . ' completion install bash 2>&1' );
 
 		$this->assertStringContainsString(
 			'_slic_completions',
@@ -90,7 +90,7 @@ class CompletionTest extends BaseTestCase {
 
 		$this->assertStringContainsString(
 			'stack',
-			$this->runInShell( 'zsh', '_describe() { print -l -- "${(@P)2}"; }; words=(slic st); CURRENT=2; BUFFER="slic st"; CURSOR=7; source ' . escapeshellarg( dirname( __DIR__, 2 ) . '/completions/zsh/_slic' ) ),
+			$this->runInShell( 'zsh', '_describe() { print -l -- "${(@P)2}"; }; words=(slic st); CURRENT=2; BUFFER="slic st"; CURSOR=7; source ' . escapeshellarg( self::slicRoot() . '/completions/zsh/_slic' ) ),
 			'Zsh should complete the word under the cursor.'
 		);
 	}
@@ -259,7 +259,7 @@ class CompletionTest extends BaseTestCase {
 	 * @return string[] The completions, one per element.
 	 */
 	private function completeInBash( array $words, int $cword, ?string $binDir = null ): array {
-		$script = 'source ' . escapeshellarg( dirname( __DIR__, 2 ) . '/completions/bash/slic.bash' )
+		$script = 'source ' . escapeshellarg( self::slicRoot() . '/completions/bash/slic.bash' )
 		          . '; COMP_WORDS=(' . implode( ' ', array_map( 'escapeshellarg', $words ) ) . ')'
 		          . '; COMP_CWORD=' . $cword
 		          . '; COMP_LINE=' . escapeshellarg( implode( ' ', $words ) )
@@ -277,7 +277,7 @@ class CompletionTest extends BaseTestCase {
 	private function createBinDirWithRelativeLinkAndBasicReadlink(): string {
 		$binDir = sys_get_temp_dir() . '/slic-completion-bin-' . uniqid( '', true );
 		mkdir( $binDir . '/install', 0777, true );
-		symlink( dirname( __DIR__, 2 ) . '/slic', $binDir . '/install/slic' );
+		symlink( self::slicRoot() . '/slic', $binDir . '/install/slic' );
 		symlink( 'install/slic', $binDir . '/slic' );
 
 		// Stand-ins for a system that has neither `realpath` nor `readlink -f`, only the basic `readlink`.
@@ -303,7 +303,7 @@ class CompletionTest extends BaseTestCase {
 		if ( null === $binDir ) {
 			$binDir = sys_get_temp_dir() . '/slic-completion-bin-' . uniqid( '', true );
 			mkdir( $binDir );
-			symlink( dirname( __DIR__, 2 ) . '/slic', $binDir . '/slic' );
+			symlink( self::slicRoot() . '/slic', $binDir . '/slic' );
 		}
 
 		$command = 'PATH=' . escapeshellarg( $binDir . ':' . getenv( 'PATH' ) )
@@ -323,7 +323,7 @@ class CompletionTest extends BaseTestCase {
 	 */
 	private function complete( array $words, int $cword ): string {
 		$command = 'SLIC_CACHE_DIR=' . escapeshellarg( $this->cacheDir )
-		           . ' php ' . escapeshellarg( dirname( __DIR__, 2 ) . '/src/completions/complete.php' )
+		           . ' php ' . escapeshellarg( self::slicRoot() . '/src/completions/complete.php' )
 		           . ' --words=' . escapeshellarg( implode( "\n", $words ) )
 		           . ' --cword=' . $cword;
 

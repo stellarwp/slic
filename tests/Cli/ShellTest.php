@@ -18,13 +18,14 @@ class ShellTest extends BaseTestCase {
 		$this->setUpPluginsDir();
 		$this->slicExec( 'use test-plugin', $this->dockerMockEnv() );
 
-		$output = $this->slicExec( 'shell', $this->dockerMockEnv() );
+		$output = $this->slicExec( 'shell', $this->dockerMockLogEnv() );
 
 		$this->assertStringContainsString(
 			'Using test-plugin',
 			$output,
 			'The shell command should show the current target.'
 		);
+		$this->assertDockerCalled( '#^exec -it .*--workdir \S*/test-plugin bash$#', 'The shell command should open bash in the target directory.' );
 	}
 
 	public function test_ssh_is_alias_for_shell(): void {

@@ -39,9 +39,7 @@ class ResetTest extends BaseTestCase {
 			'The PHP version should be staged to 8.1 before reset.'
 		);
 
-		// Reset preserves per-stack state; an explicit php-version reset is needed.
 		$this->slicExec( 'reset', $this->dockerMockEnv() );
-		$this->slicExec( 'php-version reset --skip-rebuild' );
 
 		$phpVersionAfter = $this->slicExec( 'php-version' );
 		$this->assertStringContainsString(
@@ -86,7 +84,12 @@ class ResetTest extends BaseTestCase {
 		$this->slicExec( 'reset', $this->dockerMockEnv() );
 		$this->slicExec( 'here' );
 
-		$xdebugAfter = $this->slicExec( 'xdebug status' );
+		$xdebugAfter = $this->slicExec( 'xdebug status', $this->dockerMockEnv() );
+		$this->assertStringContainsString(
+			'Remote port:',
+			$xdebugAfter,
+			'The xdebug status command should report the stack settings.'
+		);
 		$this->assertStringNotContainsString(
 			'9009',
 			$xdebugAfter,

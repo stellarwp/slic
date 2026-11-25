@@ -25,13 +25,14 @@ class WpCliTest extends BaseTestCase {
 
 		$this->slicExec( 'use test-plugin', $this->dockerMockEnv() );
 
-		$output = $this->slicExec( 'wp plugin list', $this->dockerMockEnv() );
+		$output = $this->slicExec( 'wp plugin list', $this->dockerMockLogEnv() );
 
 		$this->assertStringNotContainsString(
 			'Unknown command',
 			$output,
 			'The wp command should not produce an unknown command error.'
 		);
+		$this->assertDockerCalled( '/ wp --allow-root plugin list$/', 'The wp command should pass its arguments to wp-cli.' );
 	}
 
 	public function test_cli_is_alias_for_wp(): void {
@@ -100,7 +101,7 @@ class WpCliTest extends BaseTestCase {
 
 		$output = $this->slicExec(
 			'site-cli _install',
-			$this->dockerMockEnv(),
+			$this->dockerMockLogEnv(),
 			"no\n"
 		);
 
@@ -109,10 +110,6 @@ class WpCliTest extends BaseTestCase {
 			$output,
 			'The _install subcommand should prompt for confirmation.'
 		);
-		$this->assertStringNotContainsString(
-			'--admin_user=admin',
-			$output,
-			'Declining should prevent the install command from running.'
-		);
+		$this->assertDockerCalled( '/ core install /', 'Declining should prevent the install command from running.', false );
 	}
 }

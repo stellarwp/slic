@@ -17,7 +17,9 @@ abstract class BaseTestCase extends TestCase {
 
 	private static string $dockerMockBin = '';
 	private static string $gitMockDir = '';
+	private static string $slicRoot = '';
 	private string $slicCacheDir = '';
+	private string $dockerMockLog = '';
 
 	/**
 	 * Temporary directories created during the test, removed in tearDown.
@@ -30,6 +32,53 @@ abstract class BaseTestCase extends TestCase {
 		parent::setUpBeforeClass();
 		self::$dockerMockBin = dirname( __DIR__ ) . '/_support/bin/docker-mock';
 		self::$gitMockDir = dirname( __DIR__ ) . '/_support/bin/git-mock-dir';
+	}
+
+	/**
+	 * Returns the root of the copy of this slic checkout that the tests run, made once per test run.
+	 *
+	 * slic keeps its stack registry and every stack's settings next to `slic.php`, so running the
+	 * checkout itself would read, and change, the stacks of the developer running the tests.
+	 *
+	 * @return string The absolute path to the copy.
+	 */
+	protected static function slicRoot(): string {
+		if ( self::$slicRoot !== '' ) {
+			return self::$slicRoot;
+		}
+
+		$source = dirname( __DIR__, 2 );
+		$root   = sys_get_temp_dir() . '/slic-test-root-' . uniqid( '', true );
+
+		// Tracked and new files: .gitignore keeps out the runtime state, vendor, _wordpress and _plugins.
+		exec( 'git -C ' . escapeshellarg( $source ) . ' ls-files --cached --others --exclude-standard', $files, $status );
+		if ( 0 !== $status ) {
+			throw new \RuntimeException( "Could not list the files of the slic checkout in {$source}." );
+		}
+
+		foreach ( $files as $file ) {
+			$from = $source . '/' . $file;
+			if ( str_starts_with( $file, 'tests/' ) || ! is_file( $from ) ) {
+				continue;
+			}
+
+			$to = $root . '/' . $file;
+			if ( ! is_dir( dirname( $to ) ) ) {
+				mkdir( dirname( $to ), 0777, true );
+			}
+			if ( ! copy( $from, $to ) || ! chmod( $to, fileperms( $from ) & 0777 ) ) {
+				throw new \RuntimeException( "Could not copy {$from} to {$to}." );
+			}
+		}
+
+		// An old version checked "today" for good: slic skips its `git ls-remote` check for a newer release.
+		file_put_contents( $root . '/.remote-version', '9999-12-31:0.0.0' );
+
+		register_shutdown_function( static function () use ( $root ) {
+			self::removeDirectory( $root );
+		} );
+
+		return self::$slicRoot = $root;
 	}
 
 	public function setUp(): void {
@@ -97,7 +146,7 @@ abstract class BaseTestCase extends TestCase {
 			$envString .= $key . '=' . escapeshellarg( $value ) . ' ';
 		}
 
-		$commandString = $envString . 'php ' . escapeshellarg( dirname( __DIR__, 2 ) . '/slic.php' ) . ' ' . $command;
+		$commandString = $envString . 'php ' . escapeshellarg( self::slicRoot() . '/slic.php' ) . ' ' . $command;
 
 		if ( $stdin !== null ) {
 			$descriptors = [
@@ -140,6 +189,34 @@ abstract class BaseTestCase extends TestCase {
 			// slic exits without an SSH agent socket to forward; Docker is mocked, so a placeholder path is enough.
 			'SSH_AUTH_SOCK'           => sys_get_temp_dir() . '/slic-test-ssh-agent.sock',
 		];
+	}
+
+	/**
+	 * Returns the Docker mock env vars, recording each Docker call for `assertDockerCalled()`.
+	 *
+	 * @return array<string,string>
+	 */
+	protected function dockerMockLogEnv(): array {
+		$this->dockerMockLog = $this->createTempDir() . '/docker-calls.log';
+
+		return [ 'SLIC_DOCKER_MOCK_LOG' => $this->dockerMockLog ] + $this->dockerMockEnv();
+	}
+
+	/**
+	 * Asserts whether a Docker call recorded since the last `dockerMockLogEnv()` matches a pattern.
+	 *
+	 * @param string $pattern  The regular expression to match each call's arguments against.
+	 * @param string $message  The assertion message.
+	 * @param bool   $expected Whether a matching call should have been made.
+	 */
+	protected function assertDockerCalled( string $pattern, string $message, bool $expected = true ): void {
+		$calls = is_file( $this->dockerMockLog ) ? file( $this->dockerMockLog, FILE_IGNORE_NEW_LINES ) : [];
+
+		$this->assertSame(
+			$expected,
+			[] !== preg_grep( $pattern, $calls ),
+			$message . PHP_EOL . 'Docker calls:' . PHP_EOL . implode( PHP_EOL, $calls )
+		);
 	}
 
 	/**
@@ -191,14 +268,14 @@ abstract class BaseTestCase extends TestCase {
 		return $dir;
 	}
 
-	private function removeDirectory( string $dir ): void {
+	private static function removeDirectory( string $dir ): void {
 		$items = new \RecursiveIteratorIterator(
 			new \RecursiveDirectoryIterator( $dir, \FilesystemIterator::SKIP_DOTS ),
 			\RecursiveIteratorIterator::CHILD_FIRST
 		);
 
 		foreach ( $items as $item ) {
-			$item->isDir() ? rmdir( $item->getPathname() ) : unlink( $item->getPathname() );
+			$item->isDir() && ! $item->isLink() ? rmdir( $item->getPathname() ) : unlink( $item->getPathname() );
 		}
 
 		rmdir( $dir );

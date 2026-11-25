@@ -25,12 +25,13 @@ class RunTest extends BaseTestCase {
 
 		$this->slicExec( 'use test-plugin', $this->dockerMockEnv() );
 
-		$output = $this->slicExec( 'run wpunit', $this->dockerMockEnv() );
+		$output = $this->slicExec( 'run wpunit', $this->dockerMockLogEnv() );
 
 		$this->assertStringContainsString(
 			'Using test-plugin',
 			$output,
 			'The run command should report the current use target.'
 		);
+		$this->assertDockerCalled( '#--workdir \S*/test-plugin slic bash -c vendor/bin/codecept run wpunit$#', 'The run command should run the suite with Codeception.' );
 	}
 }

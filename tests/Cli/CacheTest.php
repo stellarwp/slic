@@ -8,7 +8,7 @@ class CacheTest extends BaseTestCase {
 		$this->setUpPluginsDir();
 		$this->slicExec( 'use test-plugin', $this->dockerMockEnv() );
 
-		$output = $this->slicExec( 'cache on', $this->dockerMockEnv() );
+		$output = $this->slicExec( 'cache on', $this->dockerMockLogEnv() );
 
 		$this->assertStringNotContainsString(
 			'Unknown command',
@@ -20,13 +20,14 @@ class CacheTest extends BaseTestCase {
 			$output,
 			'The cache on command should not report failure.'
 		);
+		$this->assertDockerCalled( '/ wp --allow-root redis enable$/', 'The cache on command should enable the Redis object cache.' );
 	}
 
 	public function test_cache_off(): void {
 		$this->setUpPluginsDir();
 		$this->slicExec( 'use test-plugin', $this->dockerMockEnv() );
 
-		$output = $this->slicExec( 'cache off', $this->dockerMockEnv() );
+		$output = $this->slicExec( 'cache off', $this->dockerMockLogEnv() );
 
 		$this->assertStringNotContainsString(
 			'Unknown command',
@@ -38,13 +39,14 @@ class CacheTest extends BaseTestCase {
 			$output,
 			'The cache off command should not report failure.'
 		);
+		$this->assertDockerCalled( '/ wp --allow-root redis disable$/', 'The cache off command should disable the Redis object cache.' );
 	}
 
 	public function test_cache_status(): void {
 		$this->setUpPluginsDir();
 		$this->slicExec( 'use test-plugin', $this->dockerMockEnv() );
 
-		$output = $this->slicExec( 'cache status', $this->dockerMockEnv() );
+		$output = $this->slicExec( 'cache status', $this->dockerMockLogEnv() );
 
 		$this->assertStringNotContainsString(
 			'Unknown command',
@@ -56,13 +58,15 @@ class CacheTest extends BaseTestCase {
 			$output,
 			'The cache status command should not report failure.'
 		);
+		$this->assertDockerCalled( '/ wp --allow-root redis status$/', 'The cache status command should ask Redis for its status.' );
+		$this->assertDockerCalled( '/ redis (enable|disable)$/', 'The cache status command should not change the cache.', false );
 	}
 
 	public function test_cache_default_is_status(): void {
 		$this->setUpPluginsDir();
 		$this->slicExec( 'use test-plugin', $this->dockerMockEnv() );
 
-		$output = $this->slicExec( 'cache', $this->dockerMockEnv() );
+		$output = $this->slicExec( 'cache', $this->dockerMockLogEnv() );
 
 		$this->assertStringNotContainsString(
 			'Unknown command',
@@ -74,6 +78,8 @@ class CacheTest extends BaseTestCase {
 			$output,
 			'The cache command with no argument should not report failure.'
 		);
+		$this->assertDockerCalled( '/ wp --allow-root redis status$/', 'The cache command with no argument should ask Redis for its status.' );
+		$this->assertDockerCalled( '/ redis (enable|disable)$/', 'The cache command with no argument should not change the cache.', false );
 	}
 
 	public function test_cache_help_shows_usage(): void {

@@ -25,13 +25,16 @@ class DebugTest extends BaseTestCase {
 	public function test_debug_on(): void {
 		$this->setUpPluginsDir();
 
-		$output = $this->slicExec( 'debug on' );
-
-		$this->assertStringContainsString(
-			'Debug status: on',
-			$output,
-			'Turning debug on should confirm activation.'
-		);
+		// The debug setting is global, so restore it.
+		try {
+			$this->assertStringContainsString(
+				'Debug status: on',
+				$this->slicExec( 'debug on' ),
+				'Turning debug on should confirm activation.'
+			);
+		} finally {
+			$this->slicExec( 'debug off' );
+		}
 	}
 
 	public function test_debug_off(): void {
@@ -62,15 +65,17 @@ class DebugTest extends BaseTestCase {
 	public function test_debug_persists_across_commands(): void {
 		$this->setUpPluginsDir();
 
+		// The debug setting is global, so restore it.
 		$this->slicExec( 'debug on' );
-
-		// The debug command writes CLI_VERBOSITY to the run settings file; verify it persists via info.
-		$output = $this->slicExec( 'info' );
-
-		$this->assertMatchesRegularExpression(
-			'/CLI_VERBOSITY\s*[:=]\s*1/',
-			$output,
-			'CLI_VERBOSITY should remain 1 after setting debug on in a previous command.'
-		);
+		try {
+			// The debug command writes CLI_VERBOSITY to the run settings file; verify it persists via info.
+			$this->assertMatchesRegularExpression(
+				'/CLI_VERBOSITY\s*[:=]\s*1/',
+				$this->slicExec( 'info' ),
+				'CLI_VERBOSITY should remain 1 after setting debug on in a previous command.'
+			);
+		} finally {
+			$this->slicExec( 'debug off' );
+		}
 	}
 }
