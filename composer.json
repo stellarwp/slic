@@ -27,7 +27,10 @@
     "minimum-stability": "dev",
     "prefer-stable": true,
     "scripts": {
-        "compat": "phpcs",
+        "compat": [
+            "phpcs",
+            "phpcs --runtime-set testVersion 8.2-8.5 tests"
+        ],
         "test": "phpunit"
     }
 }
