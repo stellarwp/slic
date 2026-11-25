@@ -241,6 +241,33 @@ class WorktreeTest extends BaseTestCase {
 		);
 	}
 
+	public function test_reset_in_a_worktree_clears_its_settings_and_keeps_its_target(): void {
+		$pluginDir = $this->setUpGitPluginStack();
+		$this->slicExec( 'worktree add feature-x -y', $this->dockerMockEnv() );
+
+		chdir( dirname( $pluginDir ) . '/test-plugin-feature-x' );
+		try {
+			$this->slicExec( 'xdebug port 9009' );
+			$this->slicExec( 'reset', $this->dockerMockEnv() );
+			$xdebug = $this->slicExec( 'xdebug status' );
+			$using  = $this->slicExec( 'using', $this->dockerMockEnv() );
+		} finally {
+			chdir( dirname( $pluginDir ) );
+			$this->slicExec( 'worktree remove feature-x -y', $this->dockerMockEnv() );
+		}
+
+		$this->assertStringNotContainsString(
+			'Remote port: 9009',
+			$xdebug,
+			'Reset should clear the settings of the worktree stack it runs in.'
+		);
+		$this->assertStringContainsString(
+			'Using test-plugin',
+			$using,
+			'Reset should leave the worktree stack pointed at its target.'
+		);
+	}
+
 	private function setUpGitPluginStack(): string {
 		$pluginDir = $this->setUpPluginsDir() . '/test-plugin';
 		$this->initGitRepository( $pluginDir );
