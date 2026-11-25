@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Breaking Change - The `slic here` command will now create a new stack for the current path instead of changing the context of the previously only stack to the path.
 - Breaking Change - The `XDK` configuration variable (`slic` by default) is now used as **root** for each stack IDE key. An `XDK` of `slic` will create stack IDE keys like `slic_<stack_hash>` and not just `slic` as it was before.
 - Extend `-y, --yes` flag support for all commands that might require confirmation
+- Compatible with PHP 8.5: replaced the deprecated backtick operator, a `case` label ending in a semicolon and the deprecated `curl_close()` call; fixed `slic_stacks_resolve_from_path()` losing its argument for paths that do not exist; CI now runs the test suite on PHP 8.2 through 8.5 and a PHPCompatibility check via `composer compat`.
 
 ### Added
 - Multiple, isolated Docker Compose projects per path 

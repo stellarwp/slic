@@ -611,8 +611,9 @@ function download_file( $source_url, $dest_file, $verify_host = true ) {
 		return false;
 	}
 
-	// This will fclose as well.
-	curl_close( $curl_handle );
+	// Releasing the handle flushes and closes the destination file.
+	unset( $curl_handle );
+	fclose( $file_handle );
 
 	debug( "File $source_url downloaded." . PHP_EOL );
 
