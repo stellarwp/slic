@@ -42,7 +42,8 @@ class UpdateTest extends BaseTestCase {
 		$this->slicExec( 'xdebug port 9100' );
 
 		// Not interactive, so update takes the default answer and stops the stack first.
-		$this->slicExec( 'update', $this->dockerMockEnv() );
+		$this->slicExec( 'update', $this->dockerMockLogEnv() );
+		$this->assertDockerCalled( '/ down --volumes --remove-orphans$/', 'Updating should stop the stack first.' );
 
 		$this->assertStringContainsString(
 			'Using test-plugin',
