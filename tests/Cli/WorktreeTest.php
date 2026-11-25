@@ -297,6 +297,27 @@ class WorktreeTest extends BaseTestCase {
 		);
 	}
 
+	public function test_a_worktree_stack_uses_the_composer_cache_set_on_its_base_stack(): void {
+		$pluginDir = $this->setUpGitPluginStack();
+		$cacheDir  = $this->createTempDir();
+		$this->slicExec( 'composer-cache set ' . escapeshellarg( $cacheDir ), $this->dockerMockEnv() );
+		$this->slicExec( 'worktree add feature-x -y', $this->dockerMockEnv() );
+
+		chdir( dirname( $pluginDir ) . '/test-plugin-feature-x' );
+		try {
+			$output = $this->slicExec( 'composer-cache', $this->dockerMockEnv() );
+		} finally {
+			chdir( dirname( $pluginDir ) );
+			$this->slicExec( 'worktree remove feature-x -y', $this->dockerMockEnv() );
+		}
+
+		$this->assertStringContainsString(
+			basename( $cacheDir ),
+			$output,
+			'A worktree stack should use the Composer cache directory set on its base stack.'
+		);
+	}
+
 	private function setUpGitPluginStack(): string {
 		$pluginDir = $this->setUpPluginsDir() . '/test-plugin';
 		$this->initGitRepository( $pluginDir );

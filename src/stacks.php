@@ -88,14 +88,23 @@ function slic_stacks_write_worktree_state_file($worktree_stack_id, $base_stack_i
 	$base_env = is_file($base_state_file) ? read_env_file($base_state_file) : [];
 	$state_file = slic_stacks_get_state_file($worktree_stack_id);
 
-	write_env_file($state_file, [
+	$state = [
 		'SLIC_HERE_DIR' => $base_stack_id,
 		'SLIC_WP_DIR' => $base_env['SLIC_WP_DIR'] ?? getenv('SLIC_WP_DIR'),
 		'SLIC_PLUGINS_DIR' => $base_env['SLIC_PLUGINS_DIR'] ?? getenv('SLIC_PLUGINS_DIR'),
 		'SLIC_THEMES_DIR' => $base_env['SLIC_THEMES_DIR'] ?? getenv('SLIC_THEMES_DIR'),
 		'SLIC_WP_CONTENT_CONTAINER_DIR' => $base_env['SLIC_WP_CONTENT_CONTAINER_DIR'] ?? getenv('SLIC_WP_CONTENT_CONTAINER_DIR'),
 		'SLIC_CURRENT_PROJECT' => $target,
-	]);
+	];
+
+	// A Composer cache set on the base stack with `slic composer-cache set` applies to its worktrees too.
+	foreach (['COMPOSER_CACHE_DIR', 'SLIC_BASE_COMPOSER_CACHE_DIR', 'SLIC_COMPOSER_CACHE_IS_EXPLICIT'] as $key) {
+		if (isset($base_env[$key])) {
+			$state[$key] = $base_env[$key];
+		}
+	}
+
+	write_env_file($state_file, $state);
 
 	return $state_file;
 }
