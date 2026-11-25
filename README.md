@@ -1162,16 +1162,27 @@ This guide covers the steps needed when upgrading `slic` between major versions.
 > - Multi-stack support allows running multiple isolated slic environments simultaneously
 > - Automatic port assignment eliminates port configuration and conflicts
 
+#### Before Upgrading
+
+Stop the 2.x containers first, with 2.x still installed:
+
+```bash
+slic stop
+slic upgrade
+```
+
+3.0 names each stack's Docker Compose project after the stack, so it does not stop containers that 2.x started.
+
 #### Automatic Migration
 
 If you're upgrading from a single-stack setup, `slic` will automatically migrate your configuration:
 
 1. Your existing `.env.slic.run` is backed up to `.env.slic.run.backup`
-2. A new stack is registered for your current configuration
-3. Default ports (8888 for WordPress, 9006 for MySQL, 8379 for Redis) are preserved in the migrated stack
+2. A new stack is registered for your current configuration, with its target and settings
+3. WordPress, MySQL and Redis ports are no longer fixed: Docker assigns them when the stack starts, and `slic using` or `slic stack info` shows them
 4. You can continue working exactly as before
 
-**No action required** – the migration happens automatically on your next `slic` command.
+**No other action required** – the migration happens automatically on your next `slic` command.
 
 #### Taking Advantage of Multi-Stack Features
 
