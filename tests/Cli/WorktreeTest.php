@@ -209,6 +209,65 @@ class WorktreeTest extends BaseTestCase {
 	 *
 	 * @return string The absolute path to the plugin repository.
 	 */
+	public function test_worktree_help_shows_usage(): void {
+		$output = $this->slicExec( 'worktree help' );
+
+		$this->assertStringContainsString(
+			'USAGE',
+			$output,
+			'The worktree help output should contain USAGE section.'
+		);
+
+		$this->assertStringContainsString(
+			'SUMMARY',
+			$output,
+			'The worktree help output should contain SUMMARY section.'
+		);
+	}
+
+	public function test_worktree_no_subcommand_shows_help(): void {
+		$output = $this->slicExec( 'worktree' );
+
+		$this->assertStringContainsString(
+			'Available commands',
+			$output,
+			'Running worktree without a subcommand should show available commands.'
+		);
+
+		$this->assertStringContainsString(
+			"Run 'slic worktree help' for more information.",
+			$output,
+			'Running worktree without a subcommand should suggest running help.'
+		);
+	}
+
+	public function test_reset_in_a_worktree_clears_its_settings_and_keeps_its_target(): void {
+		$pluginDir = $this->setUpGitPluginStack();
+		$this->slicExec( 'worktree add feature-x -y', $this->dockerMockEnv() );
+
+		chdir( dirname( $pluginDir ) . '/test-plugin-feature-x' );
+		try {
+			$this->slicExec( 'xdebug port 9009' );
+			$this->slicExec( 'reset', $this->dockerMockEnv() );
+			$xdebug = $this->slicExec( 'xdebug status' );
+			$using  = $this->slicExec( 'using', $this->dockerMockEnv() );
+		} finally {
+			chdir( dirname( $pluginDir ) );
+			$this->slicExec( 'worktree remove feature-x -y', $this->dockerMockEnv() );
+		}
+
+		$this->assertStringNotContainsString(
+			'Remote port: 9009',
+			$xdebug,
+			'Reset should clear the settings of the worktree stack it runs in.'
+		);
+		$this->assertStringContainsString(
+			'Using test-plugin',
+			$using,
+			'Reset should leave the worktree stack pointed at its target.'
+		);
+	}
+
 	private function setUpGitPluginStack(): string {
 		$pluginDir = $this->setUpPluginsDir() . '/test-plugin';
 		$this->initGitRepository( $pluginDir );
