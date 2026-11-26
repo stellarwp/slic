@@ -801,6 +801,72 @@ class WorktreeTest extends BaseTestCase {
 		$this->assertStringContainsString( 'locked External disk', $locks, 'The repository that owns the worktree should keep its lock.' );
 	}
 
+	public static function replacedRepositoryProvider(): array {
+		return [
+			'remove, directory present' => [ 'remove feature-x -y', true ],
+			'merge, directory present'  => [ 'merge feature-x -y', true ],
+			'sync, directory offline'   => [ 'sync --clean -y', false ],
+		];
+	}
+
+	#[DataProvider( 'replacedRepositoryProvider' )]
+	public function test_worktree_subcommands_refuse_a_target_replaced_by_a_clone_without_the_worktree_record( string $command, bool $present ): void {
+		$pluginDir   = $this->setUpGitPluginStack();
+		$worktreeDir = $pluginDir . '-feature-x';
+		$stackId     = realpath( dirname( $pluginDir ) ) . '@test-plugin-feature-x';
+		$this->slicExec( 'worktree add feature-x -y', $this->dockerMockEnv() );
+		$this->git( $pluginDir, 'worktree lock --reason ' . escapeshellarg( 'External disk' ) . ' ' . escapeshellarg( $worktreeDir ) );
+		if ( ! $present ) {
+			rename( $worktreeDir, $worktreeDir . '.offline' );
+		}
+		// A fresh clone at the original path: the same git common directory path, without the worktree record or its lock.
+		rename( $pluginDir, $pluginDir . '.orig' );
+		$this->git( dirname( $pluginDir ), 'clone -q ' . escapeshellarg( $pluginDir . '.orig' ) . ' ' . escapeshellarg( $pluginDir ) );
+
+		try {
+			$output = $this->slicExec( "worktree {$command}; echo \"exit=\$?\"", $this->dockerMockLogEnv() );
+			$list   = $this->slicExec( 'worktree list', $this->dockerMockEnv() );
+			$locks  = $this->git( $pluginDir . '.orig', 'worktree list --porcelain' );
+			$this->assertDockerCalled( '# down #', 'The stack should not be brought down while git has no record of its worktree.', false );
+			// The advised command should work for a worktree whose directory is gone.
+			$this->slicExec( 'stack stop ' . escapeshellarg( $stackId ), $this->dockerMockEnv() );
+			$stopped = $this->slicExec( 'worktree list', $this->dockerMockEnv() );
+		} finally {
+			shell_exec( 'rm -rf ' . escapeshellarg( $pluginDir ) );
+			rename( $pluginDir . '.orig', $pluginDir );
+			if ( ! $present ) {
+				rename( $worktreeDir . '.offline', $worktreeDir );
+			}
+			$this->git( $pluginDir, 'worktree unlock ' . escapeshellarg( $worktreeDir ) );
+			$this->slicExec( 'worktree remove feature-x -y', $this->dockerMockEnv() );
+		}
+
+		$this->assertMatchesRegularExpression( '/exit=[1-9]/', $output, 'A target without a record of the worktree should make the command fail.' );
+		$this->assertStringContainsString( 'git has no record of', $output, 'The failure should say git has no record of the worktree.' );
+		$this->assertStringContainsString( 'slic stack stop ' . escapeshellarg( $stackId ), $output, 'The failure should say how to unregister a stack whose worktree is really gone.' );
+		$this->assertStringContainsString( 'Branch: feature-x', $list, 'The stack should stay registered.' );
+		$this->assertStringContainsString( 'locked External disk', $locks, 'The repository that owns the worktree should keep its lock.' );
+		$this->assertStringContainsString( 'No slic worktree stacks registered.', $stopped, 'The advised command should unregister the stack.' );
+	}
+
+	public static function gitDirectoryPathProvider(): array {
+		return [
+			'relative'               => [ '.git', '/repo/plugin/.git' ],
+			'absolute'               => [ '/repos/plugin/.git', '/repos/plugin/.git' ],
+			'Windows, forward slash' => [ 'C:/Repos/plugin/.git', 'C:/Repos/plugin/.git' ],
+			'Windows, backslash'     => [ 'C:\\Repos\\plugin\\.git', 'C:\\Repos\\plugin\\.git' ],
+			'Windows, network share' => [ '\\\\server\\plugin\\.git', '\\\\server\\plugin\\.git' ],
+		];
+	}
+
+	// Git prints Windows paths for the git directories there; a CLI test cannot produce them on Linux or macOS.
+	#[DataProvider( 'gitDirectoryPathProvider' )]
+	public function test_a_git_directory_path_is_resolved_against_the_repository_only_when_relative( string $gitDir, string $expected ): void {
+		require_once self::slicRoot() . '/src/worktree-utils.php';
+
+		$this->assertSame( $expected, \StellarWP\Slic\slic_worktree_resolve_path( '/repo/plugin', $gitDir ) );
+	}
+
 	public function test_worktree_add_refuses_a_target_without_its_own_repository(): void {
 		$pluginDir = $this->setUpPluginsDir() . '/test-plugin';
 		// A site under git that tracks the plugin, which has no repository of its own.

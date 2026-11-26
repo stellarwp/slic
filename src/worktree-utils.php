@@ -231,7 +231,20 @@ function slic_worktree_git_common_dir( $repo_path ) {
 	}
 
 	// Git prints the directory relative to the repository when it is inside it, as `.git`.
-	return realpath( strpos( $output[0], '/' ) === 0 ? $output[0] : $repo_path . '/' . $output[0] );
+	return realpath( slic_worktree_resolve_path( $repo_path, $output[0] ) );
+}
+
+/**
+ * Returns a path git printed, joined to the directory it is relative to unless it is absolute.
+ *
+ * @param string $base_path The directory a relative path is relative to.
+ * @param string $path      The path git printed.
+ *
+ * @return string The path, absolute if the base path is.
+ */
+function slic_worktree_resolve_path( $base_path, $path ) {
+	// On Windows git prints paths such as `C:/Repos/plugin/.git`.
+	return preg_match( '#^([A-Za-z]:)?[\\\\/]#', $path ) ? $path : $base_path . '/' . $path;
 }
 
 /**
@@ -254,8 +267,7 @@ function slic_worktree_owner_git_dir( array $wt_state ) {
 		return false;
 	}
 
-	$gitdir = trim( $matches[1] );
-	$gitdir = strpos( $gitdir, '/' ) === 0 ? $gitdir : $worktree_path . '/' . $gitdir;
+	$gitdir = slic_worktree_resolve_path( $worktree_path, trim( $matches[1] ) );
 
 	// The `.git` file points to `<common dir>/worktrees/<id>`.
 	return realpath( dirname( $gitdir, 2 ) );
@@ -271,12 +283,13 @@ function slic_worktree_owner_git_dir( array $wt_state ) {
  *                                         from `slic_worktree_owner_git_dir()`, to refuse a target that is now another
  *                                         repository; false when it is unknown, to refuse; null not to check, as for
  *                                         a worktree not registered with slic.
+ * @param string|null       $stack_id      The worktree stack, for the error to say how to unregister it.
  *
  * @return string|null|false The lock reason, empty for a lock without one, null if the worktree is not locked, or
- *                           false if it cannot say: git cannot read the repository, or it is not the one that owns
- *                           the worktree.
+ *                           false if it cannot say: git cannot read the repository, it is not the one that owns
+ *                           the worktree, or it has no record of a registered worktree.
  */
-function slic_worktree_lock_reason( $target_path, $worktree_path, &$error = '', $owner_git_dir = null ) {
+function slic_worktree_lock_reason( $target_path, $worktree_path, &$error = '', $owner_git_dir = null, $stack_id = null ) {
 	if ( false === $owner_git_dir ) {
 		$error = "Cannot confirm which repository owns $worktree_path";
 
@@ -305,12 +318,22 @@ function slic_worktree_lock_reason( $target_path, $worktree_path, &$error = '', 
 	$wanted    = $normalize( $worktree_path );
 
 	foreach ( $worktrees as $wt ) {
-		if ( isset( $wt['path'], $wt['locked'] ) && $normalize( $wt['path'] ) === $wanted ) {
-			return $wt['locked'];
+		if ( isset( $wt['path'] ) && $normalize( $wt['path'] ) === $wanted ) {
+			return $wt['locked'] ?? null;
 		}
 	}
 
-	return null;
+	if ( null === $owner_git_dir ) {
+		return null;
+	}
+
+	// Git keeps the record of a locked worktree, so none can mean another repository at the same path, as a new clone.
+	$error = "git has no record of $worktree_path in $target_path, so slic cannot tell whether it is locked.";
+	if ( null !== $stack_id ) {
+		$error .= "\nIf the worktree is really gone, stop and unregister its stack with:\n  slic stack stop " . escapeshellarg( $stack_id );
+	}
+
+	return false;
 }
 
 /**
@@ -320,12 +343,13 @@ function slic_worktree_lock_reason( $target_path, $worktree_path, &$error = '', 
  * @param string            $target_path   The path to the main repository.
  * @param string            $worktree_path The path to the worktree directory.
  * @param string|false|null $owner_git_dir The repository that owns the worktree, as `slic_worktree_lock_reason()` takes it.
+ * @param string|null       $stack_id      The worktree stack, for the error to say how to unregister it.
  * @param string            $unchanged     What the command kept, said with the error.
  *
  * @return void
  */
-function slic_worktree_require_unlocked( $target_path, $worktree_path, $owner_git_dir = null, $unchanged = 'Nothing was changed.' ) {
-	$reason = slic_worktree_lock_reason( $target_path, $worktree_path, $error, $owner_git_dir );
+function slic_worktree_require_unlocked( $target_path, $worktree_path, $owner_git_dir = null, $stack_id = null, $unchanged = 'Nothing was changed.' ) {
+	$reason = slic_worktree_lock_reason( $target_path, $worktree_path, $error, $owner_git_dir, $stack_id );
 
 	if ( null === $reason ) {
 		return;

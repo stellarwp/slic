@@ -72,7 +72,7 @@ if (!$is_registered && !$git_worktree_exists) {
 }
 
 slic_worktree_require_branch($branch, $wt_state, $existing_worktree);
-slic_worktree_require_unlocked($target_path, $worktree_full_path, $owner_git_dir);
+slic_worktree_require_unlocked($target_path, $worktree_full_path, $owner_git_dir, $worktree_stack_id);
 
 if (!$is_registered && $git_worktree_exists) {
     echo "WARNING: This worktree is NOT registered with slic.\n";
@@ -137,7 +137,7 @@ if (!$force_yes) {
 }
 
 // The worktree can have been locked while slic waited for the answer.
-slic_worktree_require_unlocked($target_path, $worktree_full_path, $owner_git_dir);
+slic_worktree_require_unlocked($target_path, $worktree_full_path, $owner_git_dir, $worktree_stack_id);
 
 // Step 1: Bring the containers and network down (only if registered)
 if ($is_registered) {

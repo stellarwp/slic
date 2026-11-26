@@ -110,7 +110,7 @@ $existing_worktree = slic_worktree_is_existing($target_path, $worktree_full_path
 $git_worktree_exists = ($existing_worktree !== false);
 
 slic_worktree_require_branch($branch, $wt_state, $existing_worktree);
-slic_worktree_require_unlocked($target_path, $worktree_full_path, $owner_git_dir);
+slic_worktree_require_unlocked($target_path, $worktree_full_path, $owner_git_dir, $worktree_stack_id);
 
 $original_cwd = getcwd();
 
@@ -136,7 +136,7 @@ if (!$git_worktree_exists) {
     }
 
     // The worktree can have been locked while slic waited for the answer.
-    slic_worktree_require_unlocked($target_path, $worktree_full_path, $owner_git_dir);
+    slic_worktree_require_unlocked($target_path, $worktree_full_path, $owner_git_dir, $worktree_stack_id);
 
     // Bring the containers and network down (only if registered)
     if ($is_registered) {
@@ -217,7 +217,7 @@ if (!$force_yes) {
 }
 
 // The worktree can have been locked while slic waited for the answer.
-slic_worktree_require_unlocked($target_path, $worktree_full_path, $owner_git_dir);
+slic_worktree_require_unlocked($target_path, $worktree_full_path, $owner_git_dir, $worktree_stack_id);
 
 // Step 1: Checkout base branch in target repo
 echo "\nChecking out base branch '$base_branch'...\n";
@@ -272,7 +272,7 @@ if ($merge_code !== 0) {
 echo "Merge successful.\n";
 
 // A post-merge hook can have locked the worktree.
-slic_worktree_require_unlocked($target_path, $worktree_full_path, $owner_git_dir, 'The branch was merged; the worktree and its stack were kept.');
+slic_worktree_require_unlocked($target_path, $worktree_full_path, $owner_git_dir, $worktree_stack_id, 'The branch was merged; the worktree and its stack were kept.');
 
 // Step 3: Bring the containers and network down (only if registered)
 if ($is_registered) {
