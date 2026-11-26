@@ -980,9 +980,18 @@ function slic_stacks_migrate_legacy() {
 	echo colorize( PHP_EOL . "<yellow>✓ Migrated existing slic configuration to multi-stack format.</yellow>" . PHP_EOL );
 	echo colorize( "Your previous configuration has been backed up to .env.slic.run.backup" . PHP_EOL . PHP_EOL );
 
-	// 2.x ran Compose without -p: stop its project, named after the slic directory as Compose normalizes it.
-	$legacy_project = preg_replace( '/[^a-z0-9_-]/', '', strtolower( basename( $root_dir ) ) );
-	$down_command   = docker_compose_bin() . ' -p ' . escapeshellarg( $legacy_project ) . ' down --remove-orphans';
+	// The .env files are not loaded yet: read the settings 2.x ran Compose with, each file overriding the one before it.
+	$legacy_settings = array_merge(
+		getenv(),
+		read_env_file( $root_dir . '/.env.slic' ),
+		is_file( $root_dir . '/.env.slic.local' ) ? read_env_file( $root_dir . '/.env.slic.local' ) : [],
+		$legacy_env
+	);
+	// 2.x ran Compose without -p: its project is COMPOSE_PROJECT_NAME or the slic directory, as Compose normalizes it.
+	$legacy_project = ( $legacy_settings['COMPOSE_PROJECT_NAME'] ?? '' ) ?: basename( $root_dir );
+	$legacy_project = ltrim( preg_replace( '/[^a-z0-9_-]/', '', strtolower( $legacy_project ) ), '_-' );
+	$compose_bin    = ( $legacy_settings['SLIC_DOCKER_COMPOSE_BIN'] ?? '' ) ?: docker_compose_bin();
+	$down_command   = $compose_bin . ' -p ' . escapeshellarg( $legacy_project ) . ' down --remove-orphans';
 	exec( $down_command . ' 2>&1', $down_output, $down_status );
 	// The registry now exists, so the migration never runs again: the user has to stop the 2.x containers.
 	if ( 0 !== $down_status ) {

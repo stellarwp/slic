@@ -11,7 +11,7 @@ class MigrationTest extends BaseTestCase {
 	/**
 	 * The slic root files the migration reads or writes, set aside so each test starts as a 2.x install.
 	 */
-	private const ROOT_FILES = [ '.env.slic.stacks', '.env.slic.run', '.env.slic.run.backup', '.build-version' ];
+	private const ROOT_FILES = [ '.env.slic.stacks', '.env.slic.run', '.env.slic.run.backup', '.build-version', '.env.slic.local' ];
 
 	/**
 	 * @var array<string,string|null>
@@ -129,6 +129,66 @@ class MigrationTest extends BaseTestCase {
 		$this->assertDockerCalled(
 			'/^-p slic-test-root-[0-9a-f]+ down --remove-orphans$/',
 			'The migration should bring down the 2.x Compose project, keeping its volumes.'
+		);
+	}
+
+	public function test_migration_stops_the_2x_project_named_in_the_local_settings(): void {
+		// 2.x loaded .env.slic.local over the shell environment, so its project name won.
+		file_put_contents( self::slicRoot() . '/.env.slic.local', "COMPOSE_PROJECT_NAME=legacy_qa\n" );
+
+		$this->slicExec( 'using', [ 'COMPOSE_PROJECT_NAME' => 'from_shell' ] + $this->dockerMockLogEnv() );
+
+		$this->assertDockerCalled(
+			'/^-p legacy_qa down --remove-orphans$/',
+			'The migration should bring down the Compose project 2.x was configured to use.'
+		);
+	}
+
+	public function test_migration_stops_the_2x_project_with_the_configured_compose_bin(): void {
+		$composeBin = $this->createTempDir() . '/legacy-compose';
+		file_put_contents( $composeBin, "#!/bin/bash\nexec " . escapeshellarg( $this->dockerMockEnv()['SLIC_DOCKER_BIN'] ) . ' legacy-compose "$@"' . "\n" );
+		chmod( $composeBin, 0755 );
+		file_put_contents( self::slicRoot() . '/.env.slic.local', "SLIC_DOCKER_COMPOSE_BIN={$composeBin}\n" );
+
+		$this->slicExec( 'using', $this->dockerMockLogEnv() );
+
+		$this->assertDockerCalled(
+			'/^legacy-compose -p slic-test-root-[0-9a-f]+ down --remove-orphans$/',
+			'The migration should use the Compose executable 2.x was configured to use.'
+		);
+	}
+
+	public function test_a_failed_2x_teardown_prints_the_configured_project_and_compose_bin(): void {
+		$composeBin = $this->createTempDir() . '/legacy-compose';
+		file_put_contents( $composeBin, "#!/bin/bash\nexec " . escapeshellarg( $this->dockerMockEnv()['SLIC_DOCKER_BIN'] ) . ' "$@"' . "\n" );
+		chmod( $composeBin, 0755 );
+		file_put_contents( self::slicRoot() . '/.env.slic.local', "SLIC_DOCKER_COMPOSE_BIN={$composeBin}\nCOMPOSE_PROJECT_NAME=legacy_qa\n" );
+
+		$output = $this->slicExec( 'using', [ 'SLIC_DOCKER_MOCK_FAIL' => ' down --remove-orphans$' ] + $this->dockerMockEnv() );
+
+		$this->assertStringContainsString(
+			"{$composeBin} -p 'legacy_qa' down --remove-orphans",
+			$output,
+			'The retry command should stop the project 2.x used, with the executable it used.'
+		);
+	}
+
+	public function test_migration_normalizes_the_2x_project_name_as_compose_does(): void {
+		// The slic root is shared by the test class: run a copy whose directory name Compose has to normalize.
+		$root = $this->createTempDir() . '/_Legacy.Slic';
+		exec( 'cp -R ' . escapeshellarg( self::slicRoot() ) . ' ' . escapeshellarg( $root ), $cpOutput, $cpStatus );
+		$this->assertSame( 0, $cpStatus, 'Could not copy the slic root.' );
+
+		$command = '';
+		foreach ( $this->dockerMockLogEnv() + [ 'SLIC_CACHE_DIR' => $this->createTempDir(), 'NO_COLOR' => '1', 'SLIC_INTERACTIVE' => '0' ] as $key => $value ) {
+			$command .= $key . '=' . escapeshellarg( $value ) . ' ';
+		}
+		shell_exec( $command . 'php ' . escapeshellarg( $root . '/slic.php' ) . ' using 2>&1' );
+
+		// Compose lowercases the name, drops other characters and strips its leading `_` and `-`.
+		$this->assertDockerCalled(
+			'/^-p legacyslic down --remove-orphans$/',
+			'The migration should bring down the 2.x project under the name Compose gave it.'
 		);
 	}
 

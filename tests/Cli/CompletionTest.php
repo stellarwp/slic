@@ -86,7 +86,8 @@ class CompletionTest extends BaseTestCase {
 		$this->setUpPluginsDir( 'test-plugin' );
 		mkdir( $this->cacheDir . '/completions', 0777, true );
 		// An interrupted cache write leaves a zero-byte file behind.
-		touch( $this->cacheDir . '/completions/targets-' . md5( (string) getcwd() ) . '.json' );
+		// The key UseCompleter caches targets under: the working directory, the --stack option (none) and SLIC_STACK.
+		touch( $this->cacheDir . '/completions/targets-' . md5( implode( "\n", [ getcwd(), '', getenv( 'SLIC_STACK' ) ] ) ) . '.json' );
 
 		$this->assertContains(
 			'test-plugin',
@@ -237,6 +238,32 @@ class CompletionTest extends BaseTestCase {
 			$this->completeInBash( [ 'slic', '--stack', '' ], 2 ),
 			'A stack path with spaces should be one escaped completion.'
 		);
+	}
+
+	public function test_bash_completes_targets_from_a_quoted_or_escaped_stack_path_with_spaces(): void {
+		$stackId = realpath( $this->setUpPluginsDir( 'test-plugin', '/slic test plugins ' . uniqid( '', true ) ) );
+		chdir( $this->createTempDir() );
+
+		// Bash keeps the quotes and backslashes of a word in COMP_WORDS.
+		foreach ( [ '"' . $stackId . '"', "'" . $stackId . "'", str_replace( ' ', '\ ', $stackId ) ] as $word ) {
+			$this->assertContains(
+				'test-plugin',
+				$this->completeInBash( [ 'slic', 'use', '--stack', $word, '' ], 4 ),
+				'The targets of the stack should complete from the path as typed: ' . $word
+			);
+		}
+	}
+
+	public function test_an_unregistered_stack_completes_nothing(): void {
+		$this->setUpPluginsDir( 'test-plugin' );
+
+		foreach ( [ [ [ 'slic', 'use', '--stack', $this->createTempDir(), '' ], 4, [] ], [ [ 'slic', 'use', '' ], 2, [ 'SLIC_STACK' => $this->createTempDir() ] ] ] as [ $words, $cword, $env ] ) {
+			$this->assertSame(
+				'',
+				$this->complete( $words, $cword, $env ),
+				'A diagnostic must not become a completion: ' . implode( ' ', $words ) . ' ' . json_encode( $env )
+			);
+		}
 	}
 
 	public function test_bash_follows_a_relative_slic_symlink_with_only_a_basic_readlink(): void {

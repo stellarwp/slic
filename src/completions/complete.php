@@ -30,6 +30,11 @@ if ( empty( $options ) ) {
 	exit( 0 );
 }
 
+// Only completions reach the shell: discard what slic prints, also when it exits, as for an unregistered --stack.
+ob_start( static function () {
+	return '';
+} );
+
 // Load required files
 require_once __DIR__ . '/CompletionCache.php';
 require_once __DIR__ . '/completers/CommandCompleter.php';
@@ -87,6 +92,16 @@ if ( ! $completing_stack_option && $current_word_index > 0 ) {
 	}
 }
 
+// Bash and zsh pass a word as typed: remove its quotes and backslash escapes as the shell would.
+require_once dirname( __DIR__ ) . '/docker-argv.php';
+$unquote = static function ( string $word ): string {
+	try {
+		return \StellarWP\Slic\docker_compose_prefix_argv( $word, false )[0];
+	} catch ( \InvalidArgumentException $e ) {
+		return $word;
+	}
+};
+
 // Drop the global flags before the current word, wherever they are, as slic.php does: -q, --stack <path> and --stack=<path>.
 $SLIC_STACK_OVERRIDE = null;
 $index = 0;
@@ -96,11 +111,11 @@ while ( $index < $current_word_index ) {
 	if ( $word === '-q' ) {
 		$length = 1;
 	} elseif ( strpos( $word, '--stack=' ) === 0 ) {
-		$SLIC_STACK_OVERRIDE = substr( $word, strlen( '--stack=' ) );
+		$SLIC_STACK_OVERRIDE = $unquote( substr( $word, strlen( '--stack=' ) ) );
 		$length = 1;
 	} elseif ( $word === '--stack' ) {
 		$length = ( $words[ $index + 1 ] ?? '' ) === '=' ? 3 : 2;
-		$SLIC_STACK_OVERRIDE = $words[ $index + $length - 1 ] ?? null;
+		$SLIC_STACK_OVERRIDE = $unquote( $words[ $index + $length - 1 ] ?? '' );
 	}
 	if ( $length ) {
 		array_splice( $words, $index, $length );
@@ -188,6 +203,7 @@ if ( $completing_stack_option ) {
 }
 
 // Output completions, one per line, so a completion can contain spaces
+ob_end_clean();
 if ( ! empty( $completions ) ) {
 	echo implode( "\n", $completions );
 }
