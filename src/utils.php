@@ -366,7 +366,7 @@ function write_env_file( $file, array $lines = [], $update = false ) {
 	}, array_keys( $new_lines ), $new_lines ) );
 
 	// If this is the first time creating the .env.slic.run file, assume this is the first run and place the CLI version in `.build-version`.
-	if ( false !== strpos( $file, '.env.slic.run' ) && ! is_file( $file ) ) {
+	if ( '.env.slic.run' === basename( $file ) && ! is_file( $file ) ) {
 		write_build_version();
 	}
 

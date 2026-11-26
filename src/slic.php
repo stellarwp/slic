@@ -2019,8 +2019,8 @@ function maybe_prompt_for_stack_update() {
 		$build_version = file_get_contents( SLIC_ROOT_DIR . '/.build-version' );
 	}
 
-	// If there isn't a .env.slic.run, this is likely a fresh install. Bail.
-	if ( ! file_exists( SLIC_ROOT_DIR . '/.env.slic.run' ) ) {
+	// If there isn't a .env.slic.run or a stack registry, this is likely a fresh install. Bail.
+	if ( ! file_exists( SLIC_ROOT_DIR . '/.env.slic.run' ) && ! file_exists( slic_stacks_registry_file() ) ) {
 		return;
 	}
 

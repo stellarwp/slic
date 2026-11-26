@@ -1000,6 +1000,7 @@ function slic_stacks_migrate_legacy() {
 		'xdebug_key'   => slic_stacks_xdebug_server_name( $stack_id ),
 		// Ports are Docker-assigned and read from Docker once the stack is running.
 		'ports'        => null,
+		'target'       => $legacy_env['SLIC_CURRENT_PROJECT'] ?? null,
 		'created_at'   => date( 'c' ),
 		'status'       => 'migrated',
 	];
@@ -1009,14 +1010,19 @@ function slic_stacks_migrate_legacy() {
 		return false;
 	}
 
-	// Copy legacy file to new stack-specific file
-	$new_run_file = slic_stacks_get_state_file( $stack_id );
-	if ( ! copy( $legacy_run_file, $new_run_file ) ) {
+	// Back up the legacy file to .env.slic.run.backup
+	if ( ! copy( $legacy_run_file, $legacy_run_file . '.backup' ) ) {
 		return false;
 	}
 
-	// Rename legacy file to .env.slic.run.backup
-	rename( $legacy_run_file, $legacy_run_file . '.backup' );
+	// The settings `debug` and `composer set-version` write to .env.slic.run for all stacks stay there.
+	$global_env = array_intersect_key( $legacy_env, array_flip( [ 'CLI_VERBOSITY', 'SLIC_COMPOSER_VERSION' ] ) );
+	write_env_file( slic_stacks_get_state_file( $stack_id ), array_diff_key( $legacy_env, $global_env ) );
+	write_env_file( $legacy_run_file, $global_env );
+
+	// 2.x ran Compose without -p: stop its project, named after the slic directory as Compose normalizes it.
+	$legacy_project = preg_replace( '/[^a-z0-9_-]/', '', strtolower( basename( $root_dir ) ) );
+	exec( docker_compose_bin() . ' -p ' . escapeshellarg( $legacy_project ) . ' down --remove-orphans 2>&1' );
 
 	return true;
 }
