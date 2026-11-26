@@ -173,6 +173,54 @@ class MigrationTest extends BaseTestCase {
 		);
 	}
 
+	public function test_migration_stops_the_2x_project_the_target_settings_selected(): void {
+		// 2.x loaded the selected target's .env.slic.local last, over the root's.
+		file_put_contents( self::slicRoot() . '/.env.slic.local', "SLIC_DOCKER_COMPOSE_BIN={$this->composeWrapper( 'from-root' )}\nCOMPOSE_PROJECT_NAME=root_qa\n" );
+		file_put_contents( $this->pluginsDir . '/test-plugin/.env.slic.local', "SLIC_DOCKER_COMPOSE_BIN={$this->composeWrapper( 'from-target' )}\nCOMPOSE_PROJECT_NAME=plugin_qa\n" );
+
+		$this->slicExec( 'using', $this->dockerMockLogEnv() );
+
+		$this->assertDockerCalled(
+			'/^from-target -p plugin_qa down --remove-orphans$/',
+			'The migration should stop the project 2.x ran for the target, with the executable it used.'
+		);
+	}
+
+	public function test_migration_stops_the_2x_project_on_its_docker_context(): void {
+		file_put_contents( self::slicRoot() . '/.env.slic.local', "DOCKER_CONTEXT=legacy-remote\n" );
+
+		$this->slicExec( 'using', $this->dockerMockLogEnv( [ 'DOCKER_CONTEXT' ] ) );
+
+		$this->assertDockerCalled(
+			'/ down --remove-orphans \[DOCKER_CONTEXT=legacy-remote\]$/',
+			'The migration should stop the 2.x project on the Docker endpoint 2.x used.'
+		);
+	}
+
+	public function test_a_failed_2x_teardown_prints_the_docker_context(): void {
+		file_put_contents( self::slicRoot() . '/.env.slic.local', "DOCKER_CONTEXT=legacy-remote\n" );
+
+		$output = $this->slicExec( 'using', [ 'SLIC_DOCKER_MOCK_FAIL' => ' down --remove-orphans$' ] + $this->dockerMockEnv() );
+
+		$this->assertMatchesRegularExpression(
+			"/^DOCKER_CONTEXT='legacy-remote' .* down --remove-orphans$/m",
+			$output,
+			'The retry command should target the Docker endpoint 2.x used.'
+		);
+	}
+
+	public function test_the_2x_target_settings_do_not_outlive_the_teardown(): void {
+		// A staged PHP version wins over the target's unless the target's leaks in looking like a command-line one.
+		file_put_contents( self::slicRoot() . '/.env.slic.run', "SLIC_PHP_VERSION=8.1\nSLIC_PHP_VERSION_STAGED=1\n", FILE_APPEND );
+		file_put_contents( $this->pluginsDir . '/test-plugin/.env.slic.local', "SLIC_PHP_VERSION=8.0\n" );
+
+		$this->assertStringContainsString(
+			'PHP version is staged to switch to 8.1',
+			$this->slicExec( 'php-version', $this->dockerMockEnv() ),
+			'The environment the 2.x teardown ran with should be restored afterwards.'
+		);
+	}
+
 	public function test_migration_normalizes_the_2x_project_name_as_compose_does(): void {
 		// The slic root is shared by the test class: run a copy whose directory name Compose has to normalize.
 		$root = $this->createTempDir() . '/_Legacy.Slic';
@@ -237,5 +285,16 @@ class MigrationTest extends BaseTestCase {
 			file_get_contents( self::slicRoot() . '/.build-version' ),
 			'Creating a stack state file should not record a build that did not happen.'
 		);
+	}
+
+	/**
+	 * Creates a Compose executable that records its calls through the Docker mock, prefixed with a tag.
+	 */
+	private function composeWrapper( string $tag ): string {
+		$composeBin = $this->createTempDir() . '/' . $tag;
+		file_put_contents( $composeBin, "#!/bin/bash\nexec " . escapeshellarg( $this->dockerMockEnv()['SLIC_DOCKER_BIN'] ) . ' ' . $tag . ' "$@"' . "\n" );
+		chmod( $composeBin, 0755 );
+
+		return $composeBin;
 	}
 }

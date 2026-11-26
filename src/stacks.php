@@ -980,22 +980,42 @@ function slic_stacks_migrate_legacy() {
 	echo colorize( PHP_EOL . "<yellow>✓ Migrated existing slic configuration to multi-stack format.</yellow>" . PHP_EOL );
 	echo colorize( "Your previous configuration has been backed up to .env.slic.run.backup" . PHP_EOL . PHP_EOL );
 
-	// The .env files are not loaded yet: read the settings 2.x ran Compose with, each file overriding the one before it.
-	$legacy_settings = array_merge(
-		getenv(),
-		read_env_file( $root_dir . '/.env.slic' ),
-		is_file( $root_dir . '/.env.slic.local' ) ? read_env_file( $root_dir . '/.env.slic.local' ) : [],
-		$legacy_env
-	);
+	// The .env files are not loaded yet: apply the environment 2.x ran Compose in, in its order, then restore this one.
+	$saved_env = getenv();
+	load_env_file( $root_dir . '/.env.slic' );
+	if ( is_file( $root_dir . '/.env.slic.local' ) ) {
+		load_env_file( $root_dir . '/.env.slic.local' );
+	}
+	foreach ( $legacy_env as $key => $value ) {
+		putenv( "{$key}={$value}" );
+	}
+	if ( slic_here_is_site() && getenv( 'SLIC_CURRENT_PROJECT' ) ) {
+		slic_site_target_environment( getenv( 'SLIC_CURRENT_PROJECT' ) );
+	}
+	$target_path = get_project_local_path( null, $stack_id );
+	if ( $target_path && is_file( $target_path . '/.env.slic.local' ) ) {
+		load_env_file( $target_path . '/.env.slic.local' );
+	}
 	// 2.x ran Compose without -p: its project is COMPOSE_PROJECT_NAME or the slic directory, as Compose normalizes it.
-	$legacy_project = ( $legacy_settings['COMPOSE_PROJECT_NAME'] ?? '' ) ?: basename( $root_dir );
+	$legacy_project = getenv( 'COMPOSE_PROJECT_NAME' ) ?: basename( $root_dir );
 	$legacy_project = ltrim( preg_replace( '/[^a-z0-9_-]/', '', strtolower( $legacy_project ) ), '_-' );
-	$compose_bin    = ( $legacy_settings['SLIC_DOCKER_COMPOSE_BIN'] ?? '' ) ?: docker_compose_bin();
-	$down_command   = $compose_bin . ' -p ' . escapeshellarg( $legacy_project ) . ' down --remove-orphans';
+	$down_command   = docker_compose_bin() . ' -p ' . escapeshellarg( $legacy_project ) . ' down --remove-orphans';
+	$retry_command  = $down_command;
+	foreach ( [ 'DOCKER_HOST', 'DOCKER_CONTEXT' ] as $key ) {
+		if ( getenv( $key ) ) {
+			$retry_command = $key . '=' . escapeshellarg( getenv( $key ) ) . ' ' . $retry_command;
+		}
+	}
 	exec( $down_command . ' 2>&1', $down_output, $down_status );
+	foreach ( array_diff_key( getenv(), $saved_env ) as $key => $value ) {
+		putenv( $key );
+	}
+	foreach ( $saved_env as $key => $value ) {
+		putenv( "{$key}={$value}" );
+	}
 	// The registry now exists, so the migration never runs again: the user has to stop the 2.x containers.
 	if ( 0 !== $down_status ) {
-		echo colorize( "<magenta>Could not stop the slic 2.x containers. Stop them by running:</magenta>" . PHP_EOL . $down_command . PHP_EOL . PHP_EOL );
+		echo colorize( "<magenta>Could not stop the slic 2.x containers. Stop them by running:</magenta>" . PHP_EOL . $retry_command . PHP_EOL . PHP_EOL );
 	}
 
 	return true;
