@@ -41,7 +41,7 @@ class WorktreeTest extends BaseTestCase {
 		}
 
 		$this->assertMatchesRegularExpression(
-			"/Executing command: .*XDP='{$matches[1]}' .* stop/",
+			"/Executing command: .*XDP='{$matches[1]}' .* down/",
 			$output,
 			'Stopping the worktree stack should use the worktree XDebug port.'
 		);
@@ -389,12 +389,317 @@ class WorktreeTest extends BaseTestCase {
 		);
 	}
 
+	public static function targetTypeProvider(): array {
+		return [
+			'plugin' => [ 'plugin' ],
+			'theme'  => [ 'theme' ],
+		];
+	}
+
+	#[DataProvider( 'targetTypeProvider' )]
+	public function test_worktree_add_list_sync_and_remove_work_for_a_target_of_each_type( string $type ): void {
+		$targetDir   = 'theme' === $type ? $this->setUpGitThemeStack() : $this->setUpGitPluginStack();
+		$worktreeDir = $targetDir . '-feature-x';
+
+		$add  = $this->slicExec( 'worktree add feature-x -y', $this->dockerMockEnv() );
+		$list = $this->slicExec( 'worktree list', $this->dockerMockEnv() );
+		$sync = $this->slicExec( 'worktree sync', $this->dockerMockEnv() );
+		$remove = $this->slicExec( 'worktree remove feature-x -y', $this->dockerMockEnv() );
+
+		$this->assertStringContainsString( 'Worktree stack registered successfully!', $add, "Adding a worktree of a {$type} should succeed." );
+		$this->assertStringContainsString( 'Path: ' . realpath( $targetDir ) . '-feature-x', $list, 'The worktree should be created next to its target.' );
+		$this->assertMatchesRegularExpression( '#^' . preg_quote( realpath( $targetDir ) . '-feature-x', '#' ) . '\s+\S+ \[feature-x\]$#m', $list, 'The list should show the git worktrees of the target.' );
+		$this->assertStringContainsString( 'All worktrees are in sync.', $sync, 'Sync should find the worktree where add created it.' );
+		$this->assertStringContainsString( 'Worktree removed successfully.', $remove, "Removing a worktree of a {$type} should succeed." );
+		$this->assertDirectoryDoesNotExist( $worktreeDir, 'Remove should delete the worktree directory.' );
+	}
+
+	#[DataProvider( 'targetTypeProvider' )]
+	public function test_worktree_merge_merges_the_branch_and_removes_the_worktree( string $type ): void {
+		$targetDir   = 'theme' === $type ? $this->setUpGitThemeStack() : $this->setUpGitPluginStack();
+		$worktreeDir = $targetDir . '-feature-x';
+		$baseBranch  = $this->git( $targetDir, 'symbolic-ref --short HEAD' );
+		preg_match( '/Project Name: (\S+)/', $this->slicExec( 'worktree add feature-x -y', $this->dockerMockEnv() ), $project );
+		$this->commitFile( $worktreeDir, 'feature.txt', 'feature' );
+
+		$output = $this->slicExec( 'worktree merge feature-x -y', $this->dockerMockLogEnv() );
+
+		$this->assertStringContainsString( 'Worktree merged and removed successfully!', $output, 'A clean merge should succeed.' );
+		$this->assertSame( 'feature', $this->git( $targetDir, 'show ' . escapeshellarg( $baseBranch . ':feature.txt' ) ), 'The base branch should have the worktree commit.' );
+		$this->assertSame( '', $this->git( $targetDir, 'branch --list feature-x' ), 'The merged branch should be deleted.' );
+		$this->assertDirectoryDoesNotExist( $worktreeDir, 'The worktree directory should be removed.' );
+		$this->assertStringContainsString( 'No slic worktree stacks registered.', $this->slicExec( 'worktree list', $this->dockerMockEnv() ), 'The worktree stack should be unregistered.' );
+		$this->assertDockerCalled( '#-p ' . preg_quote( $project[1], '#' ) . ' .*down#', 'Merge should bring the worktree stack down, removing its containers and network.' );
+	}
+
+	public function test_worktree_merge_with_a_conflict_keeps_the_worktree_and_says_how_to_abort(): void {
+		$pluginDir   = $this->setUpGitPluginStack();
+		$worktreeDir = $pluginDir . '-feature-x';
+		$this->slicExec( 'worktree add feature-x -y', $this->dockerMockEnv() );
+		$this->commitFile( $worktreeDir, 'plugin.php', 'worktree' );
+		$this->commitFile( $pluginDir, 'plugin.php', 'base' );
+
+		try {
+			$output = $this->slicExec( 'worktree merge feature-x -y || echo merge-failed', $this->dockerMockEnv() );
+			$list   = $this->slicExec( 'worktree list', $this->dockerMockEnv() );
+			$kept   = is_dir( $worktreeDir );
+		} finally {
+			$this->git( $pluginDir, 'merge --abort' );
+			$this->slicExec( 'worktree remove feature-x -y', $this->dockerMockEnv() );
+		}
+
+		$this->assertStringContainsString( 'merge-failed', $output, 'A conflicting merge should fail.' );
+		$this->assertStringContainsString( 'git -C ' . escapeshellarg( realpath( $pluginDir ) ) . ' merge --abort', $output, 'The advice should say how to abort the merge.' );
+		$this->assertStringContainsString( 'Branch: feature-x', $list, 'The worktree stack should stay registered.' );
+		$this->assertTrue( $kept, 'The worktree should be kept.' );
+	}
+
+	public function test_worktree_merge_leaves_the_base_repository_mid_merge_after_a_conflict(): void {
+		$pluginDir = $this->setUpGitPluginStack();
+		$this->slicExec( 'worktree add feature-x -y', $this->dockerMockEnv() );
+		$this->commitFile( $pluginDir . '-feature-x', 'plugin.php', 'worktree' );
+		$this->commitFile( $pluginDir, 'plugin.php', 'base' );
+
+		try {
+			$this->slicExec( 'worktree merge feature-x -y', $this->dockerMockEnv() );
+			$mergeHead = $this->git( $pluginDir, 'rev-parse -q --verify MERGE_HEAD' );
+		} finally {
+			$this->git( $pluginDir, 'merge --abort' );
+			$this->slicExec( 'worktree remove feature-x -y', $this->dockerMockEnv() );
+		}
+
+		$this->assertNotSame( '', $mergeHead, 'The base repository should be left mid-merge, as git leaves it.' );
+	}
+
+	public function test_worktree_merge_refuses_a_detached_base_branch(): void {
+		$pluginDir = $this->setUpGitPluginStack();
+		$this->git( $pluginDir, 'checkout -q --detach' );
+		$this->slicExec( 'worktree add feature-x -y', $this->dockerMockEnv() );
+		$this->commitFile( $pluginDir . '-feature-x', 'feature.txt', 'feature' );
+
+		try {
+			$output = $this->slicExec( 'worktree merge feature-x -y || echo merge-failed', $this->dockerMockEnv() );
+			$branch = $this->git( $pluginDir, 'branch --list feature-x' );
+		} finally {
+			$this->slicExec( 'worktree remove feature-x -y', $this->dockerMockEnv() );
+		}
+
+		$this->assertStringContainsString( 'merge-failed', $output, 'Merging into a detached HEAD should fail.' );
+		$this->assertStringContainsString( 'feature-x', $branch, 'The branch should not be deleted.' );
+	}
+
+	public function test_worktree_merge_of_a_missing_worktree_cleans_up_its_stack(): void {
+		$pluginDir = $this->setUpGitPluginStack();
+		preg_match( '/Project Name: (\S+)/', $this->slicExec( 'worktree add feature-x -y', $this->dockerMockEnv() ), $project );
+		shell_exec( 'rm -rf ' . escapeshellarg( $pluginDir . '-feature-x' ) );
+
+		$output = $this->slicExec( 'worktree merge feature-x -y', $this->dockerMockLogEnv() );
+
+		$this->assertStringContainsString( 'Git worktree no longer exists', $output, 'Merge should notice the worktree is gone.' );
+		$this->assertStringContainsString( 'No slic worktree stacks registered.', $this->slicExec( 'worktree list', $this->dockerMockEnv() ), 'The worktree stack should be unregistered.' );
+		$this->assertDockerCalled( '#-p ' . preg_quote( $project[1], '#' ) . ' .*down#', 'Merge should bring the stack of the missing worktree down.' );
+	}
+
+	public function test_worktree_sync_clean_brings_down_and_unregisters_only_its_own_deleted_worktrees(): void {
+		$otherDir = $this->setUpGitPluginStack();
+		$this->slicExec( 'worktree add feature-x -y', $this->dockerMockEnv() );
+		shell_exec( 'rm -rf ' . escapeshellarg( $otherDir . '-feature-x' ) );
+		$pluginDir = $this->setUpGitPluginStack();
+		preg_match( '/Project Name: (\S+)/', $this->slicExec( 'worktree add feature-x -y', $this->dockerMockEnv() ), $project );
+		shell_exec( 'rm -rf ' . escapeshellarg( $pluginDir . '-feature-x' ) );
+
+		try {
+			$this->slicExec( 'worktree sync --clean -y', $this->dockerMockLogEnv() );
+			$list      = $this->slicExec( 'worktree list', $this->dockerMockEnv() );
+			chdir( dirname( $otherDir ) );
+			$otherList = $this->slicExec( 'worktree list', $this->dockerMockEnv() );
+		} finally {
+			chdir( dirname( $otherDir ) );
+			$this->slicExec( 'worktree sync --clean -y', $this->dockerMockEnv() );
+		}
+
+		$this->assertStringContainsString( 'No slic worktree stacks registered.', $list, 'Sync should unregister the deleted worktree.' );
+		$this->assertDockerCalled( '#-p ' . preg_quote( $project[1], '#' ) . ' .*down#', 'Sync should bring the deleted worktree stack down before unregistering it.' );
+		$this->assertStringContainsString( 'Branch: feature-x', $otherList, 'Sync should not clean the worktrees of another base stack.' );
+	}
+
+	public function test_worktree_remove_refuses_a_locked_worktree(): void {
+		$pluginDir   = $this->setUpGitPluginStack();
+		$worktreeDir = $pluginDir . '-feature-x';
+		$this->slicExec( 'worktree add feature-x -y', $this->dockerMockEnv() );
+		$this->git( $pluginDir, 'worktree lock ' . escapeshellarg( $worktreeDir ) );
+
+		try {
+			$output = $this->slicExec( 'worktree remove feature-x -y || echo remove-failed', $this->dockerMockEnv() );
+			$list   = $this->slicExec( 'worktree list', $this->dockerMockEnv() );
+			$kept   = is_dir( $worktreeDir );
+		} finally {
+			$this->git( $pluginDir, 'worktree unlock ' . escapeshellarg( $worktreeDir ) );
+			$this->slicExec( 'worktree remove feature-x -y', $this->dockerMockEnv() );
+		}
+
+		$this->assertStringContainsString( 'remove-failed', $output, 'Removing a locked worktree should fail.' );
+		$this->assertStringContainsString( 'locked', $output, "The failure should show git's reason." );
+		$this->assertTrue( $kept, 'A locked worktree should not be deleted.' );
+		$this->assertStringContainsString( 'Branch: feature-x', $list, 'The stack of a locked worktree should stay registered.' );
+	}
+
+	public function test_worktree_merge_refuses_to_delete_a_locked_worktree(): void {
+		$pluginDir   = $this->setUpGitPluginStack();
+		$worktreeDir = $pluginDir . '-feature-x';
+		$this->slicExec( 'worktree add feature-x -y', $this->dockerMockEnv() );
+		$this->commitFile( $worktreeDir, 'feature.txt', 'feature' );
+		$this->git( $pluginDir, 'worktree lock ' . escapeshellarg( $worktreeDir ) );
+
+		try {
+			$output = $this->slicExec( 'worktree merge feature-x -y || echo merge-failed', $this->dockerMockEnv() );
+			$branch = $this->git( $pluginDir, 'branch --list feature-x' );
+			$kept   = is_dir( $worktreeDir );
+		} finally {
+			$this->git( $pluginDir, 'worktree unlock ' . escapeshellarg( $worktreeDir ) );
+			$this->slicExec( 'worktree remove feature-x -y', $this->dockerMockEnv() );
+		}
+
+		$this->assertStringContainsString( 'merge-failed', $output, 'Merge should fail when git cannot remove the worktree.' );
+		$this->assertTrue( $kept, 'A locked worktree should not be deleted.' );
+		$this->assertStringContainsString( 'feature-x', $branch, 'The branch of a worktree that was not removed should be kept.' );
+	}
+
+	public static function sameDirectorySubcommandProvider(): array {
+		return [
+			'add'    => [ 'add' ],
+			'remove' => [ 'remove' ],
+			'merge'  => [ 'merge' ],
+		];
+	}
+
+	#[DataProvider( 'sameDirectorySubcommandProvider' )]
+	public function test_worktree_subcommands_refuse_a_branch_whose_directory_belongs_to_another_branch( string $subcommand ): void {
+		$pluginDir = $this->setUpGitPluginStack();
+		$this->slicExec( 'worktree add feat/c -y', $this->dockerMockEnv() );
+		$this->commitFile( $pluginDir . '-feat-c', 'feature.txt', 'feature' );
+
+		try {
+			$output = $this->slicExec( "worktree {$subcommand} feat-c -y || echo {$subcommand}-failed", $this->dockerMockEnv() );
+			$branch = $this->git( $pluginDir, 'branch --list feat/c' );
+			$kept   = is_dir( $pluginDir . '-feat-c' );
+		} finally {
+			$this->slicExec( 'worktree remove feat/c -y', $this->dockerMockEnv() );
+		}
+
+		$this->assertStringContainsString( "{$subcommand}-failed", $output, "{$subcommand} should refuse a branch whose directory is another branch's worktree." );
+		$this->assertTrue( $kept, "{$subcommand} should not touch the other branch's worktree." );
+		$this->assertStringContainsString( 'feat/c', $branch, "{$subcommand} should not delete the other branch." );
+	}
+
+	public function test_worktree_add_fails_when_the_registered_worktree_directory_is_gone(): void {
+		$pluginDir = $this->setUpGitPluginStack();
+		$this->slicExec( 'worktree add feature-x -y', $this->dockerMockEnv() );
+		shell_exec( 'rm -rf ' . escapeshellarg( $pluginDir . '-feature-x' ) );
+
+		try {
+			$output = $this->slicExec( 'worktree add feature-x -y || echo add-failed', $this->dockerMockEnv() );
+		} finally {
+			$this->slicExec( 'worktree sync --clean -y', $this->dockerMockEnv() );
+		}
+
+		$this->assertStringContainsString( 'add-failed', $output, 'Adding a registered worktree whose directory is gone should fail.' );
+		$this->assertStringContainsString( 'slic worktree sync --clean', $output, 'The failure should say how to clean up the stale stack.' );
+	}
+
+	public function test_worktree_remove_of_an_unknown_branch_fails_when_another_worktree_directory_is_gone(): void {
+		$pluginDir = $this->setUpGitPluginStack();
+		$this->slicExec( 'worktree add feature-x -y', $this->dockerMockEnv() );
+		shell_exec( 'rm -rf ' . escapeshellarg( $pluginDir . '-feature-x' ) );
+
+		try {
+			$output = $this->slicExec( 'worktree remove no-such-branch -y || echo remove-failed', $this->dockerMockEnv() );
+		} finally {
+			$this->slicExec( 'worktree sync --clean -y', $this->dockerMockEnv() );
+		}
+
+		$this->assertStringContainsString( 'Error: Worktree not found.', $output, 'A branch with no worktree should not be found.' );
+		$this->assertStringContainsString( 'remove-failed', $output, 'Removing a branch with no worktree should fail.' );
+	}
+
+	public function test_an_auto_registered_worktree_merges_into_the_branch_it_was_registered_from(): void {
+		if ( '' === trim( (string) shell_exec( 'command -v script' ) ) ) {
+			$this->markTestSkipped( 'script is not installed.' );
+		}
+
+		$pluginDir   = $this->setUpGitPluginStack();
+		$worktreeDir = $pluginDir . '-feature-x';
+		$baseBranch  = $this->git( $pluginDir, 'symbolic-ref --short HEAD' );
+		$this->git( $pluginDir, 'worktree add -q ' . escapeshellarg( $worktreeDir ) . ' -b feature-x' );
+		chdir( $worktreeDir );
+		$registered = $this->slicExecInTerminal( 'stack info', "y\n" );
+		chdir( $pluginDir );
+		$this->commitFile( $worktreeDir, 'feature.txt', 'feature' );
+		$this->git( $pluginDir, 'checkout -q -b other' );
+
+		chdir( dirname( $pluginDir ) );
+		$output = $this->slicExec( 'worktree merge feature-x -y', $this->dockerMockEnv() );
+
+		$this->assertStringContainsString( 'Registered successfully!', $registered, 'The worktree should be auto-registered.' );
+		$this->assertStringContainsString( "into '{$baseBranch}'", $output, 'Merge should target the branch the worktree was registered from.' );
+		$this->assertSame( 'feature', $this->git( $pluginDir, 'show ' . escapeshellarg( $baseBranch . ':feature.txt' ) ), 'The registered base branch should get the worktree commit.' );
+	}
+
 	private function setUpGitPluginStack(): string {
 		$pluginDir = $this->setUpPluginsDir() . '/test-plugin';
 		$this->initGitRepository( $pluginDir );
 		$this->slicExec( 'use test-plugin', $this->dockerMockEnv() );
 
 		return $pluginDir;
+	}
+
+	/**
+	 * Sets up a site stack whose `test-theme` target is a git repository, selects it, and changes to its plugins directory.
+	 *
+	 * @return string The absolute path to the theme repository.
+	 */
+	private function setUpGitThemeStack(): string {
+		$site = $this->createTempDir();
+		mkdir( $site . '/wp-content/plugins', 0777, true );
+		mkdir( $site . '/wp-content/themes/test-theme', 0777, true );
+		touch( $site . '/wp-config.php' );
+		file_put_contents( $site . '/wp-content/themes/test-theme/style.css', "/*\nTheme Name: Test Theme\n*/" );
+		$this->initGitRepository( $site . '/wp-content/themes/test-theme' );
+
+		chdir( $site );
+		$this->slicExec( 'here' );
+		// The stack id is the site, or its plugins directory before slic 3.0; the plugins directory resolves to either.
+		$this->createdStackIds[] = realpath( $site );
+		$this->createdStackIds[] = realpath( $site . '/wp-content/plugins' );
+		chdir( $site . '/wp-content/plugins' );
+		$this->slicExec( 'use test-theme', $this->dockerMockEnv() );
+
+		return $site . '/wp-content/themes/test-theme';
+	}
+
+	/**
+	 * Runs a git command in a repository, with the fixture identity, and returns its trimmed output.
+	 *
+	 * @param string $dir  The absolute path to the repository.
+	 * @param string $args The git arguments, escaped if required.
+	 *
+	 * @return string The trimmed output.
+	 */
+	private function git( string $dir, string $args ): string {
+		return trim( (string) shell_exec( 'git -C ' . escapeshellarg( $dir ) . ' -c user.name=slic -c user.email=slic@example.com -c commit.gpgsign=false ' . $args . ' 2>/dev/null' ) );
+	}
+
+	/**
+	 * Writes a file in a repository and commits it.
+	 *
+	 * @param string $dir     The absolute path to the repository or worktree.
+	 * @param string $file    The file path relative to the repository.
+	 * @param string $content The file content.
+	 */
+	private function commitFile( string $dir, string $file, string $content ): void {
+		file_put_contents( $dir . '/' . $file, $content );
+		$this->git( $dir, 'add ' . escapeshellarg( $file ) );
+		$this->git( $dir, 'commit -q -m ' . escapeshellarg( $file ) );
 	}
 
 	/**
@@ -417,7 +722,12 @@ class WorktreeTest extends BaseTestCase {
 			$envString .= $key . '=' . escapeshellarg( $value ) . ' ';
 		}
 
-		return (string) shell_exec( 'printf %s ' . escapeshellarg( $input ) . ' | ' . $envString . $inTerminal . ' 2>&1' );
+		// Type the answers once slic asks, for at most 10 seconds: script drops what arrives before the terminal is set up.
+		$outputFile = $this->createTempDir() . '/terminal-output';
+		$waitForPrompt = 'i=0; while ! grep -q "\[y/N\]" ' . escapeshellarg( $outputFile ) . ' 2>/dev/null && [ $i -lt 100 ]; do sleep 0.1; i=$((i+1)); done';
+		shell_exec( '{ ' . $waitForPrompt . '; printf %s ' . escapeshellarg( $input ) . '; } | ' . $envString . $inTerminal . ' > ' . escapeshellarg( $outputFile ) . ' 2>&1' );
+
+		return (string) file_get_contents( $outputFile );
 	}
 
 	/**

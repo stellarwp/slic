@@ -58,8 +58,14 @@ if (!$worktree_dir) {
 }
 
 $worktree_stack_id = $base_stack_id . '@' . $worktree_dir;
-$worktree_full_path = $base_stack_id . '/' . $worktree_dir;
-$target_path = $base_stack_id . '/' . $target;
+
+// Check if stack exists (warn but continue)
+$wt_state = slic_stacks_get($worktree_stack_id);
+$is_registered = ($wt_state !== null);
+
+// Read the paths from the stack state; an unregistered worktree is next to the target's repository
+$target_path = $wt_state['worktree_target_path'] ?? slic_worktree_target_path($target);
+$worktree_full_path = $wt_state['worktree_full_path'] ?? dirname($target_path) . '/' . $worktree_dir;
 
 // Check if running from within the worktree directory being merged
 $current_cwd = getcwd();
@@ -87,20 +93,9 @@ if (is_dir($target_path)) {
     }
 }
 
-// Check if stack exists (warn but continue)
-$wt_state = slic_stacks_get($worktree_stack_id);
-$is_registered = ($wt_state !== null);
-
 if (!$is_registered) {
     echo "Warning: Stack for branch '$branch' is not registered with slic.\n";
 }
-
-// Extract worktree info from state if available, otherwise use computed values
-$worktree_branch = $wt_state['worktree_branch'] ?? $branch;
-$worktree_target = $wt_state['worktree_target'] ?? $target;
-
-// Build paths
-$target_path = $base_stack_id . '/' . $worktree_target;
 
 // Validate target directory exists
 if (!is_dir($target_path)) {
@@ -110,44 +105,12 @@ if (!is_dir($target_path)) {
 }
 
 // Check if git worktree still exists
-$git_worktree_exists = false;
-$worktree_already_merged = false;
+$existing_worktree = slic_worktree_is_existing($target_path, $worktree_full_path, $branch);
+$git_worktree_exists = ($existing_worktree !== false);
+
+slic_worktree_require_branch($branch, $wt_state, $existing_worktree);
 
 $original_cwd = getcwd();
-chdir($target_path);
-
-exec('git worktree list --porcelain 2>&1', $worktree_list_output, $worktree_list_code);
-chdir($original_cwd);
-
-if ($worktree_list_code === 0) {
-    $current_worktree = null;
-    foreach ($worktree_list_output as $line) {
-        if (strpos($line, 'worktree ') === 0) {
-            $current_worktree = substr($line, 9);
-        }
-        if ($current_worktree && $worktree_full_path && realpath($current_worktree) === realpath($worktree_full_path)) {
-            $git_worktree_exists = true;
-            break;
-        }
-    }
-}
-
-// Get base branch (the branch that was active when worktree was created)
-// First check if stored in worktree state (preferred), otherwise fall back to current HEAD
-$base_branch = $wt_state['base_branch'] ?? null;
-
-if (empty($base_branch)) {
-    // Fallback: use current HEAD in target repo
-    // Note: This may be incorrect if someone switched branches in the main repo
-    chdir($target_path);
-    $base_branch = trim(shell_exec('git rev-parse --abbrev-ref HEAD 2>/dev/null'));
-    chdir($original_cwd);
-}
-
-if (empty($base_branch)) {
-    echo "Error: Could not determine base branch in target repository.\n";
-    exit(1);
-}
 
 // If worktree doesn't exist, inform user and proceed with stack cleanup only
 if (!$git_worktree_exists) {
@@ -170,11 +133,13 @@ if (!$git_worktree_exists) {
         }
     }
 
-    // Stop containers (only if registered)
+    // Bring the containers and network down (only if registered)
     if ($is_registered) {
         echo "\nStopping Docker containers...\n";
-        $docker_compose = docker_compose(['stop'], $worktree_stack_id);
-        $docker_compose();
+        if (command_stop($worktree_stack_id, false) !== 0) {
+            echo "Error: Failed to stop the worktree stack; it is still registered.\n";
+            exit(1);
+        }
 
         // Unregister stack
         echo "Unregistering stack...\n";
@@ -184,10 +149,29 @@ if (!$git_worktree_exists) {
     }
 
     echo "\nWorktree stack cleaned up successfully.\n";
-    echo "Note: The worktree branch '$worktree_branch' was not deleted (worktree not found).\n";
+    echo "Note: The worktree branch '$branch' was not deleted (worktree not found).\n";
     echo "You may want to delete it manually if no longer needed:\n";
-    echo "  cd $target_path && git branch -d " . escapeshellarg($worktree_branch) . "\n";
+    echo "  cd $target_path && git branch -d " . escapeshellarg($branch) . "\n";
     exit(0);
+}
+
+// The base branch is the one the target repository was on when the worktree was registered
+if ($is_registered) {
+    $base_branch = $wt_state['base_branch'] ?? '';
+} else {
+    // An unregistered worktree has no record of it: use the branch the target repository is on now
+    $base_branch = trim((string) shell_exec("git -C " . escapeshellarg($target_path) . " rev-parse --abbrev-ref HEAD 2>/dev/null"));
+}
+
+// `HEAD` is a detached HEAD: merging into it and deleting the branch would leave its commits on no branch
+if ($base_branch === '' || $base_branch === 'HEAD') {
+    echo "Error: Could not determine the branch to merge '$branch' into.\n";
+    echo "The target repository was on a detached HEAD when the worktree was registered, or slic has no record of its branch.\n";
+    echo "Merge it with git instead, then remove the worktree:\n";
+    echo "  git -C " . escapeshellarg($target_path) . " checkout <base-branch>\n";
+    echo "  git -C " . escapeshellarg($target_path) . " merge " . escapeshellarg($branch) . "\n";
+    echo "  slic worktree remove $branch\n";
+    exit(1);
 }
 
 // Check for uncommitted changes in the worktree
@@ -210,10 +194,10 @@ if (is_dir($worktree_full_path)) {
 if (!$force_yes) {
     echo "This will:\n";
     echo "  1. Checkout base branch '$base_branch' in target repository\n";
-    echo "  2. Merge worktree branch '$worktree_branch' into '$base_branch'\n";
-    echo "  3. Remove git worktree directory: $worktree_full_path\n";
-    echo "  4. Delete local worktree branch: $worktree_branch\n";
-    echo "  5. Stop Docker containers (if running)\n";
+    echo "  2. Merge worktree branch '$branch' into '$base_branch'\n";
+    echo "  3. Stop Docker containers (if running)\n";
+    echo "  4. Remove git worktree directory: $worktree_full_path\n";
+    echo "  5. Delete local worktree branch: $branch\n";
     echo "  6. Unregister slic stack: $worktree_stack_id\n";
     echo "\nContinue? [y/N] ";
 
@@ -243,10 +227,10 @@ if ($checkout_code !== 0) {
 }
 
 // Step 2: Merge worktree branch
-echo "Merging branch '$worktree_branch' into '$base_branch'...\n";
+echo "Merging branch '$branch' into '$base_branch'...\n";
 
 chdir($target_path);
-$cmd = "git merge " . escapeshellarg($worktree_branch) . " 2>&1";
+$cmd = "git merge " . escapeshellarg($branch) . " 2>&1";
 exec($cmd, $merge_output, $merge_code);
 chdir($original_cwd);
 
@@ -264,64 +248,55 @@ if ($merge_code !== 0) {
     echo "  git commit\n";
     echo "\nAfter resolving, you can complete the merge with:\n";
     echo "  cd $base_stack_id && slic worktree merge $branch\n";
-    echo "\nTo stop without merging:\n";
-    echo "  slic stack stop --stack $worktree_stack_id\n";
+    echo "\nTo abort the merge instead:\n";
+    echo "  git -C " . escapeshellarg($target_path) . " merge --abort\n";
     exit(1);
 }
 
 echo "Merge successful.\n";
 
-// Step 3: Remove git worktree
+// Step 3: Bring the containers and network down (only if registered)
+if ($is_registered) {
+    echo "Stopping Docker containers...\n";
+    if (command_stop($worktree_stack_id, false) !== 0) {
+        echo "Error: Failed to stop the worktree stack; the worktree was merged but not removed.\n";
+        exit(1);
+    }
+}
+
+// Step 4: Remove git worktree
 echo "Removing git worktree...\n";
 
 // Use git -C to avoid chdir issues (original_cwd may be inside the worktree being removed)
-$cmd = "git -C " . escapeshellarg($target_path) . " worktree remove " . escapeshellarg('../' . $worktree_dir) . " --force 2>&1";
+$cmd = "git -C " . escapeshellarg($target_path) . " worktree remove " . escapeshellarg($worktree_full_path) . " --force 2>&1";
 exec($cmd, $wt_output, $wt_code);
 
 if ($wt_code !== 0) {
-    echo "Warning: Failed to remove git worktree via git command.\n";
+    echo "Error: Failed to remove git worktree; the branch was merged but not deleted.\n";
     echo "Output: " . implode("\n", $wt_output) . "\n";
-
-    // Try manual directory removal as fallback
-    if (is_dir($worktree_full_path)) {
-        echo "Attempting manual directory removal...\n";
-        exec("rm -rf " . escapeshellarg($worktree_full_path), $rm_output, $rm_code);
-
-        if ($rm_code !== 0) {
-            echo "Warning: Could not remove directory.\n";
-            echo "You may need to manually clean up:\n";
-            echo "  cd $target_path\n";
-            echo "  git worktree prune\n";
-            echo "  rm -rf $worktree_full_path\n";
-        }
-    }
-} else {
-    echo "Git worktree removed successfully.\n";
+    exit(1);
 }
 
-// Step 4: Delete local worktree branch
-echo "Deleting local branch '$worktree_branch'...\n";
+echo "Git worktree removed successfully.\n";
+
+// Step 5: Delete local worktree branch
+echo "Deleting local branch '$branch'...\n";
 
 // Use git -C to avoid chdir issues (original_cwd may no longer exist after worktree removal)
-$cmd = "git -C " . escapeshellarg($target_path) . " branch -d " . escapeshellarg($worktree_branch) . " 2>&1";
+$cmd = "git -C " . escapeshellarg($target_path) . " branch -d " . escapeshellarg($branch) . " 2>&1";
 exec($cmd, $branch_output, $branch_code);
 
 if ($branch_code !== 0) {
-    echo "Warning: Failed to delete branch '$worktree_branch'.\n";
+    echo "Warning: Failed to delete branch '$branch'.\n";
     echo "Output: " . implode("\n", $branch_output) . "\n";
     echo "You may need to delete it manually:\n";
-    echo "  cd $target_path && git branch -D " . escapeshellarg($worktree_branch) . "\n";
+    echo "  cd $target_path && git branch -D " . escapeshellarg($branch) . "\n";
 } else {
     echo "Branch deleted successfully.\n";
 }
 
-// Step 5: Stop Docker containers (only if registered)
+// Step 6: Unregister stack (only if registered)
 if ($is_registered) {
-    echo "Stopping Docker containers...\n";
-    $docker_compose = docker_compose(['stop'], $worktree_stack_id);
-    $docker_compose();
-
-    // Step 6: Unregister stack
     echo "Unregistering stack...\n";
     if (!slic_stacks_unregister($worktree_stack_id)) {
         echo "Warning: Failed to unregister stack from registry.\n";
@@ -329,7 +304,7 @@ if ($is_registered) {
 }
 
 echo "\nWorktree merged and removed successfully!\n";
-echo "  Branch '$worktree_branch' has been merged into '$base_branch'\n";
+echo "  Branch '$branch' has been merged into '$base_branch'\n";
 if ($is_registered) {
     echo "  Stack '$worktree_stack_id' has been removed\n";
 }

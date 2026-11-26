@@ -62,10 +62,10 @@ if (!$base_state) {
     exit(1);
 }
 
-// Build paths
+// Build paths: the worktree goes next to the target's repository
 $worktree_stack_id = $base_stack_id . '@' . $worktree_dir;
-$worktree_full_path = $base_stack_id . '/' . $worktree_dir;
-$target_full_path = $base_stack_id . '/' . $target;
+$target_full_path = slic_worktree_target_path($target);
+$worktree_full_path = dirname($target_full_path) . '/' . $worktree_dir;
 
 // Validate target directory exists (fail-fast validation)
 if (!is_dir($target_full_path)) {
@@ -88,6 +88,17 @@ if ($worktree_real !== false && $target_real === $worktree_real) {
 // Check if worktree stack already exists
 $existing_state = slic_stacks_get($worktree_stack_id);
 if ($existing_state) {
+    $worktree_full_path = $existing_state['worktree_full_path'] ?? $worktree_full_path;
+
+    if (!is_dir($worktree_full_path)) {
+        echo "Error: The worktree stack is registered, but its directory is gone: $worktree_full_path\n";
+        echo "To unregister stacks whose worktree is gone, run:\n";
+        echo "  slic worktree sync --clean\n";
+        exit(1);
+    }
+
+    slic_worktree_require_branch($branch, $existing_state, slic_worktree_is_existing($target_full_path, $worktree_full_path, $branch));
+
     echo "Worktree stack already exists!\n";
     echo "  Stack ID: $worktree_stack_id\n";
     echo "  Directory: $worktree_full_path\n";
@@ -124,7 +135,7 @@ if (file_exists($worktree_full_path)) {
         if ($existing_worktree['branch'] !== null) {
             echo "  - Use the existing branch with: slic worktree add {$existing_worktree['branch']}\n";
         }
-        echo "  - Remove the worktree with: cd $target_full_path && git worktree remove " . escapeshellarg(basename($worktree_full_path)) . "\n";
+        echo "  - Remove the worktree with: git -C " . escapeshellarg($target_full_path) . " worktree remove " . escapeshellarg($worktree_full_path) . "\n";
         exit(1);
     }
 
@@ -159,22 +170,13 @@ if (!$force_yes) {
     }
 }
 
-// Get the base branch before creating the worktree
-$base_branch = trim(shell_exec("git -C " . escapeshellarg($target_full_path) . " rev-parse --abbrev-ref HEAD 2>/dev/null"));
-
 // Execute git worktree add (only if needed)
 if ($should_create_worktree) {
     echo "\nCreating git worktree...\n";
 
-    $original_cwd = getcwd();
-    chdir($base_stack_id); // Change to parent plugins/themes directory
-
-    $escaped_dir = escapeshellarg($worktree_dir);
-    $escaped_branch = escapeshellarg($branch);
-    $cmd = "git -C " . escapeshellarg($target) . " worktree add " . escapeshellarg("../$worktree_dir") . " -b $escaped_branch 2>&1";
+    $cmd = "git -C " . escapeshellarg($target_full_path) . " worktree add " . escapeshellarg($worktree_full_path) . " -b " . escapeshellarg($branch) . " 2>&1";
 
     exec($cmd, $output, $return_code);
-    chdir($original_cwd);
 
     if ($return_code !== 0) {
         echo "Error: Failed to create git worktree.\n";
@@ -196,36 +198,11 @@ if ($should_create_worktree) {
 // Register stack with slic
 echo "Registering slic stack...\n";
 
-// Determine project type
-$project_type = get_project_type();
-
-// Create worktree stack state
-$worktree_state = [
-    'stack_id' => $worktree_stack_id,
-    'is_worktree' => true,
-    'base_stack_id' => $base_stack_id,
-    'base_branch' => $base_branch,
-    'worktree_target' => $target,
-    'worktree_dir' => $worktree_dir,
-    'worktree_branch' => $branch,
-    'worktree_full_path' => $worktree_full_path,
-    'project_name' => slic_stacks_get_project_name($worktree_stack_id),
-    'state_file' => slic_stacks_get_state_file($worktree_stack_id),
-    // XDebug port and key are allocated inside slic_stacks_register() while it holds the registry lock.
-    'target' => $target, // Inherit target from base
-    'status' => 'created',
-];
-
-// Write the stack state file before registering, so the registry never points at a missing state file.
-slic_stacks_write_worktree_state_file($worktree_stack_id, $base_stack_id, $target);
-
-if (!slic_stacks_register($worktree_stack_id, $worktree_state)) {
-    unlink($worktree_state['state_file']);
+if (!slic_worktree_register($base_stack_id, $target, $target_full_path, $worktree_dir, $branch, $worktree_full_path)) {
     echo "Error: Failed to register stack.\n";
     echo "The git worktree was created but slic stack registration failed.\n";
     echo "You may need to manually remove the worktree:\n";
-    echo "  cd $target_full_path\n";
-    echo "  git worktree remove ../$worktree_dir\n";
+    echo "  git -C " . escapeshellarg($target_full_path) . " worktree remove " . escapeshellarg($worktree_full_path) . "\n";
     exit(1);
 }
 
@@ -240,7 +217,7 @@ echo "  Stack ID: $worktree_stack_id\n";
 echo "  Directory: $worktree_full_path\n";
 echo "  Branch: $branch\n";
 echo "  XDebug Port: " . slic_stacks_get($worktree_stack_id)['xdebug_port'] . "\n";
-echo "  Project Name: {$worktree_state['project_name']}\n";
+echo "  Project Name: " . slic_stacks_get($worktree_stack_id)['project_name'] . "\n";
 echo "\n";
 echo "To start working:\n";
 echo "  cd $worktree_full_path\n";

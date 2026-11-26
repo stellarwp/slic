@@ -610,12 +610,14 @@ slic worktree merge fix/issue-123
 **Important:** This command must be run from the base stack directory, not from within the worktree directory being merged. The worktree directory will be removed by git during the merge process.
 
 The merge command will:
-1. Checkout the base branch in the target repository
+1. Checkout the base branch, the branch the target repository was on when the worktree was registered
 2. Merge the worktree branch into the base branch
-3. Remove the git worktree directory
-4. Delete the local worktree branch
-5. Stop Docker containers
+3. Stop Docker containers
+4. Remove the git worktree directory
+5. Delete the local worktree branch
 6. Unregister the slic stack
+
+If the target repository was on a detached HEAD when the worktree was registered, there is no base branch to merge into: the command stops without changing anything, and you merge with git yourself.
 
 Use `-y` or `--yes` to skip confirmation prompts:
 
@@ -623,7 +625,7 @@ Use `-y` or `--yes` to skip confirmation prompts:
 slic worktree merge fix/issue-123 -y
 ```
 
-If the merge encounters conflicts, the command will stop and provide instructions for manual resolution.
+If the merge encounters conflicts, the command stops and leaves the target repository mid-merge, as git does, with the worktree and its stack in place. Resolve and commit, then run the command again, or abort with `git -C <target> merge --abort`.
 
 #### Removing a Worktree
 
@@ -633,20 +635,18 @@ To remove a worktree and clean up its slic stack:
 slic worktree remove feature/my-new-feature
 ```
 
-You can specify the worktree by:
-- Branch name: `slic worktree remove feature/my-new-feature`
-- Directory name: `slic worktree remove ../the-events-calendar-feature-my-new-feature`
-- Absolute path: `slic worktree remove /full/path/to/worktree`
+Name the worktree by the branch it was created for, as in `slic worktree add`.
 
 This command:
-1. Removes the git worktree
-2. Unregisters the associated slic stack
-3. Cleans up Docker resources
+1. Stops the worktree's Docker containers and removes its network
+2. Removes the git worktree
+3. Unregisters the associated slic stack
 
-**Note:** The command will fail if:
-- The worktree has uncommitted changes (use `git worktree remove --force` separately if needed)
-- The worktree is currently locked
-- The worktree directory is in use
+If the worktree has uncommitted changes, the command asks before discarding them; `-y` discards them without asking.
+
+**Note:** The command will fail, and keep the worktree and its stack, if:
+- The worktree is currently locked (`git worktree unlock` it first)
+- The worktree directory belongs to another branch, such as `feat/c` for `feat-c`
 
 #### Syncing Worktrees
 
@@ -657,9 +657,9 @@ slic worktree sync
 ```
 
 This command:
-- Detects orphaned worktree stacks (slic stack exists but git worktree doesn't)
+- Detects orphaned worktree stacks of the current base stack (slic stack exists but git worktree doesn't)
 - Detects unregistered worktrees (git worktree exists but slic stack doesn't)
-- Prompts you to clean up orphaned stacks
+- With `--clean`, stops the containers of each orphaned stack and unregisters it
 - Offers to register unregistered worktrees
 
 Run this periodically or whenever you suspect your worktrees and stacks are out of sync.

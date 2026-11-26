@@ -74,12 +74,8 @@ $issues_found = false;
 echo "Phase 1: Checking for orphaned slic stacks...\n";
 echo str_repeat('-', 60) . "\n";
 
-foreach ($stacks as $check_stack_id => $state) {
-	// Only check worktree stacks
-	if (empty($state['is_worktree'])) {
-		continue;
-	}
-
+// Only check the worktrees of the current base stack
+foreach (slic_stacks_get_worktrees($base_stack_id) as $check_stack_id => $state) {
 	$worktree_path = $state['worktree_full_path'] ?? null;
 
 	if (!$worktree_path) {
@@ -158,7 +154,7 @@ echo str_repeat('-', 60) . "\n";
 
 // Use `git worktree list --porcelain` to get accurate worktree information
 if ($target) {
-	$target_path = $base_stack_id . '/' . $target;
+	$target_path = slic_worktree_target_path($target);
 
 	if (is_dir($target_path . '/.git')) {
 		// Execute git worktree list --porcelain
@@ -219,9 +215,9 @@ if ($target) {
 					continue;
 				}
 
-				// Check if this worktree is in the base stack directory
+				// Check if this worktree is next to the target, where slic creates worktrees
 				$parent_dir = dirname($wt_path);
-				if (realpath($parent_dir) !== realpath($base_stack_id)) {
+				if (realpath($parent_dir) !== realpath(dirname($target_path))) {
 					// Worktree is not in the expected location, skip it
 					continue;
 				}
@@ -320,7 +316,7 @@ if (!empty($orphaned_slic_stacks)) {
 
 	foreach ($orphaned_slic_stacks as $idx => $orphan) {
 		echo "[" . ($idx + 1) . "] {$orphan['stack_id']}\n";
-		echo "    Action: Unregister from slic registry\n";
+		echo "    Action: Stop its containers and unregister from slic registry\n";
 		if (!empty($orphan['state']['state_file'])) {
 			echo "    Also remove state file: {$orphan['state']['state_file']}\n";
 		}
@@ -348,10 +344,10 @@ if (!empty($orphaned_slic_stacks)) {
 		$failed_count = 0;
 
 		foreach ($orphaned_slic_stacks as $orphan) {
-			echo "Cleaning {$orphan['stack_id']}... ";
+			echo "Cleaning {$orphan['stack_id']}...\n";
 
-			// Unregister from registry (state file cleanup is handled by slic_stacks_unregister)
-			if (slic_stacks_unregister($orphan['stack_id'])) {
+			// Bring the stack down first, so its containers do not keep running unseen (state file cleanup is handled by slic_stacks_unregister)
+			if (command_stop($orphan['stack_id'], false) === 0 && slic_stacks_unregister($orphan['stack_id'])) {
 				echo "OK\n";
 				$cleaned_count++;
 			} else {

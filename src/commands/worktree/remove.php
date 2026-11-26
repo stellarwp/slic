@@ -48,37 +48,18 @@ if (!$worktree_dir) {
 }
 
 $worktree_stack_id = $base_stack_id . '@' . $worktree_dir;
-$worktree_full_path = $base_stack_id . '/' . $worktree_dir;
 
 // Check if stack exists
 $wt_state = slic_stacks_get($worktree_stack_id);
 $is_registered = ($wt_state !== null);
 
+// Read the paths from the stack state; an unregistered worktree is next to the target's repository
+$target_path = $wt_state['worktree_target_path'] ?? slic_worktree_target_path($target);
+$worktree_full_path = $wt_state['worktree_full_path'] ?? dirname($target_path) . '/' . $worktree_dir;
+
 // Check if git worktree exists
-$git_worktree_exists = false;
-$target_path = $base_stack_id . '/' . $target;
-
-if (is_dir($target_path)) {
-    $original_cwd = getcwd();
-    chdir($target_path);
-
-    exec('git worktree list --porcelain 2>&1', $worktree_list_output, $worktree_list_code);
-    chdir($original_cwd);
-
-    if ($worktree_list_code === 0) {
-        // Parse worktree list output to find our worktree
-        $current_worktree = null;
-        foreach ($worktree_list_output as $line) {
-            if (strpos($line, 'worktree ') === 0) {
-                $current_worktree = substr($line, 9); // Remove "worktree " prefix
-            }
-            if ($current_worktree && realpath($current_worktree) === realpath($worktree_full_path)) {
-                $git_worktree_exists = true;
-                break;
-            }
-        }
-    }
-}
+$existing_worktree = slic_worktree_is_existing($target_path, $worktree_full_path, $branch);
+$git_worktree_exists = ($existing_worktree !== false);
 
 // Handle different scenarios
 if (!$is_registered && !$git_worktree_exists) {
@@ -88,6 +69,8 @@ if (!$is_registered && !$git_worktree_exists) {
     echo "\nRun 'slic worktree list' to see available worktrees.\n";
     exit(1);
 }
+
+slic_worktree_require_branch($branch, $wt_state, $existing_worktree);
 
 if (!$is_registered && $git_worktree_exists) {
     echo "WARNING: This worktree is NOT registered with slic.\n";
@@ -151,50 +134,31 @@ if (!$force_yes) {
     }
 }
 
-// Step 1: Stop containers (only if registered)
+// Step 1: Bring the containers and network down (only if registered)
 if ($is_registered) {
     echo "\nStopping Docker containers...\n";
-    $docker_compose = docker_compose(['stop'], $worktree_stack_id);
-    $docker_compose();
+    if (command_stop($worktree_stack_id, false) !== 0) {
+        echo "Error: Failed to stop the worktree stack; nothing was removed.\n";
+        exit(1);
+    }
 }
 
 // Step 2: Remove git worktree
-echo "Removing git worktree...\n";
+if ($git_worktree_exists) {
+    echo "Removing git worktree...\n";
 
-$original_cwd = getcwd();
-$target_path = $base_stack_id . '/' . $target;
-
-if (is_dir($target_path)) {
-    chdir($target_path);
-
-    $escaped_dir = escapeshellarg('../' . $worktree_dir);
-    $cmd = "git worktree remove $escaped_dir --force 2>&1";
+    $cmd = "git -C " . escapeshellarg($target_path) . " worktree remove " . escapeshellarg($worktree_full_path) . " --force 2>&1";
     exec($cmd, $output, $return_code);
 
-    chdir($original_cwd);
-
     if ($return_code !== 0) {
-        echo "Warning: Failed to remove git worktree via git command.\n";
+        echo "Error: Failed to remove git worktree.\n";
         echo "Output: " . implode("\n", $output) . "\n";
-
-        // Try manual directory removal as fallback
-        if (is_dir($worktree_full_path)) {
-            echo "Attempting manual directory removal...\n";
-            exec("rm -rf " . escapeshellarg($worktree_full_path), $rm_output, $rm_code);
-
-            if ($rm_code !== 0) {
-                echo "Error: Could not remove directory.\n";
-                echo "You may need to manually clean up:\n";
-                echo "  cd $target_path\n";
-                echo "  git worktree prune\n";
-                echo "  rm -rf $worktree_full_path\n";
-            }
-        }
-    } else {
-        echo "Git worktree removed successfully.\n";
+        exit(1);
     }
+
+    echo "Git worktree removed successfully.\n";
 } else {
-    echo "Warning: Target directory not found, skipping git worktree removal.\n";
+    echo "Git worktree not found, skipping git worktree removal.\n";
 }
 
 // Step 3: Unregister stack (only if registered)

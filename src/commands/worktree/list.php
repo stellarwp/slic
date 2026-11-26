@@ -30,7 +30,7 @@ echo "  XDebug Port: {$base_state['xdebug_port']}\n";
 echo "\n";
 
 // Show git worktrees
-$target_path = $base_stack_id . '/' . $target;
+$target_path = slic_worktree_target_path($target);
 if (is_dir($target_path . '/.git')) {
     echo "Git Worktrees (from git worktree list):\n";
     echo str_repeat('-', 60) . "\n";

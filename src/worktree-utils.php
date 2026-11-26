@@ -268,3 +268,83 @@ function slic_worktree_is_existing( $target_path, $worktree_path, $expected_bran
 
 	return false;
 }
+
+/**
+ * Returns the path of a target's repository, in the plugins or themes directory of the stack slic runs in.
+ *
+ * @param string $target The target plugin or theme name.
+ *
+ * @return string The absolute path to the target's repository.
+ */
+function slic_worktree_target_path( $target ) {
+	return get_target_content_type( $target ) === 'theme' ? slic_themes_dir( $target ) : slic_plugins_dir( $target );
+}
+
+/**
+ * Exits with an error unless a worktree directory is the requested branch's, as slic registered it and as git
+ * has it checked out: branch names such as `feat/c` and `feat-c` map to the same directory.
+ *
+ * @param string      $branch   The requested branch.
+ * @param array|null  $wt_state The registered worktree stack state, or null if not registered.
+ * @param array|false $existing The result of `slic_worktree_is_existing()` for the requested branch.
+ *
+ * @return void
+ */
+function slic_worktree_require_branch( $branch, $wt_state, $existing ) {
+	$registered  = $wt_state['worktree_branch'] ?? $branch;
+	$checked_out = $existing === false ? $branch : ( $existing['branch'] ?? '(detached HEAD)' );
+
+	if ( $registered === $branch && $checked_out === $branch ) {
+		return;
+	}
+
+	echo "Error: The worktree directory for branch '$branch' belongs to another branch.\n";
+	echo "  Registered branch: $registered\n";
+	echo "  Checked out branch: $checked_out\n";
+	exit( 1 );
+}
+
+/**
+ * Registers a worktree stack and writes its state file.
+ *
+ * @param string $base_stack_id      The base stack the worktree belongs to.
+ * @param string $target             The target plugin or theme name.
+ * @param string $target_path        The path to the target's repository.
+ * @param string $worktree_dir       The worktree directory name.
+ * @param string $branch             The branch checked out in the worktree.
+ * @param string $worktree_full_path The path to the worktree directory.
+ *
+ * @return string|false The worktree stack ID, or false if registration failed.
+ */
+function slic_worktree_register( $base_stack_id, $target, $target_path, $worktree_dir, $branch, $worktree_full_path ) {
+	$worktree_stack_id = $base_stack_id . '@' . $worktree_dir;
+
+	$worktree_state = [
+		'stack_id'             => $worktree_stack_id,
+		'is_worktree'          => true,
+		'base_stack_id'        => $base_stack_id,
+		// The branch merge targets: the one the target repository is on now, `HEAD` when it is detached.
+		'base_branch'          => trim( (string) shell_exec( 'git -C ' . escapeshellarg( $target_path ) . ' rev-parse --abbrev-ref HEAD 2>/dev/null' ) ),
+		'worktree_target'      => $target,
+		'worktree_target_path' => $target_path,
+		'worktree_dir'         => $worktree_dir,
+		'worktree_branch'      => $branch,
+		'worktree_full_path'   => $worktree_full_path,
+		'project_name'         => slic_stacks_get_project_name( $worktree_stack_id ),
+		'state_file'           => slic_stacks_get_state_file( $worktree_stack_id ),
+		// XDebug port and key are allocated inside slic_stacks_register() while it holds the registry lock.
+		'target'               => $target,
+		'status'               => 'created',
+	];
+
+	// Write the stack state file before registering, so the registry never points at a missing state file.
+	$state_file = slic_stacks_write_worktree_state_file( $worktree_stack_id, $base_stack_id, $target );
+
+	if ( ! slic_stacks_register( $worktree_stack_id, $worktree_state ) ) {
+		unlink( $state_file );
+
+		return false;
+	}
+
+	return $worktree_stack_id;
+}

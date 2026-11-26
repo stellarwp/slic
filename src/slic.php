@@ -687,35 +687,24 @@ function slic_current_stack() {
 		fclose( $handle );
 
 		if ( strtolower( $confirmation ) === 'y' ) {
-			// Auto-register
-			$worktree_stack_id = $detected['base_stack_id'] . '@' . $detected['dir_name'];
+			// Auto-register; the worktree is next to its target's repository, where `slic worktree add` creates it.
+			require_once __DIR__ . '/worktree-utils.php';
+			$worktree_stack_id = slic_worktree_register(
+				$detected['base_stack_id'],
+				$detected['target'],
+				dirname( $detected['full_path'] ) . '/' . $detected['target'],
+				$detected['dir_name'],
+				$detected['branch'],
+				$detected['full_path']
+			);
 
-			$worktree_state = [
-				'stack_id'           => $worktree_stack_id,
-				'is_worktree'        => true,
-				'base_stack_id'      => $detected['base_stack_id'],
-				'worktree_target'    => $detected['target'],
-				'worktree_dir'       => $detected['dir_name'],
-				'worktree_branch'    => $detected['branch'],
-				'worktree_full_path' => $detected['full_path'],
-				'project_name'       => slic_stacks_get_project_name( $worktree_stack_id ),
-				'state_file'         => slic_stacks_get_state_file( $worktree_stack_id ),
-				// XDebug port and key are allocated inside slic_stacks_register() while it holds the registry lock.
-				'target'             => $detected['target'],
-				'status'             => 'created',
-			];
-
-			// Write the stack state file before registering, so the registry never points at a missing state file.
-			$state_file = slic_stacks_write_worktree_state_file( $worktree_stack_id, $detected['base_stack_id'], $detected['target'] );
-
-			if ( slic_stacks_register( $worktree_stack_id, $worktree_state ) ) {
+			if ( $worktree_stack_id ) {
 				echo "Registered successfully!\n";
 
 				return $worktree_stack_id;
-			} else {
-				unlink( $state_file );
-				echo "Failed to register stack.\n";
 			}
+
+			echo "Failed to register stack.\n";
 		}
 	}
 
