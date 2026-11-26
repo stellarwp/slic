@@ -212,6 +212,31 @@ class CompletionTest extends BaseTestCase {
 		);
 	}
 
+	public function test_a_decoded_stack_path_with_a_space_is_not_split(): void {
+		[ $spacedStack ] = $this->setUpStackWithSpaceAndStackAtItsPrefix();
+
+		// Fish passes words decoded: unquoting the path would split it at the space.
+		$completions = explode( "\n", $this->complete( [ 'slic', '--stack', $spacedStack, 'use', '' ], 4, [], [ '--decoded' ] ) );
+
+		$this->assertContains( 'spaced-plugin', $completions, 'The targets of the spaced stack should complete.' );
+		$this->assertNotContains( 'prefix-plugin', $completions, 'The stack at the path before the space should not complete.' );
+	}
+
+	public function test_fish_completes_targets_from_a_stack_path_with_a_space(): void {
+		if ( '' === trim( (string) shell_exec( 'command -v fish' ) ) ) {
+			$this->markTestSkipped( 'fish is not installed.' );
+		}
+		[ $spacedStack ] = $this->setUpStackWithSpaceAndStackAtItsPrefix();
+
+		$completions = $this->runInShell(
+			'fish',
+			'source ' . escapeshellarg( self::slicRoot() . '/completions/fish/slic.fish' ) . '; complete -C ' . escapeshellarg( 'slic --stack ' . escapeshellarg( $spacedStack ) . ' use ' )
+		);
+
+		$this->assertStringContainsString( 'spaced-plugin', $completions, 'Fish should complete the targets of the spaced stack.' );
+		$this->assertStringNotContainsString( 'prefix-plugin', $completions, 'Fish should not complete the stack at the path before the space.' );
+	}
+
 	public function test_use_completes_the_plugins_of_the_current_stack(): void {
 		$this->setUpPluginsDir( 'test-plugin' );
 
@@ -544,19 +569,35 @@ class CompletionTest extends BaseTestCase {
 	 * @param string[] $words The command line words.
 	 * @param int                  $cword The index of the word being completed.
 	 * @param array<string,string> $env   Extra environment variables for the script.
+	 * @param string[]             $flags Extra flags for the script, e.g. `--decoded`.
 	 *
 	 * @return string The completion script output.
 	 */
-	private function complete( array $words, int $cword, array $env = [] ): string {
+	private function complete( array $words, int $cword, array $env = [], array $flags = [] ): string {
 		$command = 'SLIC_CACHE_DIR=' . escapeshellarg( $this->cacheDir );
 		foreach ( $env as $key => $value ) {
 			$command .= ' ' . $key . '=' . escapeshellarg( $value );
 		}
 		$command .= ' php ' . escapeshellarg( self::slicRoot() . '/src/completions/complete.php' )
+		           . ( $flags ? ' ' . implode( ' ', $flags ) : '' )
 		           . ' --words=' . escapeshellarg( implode( "\n", $words ) )
 		           . ' --cword=' . $cword;
 
 		return (string) shell_exec( $command . ' 2>&1' );
+	}
+
+	/**
+	 * Sets up a stack at a path with a space, and another stack at the path before that space.
+	 *
+	 * @return string[] The spaced stack ID and the prefix stack ID.
+	 */
+	private function setUpStackWithSpaceAndStackAtItsPrefix(): array {
+		$root        = '/slic-test-spaced-' . uniqid( '', true );
+		$prefixStack = realpath( $this->setUpPluginsDir( 'prefix-plugin', $root . '/a' ) );
+		$spacedStack = realpath( $this->setUpPluginsDir( 'spaced-plugin', $root . '/a b/site' ) );
+		chdir( $this->createTempDir() );
+
+		return [ $spacedStack, $prefixStack ];
 	}
 
 	/**

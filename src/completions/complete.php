@@ -7,7 +7,9 @@
  * completion suggestions based on the current command line context.
  *
  * Usage:
- *   php complete.php --line="<line>" --point=<point> --words="<one word per line>" --cword=<cword>
+ *   php complete.php --line="<line>" --point=<point> --words="<one word per line>" --cword=<cword> [--decoded]
+ *
+ * Pass --decoded when the words are already unquoted, as fish passes them; bash and zsh pass them as typed.
  *
  * Completions are printed one per line.
  *
@@ -24,7 +26,7 @@ ini_set( 'display_errors', '0' );
 define( 'SLIC_NO_MIGRATION', true );
 
 // Parse command line arguments
-$options = getopt( '', [ 'line:', 'point:', 'words:', 'cword:' ] );
+$options = getopt( '', [ 'line:', 'point:', 'words:', 'cword:', 'decoded' ] );
 
 if ( empty( $options ) ) {
 	exit( 0 );
@@ -94,7 +96,11 @@ if ( ! $completing_stack_option && $current_word_index > 0 ) {
 
 // Bash and zsh pass a word as typed: remove its quotes and backslash escapes as the shell would.
 require_once dirname( __DIR__ ) . '/docker-argv.php';
-$unquote = static function ( string $word ): string {
+$decoded = isset( $options['decoded'] );
+$unquote = static function ( string $word ) use ( $decoded ): string {
+	if ( $decoded ) {
+		return $word;
+	}
 	try {
 		return \StellarWP\Slic\docker_compose_prefix_argv( $word, false )[0];
 	} catch ( \InvalidArgumentException $e ) {

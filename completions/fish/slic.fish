@@ -28,8 +28,9 @@ function __slic_completions
     # Get the current token being typed
     set -l current (commandline -ct)
 
-    # Call the PHP completion script with the words one per line, the current token last, as bash and zsh do
-    php "$slic_dir/src/completions/complete.php" \
+    # Call the PHP completion script with the words one per line, the current token last, as bash and zsh do.
+    # commandline -o has already unquoted the words, so --decoded tells the script not to unquote them again.
+    php "$slic_dir/src/completions/complete.php" --decoded \
         --words=(string join -- \n $tokens $current | string collect) \
         --cword=(count $tokens) 2>/dev/null
 end
