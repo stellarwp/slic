@@ -986,27 +986,52 @@ function slic_stacks_migrate_legacy() {
 	if ( is_file( $root_dir . '/.env.slic.local' ) ) {
 		load_env_file( $root_dir . '/.env.slic.local' );
 	}
+	$configured_mounts = [];
+	foreach ( slic_target_mount_base_keys() as $key => $base_key ) {
+		$configured_mounts[ $key ] = getenv( $key );
+	}
+	$configured_mounts['COMPOSER_CACHE_DIR'] = $configured_mounts['COMPOSER_CACHE_DIR'] ?: cache( '/composer' );
 	foreach ( $legacy_env as $key => $value ) {
 		putenv( "{$key}={$value}" );
 	}
-	if ( slic_here_is_site() && getenv( 'SLIC_CURRENT_PROJECT' ) ) {
-		slic_site_target_environment( getenv( 'SLIC_CURRENT_PROJECT' ) );
+	slic_restore_target_mounts( $legacy_env, $configured_mounts );
+	$target = getenv( 'SLIC_CURRENT_PROJECT' );
+	if ( slic_here_is_site() && $target ) {
+		slic_site_target_environment( $target );
 	}
-	$target_path = get_project_local_path( null, $stack_id );
-	if ( $target_path && is_file( $target_path . '/.env.slic.local' ) ) {
+	// get_project_local_path() exits on a target that is missing or both a plugin and a theme: resolve only one that is neither.
+	$base_target  = explode( '/', (string) $target )[0];
+	$target_found = ! $target || 'site' === $target || ( is_dir( slic_plugins_dir( $base_target ) ) xor is_dir( slic_themes_dir( $base_target ) ) );
+	$target_path  = $target_found ? get_project_local_path( null, $stack_id ) : '';
+	$target_found = ! $target || ( $target_path && is_dir( $target_path ) );
+	if ( $target_found && is_file( $target_path . '/.env.slic.local' ) ) {
 		load_env_file( $target_path . '/.env.slic.local' );
 	}
-	// 2.x ran Compose without -p: its project is COMPOSE_PROJECT_NAME or the slic directory, as Compose normalizes it.
-	$legacy_project = getenv( 'COMPOSE_PROJECT_NAME' ) ?: basename( $root_dir );
+	// 2.x ran Compose from the slic root without -p: its project is COMPOSE_PROJECT_NAME, from the environment or the
+	// root's .env, or the slic directory, as Compose normalizes it.
+	$compose_env    = is_file( $root_dir . '/.env' ) ? read_env_file( $root_dir . '/.env' ) : [];
+	$legacy_project = getenv( 'COMPOSE_PROJECT_NAME' ) ?: ( $compose_env['COMPOSE_PROJECT_NAME'] ?? '' ) ?: basename( $root_dir );
 	$legacy_project = ltrim( preg_replace( '/[^a-z0-9_-]/', '', strtolower( $legacy_project ) ), '_-' );
-	$down_command   = docker_compose_bin() . ' -p ' . escapeshellarg( $legacy_project ) . ' down --remove-orphans';
-	$retry_command  = $down_command;
+	$env_prefix     = '';
 	foreach ( [ 'DOCKER_HOST', 'DOCKER_CONTEXT' ] as $key ) {
 		if ( getenv( $key ) ) {
-			$retry_command = $key . '=' . escapeshellarg( getenv( $key ) ) . ' ' . $retry_command;
+			$env_prefix = $key . '=' . escapeshellarg( getenv( $key ) ) . ' ' . $env_prefix;
 		}
 	}
-	exec( $down_command . ' 2>&1', $down_output, $down_status );
+	$down_command  = docker_compose_bin() . ' -p ' . escapeshellarg( $legacy_project ) . ' down --remove-orphans';
+	$retry_command = $env_prefix . $down_command;
+	$down_status   = 0;
+	if ( $target_found ) {
+		exec( 'cd ' . escapeshellarg( $root_dir ) . ' && ' . $down_command . ' 2>&1', $down_output, $down_status );
+	} else {
+		// The target's settings may name another project or Docker endpoint: guessing could stop the wrong containers.
+		echo colorize(
+			"<magenta>Could not find the slic 2.x target {$target} to stop its containers. List the Compose projects with:</magenta>" . PHP_EOL
+			. $env_prefix . 'docker compose ls' . PHP_EOL
+			. "<magenta>and stop the slic 2.x one by running:</magenta>" . PHP_EOL
+			. $env_prefix . docker_compose_bin() . ' -p <name> down --remove-orphans' . PHP_EOL . PHP_EOL
+		);
+	}
 	foreach ( array_diff_key( getenv(), $saved_env ) as $key => $value ) {
 		putenv( $key );
 	}

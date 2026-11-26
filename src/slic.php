@@ -370,25 +370,7 @@ function setup_slic_env( $root_dir, $reset = false, $stack_id = null ) {
 		$staged_php_version = $run_env['SLIC_PHP_VERSION'];
 	}
 
-	// Restore target-overridable mounts to their global values before loading the selected target's overrides.
-	foreach ( slic_target_mount_base_keys() as $key => $base_key ) {
-		if ( 'SLIC_SCRIPTS' === $key ) {
-			$base_value = $configured_mounts[ $key ];
-		} elseif ( 'COMPOSER_CACHE_DIR' === $key ) {
-			$legacy_cache = ! isset( $run_env[ $base_key ] )
-				&& isset( $run_env[ $key ] )
-				&& ! array_key_exists( 'SLIC_COMPOSER_CACHE_IS_EXPLICIT', $run_env );
-			$explicit_cache = '1' === ( $run_env['SLIC_COMPOSER_CACHE_IS_EXPLICIT'] ?? '' );
-			$base_value = $explicit_cache || $legacy_cache
-				? ( $run_env[ $base_key ] ?? $run_env[ $key ] )
-				: $configured_mounts[ $key ];
-			putenv( 'SLIC_COMPOSER_CACHE_IS_EXPLICIT=' . ( $explicit_cache || $legacy_cache ? '1' : '0' ) );
-		} else {
-			$base_value = $run_env[ $base_key ] ?? $run_env[ $key ] ?? $configured_mounts[ $key ];
-		}
-		putenv( "{$base_key}={$base_value}" );
-		putenv( "{$key}={$base_value}" );
-	}
+	slic_restore_target_mounts( $run_env, $configured_mounts );
 
 	/*
 	 * Special handling of the `use` command.
@@ -797,6 +779,33 @@ function slic_target_mount_base_keys() {
 		'COMPOSER_CACHE_DIR'            => 'SLIC_BASE_COMPOSER_CACHE_DIR',
 		'SLIC_SCRIPTS'                  => 'SLIC_BASE_SCRIPTS',
 	];
+}
+
+/**
+ * Restores target-overridable mounts to their global values before loading the selected target's overrides.
+ *
+ * @param array<string,string> $run_env           The run file's values.
+ * @param array<string,string> $configured_mounts The mounts as configured once the root `.env.slic.local` loaded.
+ */
+function slic_restore_target_mounts( array $run_env, array $configured_mounts ) {
+	foreach ( slic_target_mount_base_keys() as $key => $base_key ) {
+		if ( 'SLIC_SCRIPTS' === $key ) {
+			$base_value = $configured_mounts[ $key ];
+		} elseif ( 'COMPOSER_CACHE_DIR' === $key ) {
+			$legacy_cache = ! isset( $run_env[ $base_key ] )
+				&& isset( $run_env[ $key ] )
+				&& ! array_key_exists( 'SLIC_COMPOSER_CACHE_IS_EXPLICIT', $run_env );
+			$explicit_cache = '1' === ( $run_env['SLIC_COMPOSER_CACHE_IS_EXPLICIT'] ?? '' );
+			$base_value = $explicit_cache || $legacy_cache
+				? ( $run_env[ $base_key ] ?? $run_env[ $key ] )
+				: $configured_mounts[ $key ];
+			putenv( 'SLIC_COMPOSER_CACHE_IS_EXPLICIT=' . ( $explicit_cache || $legacy_cache ? '1' : '0' ) );
+		} else {
+			$base_value = $run_env[ $base_key ] ?? $run_env[ $key ] ?? $configured_mounts[ $key ];
+		}
+		putenv( "{$base_key}={$base_value}" );
+		putenv( "{$key}={$base_value}" );
+	}
 }
 
 /**
