@@ -429,11 +429,14 @@ function xdebug_get_env_vars($stack_id = null):array{
 	$state_file = get_stack_env_file( $stack_id );
 	$overrides  = is_file( $state_file ) ? read_env_file( $state_file ) : [];
 
-	// Read the user's port (shell, slic's or the target's .env.slic.local) once, before this function's values are put in
-	// the environment by setup_slic_env(); a port in the stack state file wins below anyway.
-	static $user_port;
-	if ( null === $user_port ) {
-		$user_port = (string) getenv( 'XDP' );
+	// The user's port: the shell's as slic started ($_SERVER, as slic puts its XDP in the environment), then slic's and the
+	// stack target's .env.slic.local, in setup_slic_env()'s order; a port in the stack state file wins below anyway.
+	$user_port   = (string) ( $_SERVER['XDP'] ?? '' );
+	$target_path = get_project_local_path( null, $stack_id );
+	foreach ( [ root( '.env.slic.local' ), $target_path ? $target_path . '/.env.slic.local' : '' ] as $local_file ) {
+		if ( $local_file && is_file( $local_file ) ) {
+			$user_port = read_env_file( $local_file )['XDP'] ?? $user_port;
+		}
 	}
 
 	$env_vars = [];

@@ -95,6 +95,48 @@ class XdebugTest extends BaseTestCase {
 		);
 	}
 
+	public function test_the_xdebug_port_command_wins_over_a_target_port_when_a_target_switch_recreates_services(): void {
+		$pluginsDir = $this->setUpPluginsDir();
+		mkdir( $pluginsDir . '/other-plugin' );
+		touch( $pluginsDir . '/other-plugin/plugin.php' );
+		// A different content directory changes the bind mounts, so the switch recreates the running service.
+		file_put_contents( $pluginsDir . '/other-plugin/.env.slic.local', "XDP=9666\nSLIC_WP_CONTENT_CONTAINER_DIR=/var/www/html/other\n" );
+		$this->slicExec( 'use test-plugin', $this->dockerMockEnv() );
+		$this->slicExec( 'xdebug port 9777' );
+
+		$this->slicExec( 'use other-plugin', [ 'SLIC_DOCKER_MOCK_RUNNING' => 'wordpress' ] + $this->dockerMockLogEnv( [ 'XDP' ] ) );
+
+		$this->assertDockerCalled(
+			'/ up --wait --no-deps wordpress \[XDP=9777\]$/',
+			'The recreated service should get the port set by the xdebug port command, not the target one.'
+		);
+		$this->assertStringContainsString( 'Remote port: 9777', $this->slicExec( 'xdebug status' ) );
+	}
+
+	public function test_a_shell_xdebug_port_reaches_docker_compose(): void {
+		$this->setUpPluginsDir();
+
+		$this->slicExec( 'start', [ 'XDP' => '9444' ] + $this->dockerMockLogEnv( [ 'XDP' ] ) );
+
+		$this->assertDockerCalled( '/ up .*\[XDP=9444\]$/', 'An XDP set in the shell should win over the stack default.' );
+	}
+
+	public function test_stopping_another_stack_uses_that_stack_target_xdebug_port(): void {
+		$other = $this->setUpPluginsDir();
+		file_put_contents( $other . '/test-plugin/.env.slic.local', "XDP=9666\n" );
+		$this->slicExec( 'use test-plugin', $this->dockerMockEnv() );
+		$current = $this->setUpPluginsDir();
+		file_put_contents( $current . '/test-plugin/.env.slic.local', "XDP=9555\n" );
+		$this->slicExec( 'use test-plugin', $this->dockerMockEnv() );
+
+		$this->slicExec( 'stack stop ' . escapeshellarg( realpath( $other ) ), $this->dockerMockLogEnv( [ 'XDP' ] ) );
+
+		$this->assertDockerCalled(
+			'/^-p slic_' . substr( md5( realpath( $other ) ), 0, 8 ) . ' .* down .*\[XDP=9666\]$/',
+			"The other stack should be stopped with its own target's port, not the current stack's."
+		);
+	}
+
 	public function test_xdebug_status_shows_current_state(): void {
 		$this->setUpPluginsDir();
 

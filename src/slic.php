@@ -867,6 +867,9 @@ function slic_switch_target( $target, $stack_id = null ) {
 		putenv( "{$key}={$value}" );
 	}
 
+	// The target's .env.slic.local may set XDP: reapply the stack's XDebug values, as setup_slic_env() does, before recreating services.
+	xdebug_setup_env_vars( $stack_id );
+
 	/*
 	 * Site, plugin, and theme targets in `wp/` skeletons can require different WordPress and theme bind mounts. Docker
 	 * cannot apply those changes with a normal container restart, so recreate only the PHP services that are already

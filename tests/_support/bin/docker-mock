@@ -14,9 +14,12 @@ if [ -n "${SLIC_DOCKER_MOCK_FAIL:-}" ] && [[ "$*" =~ $SLIC_DOCKER_MOCK_FAIL ]]; 
 	exit 1
 fi
 # Container ID lookups, as `docker ps --format '{{.ID}}'`, find one running container.
+# SLIC_DOCKER_MOCK_RUNNING lists the services `ps --services` reports as running, e.g. "wordpress".
 for arg in "$@"; do
 	if [ "$arg" = '{{.ID}}' ]; then
 		echo 'slic-test-container'
+	elif [ "$arg" = '--services' ]; then
+		printf '%s\n' ${SLIC_DOCKER_MOCK_RUNNING//,/ }
 	fi
 done
 exit 0

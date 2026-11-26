@@ -296,15 +296,21 @@ function slic_stacks_with_lock(callable $callback) {
 /**
  * Returns whether a path is a directory or inside it.
  *
- * @param string $path The path to check.
- * @param string $dir  The directory to check the path against.
+ * @param string $path    The path to check.
+ * @param string $dir     The directory to check the path against.
+ * @param bool   $windows Whether to read the paths as Windows paths; defaults to the current OS.
  *
  * @return bool Whether the path is the directory or inside it.
  */
-function slic_stacks_path_is_within($path, $dir) {
-	// Windows paths use backslashes; trailing slashes prevent partial matches, e.g. /foo and /foobar.
-	$path = rtrim(str_replace('\\', '/', $path), '/') . '/';
-	$dir  = rtrim(str_replace('\\', '/', $dir), '/') . '/';
+function slic_stacks_path_is_within($path, $dir, $windows = DIRECTORY_SEPARATOR === '\\') {
+	// Only Windows paths use backslashes as separators; on POSIX a backslash is a filename character.
+	if ($windows) {
+		$path = str_replace('\\', '/', $path);
+		$dir  = str_replace('\\', '/', $dir);
+	}
+	// Trailing slashes prevent partial matches, e.g. /foo and /foobar.
+	$path = rtrim($path, '/') . '/';
+	$dir  = rtrim($dir, '/') . '/';
 
 	return strpos($path, $dir) === 0;
 }

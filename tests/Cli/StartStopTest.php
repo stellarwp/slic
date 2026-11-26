@@ -75,6 +75,26 @@ class StartStopTest extends BaseTestCase {
 		);
 	}
 
+	public function test_stop_from_a_sibling_with_a_backslash_in_its_name_does_not_stop_the_stack(): void {
+		$root = '/slic-test-backslash-' . uniqid( '', true );
+		$base = realpath( $this->setUpPluginsDir( 'test-plugin', $root . '/base' ) );
+		// A second stack: with one registered stack slic would fall back to it.
+		$this->setUpPluginsDir( 'other-plugin' );
+		// On POSIX a backslash is a filename character: `base\child` is a sibling of `base`, not inside it.
+		$sibling = dirname( $base ) . '/base\\child';
+		mkdir( $sibling );
+		chdir( $sibling );
+
+		$output = $this->slicExec( 'stop', $this->dockerMockLogEnv() );
+
+		$this->assertStringContainsString( 'No active stack', $output, 'A sibling of a stack should not select it.' );
+		$this->assertDockerCalled(
+			'/-p slic_' . substr( md5( $base ), 0, 8 ) . ' .*down/',
+			'The sibling should not stop the base stack.',
+			false
+		);
+	}
+
 	public function test_down_is_alias_for_stop(): void {
 		$this->setUpPluginsDir();
 
