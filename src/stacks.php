@@ -1013,25 +1013,42 @@ function slic_stacks_migrate_legacy() {
 			$env_prefix = $key . '=' . escapeshellarg( getenv( $key ) ) . ' ' . $env_prefix;
 		}
 	}
-	// 2.x ran Compose on the root's stack file from the caller's directory, without -p: only Compose can name that project.
-	$legacy_project = '';
+	// Compose records the files each project ran: the 2.x one ran the root's stack file, which 3.0 stacks run as slic_<hash>.
+	$compose_bin   = docker_compose_bin();
+	$in_caller_dir = 'cd ' . escapeshellarg( (string) getcwd() ) . ' && ' . $env_prefix . $compose_bin;
+	$candidates    = null;
 	if ( $target_found ) {
-		exec( docker_compose_bin() . ' -f ' . escapeshellarg( $root_dir . '/slic-stack.yml' ) . ' config --format json 2>' . process_null_device(), $config_output, $config_status );
-		$config         = json_decode( implode( "\n", $config_output ), true );
-		$legacy_project = 0 === $config_status && is_string( $config['name'] ?? null ) ? $config['name'] : '';
+		exec( $compose_bin . ' ls --all --format json 2>' . process_null_device(), $ls_output, $ls_status );
+		$projects = json_decode( implode( "\n", $ls_output ), true );
+		if ( 0 === $ls_status && is_array( $projects ) ) {
+			$stack_file = realpath( $root_dir . '/slic-stack.yml' );
+			$candidates = [];
+			foreach ( $projects as $project ) {
+				$files = array_map( static function ( $file ) {
+					return realpath( $file ) ?: $file;
+				}, explode( ',', (string) ( $project['ConfigFiles'] ?? '' ) ) );
+				if ( in_array( $stack_file, $files, true ) && ! preg_match( '/^slic_[0-9a-f]{8}$/', (string) ( $project['Name'] ?? '' ) ) ) {
+					$candidates[] = (string) $project['Name'];
+				}
+			}
+		}
 	}
-	$down_command  = docker_compose_bin() . ' -p ' . escapeshellarg( $legacy_project ) . ' down --remove-orphans';
-	$retry_command = 'cd ' . escapeshellarg( (string) getcwd() ) . ' && ' . $env_prefix . $down_command;
-	$down_status   = 0;
+	$legacy_project = is_array( $candidates ) && 1 === count( $candidates ) ? $candidates[0] : '';
+	$down_command   = $compose_bin . ' -p ' . escapeshellarg( $legacy_project ) . ' down --remove-orphans';
+	$retry_command  = 'cd ' . escapeshellarg( (string) getcwd() ) . ' && ' . $env_prefix . $down_command;
+	$down_status    = 0;
 	if ( '' !== $legacy_project ) {
 		exec( $down_command . ' 2>&1', $down_output, $down_status );
-	} else {
+	} elseif ( [] !== $candidates ) {
 		// The target's settings may name another project or Docker endpoint: guessing could stop the wrong containers.
 		echo colorize(
-			"<magenta>Could not tell which Compose project slic 2.x ran" . ( $target_found ? '' : " for the missing target {$target}" ) . ". List the Compose projects with:</magenta>" . PHP_EOL
-			. $env_prefix . 'docker compose ls' . PHP_EOL
+			"<magenta>Could not tell which Compose project slic 2.x ran"
+			. ( $target_found ? '' : " for the missing target {$target}" )
+			. ( $candidates ? ': it is one of ' . implode( ', ', $candidates ) : '' )
+			. ". List the Compose projects with:</magenta>" . PHP_EOL
+			. $in_caller_dir . ' ls --all' . PHP_EOL
 			. "<magenta>and stop the slic 2.x one by running:</magenta>" . PHP_EOL
-			. 'cd ' . escapeshellarg( (string) getcwd() ) . ' && ' . $env_prefix . docker_compose_bin() . ' -p <name> down --remove-orphans' . PHP_EOL . PHP_EOL
+			. $in_caller_dir . ' -p <name> down --remove-orphans' . PHP_EOL . PHP_EOL
 		);
 	}
 	foreach ( array_diff_key( getenv(), $saved_env ) as $key => $value ) {
