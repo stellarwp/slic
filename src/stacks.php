@@ -289,10 +289,8 @@ function slic_stacks_with_lock(callable $callback) {
  * Uses prioritized resolution to prefer worktree stacks over base stacks.
  *
  * Resolution priority:
- * 1. Exact match with worktree stacks (checked FIRST)
- * 2. Exact match with base stacks
- * 3. CWD is within a base stack directory
- * 4. Parent directory walk
+ * 1. CWD is within a worktree stack directory (checked FIRST)
+ * 2. CWD is within a base stack directory, the nearest one first
  *
  * @return string|null The stack ID or null if not found.
  */
@@ -339,23 +337,9 @@ function slic_stacks_resolve_from_cwd() {
 		}
 	}
 
-	// PRIORITY 2: Exact match with base stacks
-	foreach ($stacks as $stack_id => $state) {
-		if (!slic_stacks_is_worktree($stack_id)) {
-			$stack_real = realpath($stack_id);
-			if ($stack_real === false) {
-				// realpath failed, use original stack_id
-				$stack_real = $stack_id;
-			}
-
-			// Check exact match
-			if ($cwd_real === $stack_real) {
-				return $stack_id;
-			}
-		}
-	}
-
-	// PRIORITY 3: CWD is within a base stack directory
+	// PRIORITY 2: CWD is within a base stack directory; with nested stacks, the nearest one wins
+	$nearest_stack_id = null;
+	$nearest_length = -1;
 	foreach ($stacks as $stack_id => $state) {
 		if (!slic_stacks_is_worktree($stack_id)) {
 			$stack_real = realpath($stack_id);
@@ -366,24 +350,14 @@ function slic_stacks_resolve_from_cwd() {
 
 			// Check if CWD is within base stack directory tree
 			// Add trailing slashes to prevent partial matches
-			if (strpos($cwd_real . '/', $stack_real . '/') === 0) {
-				return $stack_id;
+			if (strpos($cwd_real . '/', $stack_real . '/') === 0 && strlen($stack_real) > $nearest_length) {
+				$nearest_stack_id = $stack_id;
+				$nearest_length = strlen($stack_real);
 			}
 		}
 	}
 
-	// PRIORITY 4: Parent directory walk
-	// Walk up the directory tree to find any matching stack
-	$path = $cwd_real;  // Use normalized path for consistency
-	while ($path !== '/' && $path !== '.') {
-		$resolved = slic_stacks_resolve_from_path($path);
-		if ($resolved) {
-			return $resolved;
-		}
-		$path = dirname($path);
-	}
-
-	return null;
+	return $nearest_stack_id;
 }
 
 /**
@@ -472,23 +446,7 @@ function slic_stacks_resolve_from_path($path) {
 		}
 	}
 
-	// PRIORITY 4: Try to find a base stack where the path is within its directory
-	// For example, if stack is /Users/Alice/project/wp-content/plugins
-	// and path is /Users/Alice/project/wp-content/plugins/my-plugin
-	// we should match it
-	foreach ($stacks as $stack_id => $stack) {
-		// Skip worktrees, we already checked them
-		if (slic_stacks_is_worktree($stack_id)) {
-			continue;
-		}
-		// Add trailing slashes to prevent false positives (e.g., /foo vs /foobar)
-		if (strpos($path . '/', $stack_id . '/') === 0) {
-			// Path starts with stack_id, so it's within that stack's directory
-			return $stack_id;
-		}
-	}
-
-	// PRIORITY 5: Try to find a stack by checking parent directories
+	// PRIORITY 4: Find the nearest stack by checking parent directories
 	$current_path = $path;
 	while ($current_path !== dirname($current_path)) {
 		// Check worktrees first
@@ -677,7 +635,7 @@ function slic_stacks_get_single_id() {
  * Reads actual port assignments from Docker for a running stack.
  *
  * @param string $stack_id The stack identifier.
- * @return array|null Array with keys 'wp', 'mysql', 'redis' or null if containers aren't running.
+ * @return array|null Array with the keys 'wp', 'mysql' and 'redis' of the running services, or null if none is.
  */
 function slic_stacks_read_ports_from_docker($stack_id) {
 	$project_name = slic_stacks_get_project_name($stack_id);
@@ -713,21 +671,18 @@ function slic_stacks_read_ports_from_docker($stack_id) {
 			continue;
 		}
 
-		// Get the port mapping for this container
-		$port_command = docker_bin() . " port $service_id $container_port 2>/dev/null | grep '0.0.0.0' | cut -d: -f2";
-		$host_port = trim((string) shell_exec($port_command));
+		// Docker prints one mapping per host address, e.g. `0.0.0.0:32768`, `127.0.0.1:32768` or `[::]:32768`.
+		$port_command = docker_bin() . " port $service_id $container_port 2>/dev/null";
+		$mappings = explode("\n", trim((string) shell_exec($port_command)));
+		$host_port = substr((string) strrchr($mappings[0], ':'), 1);
 
 		if (!empty($host_port) && is_numeric($host_port)) {
 			$ports[$port_key] = (int)$host_port;
 		}
 	}
 
-	// Only return ports if we got all three
-	if (count($ports) === 3) {
-		return $ports;
-	}
-
-	return null;
+	// A service that is not running, such as Redis, has no port.
+	return $ports ?: null;
 }
 
 /**
@@ -791,7 +746,7 @@ function slic_stacks_ensure_ports($stack_id) {
 	}
 
 	// Containers not running: fall back to the last ports Docker assigned, if any
-	return isset($stack['ports']) && is_array($stack['ports']) && count($stack['ports']) === 3;
+	return !empty($stack['ports']) && is_array($stack['ports']);
 }
 
 /**
@@ -846,19 +801,13 @@ function slic_stacks_parse_worktree_id($stack_id) {
 		return null;
 	}
 
-	$parts = explode('@', $stack_id, 2);
-	if (count($parts) !== 2) {
-		return null;
-	}
+	// A base path can contain @, a worktree directory name cannot: split on the last @.
+	$at = strrpos($stack_id, '@');
+	$parts = [substr($stack_id, 0, $at), substr($stack_id, $at + 1)];
 
 	// Validate that both components are non-empty
 	if (empty($parts[0]) || empty($parts[1])) {
 		return null; // Both base path and worktree directory are required
-	}
-
-	// Validate that worktree_dir does not contain @
-	if (strpos($parts[1], '@') !== false) {
-		return null; // worktree_dir must not contain @
 	}
 
 	return [
@@ -920,23 +869,21 @@ function slic_stacks_detect_worktree($path) {
 	$parent_dir = dirname($path);
 	$dir_name = basename($path);
 
-	// Look for registered base stacks in parent directory
+	require_once __DIR__ . '/worktree-utils.php';
+
+	// Look for registered base stacks whose plugins or themes directory is the parent directory
 	$stacks = slic_stacks_list();
+	$parent_real = realpath($parent_dir);
 	foreach ($stacks as $stack_id => $state) {
 		// Skip existing worktrees
-		if (slic_stacks_is_worktree($stack_id)) {
+		if (slic_stacks_is_worktree($stack_id) || $parent_real === false) {
 			continue;
 		}
 
-		// Check if parent directory matches
-		$stack_real = realpath($stack_id);
-		$parent_real = realpath($parent_dir);
-
-		if ($stack_real === false || $parent_real === false) {
-			continue;
-		}
-
-		if ($stack_real !== $parent_real) {
+		$state_file = slic_stacks_get_state_file($stack_id);
+		$stack_env = is_file($state_file) ? read_env_file($state_file) : [];
+		$content_dirs = array_filter([$stack_env['SLIC_PLUGINS_DIR'] ?? null, $stack_env['SLIC_THEMES_DIR'] ?? null]);
+		if (!in_array($parent_real, array_map('realpath', $content_dirs), true)) {
 			continue;
 		}
 
@@ -946,8 +893,9 @@ function slic_stacks_detect_worktree($path) {
 		}
 
 		// Check if directory name matches pattern: {target}-{branch-slug}
+		// A sibling such as a submodule or another repository's worktree can share the prefix: ask the target's git.
 		$target = $state['target'] ?? null;
-		if ($target && strpos($dir_name, $target . '-') === 0) {
+		if ($target && strpos($dir_name, $target . '-') === 0 && slic_worktree_is_existing($parent_dir . '/' . $target, $path)) {
 			// Extract branch from git
 			$current_branch = trim(shell_exec("git -C " . escapeshellarg($path) . " rev-parse --abbrev-ref HEAD 2>/dev/null"));
 
@@ -985,11 +933,8 @@ function slic_stacks_migrate_legacy() {
 	require_once __DIR__ . '/utils.php';
 	$legacy_env = read_env_file( $legacy_run_file );
 
-	// Extract stack information from legacy file
-	$plugins_dir = $legacy_env['SLIC_PLUGINS_DIR'] ?? $root_dir . '/_plugins';
-
-	// Use plugins directory as stack ID
-	$stack_id = $plugins_dir;
+	// The stack ID is the directory `slic here` ran in; older files only have the plugins directory.
+	$stack_id = ( $legacy_env['SLIC_HERE_DIR'] ?? '' ) ?: ( $legacy_env['SLIC_PLUGINS_DIR'] ?? '' ) ?: $root_dir . '/_plugins';
 
 	// Create stack state
 	$stack_state = [

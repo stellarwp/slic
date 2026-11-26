@@ -67,8 +67,12 @@ echo light_cyan( "Stack: {$stack_id}" . PHP_EOL );
 require_once __DIR__ . '/../stacks.php';
 if ( slic_stacks_ensure_ports( $stack_id ) ) {
 	$stack = slic_stacks_get( $stack_id );
-	echo colorize( "WordPress URL: <yellow>http://localhost:{$stack['ports']['wp']}</yellow>" . PHP_EOL );
-	echo colorize( "MySQL Port: <yellow>{$stack['ports']['mysql']}</yellow>" . PHP_EOL );
+	if ( isset( $stack['ports']['wp'] ) ) {
+		echo colorize( "WordPress URL: <yellow>http://localhost:{$stack['ports']['wp']}</yellow>" . PHP_EOL );
+	}
+	if ( isset( $stack['ports']['mysql'] ) ) {
+		echo colorize( "MySQL Port: <yellow>{$stack['ports']['mysql']}</yellow>" . PHP_EOL );
+	}
 	if ( isset( $stack['ports']['redis'] ) ) {
 		echo colorize( "Redis Port: <yellow>{$stack['ports']['redis']}</yellow>" . PHP_EOL );
 	}

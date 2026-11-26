@@ -141,16 +141,15 @@ function xdebug_status( $stack_id = null ) {
 
 			// Only proceed if we have all required data
 			if ( ! empty( $worktree_path ) && ! empty( $base_stack_id ) ) {
-				// Determine type by checking if base_stack_id is under plugins or themes directory
-				// base_stack_id is the absolute path to the base stack directory
+				// The worktree sits beside its target, so its parent is the plugins or the themes directory.
 				$plugins_dir = realpath( slic_plugins_dir() );
 				$themes_dir = realpath( slic_themes_dir() );
-				$base_path = realpath( $base_stack_id );
+				$parent_path = realpath( dirname( $worktree_path ) );
 
 				$is_plugin = null;
-				if ( $base_path && $plugins_dir && strpos( $base_path, $plugins_dir ) === 0 ) {
+				if ( $parent_path && $parent_path === $plugins_dir ) {
 					$is_plugin = true;
-				} elseif ( $base_path && $themes_dir && strpos( $base_path, $themes_dir ) === 0 ) {
+				} elseif ( $parent_path && $parent_path === $themes_dir ) {
 					$is_plugin = false; // It's a theme
 				}
 

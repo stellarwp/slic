@@ -1,5 +1,5 @@
 #!/bin/bash
-# A mock docker binary that does nothing and exits successfully.
+# A mock docker binary that does nothing and exits successfully, unless told to fail.
 # When SLIC_DOCKER_MOCK_LOG is set, each call's arguments are appended to that file,
 # followed by `[NAME=value]` for each environment variable named in SLIC_DOCKER_MOCK_ENV.
 if [ -n "${SLIC_DOCKER_MOCK_LOG:-}" ]; then
@@ -8,6 +8,10 @@ if [ -n "${SLIC_DOCKER_MOCK_LOG:-}" ]; then
 		line="$line [$name=${!name-}]"
 	done
 	echo "$line" >> "$SLIC_DOCKER_MOCK_LOG"
+fi
+# When SLIC_DOCKER_MOCK_FAIL is set, a call whose arguments match that regular expression fails.
+if [ -n "${SLIC_DOCKER_MOCK_FAIL:-}" ] && [[ "$*" =~ $SLIC_DOCKER_MOCK_FAIL ]]; then
+	exit 1
 fi
 # Container ID lookups, as `docker ps --format '{{.ID}}'`, find one running container.
 for arg in "$@"; do

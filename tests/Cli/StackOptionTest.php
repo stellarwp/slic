@@ -7,9 +7,7 @@ use StellarWP\Slic\Test\Support\Factories\Directory;
 class StackOptionTest extends BaseTestCase {
 
 	public function test_stack_option_accepts_an_existing_path_that_contains_an_at_sign(): void {
-		$path = Directory::createTemp( '/slic-test@stack-' . uniqid( '', true ) )
-		                 ->createPlugin( 'test-plugin' )
-		                 ->getAbsolutePath();
+		$path = $this->setUpPluginsDir( 'test-plugin', '/slic-test@stack-' . uniqid( '', true ) );
 
 		$this->assertStringContainsString(
 			'Available commands:',
@@ -36,6 +34,27 @@ class StackOptionTest extends BaseTestCase {
 			'Using test-plugin',
 			$this->slicExec( 'use test-plugin', $this->dockerMockEnv() ),
 			'A base stack whose path contains @ should switch targets like any other base stack.'
+		);
+	}
+
+	public function test_stack_option_with_a_directory_that_is_not_a_stack_fails(): void {
+		$this->setUpPluginsDir();
+		$dir = realpath( $this->createTempDir() );
+
+		$this->assertStringContainsString(
+			"{$dir} is not a registered stack",
+			$this->slicExec( '--stack=' . escapeshellarg( $dir ) . ' using', $this->dockerMockEnv() ),
+			'An explicit stack that is not registered should fail, not run on the unnamed project.'
+		);
+	}
+
+	public function test_stack_variable_that_is_not_a_stack_fails(): void {
+		$this->setUpPluginsDir();
+
+		$this->assertStringContainsString(
+			'/no/such/stack is not a registered stack',
+			$this->slicExec( 'using', [ 'SLIC_STACK' => '/no/such/stack' ] + $this->dockerMockEnv() ),
+			'A SLIC_STACK that is not registered should fail, not run on the unnamed project.'
 		);
 	}
 }

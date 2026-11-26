@@ -117,39 +117,20 @@ if ( null !== $SLIC_STACK_OVERRIDE ) {
 	$is_stack_id = strpos( $SLIC_STACK_OVERRIDE, '@' ) !== false && false === realpath( $SLIC_STACK_OVERRIDE );
 
 	if ( $is_stack_id ) {
-		// Stack ID format: /base/path@worktree-dir
-		// Extract the actual directory path for validation
-		$parts = explode( '@', $SLIC_STACK_OVERRIDE, 2 );
-		if ( count( $parts ) === 2 ) {
-			$base_path = $parts[0];
-			$worktree_dir = $parts[1];
+		// Stack ID format: /base/path@worktree-dir; the base path can contain @, a worktree directory name cannot.
+		// Whether it is a registered stack is checked when the stack is resolved.
+		$at           = strrpos( $SLIC_STACK_OVERRIDE, '@' );
+		$base_path    = substr( $SLIC_STACK_OVERRIDE, 0, $at );
+		$worktree_dir = substr( $SLIC_STACK_OVERRIDE, $at + 1 );
 
-			// Validate that both components are non-empty
-			if ( empty( $base_path ) || empty( $worktree_dir ) ) {
-				echo colorize( "<magenta>Error: Invalid stack ID format - both base path and worktree directory are required</magenta>" . PHP_EOL );
-				echo colorize( "Stack ID provided: {$original_stack_path}" . PHP_EOL );
-				echo colorize( "Expected format: /base/path@worktree-directory" . PHP_EOL );
-				echo colorize( "Examples:" . PHP_EOL );
-				echo colorize( "  /Users/Alice/project@feature-branch" . PHP_EOL );
-				echo colorize( "  ~/work/tec@bugfix-123" . PHP_EOL );
-				exit( 1 );
-			}
-
-			// The actual worktree directory is: base_path/worktree_dir
-			$worktree_full_path = $base_path . '/' . $worktree_dir;
-
-			// Validate the worktree directory exists
-			$worktree_real = realpath( $worktree_full_path );
-			if ( false === $worktree_real || ! file_exists( $worktree_real ) ) {
-				echo colorize( "<magenta>Error: The worktree directory specified with --stack does not exist</magenta>" . PHP_EOL );
-				echo colorize( "Stack ID: {$original_stack_path}" . PHP_EOL );
-				echo colorize( "Expected path: {$worktree_full_path}" . PHP_EOL );
-				exit( 1 );
-			}
-		} else {
-			echo colorize( "<magenta>Error: Invalid stack ID format</magenta>" . PHP_EOL );
+		// Validate that both components are non-empty
+		if ( empty( $base_path ) || empty( $worktree_dir ) ) {
+			echo colorize( "<magenta>Error: Invalid stack ID format - both base path and worktree directory are required</magenta>" . PHP_EOL );
 			echo colorize( "Stack ID provided: {$original_stack_path}" . PHP_EOL );
-			echo colorize( "Expected format: /base/path@worktree-dir" . PHP_EOL );
+			echo colorize( "Expected format: /base/path@worktree-directory" . PHP_EOL );
+			echo colorize( "Examples:" . PHP_EOL );
+			echo colorize( "  /Users/Alice/project@feature-branch" . PHP_EOL );
+			echo colorize( "  ~/work/tec@bugfix-123" . PHP_EOL );
 			exit( 1 );
 		}
 	} else {

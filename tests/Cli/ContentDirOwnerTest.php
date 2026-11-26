@@ -62,7 +62,7 @@ class ContentDirOwnerTest extends BaseTestCase {
 		file_put_contents( "$siteDir/wp-content/plugins/my-plugin/my-plugin.php", "<?php\n/**\n * Plugin Name: My Plugin\n */\n" );
 		chdir( $siteDir );
 		$this->slicExec( 'here' );
-		$this->createdStackIds[] = realpath( "$siteDir/wp-content/plugins" );
+		$this->createdStackIds[] = realpath( $siteDir );
 		$this->slicExec( 'use site', $this->dockerMockEnv() );
 
 		// The isolated plugin target mounts `_wordpress` instead of the site, so WordPress is recreated on it.

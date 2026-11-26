@@ -94,7 +94,7 @@ class WorktreeTest extends BaseTestCase {
 
 		chdir( $site );
 		$this->slicExec( 'here' );
-		$this->createdStackIds[] = realpath( $pluginsDir );
+		$this->createdStackIds[] = realpath( $site );
 		chdir( $pluginsDir );
 		$this->slicExec( 'use test-plugin', $this->dockerMockEnv() );
 		$this->slicExec( 'worktree add feature-x -y', $this->dockerMockEnv() );
@@ -386,6 +386,97 @@ class WorktreeTest extends BaseTestCase {
 			'stack switch',
 			$output,
 			'Refusing to switch target in a worktree should not suggest a command that does not exist.'
+		);
+	}
+
+	public function test_stop_all_keeps_a_worktree_that_failed_to_stop(): void {
+		$baseStack = realpath( dirname( $this->setUpGitPluginStack() ) );
+		$this->slicExec( 'worktree add feature-x -y', $this->dockerMockEnv() );
+		$worktreeProject = 'slic_' . substr( md5( $baseStack . '@test-plugin-feature-x' ), 0, 8 );
+
+		try {
+			$this->slicExec( 'stack stop all -y', [ 'SLIC_DOCKER_MOCK_FAIL' => "^-p {$worktreeProject} " ] + $this->dockerMockEnv() );
+			$output = $this->slicExec( 'stack list', $this->dockerMockEnv() );
+		} finally {
+			chdir( $baseStack );
+			$this->slicExec( 'worktree remove feature-x -y', $this->dockerMockEnv() );
+		}
+
+		$this->assertStringContainsString(
+			'test-plugin-feature-x (feature-x)',
+			$output,
+			'A worktree that failed to stop should stay registered so it can be stopped again.'
+		);
+	}
+
+	public function test_here_in_an_unregistered_worktree_registers_only_the_worktree(): void {
+		if ( '' === trim( (string) shell_exec( 'command -v script' ) ) ) {
+			$this->markTestSkipped( 'script is not installed.' );
+		}
+
+		$pluginDir   = $this->setUpGitPluginStack();
+		$worktreeDir = dirname( $pluginDir ) . '/test-plugin-feature-x';
+		shell_exec( 'git -C ' . escapeshellarg( $pluginDir ) . ' worktree add -q ' . escapeshellarg( $worktreeDir ) . ' -b feature-x 2>&1' );
+		$worktreeDir = realpath( $worktreeDir );
+		chdir( $worktreeDir );
+		$this->createdStackIds[] = $worktreeDir;
+
+		try {
+			$this->slicExecInTerminal( 'here', "y\n" );
+			// Running here again in the now registered worktree should not register it either.
+			$this->slicExec( 'here', $this->dockerMockEnv() );
+			$output = $this->slicExec( 'stack list', $this->dockerMockEnv() );
+		} finally {
+			$this->slicExec( 'stack stop ' . escapeshellarg( dirname( $worktreeDir ) . '@test-plugin-feature-x' ), $this->dockerMockEnv() );
+		}
+
+		$this->assertStringContainsString( 'test-plugin-feature-x (feature-x)', $output, 'The worktree should be registered as a worktree.' );
+		$this->assertStringNotContainsString( $worktreeDir, $output, 'The worktree should not also be registered as a stack of its own.' );
+	}
+
+	public function test_a_worktree_of_a_stack_in_a_path_that_contains_an_at_sign_mounts_the_worktree(): void {
+		exec( 'docker compose version 2>/dev/null', $output, $status );
+		if ( 0 !== $status ) {
+			$this->markTestSkipped( 'docker compose is not installed.' );
+		}
+		$pluginDir = $this->setUpPluginsDir( 'test-plugin', '/slic-test@' . uniqid( '', true ) . '/plugins' ) . '/test-plugin';
+		$this->initGitRepository( $pluginDir );
+		$this->slicExec( 'use test-plugin', $this->dockerMockEnv() );
+		$this->slicExec( 'worktree add feature-x -y', $this->dockerMockEnv() );
+
+		chdir( dirname( $pluginDir ) . '/test-plugin-feature-x' );
+		try {
+			// `config` only renders the stack configuration; it starts nothing, so the real docker compose is safe here.
+			$config = $this->slicExec( 'dc config slic', [ 'SSH_AUTH_SOCK' => sys_get_temp_dir() . '/slic-test-ssh-agent.sock' ] );
+		} finally {
+			chdir( dirname( $pluginDir ) );
+			$this->slicExec( 'worktree remove feature-x -y', $this->dockerMockEnv() );
+		}
+
+		$this->assertMatchesRegularExpression(
+			'#source: \S+/test-plugin-feature-x\s+target: /var/www/html/wp-content/plugins/test-plugin\s#',
+			$config,
+			'A worktree of a stack whose path contains @ should be mounted over its target.'
+		);
+	}
+
+	public function test_a_sibling_repository_with_the_target_prefix_is_not_offered_as_a_worktree(): void {
+		if ( '' === trim( (string) shell_exec( 'command -v script' ) ) ) {
+			$this->markTestSkipped( 'script is not installed.' );
+		}
+
+		$pluginDir  = $this->setUpGitPluginStack();
+		$otherRepo  = $this->createTempDir();
+		$sibling    = dirname( $pluginDir ) . '/test-plugin-plus';
+		$this->initGitRepository( $otherRepo );
+		// A worktree of another repository, named like a worktree of the target.
+		shell_exec( 'git -C ' . escapeshellarg( $otherRepo ) . ' worktree add -q ' . escapeshellarg( $sibling ) . ' -b plus 2>&1' );
+		chdir( $sibling );
+
+		$this->assertStringNotContainsString(
+			'Detected unregistered git worktree!',
+			$this->slicExecInTerminal( 'stack info', "n\n" ),
+			'A checkout that is not a worktree of the target should not be offered for registration.'
 		);
 	}
 

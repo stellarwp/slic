@@ -122,8 +122,15 @@ $env_values['SLIC_CURRENT_PROJECT_SUBDIR']         = '';
 // Load stacks.php functions
 require_once __DIR__ . '/../stacks.php';
 
-// Use the plugins directory as the stack identifier
-$stack_id = $env_values['SLIC_PLUGINS_DIR'];
+// A worktree is a stack of its base stack, registered by `slic worktree add` or when slic detects it.
+$worktree_stack_id = slic_stacks_resolve_from_path( $here_dir );
+if ( null !== $worktree_stack_id && slic_stacks_is_worktree( $worktree_stack_id ) ) {
+	echo colorize( PHP_EOL . "<light_cyan>This directory is the worktree stack <yellow>{$worktree_stack_id}</yellow>.</light_cyan>" . PHP_EOL );
+	return;
+}
+
+// The directory `slic here` ran in identifies the stack; the plugins and themes directories are only mounted.
+$stack_id = $here_dir;
 
 // Check if stack already exists
 $existing_stack = slic_stacks_get( $stack_id );
@@ -138,8 +145,9 @@ if ( null !== $existing_stack ) {
 	// Get the stack-specific state file
 	$stack_run_file = slic_stacks_get_state_file( $stack_id );
 
-	// Update the state file
+	// Update the state file, and clear the target the worktree commands read from the registry.
 	write_env_file( $stack_run_file, $env_values, true );
+	slic_stacks_update( $stack_id, [ 'target' => null ] );
 
 	// Reload environment
 	setup_slic_env( root(), true, $stack_id );
@@ -150,8 +158,12 @@ if ( null !== $existing_stack ) {
 	// Ensure ports are up-to-date from Docker if containers are running
 	if ( slic_stacks_ensure_ports( $stack_id ) ) {
 		$updated_stack = slic_stacks_get( $stack_id );
-		echo colorize( "WordPress URL: <yellow>http://localhost:{$updated_stack['ports']['wp']}</yellow>" . PHP_EOL );
-		echo colorize( "MySQL Port: <yellow>{$updated_stack['ports']['mysql']}</yellow>" . PHP_EOL );
+		if ( isset( $updated_stack['ports']['wp'] ) ) {
+			echo colorize( "WordPress URL: <yellow>http://localhost:{$updated_stack['ports']['wp']}</yellow>" . PHP_EOL );
+		}
+		if ( isset( $updated_stack['ports']['mysql'] ) ) {
+			echo colorize( "MySQL Port: <yellow>{$updated_stack['ports']['mysql']}</yellow>" . PHP_EOL );
+		}
 		if ( isset( $updated_stack['ports']['redis'] ) ) {
 			echo colorize( "Redis Port: <yellow>{$updated_stack['ports']['redis']}</yellow>" . PHP_EOL );
 		}

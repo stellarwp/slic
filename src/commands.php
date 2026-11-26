@@ -66,7 +66,7 @@ function command_stop( $stack_id = null, $unregister = true ) : int {
 						}
 
 						echo colorize( "  • <light_cyan>slic worktree remove {$branch_hint}</light_cyan>" . PHP_EOL );
-						echo colorize( "  • <light_cyan>git worktree remove {$parsed['base_path']}/{$parsed['worktree_dir']}</light_cyan>" . PHP_EOL );
+						echo colorize( "  • <light_cyan>git worktree remove {$stack_state['worktree_full_path']}</light_cyan>" . PHP_EOL );
 					}
 				}
 			}

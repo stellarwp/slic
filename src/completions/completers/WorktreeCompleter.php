@@ -76,13 +76,20 @@ class WorktreeCompleter {
 		require_once $slic_root . '/src/utils.php';
 		require_once $slic_root . '/src/includes.php';
 
-		// The same repository src/commands/worktree/add.php uses: the stack target in the base stack directory.
+		require_once $slic_root . '/src/worktree-utils.php';
+		require_once $slic_root . '/version.php';
+
+		// The same repository src/commands/worktree/add.php uses: the stack target in the base stack's plugins or themes directory.
 		$stack_id = \StellarWP\Slic\slic_current_stack();
 		$target   = $stack_id ? ( \StellarWP\Slic\slic_stacks_get( $stack_id )['target'] ?? null ) : null;
 		if ( ! $target ) {
 			return [];
 		}
-		$target_full_path = \StellarWP\Slic\slic_stacks_get_base_stack_id( $stack_id ) . '/' . $target;
+		// Environment setup can print notices that must not become completions.
+		ob_start();
+		\StellarWP\Slic\setup_slic_env( $slic_root, true, \StellarWP\Slic\slic_stacks_get_base_stack_id( $stack_id ) );
+		ob_end_clean();
+		$target_full_path = \StellarWP\Slic\slic_worktree_target_path( $target );
 
 		// Get all branches including remote branches
 		$output = [];

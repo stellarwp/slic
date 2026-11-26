@@ -23,6 +23,28 @@ class CompletionTest extends BaseTestCase {
 		);
 	}
 
+	public function test_worktree_branches_of_a_site_stack_come_from_its_plugins_directory(): void {
+		$site = $this->createTempDir();
+		mkdir( $site . '/wp-content/plugins/test-plugin', 0777, true );
+		mkdir( $site . '/wp-content/themes' );
+		touch( $site . '/wp-config.php' );
+		file_put_contents( $site . '/wp-content/plugins/test-plugin/plugin.php', "<?php\n/**\n * Plugin Name: Test Plugin\n */\n" );
+		$repo = $site . '/wp-content/plugins/test-plugin';
+		$git  = 'git -C ' . escapeshellarg( $repo ) . ' -c user.name=slic -c user.email=slic@example.com -c commit.gpgsign=false';
+		shell_exec( "{$git} init -q && {$git} add -A && {$git} commit -q -m init && {$git} branch only-in-site-target" );
+		chdir( $site );
+		$this->slicExec( 'here' );
+		$this->createdStackIds[] = realpath( $site );
+		$this->slicExec( 'use test-plugin', $this->dockerMockEnv() );
+
+		// A site stack is the site directory; its plugins live in wp-content/plugins.
+		$this->assertContains(
+			'only-in-site-target',
+			explode( "\n", $this->complete( [ 'slic', 'worktree', 'add', '' ], 3 ) ),
+			'Branch completions of a site stack should come from the target in its plugins directory.'
+		);
+	}
+
 	public function test_a_branch_checked_out_in_another_worktree_completes_without_its_marker(): void {
 		$repo = $this->setUpGitTargetStackWithBranch( 'only-in-target' );
 		shell_exec( 'git -C ' . escapeshellarg( $repo ) . ' worktree add -q -b fix/x ' . escapeshellarg( $this->createTempDir() . '/wt' ) );

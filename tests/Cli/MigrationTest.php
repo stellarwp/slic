@@ -72,6 +72,24 @@ class MigrationTest extends BaseTestCase {
 		);
 	}
 
+	public function test_migration_keys_a_2x_site_on_its_here_directory(): void {
+		$site = realpath( Directory::createTemp()->createPlugin( 'wp-content/plugins/test-plugin' )->getAbsolutePath() );
+		mkdir( $site . '/wp-content/themes' );
+		touch( $site . '/wp-config.php' );
+		file_put_contents(
+			self::slicRoot() . '/.env.slic.run',
+			"SLIC_HERE_DIR={$site}\nSLIC_PLUGINS_DIR={$site}/wp-content/plugins\nSLIC_THEMES_DIR={$site}/wp-content/themes\n"
+		);
+		$this->createdStackIds[] = $site;
+		chdir( $site );
+
+		$this->assertStringContainsString(
+			"Stack ID: {$site}\n",
+			$this->slicExec( 'stack info', $this->dockerMockEnv() ),
+			'A 2.x site should be migrated to a stack keyed on the directory slic here ran in.'
+		);
+	}
+
 	public function test_debug_off_sticks_after_migration(): void {
 		$this->slicExec( 'debug off', $this->dockerMockEnv() );
 

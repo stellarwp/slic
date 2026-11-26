@@ -2,6 +2,8 @@
 
 namespace StellarWP\Slic\Test\Cli;
 
+use PHPUnit\Framework\Attributes\DataProvider;
+
 class StackPortsTest extends BaseTestCase {
 
 	public function test_wordpress_is_published_on_a_docker_assigned_port(): void {
@@ -69,10 +71,31 @@ class StackPortsTest extends BaseTestCase {
 	public function test_stack_info_reads_ports_when_a_service_is_not_running(): void {
 		$this->setUpPluginsDir();
 
-		$this->assertStringNotContainsString(
-			'trim(): Passing null',
-			$this->slicExec( 'stack info', $this->runningStackEnv( 'wordpress=11111,db=22222' ) ),
-			'A service without a container should not produce PHP notices.'
+		$output = $this->slicExec( 'stack info', $this->runningStackEnv( 'wordpress=11111' ) );
+
+		$this->assertStringContainsString(
+			'WordPress: 11111',
+			$output,
+			'A running stack should report the ports of the services that are running.'
+		);
+		$this->assertStringNotContainsString( 'Warning', $output, 'A service without a container should not produce PHP notices.' );
+	}
+
+	public static function loopbackHostProvider(): array {
+		return [
+			'IPv4 loopback' => [ '127.0.0.1' ],
+			'IPv6 any'      => [ '[::]' ],
+		];
+	}
+
+	#[DataProvider( 'loopbackHostProvider' )]
+	public function test_stack_info_reads_ports_bound_to_any_host( string $host ): void {
+		$this->setUpPluginsDir();
+
+		$this->assertStringContainsString(
+			'WordPress: 11111',
+			$this->slicExec( 'stack info', [ 'SLIC_DOCKER_MOCK_HOST' => $host ] + $this->runningStackEnv( 'wordpress=11111,db=22222,redis=33333' ) ),
+			"A port Docker published on {$host} should be reported."
 		);
 	}
 

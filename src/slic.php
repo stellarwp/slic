@@ -469,15 +469,15 @@ function setup_slic_env( $root_dir, $reset = false, $stack_id = null ) {
 		$parsed = slic_stacks_parse_worktree_id( $stack_id );
 
 		if ( null !== $parsed ) {
-			// Calculate full worktree path
-			$worktree_full_path = $parsed['base_path'] . '/' . $parsed['worktree_dir'];
+			// The worktree sits beside its target, in the plugins or themes directory, not in the base stack directory.
+			$stack              = slic_stacks_get( $stack_id );
+			$worktree_full_path = $stack['worktree_full_path'] ?? '';
 
 			// Set the full path to the worktree directory
 			putenv( "SLIC_WORKTREE_FULL_PATH={$worktree_full_path}" );
 			$_ENV['SLIC_WORKTREE_FULL_PATH'] = $worktree_full_path;
 
 			// Determine container path based on target type (plugin or theme)
-			$stack = slic_stacks_get( $stack_id );
 			if ( null !== $stack && isset( $stack['target'] ) ) {
 				$target = $stack['target'];
 
@@ -651,16 +651,18 @@ function slic_current_stack() {
 		require_once __DIR__ . '/stacks.php';
 	}
 
-	// 1. Check global override (set by --stack flag)
+	// 1. Check global override (set by --stack flag), then 2. the environment variable.
 	global $SLIC_STACK_OVERRIDE;
-	if ( ! empty( $SLIC_STACK_OVERRIDE ) ) {
-		return slic_stacks_resolve_from_path( $SLIC_STACK_OVERRIDE );
-	}
+	$explicit_stack = ! empty( $SLIC_STACK_OVERRIDE ) ? $SLIC_STACK_OVERRIDE : getenv( 'SLIC_STACK' );
+	if ( ! empty( $explicit_stack ) ) {
+		$stack_id = slic_stacks_resolve_from_path( $explicit_stack );
+		// A stack asked for by name must not fall back to another one, or to the unnamed project.
+		if ( null === $stack_id ) {
+			echo magenta( "{$explicit_stack} is not a registered stack. Run 'slic stack list' to see the registered stacks." . PHP_EOL );
+			exit( 1 );
+		}
 
-	// 2. Check environment variable
-	$env_stack = getenv( 'SLIC_STACK' );
-	if ( ! empty( $env_stack ) ) {
-		return slic_stacks_resolve_from_path( $env_stack );
+		return $stack_id;
 	}
 
 	/*
@@ -1434,7 +1436,7 @@ function slic_info() {
 
 	// Without a pinned port, the stack is published on the port Docker assigned to it.
 	$docker_ports = [];
-	if ( $stack_id && ! getenv( 'WORDPRESS_HTTP_PORT' ) && slic_stacks_ensure_ports( $stack_id ) ) {
+	if ( $stack_id && ! getenv( 'WORDPRESS_HTTP_PORT' ) && slic_stacks_ensure_ports( $stack_id ) && isset( slic_stacks_get( $stack_id )['ports']['wp'] ) ) {
 		$docker_ports['WORDPRESS_HTTP_PORT'] = (string) slic_stacks_get( $stack_id )['ports']['wp'];
 	}
 

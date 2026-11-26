@@ -330,23 +330,25 @@ function command_stack_stop_all( $force_yes = false ) {
 		echo PHP_EOL;
 	}
 
-	// Unregister all successfully stopped stacks with cascade to remove worktrees
+	// Unregister the stopped stacks one by one, without cascading: worktrees come before their base stack, which stays
+	// registered while a worktree that failed to stop remains.
 	// Note: State file cleanup is handled by slic_stacks_unregister()
+	$removed = [];
 	foreach ( $results['success'] as $stack_id ) {
-		if ( slic_stacks_unregister( $stack_id, true ) ) {
+		if ( slic_stacks_unregister( $stack_id ) ) {
 			echo colorize( "Stack unregistered: <yellow>{$stack_id}</yellow>" . PHP_EOL );
+			$removed[] = $stack_id;
 		}
 	}
 
 	// Display summary with breakdown of base stacks and worktrees
-	$success_count = count( $results['success'] );
+	$success_count = count( $removed );
 	$failed_count = count( $results['failed'] );
 
 	// Count base stacks and worktrees that were removed
-	// Note: Worktrees are already in results['success'] as they were explicitly stopped
 	$base_removed = 0;
 	$worktree_removed = 0;
-	foreach ( $results['success'] as $stack_id ) {
+	foreach ( $removed as $stack_id ) {
 		$stack_info = $stacks[ $stack_id ] ?? null;
 		if ( $stack_info ) {
 			if ( ! empty( $stack_info['is_worktree'] ) ) {
@@ -454,9 +456,13 @@ function command_stack_info( $stack_id = null ) {
 
 	// Show ports - ensure they're up-to-date from Docker
 	echo colorize( PHP_EOL . "<yellow>Ports:</yellow>" . PHP_EOL );
-	if ( isset( $updated_stack['ports']['wp'], $updated_stack['ports']['mysql'] ) ) {
-		echo colorize( "  WordPress: <light_cyan>{$updated_stack['ports']['wp']} (http://localhost:{$updated_stack['ports']['wp']})</light_cyan>" . PHP_EOL );
-		echo colorize( "  MySQL: <light_cyan>{$updated_stack['ports']['mysql']}</light_cyan>" . PHP_EOL );
+	if ( ! empty( $updated_stack['ports'] ) ) {
+		if ( isset( $updated_stack['ports']['wp'] ) ) {
+			echo colorize( "  WordPress: <light_cyan>{$updated_stack['ports']['wp']} (http://localhost:{$updated_stack['ports']['wp']})</light_cyan>" . PHP_EOL );
+		}
+		if ( isset( $updated_stack['ports']['mysql'] ) ) {
+			echo colorize( "  MySQL: <light_cyan>{$updated_stack['ports']['mysql']}</light_cyan>" . PHP_EOL );
+		}
 		if ( isset( $updated_stack['ports']['redis'] ) ) {
 			echo colorize( "  Redis: <light_cyan>{$updated_stack['ports']['redis']}</light_cyan>" . PHP_EOL );
 		}
