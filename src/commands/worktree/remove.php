@@ -52,6 +52,7 @@ $worktree_stack_id = $base_stack_id . '@' . $worktree_dir;
 // Check if stack exists
 $wt_state = slic_stacks_get($worktree_stack_id);
 $is_registered = ($wt_state !== null);
+$owner_git_dir = $is_registered ? slic_worktree_owner_git_dir($wt_state) : null;
 
 // Read the paths from the stack state; an unregistered worktree is next to the target's repository
 $target_path = $wt_state['worktree_target_path'] ?? slic_worktree_target_path($target);
@@ -71,7 +72,7 @@ if (!$is_registered && !$git_worktree_exists) {
 }
 
 slic_worktree_require_branch($branch, $wt_state, $existing_worktree);
-slic_worktree_require_unlocked($target_path, $worktree_full_path);
+slic_worktree_require_unlocked($target_path, $worktree_full_path, $owner_git_dir);
 
 if (!$is_registered && $git_worktree_exists) {
     echo "WARNING: This worktree is NOT registered with slic.\n";
@@ -136,7 +137,7 @@ if (!$force_yes) {
 }
 
 // The worktree can have been locked while slic waited for the answer.
-slic_worktree_require_unlocked($target_path, $worktree_full_path);
+slic_worktree_require_unlocked($target_path, $worktree_full_path, $owner_git_dir);
 
 // Step 1: Bring the containers and network down (only if registered)
 if ($is_registered) {

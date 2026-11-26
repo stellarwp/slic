@@ -736,6 +736,87 @@ class WorktreeTest extends BaseTestCase {
 		$this->assertStringContainsString( 'Branch: feature-x', $list, 'The stack should stay registered.' );
 	}
 
+	public static function repointedTargetProvider(): array {
+		$repointed = 'is no longer the repository';
+		$unknown   = 'Cannot confirm which repository owns';
+
+		return [
+			'remove, directory present'                                   => [ 'remove feature-x -y', true, false, $repointed ],
+			'merge, directory present'                                    => [ 'merge feature-x -y', true, false, $repointed ],
+			'sync, directory offline'                                     => [ 'sync --clean -y', false, false, $repointed ],
+			'remove, directory present, registered without its repository' => [ 'remove feature-x -y', true, true, $repointed ],
+			'remove, directory offline, registered without its repository' => [ 'remove feature-x -y', false, true, $unknown ],
+			'sync, directory offline, registered without its repository'   => [ 'sync --clean -y', false, true, $unknown ],
+		];
+	}
+
+	#[DataProvider( 'repointedTargetProvider' )]
+	public function test_worktree_subcommands_refuse_a_target_repointed_to_another_repository( string $command, bool $present, bool $legacy, string $expected ): void {
+		$pluginDir   = $this->setUpGitPluginStack();
+		$worktreeDir = $pluginDir . '-feature-x';
+		// The plugin directory is a symlink to the repository the worktree is created from.
+		$repoA = $this->createTempDir() . '/test-plugin';
+		rename( $pluginDir, $repoA );
+		symlink( $repoA, $pluginDir );
+		$this->slicExec( 'worktree add feature-x -y', $this->dockerMockEnv() );
+		$this->git( $repoA, 'worktree lock --reason ' . escapeshellarg( 'External disk' ) . ' ' . escapeshellarg( $worktreeDir ) );
+		if ( $legacy ) {
+			// A registration made before slic recorded the repository that owns the worktree.
+			$registryFile = self::slicRoot() . '/.env.slic.stacks';
+			$registry     = json_decode( (string) file_get_contents( $registryFile ), true );
+			foreach ( $registry as $id => $state ) {
+				unset( $registry[ $id ]['worktree_git_dir'] );
+			}
+			file_put_contents( $registryFile, json_encode( $registry ) );
+		}
+		if ( ! $present ) {
+			rename( $worktreeDir, $worktreeDir . '.offline' );
+		}
+		// The symlink now points to another repository, one without a record of the worktree or its lock.
+		$repoB = $this->createTempDir() . '/test-plugin';
+		mkdir( $repoB );
+		file_put_contents( $repoB . '/plugin.php', '<?php' );
+		$this->initGitRepository( $repoB );
+		unlink( $pluginDir );
+		symlink( $repoB, $pluginDir );
+
+		try {
+			$output = $this->slicExec( "worktree {$command}; echo \"exit=\$?\"", $this->dockerMockLogEnv() );
+			$list   = $this->slicExec( 'worktree list', $this->dockerMockEnv() );
+			$locks  = $this->git( $repoA, 'worktree list --porcelain' );
+		} finally {
+			unlink( $pluginDir );
+			symlink( $repoA, $pluginDir );
+			if ( ! $present ) {
+				rename( $worktreeDir . '.offline', $worktreeDir );
+			}
+			$this->git( $repoA, 'worktree unlock ' . escapeshellarg( $worktreeDir ) );
+			$this->slicExec( 'worktree remove feature-x -y', $this->dockerMockEnv() );
+		}
+
+		$this->assertMatchesRegularExpression( '/exit=[1-9]/', $output, 'A target repointed to another repository should make the command fail.' );
+		$this->assertStringContainsString( $expected, $output, 'The failure should say why the worktree repository cannot be trusted.' );
+		$this->assertDockerCalled( '# down #', 'The stack should not be brought down while its repository is elsewhere.', false );
+		$this->assertStringContainsString( 'Branch: feature-x', $list, 'The stack should stay registered.' );
+		$this->assertStringContainsString( 'locked External disk', $locks, 'The repository that owns the worktree should keep its lock.' );
+	}
+
+	public function test_worktree_add_refuses_a_target_without_its_own_repository(): void {
+		$pluginDir = $this->setUpPluginsDir() . '/test-plugin';
+		// A site under git that tracks the plugin, which has no repository of its own.
+		$siteDir = dirname( $pluginDir );
+		$this->initGitRepository( $siteDir );
+		$this->slicExec( 'use test-plugin', $this->dockerMockEnv() );
+
+		$output = $this->slicExec( 'worktree add feature -y; echo "exit=$?"', $this->dockerMockEnv() );
+
+		$this->assertMatchesRegularExpression( '/exit=[1-9]/', $output, 'A target without its own repository should make add fail.' );
+		$this->assertStringContainsString( 'is not the top of a git repository', $output, 'The failure should say the target is not a repository.' );
+		$this->assertSame( '', $this->git( $siteDir, 'branch --list feature' ), 'Add should not create a branch in the enclosing repository.' );
+		$this->assertDirectoryDoesNotExist( $pluginDir . '-feature', 'Add should not create a worktree of the enclosing repository.' );
+		$this->assertStringContainsString( 'No slic worktree stacks registered.', $this->slicExec( 'worktree list', $this->dockerMockEnv() ), 'Add should not register a stack.' );
+	}
+
 	public function test_worktree_merge_keeps_a_worktree_a_post_merge_hook_locks(): void {
 		$pluginDir   = $this->setUpGitPluginStack();
 		$worktreeDir = $pluginDir . '-feature-x';

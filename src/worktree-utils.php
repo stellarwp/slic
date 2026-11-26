@@ -217,19 +217,84 @@ function slic_worktree_list( $target_path, &$error = '' ) {
 }
 
 /**
+ * Returns the git common directory of a repository, where git keeps the records of its worktrees.
+ *
+ * @param string $repo_path The path to the repository.
+ *
+ * @return string|false The resolved absolute path, or false if git cannot read the repository.
+ */
+function slic_worktree_git_common_dir( $repo_path ) {
+	exec( 'git -C ' . escapeshellarg( $repo_path ) . ' rev-parse --git-common-dir 2>/dev/null', $output, $status );
+
+	if ( 0 !== $status || empty( $output[0] ) ) {
+		return false;
+	}
+
+	// Git prints the directory relative to the repository when it is inside it, as `.git`.
+	return realpath( strpos( $output[0], '/' ) === 0 ? $output[0] : $repo_path . '/' . $output[0] );
+}
+
+/**
+ * Returns the git common directory of the repository a registered worktree was created from.
+ *
+ * @param array $wt_state The registered worktree stack state.
+ *
+ * @return string|false The one recorded at registration or, for a stack registered before slic recorded it, the one
+ *                      the worktree `.git` file points to; false if neither is known, as when that worktree is offline.
+ */
+function slic_worktree_owner_git_dir( array $wt_state ) {
+	if ( ! empty( $wt_state['worktree_git_dir'] ) ) {
+		return $wt_state['worktree_git_dir'];
+	}
+
+	$worktree_path = $wt_state['worktree_full_path'] ?? '';
+	$git_file      = '' !== $worktree_path ? @file_get_contents( $worktree_path . '/.git' ) : false;
+
+	if ( false === $git_file || ! preg_match( '/^gitdir: (.+)$/m', $git_file, $matches ) ) {
+		return false;
+	}
+
+	$gitdir = trim( $matches[1] );
+	$gitdir = strpos( $gitdir, '/' ) === 0 ? $gitdir : $worktree_path . '/' . $gitdir;
+
+	// The `.git` file points to `<common dir>/worktrees/<id>`.
+	return realpath( dirname( $gitdir, 2 ) );
+}
+
+/**
  * Returns the reason git has a worktree locked, read from git's records so it works while the directory is unavailable.
  *
- * @param string $target_path   The path to the main repository.
- * @param string $worktree_path The path to the worktree directory.
- * @param string $error         Set to git's output if git cannot read the repository.
+ * @param string            $target_path   The path to the main repository.
+ * @param string            $worktree_path The path to the worktree directory.
+ * @param string            $error         Set to why it cannot say, if it returns false.
+ * @param string|false|null $owner_git_dir The git common directory of the repository the worktree was created from,
+ *                                         from `slic_worktree_owner_git_dir()`, to refuse a target that is now another
+ *                                         repository; false when it is unknown, to refuse; null not to check, as for
+ *                                         a worktree not registered with slic.
  *
  * @return string|null|false The lock reason, empty for a lock without one, null if the worktree is not locked, or
- *                           false if git cannot read the repository, so cannot say.
+ *                           false if it cannot say: git cannot read the repository, or it is not the one that owns
+ *                           the worktree.
  */
-function slic_worktree_lock_reason( $target_path, $worktree_path, &$error = '' ) {
+function slic_worktree_lock_reason( $target_path, $worktree_path, &$error = '', $owner_git_dir = null ) {
+	if ( false === $owner_git_dir ) {
+		$error = "Cannot confirm which repository owns $worktree_path";
+
+		return false;
+	}
+
 	$worktrees = slic_worktree_list( $target_path, $error );
 
 	if ( false === $worktrees ) {
+		$error = "Cannot read the git worktree records of $target_path: $error";
+
+		return false;
+	}
+
+	// A target that is a symlink can be repointed to another repository, which has no record of the worktree's lock.
+	if ( null !== $owner_git_dir && slic_worktree_git_common_dir( $target_path ) !== $owner_git_dir ) {
+		$error = "$target_path is no longer the repository $worktree_path was created from ($owner_git_dir)";
+
 		return false;
 	}
 
@@ -249,24 +314,25 @@ function slic_worktree_lock_reason( $target_path, $worktree_path, &$error = '' )
 }
 
 /**
- * Exits with an error, before anything is stopped, removed or unregistered, if git has a worktree locked or cannot
- * read the repository to say whether it is.
+ * Exits with an error, before anything is stopped, removed or unregistered, if git has a worktree locked or it cannot
+ * say whether it is.
  *
- * @param string $target_path   The path to the main repository.
- * @param string $worktree_path The path to the worktree directory.
- * @param string $unchanged     What the command kept, said with the error.
+ * @param string            $target_path   The path to the main repository.
+ * @param string            $worktree_path The path to the worktree directory.
+ * @param string|false|null $owner_git_dir The repository that owns the worktree, as `slic_worktree_lock_reason()` takes it.
+ * @param string            $unchanged     What the command kept, said with the error.
  *
  * @return void
  */
-function slic_worktree_require_unlocked( $target_path, $worktree_path, $unchanged = 'Nothing was changed.' ) {
-	$reason = slic_worktree_lock_reason( $target_path, $worktree_path, $error );
+function slic_worktree_require_unlocked( $target_path, $worktree_path, $owner_git_dir = null, $unchanged = 'Nothing was changed.' ) {
+	$reason = slic_worktree_lock_reason( $target_path, $worktree_path, $error, $owner_git_dir );
 
 	if ( null === $reason ) {
 		return;
 	}
 
 	if ( false === $reason ) {
-		echo "Error: Cannot read the git worktree records of $target_path: $error\n";
+		echo "Error: $error\n";
 		echo "$unchanged\n";
 		exit( 1 );
 	}
@@ -407,6 +473,8 @@ function slic_worktree_register( $base_stack_id, $target, $target_path, $worktre
 		'base_branch'          => trim( (string) shell_exec( 'git -C ' . escapeshellarg( $target_path ) . ' rev-parse --abbrev-ref HEAD 2>/dev/null' ) ),
 		'worktree_target'      => $target,
 		'worktree_target_path' => $target_path,
+		// Where git keeps the worktree's records and lock, should the target path later lead to another repository.
+		'worktree_git_dir'     => slic_worktree_git_common_dir( $target_path ),
 		'worktree_dir'         => $worktree_dir,
 		'worktree_branch'      => $branch,
 		'worktree_full_path'   => $worktree_full_path,

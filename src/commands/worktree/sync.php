@@ -134,8 +134,9 @@ $locked_slic_stacks = [];
 foreach ($orphaned_slic_stacks as $idx => $orphan) {
 	$lock_target = $orphan['state']['worktree_target_path'] ?? ($target ? slic_worktree_target_path($target) : '');
 	$orphaned_slic_stacks[$idx]['lock_target'] = $lock_target;
-	// False when git cannot read the repository, so cannot say whether the worktree is locked: keep the stack too.
-	$lock_reason = isset($orphan['path']) ? slic_worktree_lock_reason($lock_target, $orphan['path'], $git_error) : null;
+	$orphaned_slic_stacks[$idx]['owner_git_dir'] = slic_worktree_owner_git_dir($orphan['state']);
+	// False when it cannot say whether the worktree is locked, as when git cannot read the repository: keep the stack too.
+	$lock_reason = isset($orphan['path']) ? slic_worktree_lock_reason($lock_target, $orphan['path'], $git_error, $orphaned_slic_stacks[$idx]['owner_git_dir']) : null;
 	if (null !== $lock_reason) {
 		$locked_slic_stacks[] = $orphan + ['lock_reason' => $lock_reason, 'lock_target' => $lock_target, 'git_error' => $git_error];
 		unset($orphaned_slic_stacks[$idx]);
@@ -146,7 +147,7 @@ $orphaned_slic_stacks = array_values($orphaned_slic_stacks);
 foreach ($locked_slic_stacks as $locked) {
 	if (false === $locked['lock_reason']) {
 		echo "Skipping worktree stack: {$locked['stack_id']}\n";
-		echo "      Cannot read the git worktree records of {$locked['lock_target']}: {$locked['git_error']}\n\n";
+		echo "      {$locked['git_error']}\n\n";
 		continue;
 	}
 	echo "Skipping locked worktree stack: {$locked['stack_id']}\n";
@@ -372,9 +373,9 @@ if (!empty($orphaned_slic_stacks)) {
 			echo "Cleaning {$orphan['stack_id']}...\n";
 
 			// The worktree can have been locked while slic waited for the answer.
-			$lock_reason = isset($orphan['path']) ? slic_worktree_lock_reason($orphan['lock_target'], $orphan['path'], $git_error) : null;
+			$lock_reason = isset($orphan['path']) ? slic_worktree_lock_reason($orphan['lock_target'], $orphan['path'], $git_error, $orphan['owner_git_dir']) : null;
 			if (null !== $lock_reason) {
-				echo "SKIPPED: " . (false === $lock_reason ? "Cannot read the git worktree records of {$orphan['lock_target']}: $git_error" : 'The git worktree is locked' . ('' !== $lock_reason ? ": $lock_reason" : '')) . "\n";
+				echo "SKIPPED: " . (false === $lock_reason ? $git_error : 'The git worktree is locked' . ('' !== $lock_reason ? ": $lock_reason" : '')) . "\n";
 				$failed_count++;
 				continue;
 			}

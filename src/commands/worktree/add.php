@@ -85,6 +85,13 @@ if ($worktree_real !== false && $target_real === $worktree_real) {
     exit(1);
 }
 
+// A target without its own repository would branch the repository enclosing it, one `worktree remove` refuses.
+if (slic_worktree_list($target_full_path, $git_error) === false) {
+    echo "Error: $git_error\n";
+    echo "Nothing was changed.\n";
+    exit(1);
+}
+
 // Check if worktree stack already exists
 $existing_state = slic_stacks_get($worktree_stack_id);
 if ($existing_state) {
