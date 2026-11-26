@@ -33,8 +33,10 @@ if ( $is_help ) {
 $sub_args = args( [ 'target' ], $args( '...' ), 0 );
 $target   = $sub_args( 'target', false );
 
-// If no target provided, show TUI
-if ( $target === false ) {
+require_once __DIR__ . '/../tui.php';
+
+// If no target provided, show TUI; outside a terminal, fall back to the current directory below.
+if ( $target === false && tui_is_tty() ) {
 	// Get all valid targets
 	$valid_targets = get_valid_targets( true ); // true = return as array
 
@@ -52,7 +54,6 @@ if ( $target === false ) {
 	}
 
 	// Show TUI
-	require_once __DIR__ . '/../tui.php';
 	$target = tui_select(
 		$valid_targets,
 		$current_target,
@@ -95,7 +96,8 @@ if ( slic_stacks_is_worktree( $stack_id ) ) {
 	echo magenta( "Current worktree: {$worktree_dir} (target: {$current_target})" . PHP_EOL );
 	if ( null !== $base_stack_id ) {
 		echo PHP_EOL;
-		echo colorize( "To switch targets, use the base stack: <light_cyan>slic stack switch {$base_stack_id}</light_cyan>" . PHP_EOL );
+		$use_target = $target ?: '<target>';
+		echo colorize( "To switch targets, use the base stack: <light_cyan>cd {$base_stack_id} && slic use {$use_target}</light_cyan>" . PHP_EOL );
 	}
 	exit( 1 );
 }

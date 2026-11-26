@@ -351,4 +351,23 @@ class PHPVersionTest extends BaseTestCase {
 			'A three-part version should be normalized to major.minor.'
 		);
 	}
+
+	public function test_auto_detected_php_version_rebuilds_the_stack_once(): void {
+		$pluginsDir = $this->setUpPluginsDir();
+		file_put_contents(
+			$pluginsDir . '/test-plugin/composer.json',
+			json_encode( [ 'config' => [ 'platform' => [ 'php' => '8.2.10' ] ] ] )
+		);
+
+		$env    = $this->dockerMockLogEnv();
+		$output = $this->slicExec( 'use test-plugin', $env );
+		$builds = preg_grep( '/ build$/', file( $env['SLIC_DOCKER_MOCK_LOG'], FILE_IGNORE_NEW_LINES ) );
+
+		$this->assertCount( 1, $builds, 'Switching to an auto-detected PHP version should build the stack once.' );
+		$this->assertStringNotContainsString(
+			"from stack's file",
+			$output,
+			'The auto-detected PHP version should not be applied a second time from the stack file.'
+		);
+	}
 }

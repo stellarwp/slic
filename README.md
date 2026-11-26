@@ -700,13 +700,13 @@ cd ../the-events-calendar-feature-new-feature
 slic use event-tickets
 # Error: Cannot switch target in a worktree stack.
 # Worktree stacks are tied to a specific target directory.
-# To switch targets, use the base stack: slic stack switch /path/to/plugins
+# To switch targets, use the base stack: cd /path/to/plugins && slic use event-tickets
 ```
 
 To work with a different target, switch back to your base stack first:
 
 ```bash
-slic stack switch /path/to/plugins
+cd /path/to/plugins
 slic use event-tickets
 ```
 

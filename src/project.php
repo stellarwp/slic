@@ -90,6 +90,17 @@ function get_project_local_path( $target = null ) {
 		}
 	}
 
+	// A worktree stack mounts its worktree over the target, so the target's files are the worktree's.
+	$stack_id = slic_current_stack();
+	if ( $stack_id && slic_stacks_is_worktree( $stack_id ) ) {
+		$stack = slic_stacks_get( $stack_id );
+		$parts = explode( '/', $target, 2 );
+
+		if ( isset( $stack['worktree_full_path'], $stack['worktree_target'] ) && $parts[0] === $stack['worktree_target'] ) {
+			return $stack['worktree_full_path'] . ( isset( $parts[1] ) ? '/' . $parts[1] : '' );
+		}
+	}
+
 	switch ( get_target_content_type( $target ) ) {
 		case 'plugin':
 			return slic_plugins_dir( $target );
@@ -350,6 +361,8 @@ function project_apply_php_version( $slic_env_local, $slic_json, $composer_json 
 	if ( $project_version && $project_version !== $effective ) {
 		project_show_php_version_message( $project_version, 'auto-detected from project', 'success' );
 		slic_set_php_version( $project_version );
+
+		return;
 	}
 
 	// Switch to the PHP version detected from the stack's env file, if any.

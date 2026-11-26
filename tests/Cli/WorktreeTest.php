@@ -318,6 +318,53 @@ class WorktreeTest extends BaseTestCase {
 		);
 	}
 
+	public function test_update_dump_in_a_worktree_finds_a_dump_that_exists_only_on_the_branch(): void {
+		$pluginDir = $this->setUpGitPluginStack();
+		$this->slicExec( 'worktree add feature-x -y', $this->dockerMockEnv() );
+		$worktreeDir = dirname( $pluginDir ) . '/test-plugin-feature-x';
+		file_put_contents( $worktreeDir . '/branch-only.sql', '' );
+
+		chdir( $worktreeDir );
+		try {
+			$output = $this->slicExec( 'update-dump branch-only.sql', $this->dockerMockEnv() );
+		} finally {
+			chdir( dirname( $pluginDir ) );
+			$this->slicExec( 'worktree remove feature-x -y', $this->dockerMockEnv() );
+		}
+
+		$this->assertStringNotContainsString(
+			'does not exist',
+			$output,
+			'A worktree stack should look for files in the worktree, not in the base checkout.'
+		);
+	}
+
+	public function test_use_in_a_worktree_says_how_to_switch_target_from_the_base_stack(): void {
+		$pluginDir = $this->setUpGitPluginStack();
+		$this->slicExec( 'worktree add feature-x -y', $this->dockerMockEnv() );
+		mkdir( dirname( $pluginDir ) . '/other-plugin' );
+		file_put_contents( dirname( $pluginDir ) . '/other-plugin/plugin.php', "/**\n* Plugin Name: Other Plugin\n*/" );
+
+		chdir( dirname( $pluginDir ) . '/test-plugin-feature-x' );
+		try {
+			$output = $this->slicExec( 'use other-plugin', $this->dockerMockEnv() );
+		} finally {
+			chdir( dirname( $pluginDir ) );
+			$this->slicExec( 'worktree remove feature-x -y', $this->dockerMockEnv() );
+		}
+
+		$this->assertStringContainsString(
+			'cd ' . realpath( dirname( $pluginDir ) ) . ' && slic use other-plugin',
+			$output,
+			'Refusing to switch target in a worktree should say how to switch it in the base stack.'
+		);
+		$this->assertStringNotContainsString(
+			'stack switch',
+			$output,
+			'Refusing to switch target in a worktree should not suggest a command that does not exist.'
+		);
+	}
+
 	private function setUpGitPluginStack(): string {
 		$pluginDir = $this->setUpPluginsDir() . '/test-plugin';
 		$this->initGitRepository( $pluginDir );

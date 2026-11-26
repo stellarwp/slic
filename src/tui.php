@@ -60,17 +60,6 @@ function tui_unix_restore( $settings ) {
 }
 
 /**
- * Check if running in a TTY on Unix
- *
- * @return bool
- */
-function tui_unix_is_tty() {
-	return function_exists( 'posix_isatty' )
-		&& posix_isatty( STDIN )
-		&& posix_isatty( STDOUT );
-}
-
-/**
  * Set terminal to raw mode on Windows
  *
  * @return bool Success
@@ -93,23 +82,6 @@ function tui_windows_raw_mode() {
  */
 function tui_windows_restore() {
 	stream_set_blocking( STDIN, true );
-}
-
-/**
- * Check if running in a TTY on Windows
- *
- * @return bool
- */
-function tui_windows_is_tty() {
-	// Check if STDIN/STDOUT are connected to console
-	// On Windows, we can check if stream_isatty exists (PHP 7.2+)
-	if ( function_exists( 'stream_isatty' ) ) {
-		return stream_isatty( STDIN ) && stream_isatty( STDOUT );
-	}
-
-	// Fallback: check if we can get console mode
-	// If not redirected, this should work
-	return ! getenv( 'CI' ) && PHP_SAPI !== 'cgi-fcgi';
 }
 
 /**
@@ -160,18 +132,8 @@ function tui_terminal_restore( $state ) {
  * @return bool
  */
 function tui_is_tty() {
-	$platform = tui_platform();
-
-	switch ( $platform ) {
-		case 'unix':
-			return tui_unix_is_tty();
-
-		case 'windows':
-			return tui_windows_is_tty();
-
-		default:
-			return false;
-	}
+	// Raw mode is only implemented for Unix and Windows terminals.
+	return 'unknown' !== tui_platform() && stream_isatty( STDIN ) && stream_isatty( STDOUT );
 }
 
 /**

@@ -107,4 +107,42 @@ class UseTest extends BaseTestCase {
 		chdir( $this->initialDir );
 		exec( 'rm -rf ' . escapeshellarg( $tempDir ) );
 	}
+
+	public function test_use_without_target_outside_a_terminal_uses_the_current_directory(): void {
+		$pluginsDir = $this->setUpPluginsDir( 'first-plugin' );
+		mkdir( $pluginsDir . '/second-plugin', 0777, true );
+		file_put_contents(
+			$pluginsDir . '/second-plugin/plugin.php',
+			"/**\n* Plugin Name: Second Plugin\n*/"
+		);
+		$this->slicExec( 'use first-plugin', $this->dockerMockEnv() );
+
+		chdir( $pluginsDir . '/second-plugin' );
+		$this->slicExec( 'use', $this->dockerMockEnv() );
+		chdir( $pluginsDir );
+
+		$this->assertStringContainsString(
+			'Using second-plugin',
+			$this->slicExec( 'using' ),
+			'Without a target and a terminal, use should switch to the current directory, as in slic 2.'
+		);
+	}
+
+	public function test_use_without_target_outside_a_terminal_fails_when_the_current_directory_is_no_target(): void {
+		$this->setUpPluginsDir();
+
+		// slicExec() returns only the output, so the shell reports the exit status.
+		$output = $this->slicExec( 'use </dev/null || echo use-failed', $this->dockerMockEnv() );
+
+		$this->assertStringContainsString(
+			'Detecting the current directory',
+			$output,
+			'Without a target and a terminal, use should say the current directory is not a target.'
+		);
+		$this->assertStringContainsString(
+			'use-failed',
+			$output,
+			'Without a target and a terminal, use should exit with an error when the current directory is not a target.'
+		);
+	}
 }
