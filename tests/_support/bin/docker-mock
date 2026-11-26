@@ -13,6 +13,12 @@ fi
 if [ -n "${SLIC_DOCKER_MOCK_FAIL:-}" ] && [[ "$*" =~ $SLIC_DOCKER_MOCK_FAIL ]]; then
 	exit 1
 fi
+# `compose config --format json` names the project SLIC_DOCKER_MOCK_PROJECT_NAME, and fails without it.
+if [[ " $* " =~ \ config\  ]] && [[ " $* " =~ \ --format(\ |=)json\  ]]; then
+	[ -n "${SLIC_DOCKER_MOCK_PROJECT_NAME:-}" ] || exit 1
+	echo "{\"name\":\"$SLIC_DOCKER_MOCK_PROJECT_NAME\"}"
+	exit 0
+fi
 # Container ID lookups, as `docker ps --format '{{.ID}}'`, find one running container.
 # SLIC_DOCKER_MOCK_RUNNING lists the services `ps --services` reports as running, e.g. "wordpress".
 for arg in "$@"; do
