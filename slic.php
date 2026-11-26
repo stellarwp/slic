@@ -164,6 +164,9 @@ $args = args( [
 
 // `completion show` prints a script meant to be redirected to a file, so it prints nothing else.
 $is_completion_show = array_slice( $argv, 1, 2 ) === [ 'completion', 'show' ];
+if ( $is_completion_show ) {
+	define( 'SLIC_NO_MIGRATION', true );
+}
 
 // If the run-time option `-q`, for "quiet", is specified, then do not print the header.
 if (

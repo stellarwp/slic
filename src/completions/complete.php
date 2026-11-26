@@ -20,6 +20,9 @@ namespace StellarWP\Slic\Completions;
 error_reporting( 0 );
 ini_set( 'display_errors', '0' );
 
+// Pressing Tab must not migrate a 2.x install, which stops its containers: the next slic command does that.
+define( 'SLIC_NO_MIGRATION', true );
+
 // Parse command line arguments
 $options = getopt( '', [ 'line:', 'point:', 'words:', 'cword:' ] );
 
@@ -84,22 +87,26 @@ if ( ! $completing_stack_option && $current_word_index > 0 ) {
 	}
 }
 
-// Skip the global flags before the command, as slic.php does: -q, --stack <path> and --stack=<path>.
-$command_index = 0;
+// Drop the global flags before the current word, wherever they are, as slic.php does: -q, --stack <path> and --stack=<path>.
 $SLIC_STACK_OVERRIDE = null;
-while ( $command_index < $current_word_index ) {
-	$word = $words[ $command_index ];
+$index = 0;
+while ( $index < $current_word_index ) {
+	$word   = $words[ $index ];
+	$length = 0;
 	if ( $word === '-q' ) {
-		$command_index++;
+		$length = 1;
 	} elseif ( strpos( $word, '--stack=' ) === 0 ) {
 		$SLIC_STACK_OVERRIDE = substr( $word, strlen( '--stack=' ) );
-		$command_index++;
+		$length = 1;
 	} elseif ( $word === '--stack' ) {
-		$path_index = ( $words[ $command_index + 1 ] ?? '' ) === '=' ? $command_index + 2 : $command_index + 1;
-		$SLIC_STACK_OVERRIDE = $words[ $path_index ] ?? null;
-		$command_index = $path_index + 1;
+		$length = ( $words[ $index + 1 ] ?? '' ) === '=' ? 3 : 2;
+		$SLIC_STACK_OVERRIDE = $words[ $index + $length - 1 ] ?? null;
+	}
+	if ( $length ) {
+		array_splice( $words, $index, $length );
+		$current_word_index -= $length;
 	} else {
-		break;
+		$index++;
 	}
 }
 
@@ -127,14 +134,13 @@ if ( $completing_stack_option ) {
 			} );
 		}
 	}
-} elseif ( $current_word_index === $command_index ) {
+} elseif ( $current_word_index === 0 ) {
 	// Complete top-level commands
 	// CommandCompleter already filters by prefix, so no need for additional filtering
 	$completer = new CommandCompleter();
 	$completions = $completer->get_completions( $current_word );
 } else {
 	// Delegate to specific completers based on the command; slic_current_stack() reads $SLIC_STACK_OVERRIDE.
-	$words = array_slice( $words, $command_index );
 	$command = $words[0] ?? '';
 
 	// Use command-specific completers

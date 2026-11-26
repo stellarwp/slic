@@ -73,9 +73,9 @@ class UseCompleter {
 	 * @return array List of target names and subdirectories.
 	 */
 	private function get_targets(): array {
-		// Targets come from the stack the --stack option or the working directory resolves to, so cache them per both.
+		// Targets come from the stack the --stack option, SLIC_STACK or the working directory resolves to, so cache them per all three.
 		global $SLIC_STACK_OVERRIDE;
-		$cache_key = self::CACHE_KEY . '-' . md5( (string) getcwd() . $SLIC_STACK_OVERRIDE );
+		$cache_key = self::CACHE_KEY . '-' . md5( implode( "\n", [ getcwd(), $SLIC_STACK_OVERRIDE, getenv( 'SLIC_STACK' ) ] ) );
 
 		// Try cache first
 		$cached = $this->cache->get( $cache_key );
@@ -107,7 +107,7 @@ class UseCompleter {
 		require_once $slic_root . '/src/utils.php';
 		require_once $slic_root . '/src/includes.php';
 		require_once $slic_root . '/version.php';
-		// Environment setup can print notices, such as the legacy migration message, that must not become completions.
+		// Environment setup can print notices that must not become completions.
 		ob_start();
 		\StellarWP\Slic\setup_slic_env( $slic_root );
 		ob_end_clean();

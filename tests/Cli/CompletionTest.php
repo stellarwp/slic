@@ -151,6 +151,42 @@ class CompletionTest extends BaseTestCase {
 		);
 	}
 
+	public function test_bash_3_completes_a_stack_path_in_an_unsplit_equals_word(): void {
+		$stackId = realpath( $this->setUpPluginsDir( 'test-plugin' ) );
+
+		// Bash 3 keeps --stack=<path> as one word, but readline only replaces the text after the = with the completion.
+		$completions = $this->completeInBash( [ 'slic', '--stack=' . substr( $stackId, 0, -3 ) ], 1 );
+
+		$this->assertContains( $stackId, $completions, 'Bash should complete the bare path, or readline repeats --stack=.' );
+		$this->assertNotContains( '--stack=' . $stackId, $completions, 'The --stack= prefix is already on the command line.' );
+	}
+
+	public function test_a_stack_option_after_the_command_selects_the_stack_to_complete_from(): void {
+		$firstStack = realpath( $this->setUpPluginsDir( 'first-plugin' ) );
+		$this->setUpPluginsDir( 'second-plugin' );
+		chdir( $this->createTempDir() );
+
+		foreach ( [ [ '--stack', $firstStack ], [ '--stack=' . $firstStack ], [ '--stack', '=', $firstStack ] ] as $option ) {
+			$words       = array_merge( [ 'slic', 'use' ], $option, [ '' ] );
+			$completions = explode( "\n", $this->complete( $words, count( $words ) - 1 ) );
+
+			$this->assertContains( 'first-plugin', $completions, 'slic takes --stack after the command too: ' . implode( ' ', $option ) );
+			$this->assertNotContains( 'second-plugin', $completions, 'Another stack\'s targets should not complete: ' . implode( ' ', $option ) );
+		}
+	}
+
+	public function test_the_stack_env_var_selects_the_cached_targets(): void {
+		$firstStack  = realpath( $this->setUpPluginsDir( 'first-plugin' ) );
+		$secondStack = realpath( $this->setUpPluginsDir( 'second-plugin' ) );
+		chdir( $this->createTempDir() );
+
+		$this->complete( [ 'slic', 'use', '' ], 2, [ 'SLIC_STACK' => $firstStack ] );
+		$completions = explode( "\n", $this->complete( [ 'slic', 'use', '' ], 2, [ 'SLIC_STACK' => $secondStack ] ) );
+
+		$this->assertContains( 'second-plugin', $completions, 'SLIC_STACK should select the stack to complete from.' );
+		$this->assertNotContains( 'first-plugin', $completions, 'Another stack\'s cached targets should not complete.' );
+	}
+
 	public function test_bash_does_not_run_commands_found_in_candidates(): void {
 		$pluginsDir = $this->setUpPluginsDir( 'test-plugin' );
 		mkdir( $pluginsDir . '/test-plugin/$(touch slic-pwned)' );
@@ -479,13 +515,17 @@ class CompletionTest extends BaseTestCase {
 	 * Runs the completion script the way the bash and zsh completion functions call it.
 	 *
 	 * @param string[] $words The command line words.
-	 * @param int      $cword The index of the word being completed.
+	 * @param int                  $cword The index of the word being completed.
+	 * @param array<string,string> $env   Extra environment variables for the script.
 	 *
 	 * @return string The completion script output.
 	 */
-	private function complete( array $words, int $cword ): string {
-		$command = 'SLIC_CACHE_DIR=' . escapeshellarg( $this->cacheDir )
-		           . ' php ' . escapeshellarg( self::slicRoot() . '/src/completions/complete.php' )
+	private function complete( array $words, int $cword, array $env = [] ): string {
+		$command = 'SLIC_CACHE_DIR=' . escapeshellarg( $this->cacheDir );
+		foreach ( $env as $key => $value ) {
+			$command .= ' ' . $key . '=' . escapeshellarg( $value );
+		}
+		$command .= ' php ' . escapeshellarg( self::slicRoot() . '/src/completions/complete.php' )
 		           . ' --words=' . escapeshellarg( implode( "\n", $words ) )
 		           . ' --cword=' . $cword;
 

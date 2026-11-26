@@ -49,11 +49,15 @@ _slic_completions() {
 
     # Keep the one-per-line completions that start with the current word, escaping each one for the command line.
     # Not compgen -W: it expands $(...) in a candidate, such as a branch or folder name, and runs it.
+    # Bash 3 keeps --stack=<path> as one word, but readline only replaces the text after the =: drop the rest.
+    local word="${COMP_WORDS[COMP_CWORD]}" before_equals=""
+    [[ "$COMP_WORDBREAKS" == *=* && "$word" == *=* ]] && before_equals="${word%"${word##*=}"}"
     if [[ -n "$completions" ]]; then
         local completion
         COMPREPLY=()
         while IFS= read -r completion; do
-            [[ "$completion" == "$cur"* ]] && COMPREPLY+=("$(printf '%q' "$completion")")
+            completion="${completion#"$before_equals"}"
+            [[ "$completion" == "${cur#"$before_equals"}"* ]] && COMPREPLY+=("$(printf '%q' "$completion")")
         done <<< "$completions"
     fi
 }

@@ -971,9 +971,17 @@ function slic_stacks_migrate_legacy() {
 	write_env_file( slic_stacks_get_state_file( $stack_id ), array_diff_key( $legacy_env, $global_env ) );
 	write_env_file( $legacy_run_file, $global_env );
 
+	echo colorize( PHP_EOL . "<yellow>✓ Migrated existing slic configuration to multi-stack format.</yellow>" . PHP_EOL );
+	echo colorize( "Your previous configuration has been backed up to .env.slic.run.backup" . PHP_EOL . PHP_EOL );
+
 	// 2.x ran Compose without -p: stop its project, named after the slic directory as Compose normalizes it.
 	$legacy_project = preg_replace( '/[^a-z0-9_-]/', '', strtolower( basename( $root_dir ) ) );
-	exec( docker_compose_bin() . ' -p ' . escapeshellarg( $legacy_project ) . ' down --remove-orphans 2>&1' );
+	$down_command   = docker_compose_bin() . ' -p ' . escapeshellarg( $legacy_project ) . ' down --remove-orphans';
+	exec( $down_command . ' 2>&1', $down_output, $down_status );
+	// The registry now exists, so the migration never runs again: the user has to stop the 2.x containers.
+	if ( 0 !== $down_status ) {
+		echo colorize( "<magenta>Could not stop the slic 2.x containers. Stop them by running:</magenta>" . PHP_EOL . $down_command . PHP_EOL . PHP_EOL );
+	}
 
 	return true;
 }

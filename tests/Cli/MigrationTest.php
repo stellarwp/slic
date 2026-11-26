@@ -132,6 +132,42 @@ class MigrationTest extends BaseTestCase {
 		);
 	}
 
+	public function test_completing_a_command_does_not_migrate(): void {
+		$env     = $this->dockerMockLogEnv() + [ 'SLIC_CACHE_DIR' => $this->createTempDir() ];
+		$command = '';
+		foreach ( $env as $key => $value ) {
+			$command .= $key . '=' . escapeshellarg( $value ) . ' ';
+		}
+		$command .= 'php ' . escapeshellarg( self::slicRoot() . '/src/completions/complete.php' )
+		            . ' --words=' . escapeshellarg( "slic\nuse\n" ) . ' --cword=2';
+
+		// Pressing Tab must not take down the 2.x containers the user may be running.
+		$this->assertContains( 'test-plugin', explode( "\n", (string) shell_exec( $command . ' 2>&1' ) ), 'The 2.x target should still complete.' );
+		$this->assertDockerCalled( '/ down /', 'Completion should not bring down the 2.x Compose project.', false );
+		$this->assertFileDoesNotExist( self::slicRoot() . '/.env.slic.stacks', 'Completion should leave the migration to the next command.' );
+	}
+
+	public function test_completion_show_prints_only_the_script_before_the_migration(): void {
+		$this->assertStringStartsWith(
+			'#compdef slic',
+			$this->slicExec( 'completion show zsh', $this->dockerMockEnv() ),
+			'The migration notice should not precede the completion script.'
+		);
+	}
+
+	public function test_a_failed_2x_teardown_prints_the_command_to_stop_it(): void {
+		$env = [ 'SLIC_DOCKER_MOCK_FAIL' => ' down --remove-orphans$' ] + $this->dockerMockEnv();
+
+		$output = $this->slicExec( 'using', $env );
+
+		$this->assertMatchesRegularExpression(
+			'/' . preg_quote( $env['SLIC_DOCKER_COMPOSE_BIN'], '/' ) . " -p 'slic-test-root-[0-9a-f.]+' down --remove-orphans/",
+			$output,
+			'A failed teardown should tell the user how to stop the 2.x containers by hand.'
+		);
+		$this->assertStringContainsString( 'Migrated existing slic configuration', $output, 'The migration itself should still succeed.' );
+	}
+
 	public function test_a_new_stack_does_not_mark_the_images_as_built(): void {
 		$this->slicExec( 'using', $this->dockerMockEnv() );
 		$this->setUpPluginsDir();

@@ -288,13 +288,10 @@ function setup_slic_env( $root_dir, $reset = false, $stack_id = null ) {
 
 	$set = true;
 
-	// Attempt legacy migration on first run
-	if ( ! $reset && is_file( __DIR__ . '/stacks.php' ) ) {
+	// Attempt legacy migration on first run; completions and `completion show` define SLIC_NO_MIGRATION, as they must not stop 2.x containers or print.
+	if ( ! $reset && ! defined( 'SLIC_NO_MIGRATION' ) && is_file( __DIR__ . '/stacks.php' ) ) {
 		require_once __DIR__ . '/stacks.php';
-		if ( slic_stacks_migrate_legacy() ) {
-			echo colorize( PHP_EOL . "<yellow>✓ Migrated existing slic configuration to multi-stack format.</yellow>" . PHP_EOL );
-			echo colorize( "Your previous configuration has been backed up to .env.slic.run.backup" . PHP_EOL . PHP_EOL );
-		}
+		slic_stacks_migrate_legacy();
 	}
 
 	// Let's declare we're performing slics.
