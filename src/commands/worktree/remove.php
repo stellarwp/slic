@@ -135,6 +135,9 @@ if (!$force_yes) {
     }
 }
 
+// The worktree can have been locked while slic waited for the answer.
+slic_worktree_require_unlocked($target_path, $worktree_full_path);
+
 // Step 1: Bring the containers and network down (only if registered)
 if ($is_registered) {
     echo "\nStopping Docker containers...\n";

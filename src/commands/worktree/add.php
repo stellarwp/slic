@@ -90,14 +90,17 @@ $existing_state = slic_stacks_get($worktree_stack_id);
 if ($existing_state) {
     $worktree_full_path = $existing_state['worktree_full_path'] ?? $worktree_full_path;
 
-    if (!is_dir($worktree_full_path)) {
-        echo "Error: The worktree stack is registered, but its directory is gone: $worktree_full_path\n";
+    $existing_worktree = slic_worktree_is_existing($target_full_path, $worktree_full_path, $branch);
+
+    // Git keeps the record of a deleted worktree, so an empty directory at its path is listed: check its `.git` file too, as sync does.
+    if ($existing_worktree === false || !is_file($worktree_full_path . '/.git')) {
+        echo "Error: The worktree stack is registered, but its directory is gone or is not a git worktree: $worktree_full_path\n";
         echo "To unregister stacks whose worktree is gone, run:\n";
         echo "  slic worktree sync --clean\n";
         exit(1);
     }
 
-    slic_worktree_require_branch($branch, $existing_state, slic_worktree_is_existing($target_full_path, $worktree_full_path, $branch));
+    slic_worktree_require_branch($branch, $existing_state, $existing_worktree);
 
     echo "Worktree stack already exists!\n";
     echo "  Stack ID: $worktree_stack_id\n";

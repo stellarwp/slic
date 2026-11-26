@@ -364,7 +364,10 @@ class WorktreeTest extends BaseTestCase {
 	}
 
 	public function test_use_in_a_worktree_says_how_to_switch_target_from_the_base_stack(): void {
-		$pluginDir = $this->setUpGitPluginStack();
+		// A space in the base stack path: the suggested command must still be one to paste.
+		$pluginDir = $this->setUpPluginsDir( 'test-plugin', '/slic test plugins ' . uniqid( '', true ) ) . '/test-plugin';
+		$this->initGitRepository( $pluginDir );
+		$this->slicExec( 'use test-plugin', $this->dockerMockEnv() );
 		$this->slicExec( 'worktree add feature-x -y', $this->dockerMockEnv() );
 		mkdir( dirname( $pluginDir ) . '/other-plugin' );
 		file_put_contents( dirname( $pluginDir ) . '/other-plugin/plugin.php', "/**\n* Plugin Name: Other Plugin\n*/" );
@@ -378,7 +381,7 @@ class WorktreeTest extends BaseTestCase {
 		}
 
 		$this->assertStringContainsString(
-			'cd ' . realpath( dirname( $pluginDir ) ) . ' && slic use other-plugin',
+			'cd ' . escapeshellarg( realpath( dirname( $pluginDir ) ) ) . ' && slic use other-plugin',
 			$output,
 			'Refusing to switch target in a worktree should say how to switch it in the base stack.'
 		);
@@ -656,6 +659,134 @@ class WorktreeTest extends BaseTestCase {
 		$this->assertStringContainsString( 'feature-x', $branch, 'The branch of a locked worktree should be kept.' );
 	}
 
+	public static function unreadableRepositoryProvider(): array {
+		return [
+			'remove, repository offline'                => [ 'remove feature-x -y', false ],
+			'remove, empty directory at the repository' => [ 'remove feature-x -y', true ],
+			'merge, empty directory at the repository'  => [ 'merge feature-x -y', true ],
+			'sync, repository offline'                  => [ 'sync --clean -y', false ],
+			'sync, empty directory at the repository'   => [ 'sync --clean -y', true ],
+		];
+	}
+
+	#[DataProvider( 'unreadableRepositoryProvider' )]
+	public function test_worktree_subcommands_change_nothing_when_git_cannot_read_the_repository( string $command, bool $emptyMount ): void {
+		$pluginDir   = $this->setUpGitPluginStack();
+		$worktreeDir = $pluginDir . '-feature-x';
+		$this->slicExec( 'worktree add feature-x -y', $this->dockerMockEnv() );
+		// An unmounted disk with the repository and its worktree: git cannot read the worktree records, or their locks.
+		rename( $pluginDir, $pluginDir . '.offline' );
+		rename( $worktreeDir, $worktreeDir . '.offline' );
+		if ( $emptyMount ) {
+			mkdir( $pluginDir );
+		}
+
+		try {
+			$output = $this->slicExec( "worktree {$command}; echo \"exit=\$?\"", $this->dockerMockLogEnv() );
+			$list   = $this->slicExec( 'worktree list', $this->dockerMockEnv() );
+		} finally {
+			if ( $emptyMount ) {
+				rmdir( $pluginDir );
+			}
+			rename( $pluginDir . '.offline', $pluginDir );
+			rename( $worktreeDir . '.offline', $worktreeDir );
+			$this->slicExec( 'worktree remove feature-x -y', $this->dockerMockEnv() );
+		}
+
+		$this->assertMatchesRegularExpression( '/exit=[1-9]/', $output, 'A repository git cannot read should make the command fail.' );
+		$this->assertStringContainsString( 'Cannot read the git worktree records of', $output, 'The failure should say git cannot read the repository.' );
+		$this->assertDockerCalled( '# down #', 'The stack should not be brought down when git cannot say whether its worktree is locked.', false );
+		$this->assertStringContainsString( 'Branch: feature-x', $list, 'The stack should stay registered.' );
+	}
+
+	public static function lockedAtThePromptProvider(): array {
+		return [
+			'remove, directory present' => [ 'worktree remove feature-x', true ],
+			'merge, directory present'  => [ 'worktree merge feature-x', true ],
+			'merge, directory offline'  => [ 'worktree merge feature-x', false ],
+			'sync, directory offline'   => [ 'worktree sync --clean', false ],
+		];
+	}
+
+	#[DataProvider( 'lockedAtThePromptProvider' )]
+	public function test_worktree_subcommands_refuse_a_worktree_locked_while_waiting_for_confirmation( string $command, bool $present ): void {
+		if ( '' === trim( (string) shell_exec( 'command -v script' ) ) ) {
+			$this->markTestSkipped( 'script is not installed.' );
+		}
+
+		$pluginDir   = $this->setUpGitPluginStack();
+		$worktreeDir = $pluginDir . '-feature-x';
+		$this->slicExec( 'worktree add feature-x -y', $this->dockerMockEnv() );
+		$this->commitFile( $worktreeDir, 'feature.txt', 'feature' );
+		if ( ! $present ) {
+			rename( $worktreeDir, $worktreeDir . '.offline' );
+		}
+		$lock = 'git -C ' . escapeshellarg( $pluginDir ) . ' worktree lock --reason ' . escapeshellarg( 'External disk' ) . ' ' . escapeshellarg( $worktreeDir ) . ' >/dev/null 2>&1';
+
+		try {
+			$output = $this->slicExecInTerminal( $command, "y\n", $this->dockerMockLogEnv(), $lock );
+			$list   = $this->slicExec( 'worktree list', $this->dockerMockEnv() );
+			$locked = $this->git( $pluginDir, 'worktree list --porcelain' );
+		} finally {
+			if ( ! $present ) {
+				rename( $worktreeDir . '.offline', $worktreeDir );
+			}
+			$this->git( $pluginDir, 'worktree unlock ' . escapeshellarg( $worktreeDir ) );
+			$this->slicExec( 'worktree remove feature-x -y', $this->dockerMockEnv() );
+		}
+
+		$this->assertStringContainsString( 'locked External disk', $locked, 'The worktree should have been locked at the prompt.' );
+		$this->assertStringContainsString( 'External disk', $output, "The failure should show git's lock reason." );
+		$this->assertDockerCalled( '# down #', 'A worktree locked at the prompt should not be brought down.', false );
+		$this->assertStringContainsString( 'Branch: feature-x', $list, 'A worktree locked at the prompt should stay registered.' );
+	}
+
+	public function test_worktree_merge_that_fails_before_merging_does_not_say_how_to_abort(): void {
+		$pluginDir = $this->setUpGitPluginStack();
+		$this->slicExec( 'worktree add feature-x -y', $this->dockerMockEnv() );
+		$this->commitFile( $pluginDir . '-feature-x', 'feature.txt', 'feature' );
+		$this->commitFile( $pluginDir, 'base.txt', 'base' );
+		// No git identity: the merge commit cannot be made, so git refuses the merge before it starts.
+		$gitConfig = $this->createTempDir() . '/gitconfig';
+		file_put_contents( $gitConfig, "[user]\n\tuseConfigOnly = true\n" );
+		$noIdentity = [
+			'GIT_CONFIG_GLOBAL'   => $gitConfig,
+			'GIT_CONFIG_NOSYSTEM' => '1',
+			'GIT_AUTHOR_NAME'     => '',
+			'GIT_AUTHOR_EMAIL'    => '',
+			'GIT_COMMITTER_NAME'  => '',
+			'GIT_COMMITTER_EMAIL' => '',
+			'EMAIL'               => '',
+		];
+
+		try {
+			$output    = $this->slicExec( 'worktree merge feature-x -y; echo "exit=$?"', $noIdentity + $this->dockerMockEnv() );
+			$mergeHead = $this->git( $pluginDir, 'rev-parse -q --verify MERGE_HEAD' );
+		} finally {
+			$this->slicExec( 'worktree remove feature-x -y', $this->dockerMockEnv() );
+		}
+
+		$this->assertMatchesRegularExpression( '/exit=[1-9]/', $output, 'A merge git refuses should fail.' );
+		$this->assertSame( '', $mergeHead, 'The fixture merge should fail before it starts.' );
+		$this->assertStringNotContainsString( 'merge --abort', $output, 'There is no merge to abort.' );
+	}
+
+	public function test_worktree_add_fails_when_the_registered_worktree_directory_is_not_a_worktree(): void {
+		$pluginDir = $this->setUpGitPluginStack();
+		$this->slicExec( 'worktree add feature-x -y', $this->dockerMockEnv() );
+		shell_exec( 'rm -rf ' . escapeshellarg( $pluginDir . '-feature-x' ) );
+		mkdir( $pluginDir . '-feature-x' );
+
+		try {
+			$output = $this->slicExec( 'worktree add feature-x -y; echo "exit=$?"', $this->dockerMockEnv() );
+		} finally {
+			$this->slicExec( 'worktree sync --clean -y', $this->dockerMockEnv() );
+		}
+
+		$this->assertMatchesRegularExpression( '/exit=[1-9]/', $output, 'Adding a registered worktree whose directory is not a worktree should fail.' );
+		$this->assertStringContainsString( 'slic worktree sync --clean', $output, 'The failure should say how to clean up the stale stack.' );
+	}
+
 	public function test_worktree_sync_clean_fails_when_a_stack_fails_to_stop(): void {
 		$pluginDir = $this->setUpGitPluginStack();
 		$this->slicExec( 'worktree add feature-x -y', $this->dockerMockEnv() );
@@ -890,12 +1021,14 @@ class WorktreeTest extends BaseTestCase {
 	/**
 	 * Runs a slic command in a pseudo-terminal, where slic asks its interactive questions, and returns the output.
 	 *
-	 * @param string $command The command to execute, escaped if required.
-	 * @param string $input   The answers to type at the prompts.
+	 * @param string $command      The command to execute, escaped if required.
+	 * @param string $input        The answers to type at the prompts.
+	 * @param array  $env          Environment variables to set, on top of the Docker mock ones.
+	 * @param string $beforeAnswer A shell command to run once slic asks, before the answers are typed.
 	 *
 	 * @return string The command output.
 	 */
-	private function slicExecInTerminal( string $command, string $input ): string {
+	private function slicExecInTerminal( string $command, string $input, array $env = [], string $beforeAnswer = ':' ): string {
 		$slic = 'php ' . escapeshellarg( self::slicRoot() . '/slic.php' ) . ' ' . $command;
 		// util-linux script (Linux) takes the command with -c; BSD script (macOS) takes it as trailing arguments.
 		$inTerminal = str_contains( (string) shell_exec( 'script --version 2>&1' ), 'util-linux' )
@@ -903,14 +1036,14 @@ class WorktreeTest extends BaseTestCase {
 			: 'script -q /dev/null ' . $slic;
 
 		$envString = '';
-		foreach ( [ 'NO_COLOR' => '1' ] + $this->dockerMockEnv() as $key => $value ) {
+		foreach ( [ 'NO_COLOR' => '1' ] + $env + $this->dockerMockEnv() as $key => $value ) {
 			$envString .= $key . '=' . escapeshellarg( $value ) . ' ';
 		}
 
 		// Type the answers once slic asks, for at most 10 seconds: script drops what arrives before the terminal is set up.
 		$outputFile = $this->createTempDir() . '/terminal-output';
 		$waitForPrompt = 'i=0; while ! grep -q "\[y/N\]" ' . escapeshellarg( $outputFile ) . ' 2>/dev/null && [ $i -lt 100 ]; do sleep 0.1; i=$((i+1)); done';
-		shell_exec( '{ ' . $waitForPrompt . '; printf %s ' . escapeshellarg( $input ) . '; } | ' . $envString . $inTerminal . ' > ' . escapeshellarg( $outputFile ) . ' 2>&1' );
+		shell_exec( '{ ' . $waitForPrompt . '; ' . $beforeAnswer . '; printf %s ' . escapeshellarg( $input ) . '; } | ' . $envString . $inTerminal . ' > ' . escapeshellarg( $outputFile ) . ' 2>&1' );
 
 		return (string) file_get_contents( $outputFile );
 	}

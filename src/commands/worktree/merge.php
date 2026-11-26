@@ -134,6 +134,9 @@ if (!$git_worktree_exists) {
         }
     }
 
+    // The worktree can have been locked while slic waited for the answer.
+    slic_worktree_require_unlocked($target_path, $worktree_full_path);
+
     // Bring the containers and network down (only if registered)
     if ($is_registered) {
         echo "\nStopping Docker containers...\n";
@@ -212,6 +215,9 @@ if (!$force_yes) {
     }
 }
 
+// The worktree can have been locked while slic waited for the answer.
+slic_worktree_require_unlocked($target_path, $worktree_full_path);
+
 // Step 1: Checkout base branch in target repo
 echo "\nChecking out base branch '$base_branch'...\n";
 
@@ -241,6 +247,14 @@ if ($merge_code !== 0) {
     foreach ($merge_output as $line) {
         echo "  $line\n";
     }
+
+    // Git can refuse a merge before starting it, as without a git identity: then there is nothing to resolve or abort.
+    exec("git -C " . escapeshellarg($target_path) . " rev-parse -q --verify MERGE_HEAD 2>/dev/null", $merge_head_output, $merge_head_code);
+    if ($merge_head_code !== 0) {
+        echo "\nThe merge did not start. Fix the error above and try again.\n";
+        exit(1);
+    }
+
     echo "\nThe merge encountered conflicts or errors.\n";
     echo "Please resolve the merge issue manually:\n";
     echo "  cd $target_path\n";

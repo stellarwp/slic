@@ -97,7 +97,7 @@ if ( slic_stacks_is_worktree( $stack_id ) ) {
 	if ( null !== $base_stack_id ) {
 		echo PHP_EOL;
 		$use_target = $target ?: '<target>';
-		echo colorize( "To switch targets, use the base stack: <light_cyan>cd {$base_stack_id} && slic use {$use_target}</light_cyan>" . PHP_EOL );
+		echo colorize( "To switch targets, use the base stack: <light_cyan>cd " . escapeshellarg( $base_stack_id ) . " && slic use {$use_target}</light_cyan>" . PHP_EOL );
 	}
 	exit( 1 );
 }

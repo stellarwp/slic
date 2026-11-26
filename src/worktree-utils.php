@@ -156,19 +156,27 @@ function slic_worktree_create_dir_name( $target, $branch ) {
  * The main repository is the first entry; git keeps the record of a worktree whose directory is missing.
  *
  * @param string $target_path The path to the repository.
+ * @param string $error       Set to git's output if git cannot read the repository.
  *
- * @return array[] The worktrees, each with the 'path' key and the 'head', 'branch' and 'locked' keys git reports;
- *                 'locked' is the lock reason, empty for a lock without one.
+ * @return array[]|false The worktrees, each with the 'path' key and the 'head', 'branch' and 'locked' keys git reports;
+ *                       'locked' is the lock reason, empty for a lock without one. False if git cannot read the
+ *                       repository, as when it is missing or not a git repository.
  */
-function slic_worktree_list( $target_path ) {
-	$output = shell_exec( 'git -C ' . escapeshellarg( $target_path ) . ' worktree list --porcelain 2>/dev/null' );
+function slic_worktree_list( $target_path, &$error = '' ) {
+	exec( 'git -C ' . escapeshellarg( $target_path ) . ' worktree list --porcelain 2>&1', $output, $status );
+
+	if ( 0 !== $status ) {
+		$error = implode( "\n", $output );
+
+		return false;
+	}
 
 	// Each entry is a `worktree <path>` line, then `HEAD <commit>`, `branch refs/heads/<name>`, `locked [<reason>]` and
 	// other lines, then a blank line.
 	$worktrees        = [];
 	$current_worktree = [];
 
-	foreach ( explode( "\n", trim( (string) $output ) ) as $line ) {
+	foreach ( $output as $line ) {
 		$line = trim( $line );
 
 		// Empty line indicates end of a worktree entry
@@ -204,12 +212,16 @@ function slic_worktree_list( $target_path ) {
  *
  * @param string $target_path   The path to the main repository.
  * @param string $worktree_path The path to the worktree directory.
+ * @param string $error         Set to git's output if git cannot read the repository.
  *
- * @return string|null The lock reason, empty for a lock without one, or null if the worktree is not locked.
+ * @return string|null|false The lock reason, empty for a lock without one, null if the worktree is not locked, or
+ *                           false if git cannot read the repository, so cannot say.
  */
-function slic_worktree_lock_reason( $target_path, $worktree_path ) {
-	if ( ! is_dir( $target_path ) ) {
-		return null;
+function slic_worktree_lock_reason( $target_path, $worktree_path, &$error = '' ) {
+	$worktrees = slic_worktree_list( $target_path, $error );
+
+	if ( false === $worktrees ) {
+		return false;
 	}
 
 	// The directory of a locked worktree can be missing, as on an unmounted disk: resolve its parent instead.
@@ -218,7 +230,7 @@ function slic_worktree_lock_reason( $target_path, $worktree_path ) {
 	};
 	$wanted    = $normalize( $worktree_path );
 
-	foreach ( slic_worktree_list( $target_path ) as $wt ) {
+	foreach ( $worktrees as $wt ) {
 		if ( isset( $wt['path'], $wt['locked'] ) && $normalize( $wt['path'] ) === $wanted ) {
 			return $wt['locked'];
 		}
@@ -228,7 +240,8 @@ function slic_worktree_lock_reason( $target_path, $worktree_path ) {
 }
 
 /**
- * Exits with an error, before anything is stopped, removed or unregistered, if git has a worktree locked.
+ * Exits with an error, before anything is stopped, removed or unregistered, if git has a worktree locked or cannot
+ * read the repository to say whether it is.
  *
  * @param string $target_path   The path to the main repository.
  * @param string $worktree_path The path to the worktree directory.
@@ -236,10 +249,16 @@ function slic_worktree_lock_reason( $target_path, $worktree_path ) {
  * @return void
  */
 function slic_worktree_require_unlocked( $target_path, $worktree_path ) {
-	$reason = slic_worktree_lock_reason( $target_path, $worktree_path );
+	$reason = slic_worktree_lock_reason( $target_path, $worktree_path, $error );
 
 	if ( null === $reason ) {
 		return;
+	}
+
+	if ( false === $reason ) {
+		echo "Error: Cannot read the git worktree records of $target_path: $error\n";
+		echo "Nothing was changed.\n";
+		exit( 1 );
 	}
 
 	echo "Error: The git worktree is locked" . ( '' !== $reason ? ": $reason" : '' ) . "\n";
@@ -270,6 +289,9 @@ function slic_worktree_is_existing( $target_path, $worktree_path, $expected_bran
 	}
 
 	$worktrees = slic_worktree_list( $target_path );
+	if ( false === $worktrees ) {
+		return false;
+	}
 
 	// Normalize paths for comparison (resolve symlinks, etc.)
 	// realpath() can return false for paths that don't exist yet or are not accessible.
