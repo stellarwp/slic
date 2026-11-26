@@ -8,7 +8,6 @@
  *
  * Usage:
  *   php complete.php --line="<line>" --point=<point> --words="<one word per line>" --cword=<cword>
- *   php complete.php --shell=fish --words="<space-separated words>" --current="<current>"
  *
  * Completions are printed one per line.
  *
@@ -22,7 +21,7 @@ error_reporting( 0 );
 ini_set( 'display_errors', '0' );
 
 // Parse command line arguments
-$options = getopt( '', [ 'line:', 'point:', 'words:', 'cword:', 'shell:', 'current:' ] );
+$options = getopt( '', [ 'line:', 'point:', 'words:', 'cword:' ] );
 
 if ( empty( $options ) ) {
 	exit( 0 );
@@ -38,29 +37,12 @@ require_once __DIR__ . '/completers/XdebugCompleter.php';
 require_once __DIR__ . '/completers/WorktreeCompleter.php';
 require_once __DIR__ . '/completers/PhpVersionCompleter.php';
 
-// Parse the command line
-$shell = $options['shell'] ?? 'bash';
+// Parse the command line: one word per line, so a word can contain spaces
 $words = [];
-$current_word_index = 0;
-$current_word = '';
-
-if ( $shell === 'fish' ) {
-	// Fish provides words as a string (already-completed tokens) and current token being typed
-	if ( isset( $options['words'] ) ) {
-		$words = explode( ' ', $options['words'] );
-	}
-	$current_word = $options['current'] ?? '';
-	// If current word is empty (trailing space), we're completing the next word
-	// Otherwise, we're completing the last word in the list
-	$current_word_index = empty( $current_word ) ? count( $words ) : count( $words ) - 1;
-} else {
-	// Bash/Zsh format: one word per line, so a word can contain spaces
-	if ( isset( $options['words'] ) ) {
-		$words = explode( "\n", $options['words'] );
-	}
-	$current_word_index = isset( $options['cword'] ) ? (int) $options['cword'] : 0;
-	$current_word = $words[ $current_word_index ] ?? '';
+if ( isset( $options['words'] ) ) {
+	$words = explode( "\n", $options['words'] );
 }
+$current_word_index = isset( $options['cword'] ) ? (int) $options['cword'] : 0;
 
 // Ensure we have at least the command name
 if ( empty( $words ) || count( $words ) < 1 ) {
@@ -81,9 +63,6 @@ if ( $current_word_index < 0 ) {
 // Update current_word after index adjustment
 $current_word = $words[ $current_word_index ] ?? '';
 
-// Initialize cache
-$cache = new CompletionCache();
-
 // Determine what to complete
 $completions = [];
 
@@ -99,15 +78,33 @@ if ( strpos( $current_word, '--stack=' ) === 0 ) {
 // Check if previous word is --stack (for "--stack <path>" format)
 if ( ! $completing_stack_option && $current_word_index > 0 ) {
 	$prev_word = $words[ $current_word_index - 1 ] ?? '';
-	if ( $prev_word === '--stack' ) {
+	// Bash splits --stack=<path> at the =, so the words are --stack, = and the path.
+	if ( $prev_word === '--stack' || ( $prev_word === '=' && ( $words[ $current_word_index - 2 ] ?? '' ) === '--stack' ) ) {
 		$completing_stack_option = true;
+	}
+}
+
+// Skip the global flags before the command, as slic.php does: -q, --stack <path> and --stack=<path>.
+$command_index = 0;
+$SLIC_STACK_OVERRIDE = null;
+while ( $command_index < $current_word_index ) {
+	$word = $words[ $command_index ];
+	if ( $word === '-q' ) {
+		$command_index++;
+	} elseif ( strpos( $word, '--stack=' ) === 0 ) {
+		$SLIC_STACK_OVERRIDE = substr( $word, strlen( '--stack=' ) );
+		$command_index++;
+	} elseif ( $word === '--stack' ) {
+		$path_index = ( $words[ $command_index + 1 ] ?? '' ) === '=' ? $command_index + 2 : $command_index + 1;
+		$SLIC_STACK_OVERRIDE = $words[ $path_index ] ?? null;
+		$command_index = $path_index + 1;
+	} else {
+		break;
 	}
 }
 
 if ( $completing_stack_option ) {
 	// Complete with stack paths
-	$completer = new StackCompleter( $cache );
-	// Get stack IDs from the StackCompleter
 	require_once dirname( dirname( __DIR__ ) ) . '/src/stacks.php';
 	$stacks = \StellarWP\Slic\slic_stacks_list();
 	if ( is_array( $stacks ) ) {
@@ -130,24 +127,25 @@ if ( $completing_stack_option ) {
 			} );
 		}
 	}
-} elseif ( $current_word_index === 0 || empty( $words ) ) {
+} elseif ( $current_word_index === $command_index ) {
 	// Complete top-level commands
 	// CommandCompleter already filters by prefix, so no need for additional filtering
-	$completer = new CommandCompleter( $cache );
+	$completer = new CommandCompleter();
 	$completions = $completer->get_completions( $current_word );
 } else {
-	// Delegate to specific completers based on the command
+	// Delegate to specific completers based on the command; slic_current_stack() reads $SLIC_STACK_OVERRIDE.
+	$words = array_slice( $words, $command_index );
 	$command = $words[0] ?? '';
 
 	// Use command-specific completers
 	switch ( $command ) {
 		case 'use':
-			$completer = new UseCompleter( $cache );
+			$completer = new UseCompleter( new CompletionCache() );
 			$completions = $completer->get_completions( $current_word );
 			break;
 
 		case 'stack':
-			$completer = new StackCompleter( $cache );
+			$completer = new StackCompleter();
 			$completions = $completer->get_completions( $words, $current_word );
 			break;
 
@@ -157,22 +155,22 @@ if ( $completing_stack_option ) {
 		case 'cache':
 		case 'debug':
 		case 'interactive':
-			$completer = new ToggleCompleter( $cache );
+			$completer = new ToggleCompleter();
 			$completions = $completer->get_completions( $current_word );
 			break;
 
 		case 'xdebug':
-			$completer = new XdebugCompleter( $cache );
+			$completer = new XdebugCompleter();
 			$completions = $completer->get_completions( $words, $current_word );
 			break;
 
 		case 'worktree':
-			$completer = new WorktreeCompleter( $cache );
+			$completer = new WorktreeCompleter();
 			$completions = $completer->get_completions( $words, $current_word );
 			break;
 
 		case 'php-version':
-			$completer = new PhpVersionCompleter( $cache );
+			$completer = new PhpVersionCompleter();
 			$completions = $completer->get_completions( $words, $current_word );
 			break;
 

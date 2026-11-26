@@ -73,8 +73,9 @@ class UseCompleter {
 	 * @return array List of target names and subdirectories.
 	 */
 	private function get_targets(): array {
-		// Targets come from the stack the working directory resolves to, so cache them per directory.
-		$cache_key = self::CACHE_KEY . '-' . md5( (string) getcwd() );
+		// Targets come from the stack the --stack option or the working directory resolves to, so cache them per both.
+		global $SLIC_STACK_OVERRIDE;
+		$cache_key = self::CACHE_KEY . '-' . md5( (string) getcwd() . $SLIC_STACK_OVERRIDE );
 
 		// Try cache first
 		$cached = $this->cache->get( $cache_key );
@@ -121,8 +122,8 @@ class UseCompleter {
 
 		// For each plugin target, scan for valid subdirectories
 		foreach ( $base_targets as $target ) {
-			// Skip 'site' and themes
-			if ( $target === 'site' || strpos( $target, 'theme' ) !== false ) {
+			// Skip 'site'; themes have no plugin directory, so scan_plugin_subdirectories() skips them.
+			if ( $target === 'site' ) {
 				continue;
 			}
 

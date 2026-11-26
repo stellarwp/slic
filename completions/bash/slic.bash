@@ -47,13 +47,14 @@ _slic_completions() {
         --words="${COMP_WORDS[*]}" \
         --cword="${COMP_CWORD}" 2>/dev/null)
 
-    # Convert the one-per-line completions to an array, escaping each one for the command line
+    # Keep the one-per-line completions that start with the current word, escaping each one for the command line.
+    # Not compgen -W: it expands $(...) in a candidate, such as a branch or folder name, and runs it.
     if [[ -n "$completions" ]]; then
-        local IFS=$'\n' i
-        COMPREPLY=($(compgen -W "$completions" -- "$cur"))
-        for i in "${!COMPREPLY[@]}"; do
-            COMPREPLY[i]=$(printf '%q' "${COMPREPLY[i]}")
-        done
+        local completion
+        COMPREPLY=()
+        while IFS= read -r completion; do
+            [[ "$completion" == "$cur"* ]] && COMPREPLY+=("$(printf '%q' "$completion")")
+        done <<< "$completions"
     fi
 }
 

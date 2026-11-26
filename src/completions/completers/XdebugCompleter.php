@@ -14,25 +14,9 @@ namespace StellarWP\Slic\Completions;
  * - on, off, status (toggle options)
  * - port, host, key (configuration options - no further completion needed)
  *
- * These are static completions cached for 24 hours.
- *
  * @package StellarWP\Slic\Completions
  */
 class XdebugCompleter {
-	/**
-	 * Cache instance.
-	 *
-	 * @var CompletionCache
-	 */
-	private CompletionCache $cache;
-
-	/**
-	 * Cache TTL in seconds (24 hours).
-	 *
-	 * @var int
-	 */
-	private const CACHE_TTL = 86400;
-
 	/**
 	 * Available xdebug options.
 	 *
@@ -46,15 +30,6 @@ class XdebugCompleter {
 	 * @var array
 	 */
 	private const VALUE_OPTIONS = [ 'port', 'host', 'key' ];
-
-	/**
-	 * XdebugCompleter constructor.
-	 *
-	 * @param CompletionCache $cache The cache instance.
-	 */
-	public function __construct( CompletionCache $cache ) {
-		$this->cache = $cache;
-	}
 
 	/**
 	 * Gets xdebug option completions.

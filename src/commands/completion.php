@@ -420,8 +420,7 @@ function show_completion_script( $shell ) {
 		exit( 1 );
 	}
 
-	echo colorize( "<yellow>Completion script for {$shell}:</yellow>" . PHP_EOL );
-	echo colorize( "<yellow>File: {$script_path}</yellow>" . PHP_EOL . PHP_EOL );
+	// Only the script, so the output can be redirected to a completion file.
 	echo file_get_contents( $script_path );
 }
 

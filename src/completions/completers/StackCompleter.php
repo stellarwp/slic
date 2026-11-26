@@ -14,47 +14,15 @@ namespace StellarWP\Slic\Completions;
  * - Subcommands: list, stop, info
  * - Stack IDs for 'stop' and 'info' subcommands
  *
- * Stack IDs are cached for 1 minute as they can change frequently.
- *
  * @package StellarWP\Slic\Completions
  */
 class StackCompleter {
-	/**
-	 * Cache instance.
-	 *
-	 * @var CompletionCache
-	 */
-	private CompletionCache $cache;
-
-	/**
-	 * Cache TTL in seconds (1 minute).
-	 *
-	 * @var int
-	 */
-	private const CACHE_TTL = 60;
-
-	/**
-	 * Cache key for stack IDs.
-	 *
-	 * @var string
-	 */
-	private const CACHE_KEY = 'stacks';
-
 	/**
 	 * Available stack subcommands.
 	 *
 	 * @var array
 	 */
 	private const SUBCOMMANDS = [ 'list', 'stop', 'info' ];
-
-	/**
-	 * StackCompleter constructor.
-	 *
-	 * @param CompletionCache $cache The cache instance.
-	 */
-	public function __construct( CompletionCache $cache ) {
-		$this->cache = $cache;
-	}
 
 	/**
 	 * Gets completions for the 'stack' command.
@@ -82,7 +50,7 @@ class StackCompleter {
 
 		if ( in_array( $subcommand, [ 'stop', 'info' ], true ) ) {
 			// Return stack IDs (plus 'all' for stop command)
-			$completions = $this->get_stack_ids();
+			$completions = $this->scan_stacks();
 
 			// Add 'all' option for 'stop' command
 			if ( $subcommand === 'stop' ) {
@@ -94,29 +62,6 @@ class StackCompleter {
 
 		// No further completions needed
 		return [];
-	}
-
-	/**
-	 * Gets the list of registered stack IDs.
-	 *
-	 * Checks cache first, then queries the stack registry if needed.
-	 *
-	 * @return array List of stack IDs.
-	 */
-	private function get_stack_ids(): array {
-		// Try cache first
-		$cached = $this->cache->get( self::CACHE_KEY );
-		if ( null !== $cached && is_array( $cached ) ) {
-			return $cached;
-		}
-
-		// Query the stack registry
-		$stack_ids = $this->scan_stacks();
-
-		// Cache the results
-		$this->cache->set( self::CACHE_KEY, $stack_ids, self::CACHE_TTL );
-
-		return $stack_ids;
 	}
 
 	/**

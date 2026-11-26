@@ -181,8 +181,15 @@ $args = args( [
 	'...',
 ] );
 
+// `completion show` prints a script meant to be redirected to a file, so it prints nothing else.
+$is_completion_show = array_slice( $argv, 1, 2 ) === [ 'completion', 'show' ];
+
 // If the run-time option `-q`, for "quiet", is specified, then do not print the header.
-if ( $is_quiet || ( in_array( 'exec', $argv, true ) && ! in_array( 'help', $argv, true ) ) ) {
+if (
+	$is_quiet
+	|| ( in_array( 'exec', $argv, true ) && ! in_array( 'help', $argv, true ) )
+	|| $is_completion_show
+) {
 	// Define a const commands will be able to check for quietness.
 	define( 'SLIC_QUIET', true );
 } else {
@@ -276,7 +283,9 @@ $run_settings_file = root( '/.env.slic.run' );
 $cli_name          = basename( $argv[0] );
 
 if ( 'help' !== $subcommand ) {
-	maybe_prompt_for_repo_update();
+	if ( ! $is_completion_show ) {
+		maybe_prompt_for_repo_update();
+	}
 } else {
 	$help_subcommand = $args( '...' );
 
@@ -286,7 +295,7 @@ if ( 'help' !== $subcommand ) {
 	}
 }
 
-if ( ! in_array( $subcommand, [ 'help', 'update' ] ) ) {
+if ( ! in_array( $subcommand, [ 'help', 'update' ] ) && ! $is_completion_show ) {
 	maybe_prompt_for_stack_update();
 }
 

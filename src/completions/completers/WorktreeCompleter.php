@@ -12,34 +12,11 @@ namespace StellarWP\Slic\Completions;
  *
  * Returns completions for the 'worktree' command:
  * - Subcommands: add, list, merge, remove, sync
- * - Git branch names for 'add', 'merge', and 'remove' subcommands
- *
- * Branch names are cached for 2 minutes as they can change during development.
+ * - Git branch names of the stack target's repository for 'add', 'merge', and 'remove' subcommands
  *
  * @package StellarWP\Slic\Completions
  */
 class WorktreeCompleter {
-	/**
-	 * Cache instance.
-	 *
-	 * @var CompletionCache
-	 */
-	private CompletionCache $cache;
-
-	/**
-	 * Cache TTL in seconds (2 minutes).
-	 *
-	 * @var int
-	 */
-	private const CACHE_TTL = 120;
-
-	/**
-	 * Cache key for git branches.
-	 *
-	 * @var string
-	 */
-	private const CACHE_KEY = 'branches';
-
 	/**
 	 * Available worktree subcommands.
 	 *
@@ -53,15 +30,6 @@ class WorktreeCompleter {
 	 * @var array
 	 */
 	private const BRANCH_SUBCOMMANDS = [ 'add', 'merge', 'remove' ];
-
-	/**
-	 * WorktreeCompleter constructor.
-	 *
-	 * @param CompletionCache $cache The cache instance.
-	 */
-	public function __construct( CompletionCache $cache ) {
-		$this->cache = $cache;
-	}
 
 	/**
 	 * Gets completions for the 'worktree' command.
@@ -89,7 +57,7 @@ class WorktreeCompleter {
 
 		if ( in_array( $subcommand, self::BRANCH_SUBCOMMANDS, true ) ) {
 			// Return branch names
-			$branches = $this->get_branches();
+			$branches = $this->scan_branches();
 			return $this->filter_by_prefix( $branches, $current_word );
 		}
 
@@ -98,41 +66,28 @@ class WorktreeCompleter {
 	}
 
 	/**
-	 * Gets the list of git branches.
-	 *
-	 * Checks cache first, then queries git if needed.
-	 *
-	 * @return array List of branch names.
-	 */
-	private function get_branches(): array {
-		// Branches come from the repository in the working directory, so cache them per directory.
-		$cache_key = self::CACHE_KEY . '-' . md5( (string) getcwd() );
-
-		// Try cache first
-		$cached = $this->cache->get( $cache_key );
-		if ( null !== $cached && is_array( $cached ) ) {
-			return $cached;
-		}
-
-		// Query git for branches
-		$branches = $this->scan_branches();
-
-		// Cache the results
-		$this->cache->set( $cache_key, $branches, self::CACHE_TTL );
-
-		return $branches;
-	}
-
-	/**
-	 * Scans git for all available branches (local and remote).
+	 * Scans the stack target's repository for all available branches (local and remote).
 	 *
 	 * @return array List of branch names.
 	 */
 	private function scan_branches(): array {
+		// Load slic functions, as the slic command does, to find the repository `worktree add` works on.
+		$slic_root = dirname( dirname( dirname( __DIR__ ) ) );
+		require_once $slic_root . '/src/utils.php';
+		require_once $slic_root . '/src/includes.php';
+
+		// The same repository src/commands/worktree/add.php uses: the stack target in the base stack directory.
+		$stack_id = \StellarWP\Slic\slic_current_stack();
+		$target   = $stack_id ? ( \StellarWP\Slic\slic_stacks_get( $stack_id )['target'] ?? null ) : null;
+		if ( ! $target ) {
+			return [];
+		}
+		$target_full_path = \StellarWP\Slic\slic_stacks_get_base_stack_id( $stack_id ) . '/' . $target;
+
 		// Get all branches including remote branches
 		$output = [];
 		$return_var = 0;
-		exec( 'git branch -a 2>/dev/null', $output, $return_var );
+		exec( 'git -C ' . escapeshellarg( $target_full_path ) . ' branch -a 2>/dev/null', $output, $return_var );
 
 		if ( $return_var !== 0 || empty( $output ) ) {
 			// Not in a git repository or git command failed
@@ -148,8 +103,10 @@ class WorktreeCompleter {
 				continue;
 			}
 
-			// Remove the current branch indicator (*)
-			$line = ltrim( $line, '* ' );
+			// Remove the marker of the current branch (*) or of a branch checked out in another worktree (+)
+			if ( strpos( $line, '* ' ) === 0 || strpos( $line, '+ ' ) === 0 ) {
+				$line = substr( $line, 2 );
+			}
 
 			// Skip HEAD references
 			if ( strpos( $line, 'HEAD ->' ) !== false ) {

@@ -63,29 +63,9 @@ class CompletionCache {
 			return null;
 		}
 
-		// Use file locking to prevent reading partially written data
-		$fp = @fopen( $cache_file, 'r' );
-		if ( false === $fp ) {
-			return null;
-		}
-
-		$locked = flock( $fp, LOCK_SH );
-		if ( ! $locked ) {
-			fclose( $fp );
-			return null;
-		}
-
-		$contents = fread( $fp, filesize( $cache_file ) );
-		flock( $fp, LOCK_UN );
-		fclose( $fp );
-
-		if ( false === $contents ) {
-			return null;
-		}
-
-		$data = json_decode( $contents, true );
+		$data = json_decode( (string) @file_get_contents( $cache_file ), true );
 		if ( ! is_array( $data ) || ! isset( $data['created_at'], $data['ttl'], $data['data'] ) ) {
-			// Invalid cache format, delete it
+			// Empty or invalid cache file, delete it
 			@unlink( $cache_file );
 			return null;
 		}
@@ -116,6 +96,11 @@ class CompletionCache {
 	public function set( string $key, $data, int $ttl ): bool {
 		$cache_file = $this->get_cache_file( $key );
 
+		// The cache is disabled when its directory could not be created.
+		if ( empty( $cache_file ) ) {
+			return false;
+		}
+
 		$cache_data = [
 			'created_at' => time(),
 			'ttl'        => $ttl,
@@ -127,64 +112,14 @@ class CompletionCache {
 			return false;
 		}
 
-		// Use file locking to prevent race conditions
-		$fp = @fopen( $cache_file, 'w' );
-		if ( false === $fp ) {
+		// Write a temporary file and rename it, so a reader never sees a partly written cache file.
+		$temp_file = $cache_file . '.' . getmypid() . '.tmp';
+		if ( false === @file_put_contents( $temp_file, $json ) || ! @rename( $temp_file, $cache_file ) ) {
+			@unlink( $temp_file );
 			return false;
 		}
 
-		$locked = flock( $fp, LOCK_EX );
-		if ( $locked ) {
-			fwrite( $fp, $json );
-			flock( $fp, LOCK_UN );
-		}
-		fclose( $fp );
-
-		return $locked;
-	}
-
-	/**
-	 * Clears a specific cache entry.
-	 *
-	 * @param string $key The cache key to clear.
-	 *
-	 * @return bool True if the file was deleted, false otherwise.
-	 */
-	public function clear( string $key ): bool {
-		$cache_file = $this->get_cache_file( $key );
-
-		if ( file_exists( $cache_file ) ) {
-			return @unlink( $cache_file );
-		}
-
-		return false;
-	}
-
-	/**
-	 * Clears all cache entries.
-	 *
-	 * @return bool True on success, false on failure.
-	 */
-	public function clear_all(): bool {
-		if ( ! is_dir( $this->cache_dir ) ) {
-			return true;
-		}
-
-		$files = glob( $this->cache_dir . '/*.json' );
-		if ( false === $files ) {
-			return false;
-		}
-
-		$success = true;
-		foreach ( $files as $file ) {
-			if ( is_file( $file ) ) {
-				if ( ! @unlink( $file ) ) {
-					$success = false;
-				}
-			}
-		}
-
-		return $success;
+		return true;
 	}
 
 	/**
