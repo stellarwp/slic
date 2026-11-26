@@ -357,8 +357,6 @@ function setup_slic_env( $root_dir, $reset = false, $stack_id = null ) {
 		if ( is_file( $stack_run_file ) ) {
 			load_env_file( $stack_run_file );
 		}
-		// Load XDebug configuration for the stack.
-		xdebug_setup_env_vars( $stack_id );
 	}
 
 	// Read the staged PHP version before a project's .env.slic.local can overwrite it.
@@ -415,6 +413,9 @@ function setup_slic_env( $root_dir, $reset = false, $stack_id = null ) {
 			load_env_file( $target_path . '/.env.slic.local' );
 		}
 	}
+
+	// Load the stack's XDebug configuration after the target's overrides: an XDP set there is the user's, like one in the shell.
+	xdebug_setup_env_vars( $stack_id );
 
 	// SLIC_PHP_VERSION was passed via the command line.
 	$target_version = env_var_backup( 'SLIC_PHP_VERSION' );

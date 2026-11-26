@@ -294,6 +294,22 @@ function slic_stacks_with_lock(callable $callback) {
 }
 
 /**
+ * Returns whether a path is a directory or inside it.
+ *
+ * @param string $path The path to check.
+ * @param string $dir  The directory to check the path against.
+ *
+ * @return bool Whether the path is the directory or inside it.
+ */
+function slic_stacks_path_is_within($path, $dir) {
+	// Windows paths use backslashes; trailing slashes prevent partial matches, e.g. /foo and /foobar.
+	$path = rtrim(str_replace('\\', '/', $path), '/') . '/';
+	$dir  = rtrim(str_replace('\\', '/', $dir), '/') . '/';
+
+	return strpos($path, $dir) === 0;
+}
+
+/**
  * Resolves the stack ID from the current working directory.
  * Uses prioritized resolution to prefer worktree stacks over base stacks.
  *
@@ -332,14 +348,7 @@ function slic_stacks_resolve_from_cwd() {
 					$worktree_real = $worktree_path;
 				}
 
-				// Check exact match
-				if ($cwd_real === $worktree_real) {
-					return $stack_id;
-				}
-
-				// Check if CWD is within worktree directory tree
-				// Add trailing slashes to prevent partial matches (e.g., /foo vs /foobar)
-				if (strpos($cwd_real . '/', $worktree_real . '/') === 0) {
+				if (slic_stacks_path_is_within($cwd_real, $worktree_real)) {
 					return $stack_id;
 				}
 			}
@@ -357,9 +366,7 @@ function slic_stacks_resolve_from_cwd() {
 				$stack_real = $stack_id;
 			}
 
-			// Check if CWD is within base stack directory tree
-			// Add trailing slashes to prevent partial matches
-			if (strpos($cwd_real . '/', $stack_real . '/') === 0 && strlen($stack_real) > $nearest_length) {
+			if (slic_stacks_path_is_within($cwd_real, $stack_real) && strlen($stack_real) > $nearest_length) {
 				$nearest_stack_id = $stack_id;
 				$nearest_length = strlen($stack_real);
 			}
@@ -402,21 +409,14 @@ function slic_stacks_resolve_from_path($path) {
 		}
 	}
 
-	// Resolve to absolute path
-	$original_path = $path;
-	$path = realpath($path);
-	if ($path === false) {
-		// Path doesn't exist, try without realpath
-		$path = $original_path;
-		if (strpos($path, '~') === 0) {
-			$home = getenv('HOME') ?: getenv('USERPROFILE');
-			if ($home !== false) {
-				$path = $home . substr($path, 1);
-			}
-		}
-	}
-
 	$stacks = slic_stacks_list();
+
+	// A path that does not exist names only itself: a registered stack whose directory is gone, or nothing.
+	$real_path = realpath($path);
+	if ($real_path === false) {
+		return isset($stacks[$path]) ? $path : null;
+	}
+	$path = $real_path;
 
 	// PRIORITY 1: Check if this path is a worktree directory (exact match)
 	// This ensures worktree stacks take precedence over base stacks
@@ -444,10 +444,7 @@ function slic_stacks_resolve_from_path($path) {
 			if ($worktree_path) {
 				$worktree_real = realpath($worktree_path);
 				if ($worktree_real !== false) {
-					// Check if path is within this worktree directory
-					// strpos($haystack, $needle) checks if $needle appears at position 0 in $haystack
-					// So this checks if $path starts with $worktree_real
-					if (strpos($path . '/', $worktree_real . '/') === 0) {
+					if (slic_stacks_path_is_within($path, $worktree_real)) {
 						return $stack_id;
 					}
 				}

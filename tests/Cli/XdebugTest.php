@@ -80,6 +80,21 @@ class XdebugTest extends BaseTestCase {
 		);
 	}
 
+	public function test_a_target_xdebug_port_reaches_docker_compose_and_the_status(): void {
+		$pluginsDir = $this->setUpPluginsDir();
+		file_put_contents( $pluginsDir . '/test-plugin/.env.slic.local', "XDP=9666\n" );
+		$this->slicExec( 'use test-plugin' );
+
+		$this->slicExec( 'start', $this->dockerMockLogEnv( [ 'XDP' ] ) );
+
+		$this->assertDockerCalled( '/ up .*\[XDP=9666\]$/', 'An XDP set in the target .env.slic.local should reach docker compose.' );
+		$this->assertStringContainsString(
+			'Remote port: 9666',
+			$this->slicExec( 'xdebug status' ),
+			'The xdebug status should report the XDP set in the target .env.slic.local.'
+		);
+	}
+
 	public function test_xdebug_status_shows_current_state(): void {
 		$this->setUpPluginsDir();
 

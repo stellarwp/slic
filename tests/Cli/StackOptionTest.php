@@ -57,4 +57,34 @@ class StackOptionTest extends BaseTestCase {
 			'A SLIC_STACK that is not registered should fail, not run on the unnamed project.'
 		);
 	}
+
+	public function test_stack_option_with_a_missing_directory_in_a_stack_fails(): void {
+		$pluginsDir = realpath( $this->setUpPluginsDir() );
+
+		$this->assertStringContainsString(
+			'The path specified with --stack does not exist',
+			$this->slicExec( '--stack=' . escapeshellarg( $pluginsDir . '/missing-child' ) . ' using', $this->dockerMockEnv() ),
+			'An explicit stack path that does not exist should fail, not select the stack it would be in.'
+		);
+	}
+
+	public function test_stack_variable_with_a_missing_directory_in_a_stack_fails(): void {
+		$pluginsDir = realpath( $this->setUpPluginsDir() );
+
+		$this->assertStringContainsString(
+			"{$pluginsDir}/missing-child is not a registered stack",
+			$this->slicExec( 'using', [ 'SLIC_STACK' => $pluginsDir . '/missing-child' ] + $this->dockerMockEnv() ),
+			'A SLIC_STACK path that does not exist should fail, not select the stack it would be in.'
+		);
+	}
+
+	public function test_stack_option_with_a_directory_in_a_stack_selects_the_stack(): void {
+		$pluginsDir = realpath( $this->setUpPluginsDir() );
+
+		$this->assertStringContainsString(
+			'Stack ID: ' . $pluginsDir,
+			$this->slicExec( '--stack=' . escapeshellarg( $pluginsDir . '/test-plugin' ) . ' stack info', $this->dockerMockEnv() ),
+			'An explicit stack path inside a stack should select that stack.'
+		);
+	}
 }
