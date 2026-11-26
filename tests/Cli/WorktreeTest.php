@@ -699,6 +699,73 @@ class WorktreeTest extends BaseTestCase {
 		$this->assertStringContainsString( 'Branch: feature-x', $list, 'The stack should stay registered.' );
 	}
 
+	public static function nestedRepositoryProvider(): array {
+		return [
+			'remove' => [ 'remove feature-x -y' ],
+			'merge'  => [ 'merge feature-x -y' ],
+			'sync'   => [ 'sync --clean -y' ],
+		];
+	}
+
+	#[DataProvider( 'nestedRepositoryProvider' )]
+	public function test_worktree_subcommands_do_not_read_the_worktrees_of_an_enclosing_repository( string $command ): void {
+		$pluginDir   = $this->setUpGitPluginStack();
+		$worktreeDir = $pluginDir . '-feature-x';
+		// A site under git, with the plugin repository inside it.
+		$this->git( dirname( $pluginDir ), 'init -q' );
+		$this->slicExec( 'worktree add feature-x -y', $this->dockerMockEnv() );
+		$this->git( $pluginDir, 'worktree lock --reason ' . escapeshellarg( 'External disk' ) . ' ' . escapeshellarg( $worktreeDir ) );
+		// The plugin is off its mount: git, in the empty directory left, finds the site repository instead.
+		rename( $pluginDir, $pluginDir . '.offline' );
+		rename( $worktreeDir, $worktreeDir . '.offline' );
+		mkdir( $pluginDir );
+
+		try {
+			$output = $this->slicExec( "worktree {$command}; echo \"exit=\$?\"", $this->dockerMockLogEnv() );
+			$list   = $this->slicExec( 'worktree list', $this->dockerMockEnv() );
+		} finally {
+			rmdir( $pluginDir );
+			rename( $pluginDir . '.offline', $pluginDir );
+			rename( $worktreeDir . '.offline', $worktreeDir );
+			$this->git( $pluginDir, 'worktree unlock ' . escapeshellarg( $worktreeDir ) );
+			$this->slicExec( 'worktree remove feature-x -y', $this->dockerMockEnv() );
+		}
+
+		$this->assertMatchesRegularExpression( '/exit=[1-9]/', $output, 'The worktrees of an enclosing repository should not count as the target repository ones.' );
+		$this->assertDockerCalled( '# down #', 'The stack should not be brought down when git cannot read the target repository.', false );
+		$this->assertStringContainsString( 'Branch: feature-x', $list, 'The stack should stay registered.' );
+	}
+
+	public function test_worktree_merge_keeps_a_worktree_a_post_merge_hook_locks(): void {
+		$pluginDir   = $this->setUpGitPluginStack();
+		$worktreeDir = $pluginDir . '-feature-x';
+		$this->slicExec( 'worktree add feature-x -y', $this->dockerMockEnv() );
+		$this->commitFile( $worktreeDir, 'feature.txt', 'feature' );
+		$hook = $pluginDir . '/.git/hooks/post-merge';
+		file_put_contents( $hook, "#!/bin/sh\ngit worktree lock --reason 'Hook lock' " . escapeshellarg( $worktreeDir ) . "\n" );
+		chmod( $hook, 0755 );
+
+		try {
+			$output = $this->slicExec( 'worktree merge feature-x -y; echo "exit=$?"', $this->dockerMockLogEnv() );
+			$list   = $this->slicExec( 'worktree list', $this->dockerMockEnv() );
+			$locked = $this->git( $pluginDir, 'worktree list --porcelain' );
+			$kept   = is_dir( $worktreeDir );
+		} finally {
+			unlink( $hook );
+			$this->git( $pluginDir, 'worktree unlock ' . escapeshellarg( $worktreeDir ) );
+			$this->slicExec( 'worktree remove feature-x -y', $this->dockerMockEnv() );
+		}
+
+		$this->assertStringContainsString( 'locked Hook lock', $locked, 'The post-merge hook should have locked the worktree.' );
+		$this->assertMatchesRegularExpression( '/exit=[1-9]/', $output, 'A worktree locked by the merge should make the command fail.' );
+		$this->assertStringContainsString( 'Hook lock', $output, "The failure should show git's lock reason." );
+		$this->assertStringContainsString( 'was merged', $output, 'The failure should say the branch was merged.' );
+		$this->assertStringNotContainsString( 'Nothing was changed', $output, 'The merge changed the base branch.' );
+		$this->assertDockerCalled( '# down #', 'The stack of a worktree locked by the merge should not be brought down.', false );
+		$this->assertTrue( $kept, 'The worktree locked by the merge should be kept.' );
+		$this->assertStringContainsString( 'Branch: feature-x', $list, 'The stack of a worktree locked by the merge should stay registered.' );
+	}
+
 	public static function lockedAtThePromptProvider(): array {
 		return [
 			'remove, directory present' => [ 'worktree remove feature-x', true ],

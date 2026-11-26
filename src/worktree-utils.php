@@ -160,9 +160,18 @@ function slic_worktree_create_dir_name( $target, $branch ) {
  *
  * @return array[]|false The worktrees, each with the 'path' key and the 'head', 'branch' and 'locked' keys git reports;
  *                       'locked' is the lock reason, empty for a lock without one. False if git cannot read the
- *                       repository, as when it is missing or not a git repository.
+ *                       repository, as when it is missing or not the top of a git repository.
  */
 function slic_worktree_list( $target_path, &$error = '' ) {
+	// Git walks up from a path that is not a repository, as an empty mount point, to the repository enclosing it.
+	exec( 'git -C ' . escapeshellarg( $target_path ) . ' rev-parse --show-toplevel 2>&1', $toplevel, $status );
+
+	if ( 0 !== $status || realpath( trim( implode( "\n", $toplevel ) ) ) !== realpath( $target_path ) ) {
+		$error = "$target_path is not the top of a git repository" . ( 0 !== $status ? ': ' . implode( "\n", $toplevel ) : '' );
+
+		return false;
+	}
+
 	exec( 'git -C ' . escapeshellarg( $target_path ) . ' worktree list --porcelain 2>&1', $output, $status );
 
 	if ( 0 !== $status ) {
@@ -245,10 +254,11 @@ function slic_worktree_lock_reason( $target_path, $worktree_path, &$error = '' )
  *
  * @param string $target_path   The path to the main repository.
  * @param string $worktree_path The path to the worktree directory.
+ * @param string $unchanged     What the command kept, said with the error.
  *
  * @return void
  */
-function slic_worktree_require_unlocked( $target_path, $worktree_path ) {
+function slic_worktree_require_unlocked( $target_path, $worktree_path, $unchanged = 'Nothing was changed.' ) {
 	$reason = slic_worktree_lock_reason( $target_path, $worktree_path, $error );
 
 	if ( null === $reason ) {
@@ -257,13 +267,13 @@ function slic_worktree_require_unlocked( $target_path, $worktree_path ) {
 
 	if ( false === $reason ) {
 		echo "Error: Cannot read the git worktree records of $target_path: $error\n";
-		echo "Nothing was changed.\n";
+		echo "$unchanged\n";
 		exit( 1 );
 	}
 
 	echo "Error: The git worktree is locked" . ( '' !== $reason ? ": $reason" : '' ) . "\n";
 	echo "  Worktree: $worktree_path\n";
-	echo "Nothing was changed. If the worktree is no longer in use, unlock it with:\n";
+	echo "$unchanged If the worktree is no longer in use, unlock it with:\n";
 	echo "  git -C " . escapeshellarg( $target_path ) . " worktree unlock " . escapeshellarg( $worktree_path ) . "\n";
 	exit( 1 );
 }

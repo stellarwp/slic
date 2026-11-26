@@ -270,6 +270,9 @@ if ($merge_code !== 0) {
 
 echo "Merge successful.\n";
 
+// A post-merge hook can have locked the worktree.
+slic_worktree_require_unlocked($target_path, $worktree_full_path, 'The branch was merged; the worktree and its stack were kept.');
+
 // Step 3: Bring the containers and network down (only if registered)
 if ($is_registered) {
     echo "Stopping Docker containers...\n";
