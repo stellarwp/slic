@@ -106,7 +106,8 @@ class MigrationTest extends BaseTestCase {
 		$this->slicExec( 'composer get-version', $this->dockerMockLogEnv() );
 
 		$this->assertDockerCalled(
-			'/ exec slic composer --version$/',
+			// In CI slic runs exec without a terminal, with -T.
+			'/ exec (-T )?slic composer --version$/',
 			'The Composer version is global, so the migrated stack should not override it.'
 		);
 	}

@@ -140,6 +140,13 @@ abstract class BaseTestCase extends TestCase {
 		if ( ! isset( $env['SLIC_CACHE_DIR'] ) && $this->slicCacheDir !== '' ) {
 			$env['SLIC_CACHE_DIR'] = $this->slicCacheDir;
 		}
+		// The git commands slic runs, such as a merge, must not depend on the host git identity: CI runners have none.
+		$env += [
+			'GIT_AUTHOR_NAME'     => 'slic',
+			'GIT_AUTHOR_EMAIL'    => 'slic@example.com',
+			'GIT_COMMITTER_NAME'  => 'slic',
+			'GIT_COMMITTER_EMAIL' => 'slic@example.com',
+		];
 
 		$envString = '';
 		foreach ( $env as $key => $value ) {
