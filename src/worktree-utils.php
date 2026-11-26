@@ -151,6 +151,105 @@ function slic_worktree_create_dir_name( $target, $branch ) {
 }
 
 /**
+ * Returns the worktrees git records for a repository, from `git worktree list --porcelain`.
+ *
+ * The main repository is the first entry; git keeps the record of a worktree whose directory is missing.
+ *
+ * @param string $target_path The path to the repository.
+ *
+ * @return array[] The worktrees, each with the 'path' key and the 'head', 'branch' and 'locked' keys git reports;
+ *                 'locked' is the lock reason, empty for a lock without one.
+ */
+function slic_worktree_list( $target_path ) {
+	$output = shell_exec( 'git -C ' . escapeshellarg( $target_path ) . ' worktree list --porcelain 2>/dev/null' );
+
+	// Each entry is a `worktree <path>` line, then `HEAD <commit>`, `branch refs/heads/<name>`, `locked [<reason>]` and
+	// other lines, then a blank line.
+	$worktrees        = [];
+	$current_worktree = [];
+
+	foreach ( explode( "\n", trim( (string) $output ) ) as $line ) {
+		$line = trim( $line );
+
+		// Empty line indicates end of a worktree entry
+		if ( empty( $line ) ) {
+			if ( ! empty( $current_worktree ) ) {
+				$worktrees[]      = $current_worktree;
+				$current_worktree = [];
+			}
+			continue;
+		}
+
+		if ( strpos( $line, 'worktree ' ) === 0 ) {
+			$current_worktree['path'] = trim( substr( $line, 9 ) );
+		} elseif ( strpos( $line, 'HEAD ' ) === 0 ) {
+			$current_worktree['head'] = trim( substr( $line, 5 ) );
+		} elseif ( strpos( $line, 'branch refs/heads/' ) === 0 ) {
+			$current_worktree['branch'] = substr( $line, 18 );
+		} elseif ( $line === 'locked' || strpos( $line, 'locked ' ) === 0 ) {
+			$current_worktree['locked'] = trim( substr( $line, 6 ) );
+		}
+	}
+
+	// Don't forget the last worktree if the output doesn't end with a blank line
+	if ( ! empty( $current_worktree ) ) {
+		$worktrees[] = $current_worktree;
+	}
+
+	return $worktrees;
+}
+
+/**
+ * Returns the reason git has a worktree locked, read from git's records so it works while the directory is unavailable.
+ *
+ * @param string $target_path   The path to the main repository.
+ * @param string $worktree_path The path to the worktree directory.
+ *
+ * @return string|null The lock reason, empty for a lock without one, or null if the worktree is not locked.
+ */
+function slic_worktree_lock_reason( $target_path, $worktree_path ) {
+	if ( ! is_dir( $target_path ) ) {
+		return null;
+	}
+
+	// The directory of a locked worktree can be missing, as on an unmounted disk: resolve its parent instead.
+	$normalize = static function ( $path ) {
+		return realpath( $path ) ?: ( realpath( dirname( $path ) ) ?: dirname( $path ) ) . '/' . basename( $path );
+	};
+	$wanted    = $normalize( $worktree_path );
+
+	foreach ( slic_worktree_list( $target_path ) as $wt ) {
+		if ( isset( $wt['path'], $wt['locked'] ) && $normalize( $wt['path'] ) === $wanted ) {
+			return $wt['locked'];
+		}
+	}
+
+	return null;
+}
+
+/**
+ * Exits with an error, before anything is stopped, removed or unregistered, if git has a worktree locked.
+ *
+ * @param string $target_path   The path to the main repository.
+ * @param string $worktree_path The path to the worktree directory.
+ *
+ * @return void
+ */
+function slic_worktree_require_unlocked( $target_path, $worktree_path ) {
+	$reason = slic_worktree_lock_reason( $target_path, $worktree_path );
+
+	if ( null === $reason ) {
+		return;
+	}
+
+	echo "Error: The git worktree is locked" . ( '' !== $reason ? ": $reason" : '' ) . "\n";
+	echo "  Worktree: $worktree_path\n";
+	echo "Nothing was changed. If the worktree is no longer in use, unlock it with:\n";
+	echo "  git -C " . escapeshellarg( $target_path ) . " worktree unlock " . escapeshellarg( $worktree_path ) . "\n";
+	exit( 1 );
+}
+
+/**
  * Checks if a directory is already a git worktree for a specific target repository.
  *
  * Uses 'git worktree list --porcelain' to verify if the directory is already
@@ -170,58 +269,7 @@ function slic_worktree_is_existing( $target_path, $worktree_path, $expected_bran
 		return false;
 	}
 
-	// Get worktree list in porcelain format for parsing
-	$escaped_target = escapeshellarg( $target_path );
-	$cmd = "git -C " . $escaped_target . " worktree list --porcelain 2>/dev/null";
-	$output = shell_exec( $cmd );
-
-	if ( empty( $output ) ) {
-		return false;
-	}
-
-	// Parse porcelain output
-	// Format:
-	// worktree /path/to/worktree
-	// HEAD <commit-hash>
-	// branch refs/heads/<branch-name>
-	// <blank line>
-	//
-	// Note: The main repository appears as the first entry in git worktree list.
-	// This is normal git behavior and not an error.
-	$worktrees = [];
-	$current_worktree = [];
-
-	$lines = explode( "\n", trim( $output ) );
-	foreach ( $lines as $line ) {
-		$line = trim( $line );
-
-		// Empty line indicates end of a worktree entry
-		if ( empty( $line ) ) {
-			if ( ! empty( $current_worktree ) ) {
-				$worktrees[] = $current_worktree;
-				$current_worktree = [];
-			}
-			continue;
-		}
-
-		// Parse line
-		if ( strpos( $line, 'worktree ' ) === 0 ) {
-			$current_worktree['path'] = trim( substr( $line, 9 ) );
-		} elseif ( strpos( $line, 'HEAD ' ) === 0 ) {
-			$current_worktree['head'] = trim( substr( $line, 5 ) );
-		} elseif ( strpos( $line, 'branch ' ) === 0 ) {
-			$branch_ref = trim( substr( $line, 7 ) );
-			// Extract branch name from refs/heads/branch-name
-			if ( strpos( $branch_ref, 'refs/heads/' ) === 0 ) {
-				$current_worktree['branch'] = substr( $branch_ref, 11 );
-			}
-		}
-	}
-
-	// Don't forget the last worktree if file doesn't end with blank line
-	if ( ! empty( $current_worktree ) ) {
-		$worktrees[] = $current_worktree;
-	}
+	$worktrees = slic_worktree_list( $target_path );
 
 	// Normalize paths for comparison (resolve symlinks, etc.)
 	// realpath() can return false for paths that don't exist yet or are not accessible.

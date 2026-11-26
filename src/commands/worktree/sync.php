@@ -63,6 +63,7 @@ if (!$base_state) {
 }
 
 $stacks = slic_stacks_list();
+$failed_count = 0;
 $orphaned_slic_stacks = [];
 $orphaned_git_worktrees = [];
 $issues_found = false;
@@ -126,6 +127,24 @@ foreach (slic_stacks_get_worktrees($base_stack_id) as $check_stack_id => $state)
 		$issues_found = true;
 		continue;
 	}
+}
+
+// A locked worktree, such as one on an unmounted disk, is kept by git: keep its stack too.
+$locked_slic_stacks = [];
+foreach ($orphaned_slic_stacks as $idx => $orphan) {
+	$lock_target = $orphan['state']['worktree_target_path'] ?? ($target ? slic_worktree_target_path($target) : '');
+	$lock_reason = isset($orphan['path']) ? slic_worktree_lock_reason($lock_target, $orphan['path']) : null;
+	if (null !== $lock_reason) {
+		$locked_slic_stacks[] = $orphan + ['lock_reason' => $lock_reason, 'lock_target' => $lock_target];
+		unset($orphaned_slic_stacks[$idx]);
+	}
+}
+$orphaned_slic_stacks = array_values($orphaned_slic_stacks);
+
+foreach ($locked_slic_stacks as $locked) {
+	echo "Skipping locked worktree stack: {$locked['stack_id']}\n";
+	echo "      Locked: " . ($locked['lock_reason'] !== '' ? $locked['lock_reason'] : '(no reason given)') . "\n";
+	echo "      Unlock it with: git -C " . escapeshellarg($locked['lock_target']) . " worktree unlock " . escapeshellarg($locked['path']) . "\n\n";
 }
 
 if (!empty($orphaned_slic_stacks)) {
@@ -341,7 +360,6 @@ if (!empty($orphaned_slic_stacks)) {
 
 		// Perform cleanup
 		$cleaned_count = 0;
-		$failed_count = 0;
 
 		foreach ($orphaned_slic_stacks as $orphan) {
 			echo "Cleaning {$orphan['stack_id']}...\n";
@@ -394,4 +412,5 @@ if ($dry_run) {
 	echo "Run without --dry-run to apply changes.\n";
 }
 
-exit(0);
+// A clean-up that left a stack behind, because it failed to stop or its worktree is locked, fails.
+exit($auto_clean && !$dry_run && ($failed_count > 0 || !empty($locked_slic_stacks)) ? 1 : 0);

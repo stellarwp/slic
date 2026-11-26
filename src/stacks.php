@@ -104,6 +104,15 @@ function slic_stacks_write_worktree_state_file($worktree_stack_id, $base_stack_i
 		}
 	}
 
+	// The worktree uses the subdirectory of the target the base stack uses, as set with `slic use <target>/<subdir>`.
+	if (($base_env['SLIC_CURRENT_PROJECT'] ?? null) === $target) {
+		foreach (['SLIC_CURRENT_PROJECT_SUBDIR', 'SLIC_CURRENT_PROJECT_RELATIVE_PATH', 'SLIC_CURRENT_PROJECT_CONTAINER_PATH'] as $key) {
+			if (isset($base_env[$key])) {
+				$state[$key] = $base_env[$key];
+			}
+		}
+	}
+
 	write_env_file($state_file, $state);
 
 	return $state_file;

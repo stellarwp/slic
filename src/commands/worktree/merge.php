@@ -109,6 +109,7 @@ $existing_worktree = slic_worktree_is_existing($target_path, $worktree_full_path
 $git_worktree_exists = ($existing_worktree !== false);
 
 slic_worktree_require_branch($branch, $wt_state, $existing_worktree);
+slic_worktree_require_unlocked($target_path, $worktree_full_path);
 
 $original_cwd = getcwd();
 

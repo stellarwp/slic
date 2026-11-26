@@ -72,11 +72,12 @@ function get_target_content_type( $target = null ) {
 /**
  * Returns the local filesystem path for a target.
  *
- * @param string|null $target The target to resolve. Defaults to the current slic target.
+ * @param string|null $target   The target to resolve. Defaults to the current slic target.
+ * @param string|null $stack_id The stack whose files to resolve the target in. Defaults to the current stack.
  *
  * @return string The local target path.
  */
-function get_project_local_path( $target = null ) {
+function get_project_local_path( $target = null, $stack_id = null ) {
 	$target = $target ?: slic_target();
 
 	if ( empty( $target ) ) {
@@ -91,7 +92,7 @@ function get_project_local_path( $target = null ) {
 	}
 
 	// A worktree stack mounts its worktree over the target, so the target's files are the worktree's.
-	$stack_id = slic_current_stack();
+	$stack_id = $stack_id ?: slic_current_stack();
 	if ( $stack_id && slic_stacks_is_worktree( $stack_id ) ) {
 		$stack = slic_stacks_get( $stack_id );
 		$parts = explode( '/', $target, 2 );

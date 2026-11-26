@@ -71,6 +71,7 @@ if (!$is_registered && !$git_worktree_exists) {
 }
 
 slic_worktree_require_branch($branch, $wt_state, $existing_worktree);
+slic_worktree_require_unlocked($target_path, $worktree_full_path);
 
 if (!$is_registered && $git_worktree_exists) {
     echo "WARNING: This worktree is NOT registered with slic.\n";

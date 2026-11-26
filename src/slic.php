@@ -408,7 +408,7 @@ function setup_slic_env( $root_dir, $reset = false, $stack_id = null ) {
 		slic_site_target_environment( getenv( 'SLIC_CURRENT_PROJECT' ) );
 	}
 
-	$target_path = get_project_local_path();
+	$target_path = get_project_local_path( null, $stack_id );
 	if ( ! empty( $target_path ) ) {
 		// Load the local overrides from the target.
 		if ( file_exists( $target_path . '/.env.slic.local' ) ) {

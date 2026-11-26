@@ -129,6 +129,15 @@ if ( null !== $worktree_stack_id && slic_stacks_is_worktree( $worktree_stack_id 
 	return;
 }
 
+// A worktree of a registered target is a worktree stack or nothing: registration was declined, or there was no terminal to ask in.
+$detected_worktree = slic_stacks_detect_worktree( $here_dir );
+if ( null !== $detected_worktree ) {
+	echo magenta( "This directory is an unregistered git worktree of {$detected_worktree['target']}; slic did not create a stack for it." . PHP_EOL );
+	echo "To register it as a worktree stack, run 'slic here' here in a terminal and answer yes, or run this from the base stack:" . PHP_EOL;
+	echo "  cd " . escapeshellarg( $detected_worktree['base_stack_id'] ) . " && slic worktree add {$detected_worktree['branch']}" . PHP_EOL;
+	exit( 1 );
+}
+
 // The directory `slic here` ran in identifies the stack; the plugins and themes directories are only mounted.
 $stack_id = $here_dir;
 
