@@ -288,6 +288,11 @@ function setup_slic_env( $root_dir, $reset = false, $stack_id = null ) {
 
 	$set = true;
 
+	// Keep the shell's XDP before any env file can overwrite it: $_SERVER lacks it when variables_order has no S.
+	if ( null === env_var_backup( 'XDP' ) ) {
+		backup_env_var( 'XDP' );
+	}
+
 	// Attempt legacy migration on first run; completions and `completion show` define SLIC_NO_MIGRATION, as they must not stop 2.x containers or print.
 	if ( ! $reset && ! defined( 'SLIC_NO_MIGRATION' ) && is_file( __DIR__ . '/stacks.php' ) ) {
 		require_once __DIR__ . '/stacks.php';
@@ -412,7 +417,7 @@ function setup_slic_env( $root_dir, $reset = false, $stack_id = null ) {
 	}
 
 	// Load the stack's XDebug configuration after the target's overrides: an XDP set there is the user's, like one in the shell.
-	xdebug_setup_env_vars( $stack_id );
+	xdebug_setup_env_vars( $stack_id, $target_path ?: '' );
 
 	// SLIC_PHP_VERSION was passed via the command line.
 	$target_version = env_var_backup( 'SLIC_PHP_VERSION' );
@@ -868,7 +873,7 @@ function slic_switch_target( $target, $stack_id = null ) {
 	}
 
 	// The target's .env.slic.local may set XDP: reapply the stack's XDebug values, as setup_slic_env() does, before recreating services.
-	xdebug_setup_env_vars( $stack_id );
+	xdebug_setup_env_vars( $stack_id, $target_path ?: '' );
 
 	/*
 	 * Site, plugin, and theme targets in `wp/` skeletons can require different WordPress and theme bind mounts. Docker

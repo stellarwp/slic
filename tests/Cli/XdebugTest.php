@@ -95,6 +95,32 @@ class XdebugTest extends BaseTestCase {
 		);
 	}
 
+	public function test_a_target_xdebug_port_wins_when_the_target_also_sets_the_plugins_dir(): void {
+		$pluginsDir = $this->setUpPluginsDir();
+		$otherDir   = $this->createTempDir();
+		mkdir( $otherDir . '/test-plugin' );
+		touch( $otherDir . '/test-plugin/plugin.php' );
+		// Once loaded, this plugins dir would resolve the target to the other copy, which has no XDP.
+		file_put_contents( $pluginsDir . '/test-plugin/.env.slic.local', "XDP=9666\nSLIC_PLUGINS_DIR={$otherDir}\n" );
+		$this->slicExec( 'use test-plugin' );
+
+		$this->slicExec( 'start', $this->dockerMockLogEnv( [ 'XDP' ] ) );
+
+		$this->assertDockerCalled( '/ up .*\[XDP=9666\]$/', 'The XDP of the loaded target .env.slic.local should reach docker compose.' );
+		$this->assertStringContainsString( 'Remote port: 9666', $this->slicExec( 'xdebug status' ) );
+	}
+
+	public function test_a_shell_xdebug_port_wins_when_php_does_not_populate_server_env_vars(): void {
+		$this->setUpPluginsDir();
+		// Without S in variables_order, $_SERVER has no environment variables; the leading : keeps the default ini dir.
+		$iniDir = $this->createTempDir();
+		file_put_contents( $iniDir . '/variables-order.ini', "variables_order = \"GPC\"\n" );
+
+		$this->slicExec( 'start', [ 'XDP' => '9444', 'PHP_INI_SCAN_DIR' => ':' . $iniDir ] + $this->dockerMockLogEnv( [ 'XDP' ] ) );
+
+		$this->assertDockerCalled( '/ up .*\[XDP=9444\]$/', 'An XDP set in the shell should win over the stack default.' );
+	}
+
 	public function test_the_xdebug_port_command_wins_over_a_target_port_when_a_target_switch_recreates_services(): void {
 		$pluginsDir = $this->setUpPluginsDir();
 		mkdir( $pluginsDir . '/other-plugin' );

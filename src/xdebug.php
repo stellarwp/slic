@@ -407,13 +407,22 @@ function slic_handle_pcov( callable $args, $confirm = false ) {
  *
  * @since TBD
  *
- * @param string|null $stack_id The stack ID to get the env vars for.
+ * @param string|null $stack_id    The stack ID to get the env vars for.
+ * @param string|null $target_path The target directory whose .env.slic.local was loaded for the stack, or `null` to use
+ *                                 the one passed earlier in this process for the stack, else to resolve it.
  *
  * @return array{XDP?: string, XDE?: string} A map of the XDebug env vars to set, if any,
  */
-function xdebug_get_env_vars($stack_id = null):array{
+function xdebug_get_env_vars( $stack_id = null, $target_path = null ):array{
+	// The loaded target can set SLIC_PLUGINS_DIR, so resolving it again, as each docker compose command does, may point elsewhere.
+	static $loaded_target_paths = [];
+
 	if ( null === $stack_id ) {
 		return [];
+	}
+
+	if ( null !== $target_path ) {
+		$loaded_target_paths[ $stack_id ] = $target_path;
 	}
 
 	$stack = slic_stacks_get( $stack_id );
@@ -429,10 +438,10 @@ function xdebug_get_env_vars($stack_id = null):array{
 	$state_file = get_stack_env_file( $stack_id );
 	$overrides  = is_file( $state_file ) ? read_env_file( $state_file ) : [];
 
-	// The user's port: the shell's as slic started ($_SERVER, as slic puts its XDP in the environment), then slic's and the
-	// stack target's .env.slic.local, in setup_slic_env()'s order; a port in the stack state file wins below anyway.
-	$user_port   = (string) ( $_SERVER['XDP'] ?? '' );
-	$target_path = get_project_local_path( null, $stack_id );
+	// The user's port: the shell's as slic started (backed up by setup_slic_env(), as slic puts its XDP in the environment),
+	// then slic's and the stack target's .env.slic.local, in setup_slic_env()'s order; the stack state file wins below anyway.
+	$user_port   = (string) Env\env_var_backup( 'XDP', '' );
+	$target_path = $loaded_target_paths[ $stack_id ] ?? get_project_local_path( null, $stack_id );
 	foreach ( [ root( '.env.slic.local' ), $target_path ? $target_path . '/.env.slic.local' : '' ] as $local_file ) {
 		if ( $local_file && is_file( $local_file ) ) {
 			$user_port = read_env_file( $local_file )['XDP'] ?? $user_port;
@@ -471,10 +480,11 @@ function xdebug_get_env_vars($stack_id = null):array{
  *
  * @since 3.0.0
  *
- * @param string|null $stack_id Optional stack ID. If not provided, no stack-specific values are loaded.
+ * @param string|null $stack_id    Optional stack ID. If not provided, no stack-specific values are loaded.
+ * @param string|null $target_path The target directory whose .env.slic.local was loaded, or `null` to resolve it.
  */
-function xdebug_setup_env_vars( $stack_id = null ) {
-	$env_vars = xdebug_get_env_vars( $stack_id );
+function xdebug_setup_env_vars( $stack_id = null, $target_path = null ) {
+	$env_vars = xdebug_get_env_vars( $stack_id, $target_path );
 
 	foreach($env_vars as $key => $value){
 		putenv( $key . '=' . $value );
