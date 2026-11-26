@@ -285,7 +285,7 @@ slic xdebug on              # enable (requires restart)
 slic xdebug off             # disable (requires restart)
 slic xdebug status          # show current state
 slic xdebug host <ip>       # set host IP for IDE connection
-slic xdebug port <port>     # set port (default 9001)
+slic xdebug port <port>     # set port (default: per stack, 49000-59000)
 slic xdebug key <key>       # set IDE key (default slic)
 ```
 

@@ -34,4 +34,16 @@ class PlaywrightTest extends BaseTestCase {
 			'Running playwright test with docker mock should not produce errors.'
 		);
 	}
+
+	public function test_playwright_targets_the_current_stack_project(): void {
+		$this->setUpPluginsDir();
+		$this->slicExec( 'use test-plugin', $this->dockerMockEnv() );
+
+		$this->slicExec( 'playwright test --list', $this->dockerMockLogEnv() );
+
+		$this->assertDockerCalled(
+			'/-p slic_\S+ .*exec .*node_modules\/\.bin\/playwright test --list/',
+			'Playwright should run in the current stack\'s Compose project, not the default one.'
+		);
+	}
 }

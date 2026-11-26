@@ -39,9 +39,44 @@ class XdebugTest extends BaseTestCase {
 		}
 
 		$this->assertMatchesRegularExpression(
-			'/Executing command: .*XDP=9999 /',
+			"/Executing command: .*XDP='9999' /",
 			$output,
 			'The stack should start with the XDebug port set by the xdebug port command.'
+		);
+	}
+
+	public function test_xdebug_key_with_a_space_reaches_the_docker_compose_commands(): void {
+		$this->setUpPluginsDir();
+		$this->slicExec( "xdebug key 'my key'" );
+
+		$this->slicExec( 'start', $this->dockerMockLogEnv( [ 'XDK' ] ) );
+
+		$this->assertDockerCalled(
+			'/ up .*\[XDK=my key\]$/',
+			'An IDE key with a space should reach docker compose as one value.'
+		);
+	}
+
+	public function test_a_user_xdebug_port_wins_over_the_stack_default_and_the_xdebug_port_command_over_both(): void {
+		$this->setUpPluginsDir();
+
+		// The slic root's local settings are shared by every test, so restore them.
+		$localFile = self::slicRoot() . '/.env.slic.local';
+		$previous  = is_file( $localFile ) ? file_get_contents( $localFile ) : null;
+		file_put_contents( $localFile, "XDP=9555\n" );
+		try {
+			$this->slicExec( 'start', $this->dockerMockLogEnv( [ 'XDP' ] ) );
+			$this->slicExec( 'xdebug port 9009' );
+			$status = $this->slicExec( 'xdebug status' );
+		} finally {
+			null === $previous ? unlink( $localFile ) : file_put_contents( $localFile, $previous );
+		}
+
+		$this->assertDockerCalled( '/ up .*\[XDP=9555\]$/', 'An XDP set in .env.slic.local should win over the stack default.' );
+		$this->assertStringContainsString(
+			'Remote port: 9009',
+			$status,
+			'The xdebug port command should win over an XDP set in .env.slic.local.'
 		);
 	}
 

@@ -132,7 +132,7 @@ slic xdebug on
 
 The next time you spin up the stack to run tests or to have the WordPress installation locally served, you will be able to debug the code line-by-line using the following settings in your IDE:
 
-* Listen for XDebug connections on port 9001
+* Listen for XDebug connections on the port `slic xdebug status` shows (each stack has its own)
 * Set up path mappings:
 	* `_wordpress` -> `/var/www/html`
 	* `_plugins` -> `/plugins`

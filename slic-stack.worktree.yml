@@ -14,3 +14,10 @@ services:
         source: ${SLIC_WORKTREE_FULL_PATH}
         target: ${SLIC_WP_CONTENT_CONTAINER_DIR}/${SLIC_WORKTREE_CONTAINER_PATH}
         consistency: delegated
+
+  playwright:
+    volumes:
+      - type: bind
+        source: ${SLIC_WORKTREE_FULL_PATH}
+        target: ${SLIC_WP_CONTENT_CONTAINER_DIR}/${SLIC_WORKTREE_CONTAINER_PATH}
+        consistency: delegated

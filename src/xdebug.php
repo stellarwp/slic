@@ -98,7 +98,7 @@ function xdebug_status( $stack_id = null ) {
 
 	echo 'XDebug status is: ' . ( $enabled ? light_cyan( 'on' ) : magenta( 'off' ) ) . PHP_EOL;
 	echo 'Remote host: ' . light_cyan( getenv( 'XDH' ) ) . PHP_EOL;
-	$remote_port = $stack_id ? ( $xdebug_env_vars['XDP'] ?? slic_stacks_xdebug_port( $stack_id ) ) : getenv( 'XDP' );
+	$remote_port = $stack_id ? ( $xdebug_env_vars['XDP'] ?? slic_stacks_xdebug_port( $stack_id ) ) : ( getenv( 'XDP' ) ?: '9001' );
 	echo 'Remote port: ' . light_cyan( $remote_port ) . PHP_EOL;
 
 	echo 'IDE Key (server name): ' . light_cyan( $ide_key ) . PHP_EOL;
@@ -420,8 +420,8 @@ function xdebug_get_env_vars($stack_id = null):array{
 	$stack = slic_stacks_get( $stack_id );
 
 	// Always set XDebug values from the stack so each stack gets its own port and key.
-	// These override the values in .env.slic and .env.slic.local files; only the
-	// `xdebug port|key` commands, which write the stack state file, override them.
+	// The key overrides the values in .env.slic and .env.slic.local files; a port set by the user
+	// wins over the stack's. The `xdebug port|key` commands, which write the stack state file, override both.
 	if ( null == $stack ) {
 		return [];
 	}
@@ -430,10 +430,20 @@ function xdebug_get_env_vars($stack_id = null):array{
 	$state_file = get_stack_env_file( $stack_id );
 	$overrides  = is_file( $state_file ) ? read_env_file( $state_file ) : [];
 
+	// Read the user's port (shell or .env.slic.local) once, before this function's values are put in the environment.
+	// The current stack's state file is loaded in the environment by then: its port is not the user's.
+	static $user_port;
+	if ( null === $user_port ) {
+		$user_port = (string) getenv( 'XDP' );
+		$user_port = $user_port === ( $overrides['XDP'] ?? null ) ? '' : $user_port;
+	}
+
 	$env_vars = [];
 
 	if ( ! empty( $overrides['XDP'] ) ) {
 		$env_vars['XDP'] = $overrides['XDP'];
+	} elseif ( '' !== $user_port ) {
+		$env_vars['XDP'] = $user_port;
 	} elseif ( isset( $stack['xdebug_port'] ) ) {
 		$env_vars['XDP']	 = $stack['xdebug_port'];
 	}

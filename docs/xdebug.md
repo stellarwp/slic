@@ -18,7 +18,7 @@ In PHPStorm settings:
 
 1. Search for `debug`
 2. Select `PHP` > `Debug`
-3. Ensure that the Debug port is set to whatever `slic xdebug status` returns. (typically `9001`)
+3. Ensure that the Debug port is set to whatever `slic xdebug status` returns. Each stack has its own port, in the 49000-59000 range, unless you set `XDP` in `.env.slic.local` or run `slic xdebug port <port>`.
 
 ### Set up server configuration
 
@@ -28,7 +28,7 @@ In PHPStorm settings:
 2. Select `PHP` > `Servers`
 3. Click the `+` button to add a new server
 4. Set the `Name` to `slic`
-5. Set the `Host` to whatever `slic xdebug status` returns. (typically `http://localhost:8888` ... yes, put the whole thing in the `Host` field)
+5. Set the `Host` to whatever `slic xdebug status` returns, such as `http://localhost:55001` (yes, put the whole thing in the `Host` field). Docker assigns each stack its own port unless you set `WORDPRESS_HTTP_PORT` in `.env.slic.local`.
 6. Set the `Port` to `80`
 7. Check the `Use path mappings` checkbox
 8. Find the plugins directory and set the `Absolute path on the server` to the path reported by `slic xdebug status`
@@ -52,7 +52,7 @@ Here's a standard configuration for Xdebug in VSCode or VSCode-like editors. _(N
 			"name": "Slic: Listen for Xdebug",
 			"type": "php",
 			"request": "launch",
-			"port": 9001,
+			"port": 49152,
 			"pathMappings": {
 				"/var/www/html/wp-content/plugins": "${workspaceFolder}/<PATH_TO_WP_CONTENT_DIR>/plugins",
 				"/var/www/html": "${workspaceFolder}/slic/_wordpress"

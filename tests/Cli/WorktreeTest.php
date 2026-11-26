@@ -41,7 +41,7 @@ class WorktreeTest extends BaseTestCase {
 		}
 
 		$this->assertMatchesRegularExpression(
-			'/Executing command: .*XDP=' . $matches[1] . ' .* stop/',
+			"/Executing command: .*XDP='{$matches[1]}' .* stop/",
 			$output,
 			'Stopping the worktree stack should use the worktree XDebug port.'
 		);
@@ -116,6 +116,30 @@ class WorktreeTest extends BaseTestCase {
 			'/test-plugin-feature-x => /var/www/html/content/plugins/test-plugin',
 			$output,
 			'A worktree of a site stack should be mounted over its target in the same content directory.'
+		);
+	}
+
+	public function test_a_worktree_stack_mounts_the_worktree_into_the_playwright_server(): void {
+		exec( 'docker compose version 2>/dev/null', $output, $status );
+		if ( 0 !== $status ) {
+			$this->markTestSkipped( 'docker compose is not installed.' );
+		}
+		$pluginDir = $this->setUpGitPluginStack();
+		$this->slicExec( 'worktree add feature-x -y', $this->dockerMockEnv() );
+
+		chdir( dirname( $pluginDir ) . '/test-plugin-feature-x' );
+		try {
+			// `config` only renders the stack configuration; it starts nothing, so the real docker compose is safe here.
+			$config = $this->slicExec( 'dc --profile playwright config playwright', [ 'SSH_AUTH_SOCK' => sys_get_temp_dir() . '/slic-test-ssh-agent.sock' ] );
+		} finally {
+			chdir( dirname( $pluginDir ) );
+			$this->slicExec( 'worktree remove feature-x -y', $this->dockerMockEnv() );
+		}
+
+		$this->assertMatchesRegularExpression(
+			'#source: \S+/test-plugin-feature-x\s+target: /var/www/html/wp-content/plugins/test-plugin\s#',
+			$config,
+			'The Playwright server should run the worktree\'s own Playwright, as the slic container does.'
 		);
 	}
 

@@ -21,6 +21,40 @@ class StackPortsTest extends BaseTestCase {
 		);
 	}
 
+	public function test_ports_set_by_the_user_are_published(): void {
+		exec( 'docker compose version 2>/dev/null', $output, $status );
+		if ( 0 !== $status ) {
+			$this->markTestSkipped( 'docker compose is not installed.' );
+		}
+		$this->setUpPluginsDir();
+
+		// `config` only renders the stack configuration; it starts nothing, so the real docker compose is safe here.
+		$config = $this->slicExec( 'dc config', [
+			'SSH_AUTH_SOCK'             => sys_get_temp_dir() . '/slic-test-ssh-agent.sock',
+			'WORDPRESS_HTTP_PORT'       => '8123',
+			'SLIC_DB_LOCALHOST_PORT'    => '8124',
+			'SLIC_REDIS_LOCALHOST_PORT' => '8125',
+		] );
+
+		foreach ( [ 80 => '8123', 3306 => '8124', 6379 => '8125' ] as $target => $published ) {
+			$this->assertMatchesRegularExpression(
+				"/target: {$target}\s+published: \"{$published}\"/",
+				$config,
+				"A port set by the user should be published for container port {$target}."
+			);
+		}
+	}
+
+	public function test_info_reports_the_wordpress_port_docker_assigned(): void {
+		$this->setUpPluginsDir();
+
+		$this->assertMatchesRegularExpression(
+			'/- WORDPRESS_HTTP_PORT: 44444$/m',
+			$this->slicExec( 'info', $this->runningStackEnv( 'wordpress=44444,db=55555,redis=56666' ) ),
+			'Without a pinned port, info should report the port Docker assigned to the stack.'
+		);
+	}
+
 	public function test_stack_info_reports_the_ports_docker_assigned_last(): void {
 		$this->setUpPluginsDir();
 		$this->slicExec( 'stack info', $this->runningStackEnv( 'wordpress=11111,db=22222,redis=33333' ) );

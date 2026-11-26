@@ -4,7 +4,6 @@ namespace StellarWP\Slic;
 
 
 use Exception;
-use mysqli;
 
 /**
  * Provides functions to manage and interact with the database services of the stack.
@@ -66,47 +65,6 @@ function get_default_tables_list() {
 		'usermeta',
 		'users',
 	] );
-}
-
-/**
- * Returns the value of the database host and port that should
- * be used to contact the database from outside the containers'
- * stack.
- *
- * @return string The database host an port in `host:port` format.
- */
-function get_localhost_db_host() {
-	return '127.0.0.1:' . getenv( 'SLIC_DB_LOCALHOST_PORT' );
-}
-
-/**
- * Returns an open mysqli connection handle opened accessing the
- * database from outside the containers' stack.
- *
- * @return false|mysqli|null The database connection handle on success.
- */
-function get_localhost_db_handle() {
-	static $handle;
-
-	if ( $handle === null ) {
-		setup_slic_env( root() );
-
-		$connection = @mysqli_connect(
-			'127.0.0.1',
-			get_db_user(),
-			get_db_password(),
-			get_db_name(),
-			getenv( 'SLIC_DB_LOCALHOST_PORT' )
-		);
-
-		if ( $connection instanceof mysqli ) {
-			$handle = $connection;
-		} else {
-			return $connection;
-		}
-	}
-
-	return $handle;
 }
 
 /**

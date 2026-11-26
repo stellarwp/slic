@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Breaking Change - The `slic here` command will now create a new stack for the current path instead of changing the context of the previously only stack to the path.
 - Breaking Change - The `XDK` configuration variable (`slic` by default) is now used as **root** for each stack IDE key. An `XDK` of `slic` will create stack IDE keys like `slic_<stack_hash>` and not just `slic` as it was before.
+- Breaking Change - Each stack publishes WordPress, the database and Redis on ports Docker assigns, not on `8888` and `9906`; `slic info` and `slic stack info` show them. Set `WORDPRESS_HTTP_PORT`, `SLIC_DB_LOCALHOST_PORT` or `SLIC_REDIS_LOCALHOST_PORT` in `.env.slic.local` to pin a port; only one running stack can use a pinned port.
+- Breaking Change - Each stack's XDebug port is its own, in the 49000-59000 range, not `9001`; `slic xdebug status` shows it. Set `XDP` in `.env.slic.local` to use one port for every stack, or `slic xdebug port <port>` for the current stack.
 - Extend `-y, --yes` flag support for all commands that might require confirmation
 - Compatible with PHP 8.5: replaced the deprecated backtick operator, a `case` label ending in a semicolon and the deprecated `curl_close()` call; fixed `slic_stacks_resolve_from_path()` losing its argument for paths that do not exist; CI now runs the test suite on PHP 8.2 through 8.5 and a PHPCompatibility check via `composer compat`.
 

@@ -1443,9 +1443,15 @@ function slic_info() {
 	}
 	echo PHP_EOL;
 
+	// Without a pinned port, the stack is published on the port Docker assigned to it.
+	$docker_ports = [];
+	if ( $stack_id && ! getenv( 'WORDPRESS_HTTP_PORT' ) && slic_stacks_ensure_ports( $stack_id ) ) {
+		$docker_ports['WORDPRESS_HTTP_PORT'] = (string) slic_stacks_get( $stack_id )['ports']['wp'];
+	}
+
 	echo colorize( "<yellow>Current configuration:</yellow>" . PHP_EOL );
 	foreach ( $config_vars as $key ) {
-		$effective_value = getenv( $key );
+		$effective_value = $docker_ports[ $key ] ?? getenv( $key );
 		$runtime_value   = $run_env[ $key ] ?? null;
 
 		// Show runtime value if it exists, otherwise effective value; a runtime `0` is a setting turned off, not a missing one.

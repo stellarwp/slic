@@ -73,7 +73,7 @@ function docker_compose( array $options = [], $stack_id = null ) {
 
 		if ( ! empty( $stack_id ) ) {
 			foreach ( xdebug_get_env_vars( $stack_id ) as $key => $value ) {
-				$command = "{$key}={$value} " . $command;
+				$command = $key . '=' . escapeshellarg( $value ) . ' ' . $command;
 			}
 		}
 
@@ -261,7 +261,7 @@ function docker_compose_process( array $options = [], $is_realtime = true, $stac
 
 		if ( ! empty( $stack_id ) ) {
 			foreach ( xdebug_get_env_vars( $stack_id ) as $key => $value ) {
-				$command = "{$key}={$value} " . $command;
+				$command = $key . '=' . escapeshellarg( $value ) . ' ' . $command;
 			}
 		}
 
