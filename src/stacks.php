@@ -1013,54 +1013,21 @@ function slic_stacks_migrate_legacy() {
 			$env_prefix = $key . '=' . escapeshellarg( getenv( $key ) ) . ' ' . $env_prefix;
 		}
 	}
-	// Compose records the files each project ran: the 2.x one ran the root's stack file, which 3.0 stacks run as slic_<hash>.
-	$compose_bin   = docker_compose_bin();
-	$in_caller_dir = 'cd ' . escapeshellarg( (string) getcwd() ) . ' && ' . $env_prefix . $compose_bin;
-	$candidates    = null;
-	if ( $target_found ) {
-		exec( $compose_bin . ' ls --all --format json 2>' . process_null_device(), $ls_output, $ls_status );
-		$projects = json_decode( implode( "\n", $ls_output ), true );
-		if ( 0 === $ls_status && is_array( $projects ) ) {
-			$stack_file = realpath( $root_dir . '/slic-stack.yml' );
-			$candidates = [];
-			foreach ( $projects as $project ) {
-				$files = array_map( static function ( $file ) {
-					return realpath( $file ) ?: $file;
-				}, explode( ',', (string) ( $project['ConfigFiles'] ?? '' ) ) );
-				if ( in_array( $stack_file, $files, true ) && ! preg_match( '/^slic_[0-9a-f]{8}$/', (string) ( $project['Name'] ?? '' ) ) ) {
-					$candidates[] = (string) $project['Name'];
-				}
-			}
-		}
-	}
-	$legacy_project = is_array( $candidates ) && 1 === count( $candidates ) ? $candidates[0] : '';
-	$down_command   = $compose_bin . ' -p ' . escapeshellarg( $legacy_project ) . ' down --remove-orphans';
-	$retry_command  = 'cd ' . escapeshellarg( (string) getcwd() ) . ' && ' . $env_prefix . $down_command;
-	$down_status    = 0;
-	if ( '' !== $legacy_project ) {
-		exec( $down_command . ' 2>&1', $down_output, $down_status );
-	} elseif ( [] !== $candidates ) {
-		// The target's settings may name another project or Docker endpoint: guessing could stop the wrong containers.
-		echo colorize(
-			"<magenta>Could not tell which Compose project slic 2.x ran"
-			. ( $target_found ? '' : " for the missing target {$target}" )
-			. ( $candidates ? ': it is one of ' . implode( ', ', $candidates ) : '' )
-			. ". List the Compose projects with:</magenta>" . PHP_EOL
-			. $in_caller_dir . ' ls --all' . PHP_EOL
-			. "<magenta>and stop the slic 2.x one by running:</magenta>" . PHP_EOL
-			. $in_caller_dir . ' -p <name> down --remove-orphans' . PHP_EOL . PHP_EOL
-		);
-	}
+	// A Compose executable such as `docker --context remote compose` names its Docker endpoint: list and remove there.
+	$docker = $env_prefix . ( preg_match( '/^(.*\S)\s+compose$/', trim( docker_compose_bin() ), $matches ) ? $matches[1] : docker_bin() );
+	// Docker has no record of which Compose project is the 2.x one, so slic does not guess: it says how to find and remove it.
+	$notice = "<yellow>slic 3.0 runs each stack as its own Compose project, so it leaves any slic 2.x containers as they are.</yellow>" . PHP_EOL
+		. 'List the Compose projects on the Docker endpoint slic 2.x used with:' . PHP_EOL
+		. "  {$docker} ps -a --filter label=com.docker.compose.project --format 'table {{.Label \"com.docker.compose.project\"}}\\t{{.Status}}\\t{{.Label \"com.docker.compose.project.config_files\"}}'" . PHP_EOL
+		. 'and remove the containers of the slic 2.x one, keeping its volumes, with:' . PHP_EOL
+		. "  {$docker} rm -f \$({$docker} ps -aq --filter label=com.docker.compose.project=<name>)" . PHP_EOL . PHP_EOL;
 	foreach ( array_diff_key( getenv(), $saved_env ) as $key => $value ) {
 		putenv( $key );
 	}
 	foreach ( $saved_env as $key => $value ) {
 		putenv( "{$key}={$value}" );
 	}
-	// The registry now exists, so the migration never runs again: the user has to stop the 2.x containers.
-	if ( 0 !== $down_status ) {
-		echo colorize( "<magenta>Could not stop the slic 2.x containers. Stop them by running:</magenta>" . PHP_EOL . $retry_command . PHP_EOL . PHP_EOL );
-	}
+	echo colorize( $notice );
 
 	return true;
 }

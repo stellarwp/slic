@@ -11,7 +11,7 @@ class MigrationTest extends BaseTestCase {
 	/**
 	 * The slic root files the migration reads or writes, set aside so each test starts as a 2.x install.
 	 */
-	private const ROOT_FILES = [ '.env.slic.stacks', '.env.slic.run', '.env.slic.run.backup', '.build-version', '.env.slic.local', 'compose-wrapper' ];
+	private const ROOT_FILES = [ '.env.slic.stacks', '.env.slic.run', '.env.slic.run.backup', '.build-version', '.env.slic.local' ];
 
 	/**
 	 * @var array<string,string|null>
@@ -90,7 +90,7 @@ class MigrationTest extends BaseTestCase {
 		);
 	}
 
-	public function test_a_missing_2x_site_target_skips_the_teardown(): void {
+	public function test_a_missing_2x_site_target_does_not_stop_the_migration(): void {
 		$site = realpath( Directory::createTemp()->createPlugin( 'wp-content/plugins/test-plugin' )->getAbsolutePath() );
 		mkdir( $site . '/wp-content/themes' );
 		touch( $site . '/wp-config.php' );
@@ -102,13 +102,13 @@ class MigrationTest extends BaseTestCase {
 		chdir( $site );
 
 		// Switching away from the removed target is how a 2.x user recovers, so the migration must not exit first.
-		$output = $this->slicExec( 'use test-plugin', $this->legacyComposeEnv() );
+		$output = $this->slicExec( 'use test-plugin', $this->dockerMockLogEnv() );
 
 		$this->assertStringNotContainsString( 'Unable to resolve target', $output, 'A removed 2.x target should not stop the command.' );
 		$this->assertStringContainsString( 'Using test-plugin', $output, 'The command should run after the migration.' );
 		$this->assertStringContainsString( 'Migrated existing slic configuration', $output, 'The migration itself should still succeed.' );
-		$this->assertStringContainsString( ' -p <name> down --remove-orphans', $output, 'The user should be told how to stop the 2.x containers.' );
-		$this->assertDockerCalled( '/ down /', 'Without the target 2.x used, the migration cannot tell which project to stop.', false );
+		$this->assertStringContainsString( 'ps -a --filter label=com.docker.compose.project ', $output, 'The user should be told how to find the 2.x containers.' );
+		$this->assertDockerCalled( '/ (down|rm) /', 'The migration should not stop or remove any container.', false );
 	}
 
 	public function test_debug_off_sticks_after_migration(): void {
@@ -143,178 +143,61 @@ class MigrationTest extends BaseTestCase {
 		);
 	}
 
-	public function test_migration_stops_the_2x_compose_project(): void {
-		$this->slicExec( 'using', $this->legacyComposeEnv( [ 'PWD' ] ) );
-
-		// Compose records the files each project ran: the 2.x one ran the slic root's stack file and is not a 3.0 stack.
-		$caller = '\[PWD=' . preg_quote( $this->pluginsDir, '/' ) . '\]';
-		$this->assertDockerCalled(
-			'/^ls --all --format json ' . $caller . '$/',
-			'The migration should ask Docker which Compose projects exist, from the caller\'s directory as 2.x ran Compose.'
-		);
-		$this->assertDockerCalled( '/ -p (other_project|slic_0123abcd) /', 'Only the 2.x project should be brought down.', false );
-		$this->assertDockerCalled(
-			'/^-p legacy_project down --remove-orphans ' . $caller . '$/',
-			'The migration should bring down the 2.x Compose project, keeping its volumes.'
-		);
-	}
-
-	public function test_an_unknown_2x_project_skips_the_teardown_and_prints_how_to_stop_it(): void {
-		// Compose cannot list its projects, as Compose v1 cannot.
+	public function test_migration_stops_no_containers_and_says_how_to(): void {
 		$env    = $this->dockerMockLogEnv();
 		$output = $this->slicExec( 'using', $env );
 
-		$this->assertDockerCalled( '/ down /', 'Without the list of Compose projects, the migration cannot tell which to stop.', false );
-		$this->assertStringContainsString( "{$env['SLIC_DOCKER_COMPOSE_BIN']} ls --all", $output, 'The user should be told how to find the 2.x containers.' );
-		$this->assertStringContainsString( ' -p <name> down --remove-orphans', $output, 'The user should be told how to stop the 2.x containers.' );
-		$this->assertStringContainsString( 'Migrated existing slic configuration', $output, 'The migration itself should still succeed.' );
-	}
-
-	public function test_two_2x_projects_skip_the_teardown_and_print_them(): void {
-		$output = $this->slicExec( 'using', [ 'SLIC_DOCKER_MOCK_LS' => $this->composeProjects( [ 'legacy_one', 'legacy_two' ] ) ] + $this->dockerMockLogEnv() );
-
-		$this->assertDockerCalled( '/ down /', 'With two projects on the 2.x stack file, the migration cannot tell which to stop.', false );
-		$this->assertStringContainsString( 'legacy_one', $output, 'The user should be told which projects may be the 2.x one.' );
-		$this->assertStringContainsString( 'legacy_two', $output, 'The user should be told which projects may be the 2.x one.' );
-		$this->assertStringContainsString( ' -p <name> down --remove-orphans', $output, 'The user should be told how to stop the 2.x containers.' );
-	}
-
-	public function test_no_2x_project_stops_nothing(): void {
-		$output = $this->slicExec( 'using', [ 'SLIC_DOCKER_MOCK_LS' => $this->composeProjects( [] ) ] + $this->dockerMockLogEnv() );
-
-		$this->assertDockerCalled( '/ down /', 'With no 2.x containers there is nothing to stop.', false );
-		$this->assertStringNotContainsString( 'down --remove-orphans', $output, 'With no 2.x containers there is nothing to tell the user.' );
-		$this->assertStringContainsString( 'Migrated existing slic configuration', $output, 'The migration itself should still succeed.' );
-	}
-
-	public function test_migration_runs_a_relative_compose_bin_from_the_callers_directory(): void {
-		// 2.x ran Compose from the caller's directory, so a relative executable resolved there.
-		copy( $this->composeWrapper( 'from-caller' ), $this->pluginsDir . '/compose-wrapper' );
-		chmod( $this->pluginsDir . '/compose-wrapper', 0755 );
-		copy( $this->composeWrapper( 'from-root' ), self::slicRoot() . '/compose-wrapper' );
-		chmod( self::slicRoot() . '/compose-wrapper', 0755 );
-		file_put_contents( self::slicRoot() . '/.env.slic.local', "SLIC_DOCKER_COMPOSE_BIN=./compose-wrapper\n" );
-
-		$this->slicExec( 'using', $this->legacyComposeEnv() );
-
-		$this->assertDockerCalled(
-			'/^from-caller -p legacy_project down --remove-orphans$/',
-			'The migration should stop the 2.x project with the executable 2.x ran from the caller\'s directory.'
-		);
-	}
-
-	public function test_migration_stops_the_2x_project_with_the_configured_compose_bin(): void {
-		$composeBin = $this->createTempDir() . '/legacy-compose';
-		file_put_contents( $composeBin, "#!/bin/bash\nexec " . escapeshellarg( $this->dockerMockEnv()['SLIC_DOCKER_BIN'] ) . ' legacy-compose "$@"' . "\n" );
-		chmod( $composeBin, 0755 );
-		file_put_contents( self::slicRoot() . '/.env.slic.local', "SLIC_DOCKER_COMPOSE_BIN={$composeBin}\n" );
-
-		$this->slicExec( 'using', $this->legacyComposeEnv() );
-
-		$this->assertDockerCalled( '/^legacy-compose ls --all --format json$/', 'The migration should ask the Compose executable 2.x was configured to use.' );
-		$this->assertDockerCalled(
-			'/^legacy-compose -p legacy_project down --remove-orphans$/',
-			'The migration should use the Compose executable 2.x was configured to use.'
-		);
-	}
-
-	public function test_a_failed_2x_teardown_prints_the_configured_project_and_compose_bin(): void {
-		$composeBin = $this->createTempDir() . '/legacy-compose';
-		file_put_contents( $composeBin, "#!/bin/bash\nexec " . escapeshellarg( $this->dockerMockEnv()['SLIC_DOCKER_BIN'] ) . ' "$@"' . "\n" );
-		chmod( $composeBin, 0755 );
-		file_put_contents( self::slicRoot() . '/.env.slic.local', "SLIC_DOCKER_COMPOSE_BIN={$composeBin}\n" );
-
-		$output = $this->slicExec( 'using', [ 'SLIC_DOCKER_MOCK_FAIL' => ' down --remove-orphans$', 'SLIC_DOCKER_MOCK_LS' => $this->composeProjects( [ 'legacy_qa' ] ) ] + $this->dockerMockEnv() );
-
+		// Docker cannot tell which project is the 2.x one, so stopping one automatically could stop someone else's.
+		$this->assertDockerCalled( '/ (down|rm|stop|kill) /', 'The migration should not stop or remove any container.', false );
+		$this->assertStringContainsString( "{$env['SLIC_DOCKER_BIN']} ps -a --filter label=com.docker.compose.project ", $output, 'The user should be told how to list the Compose projects.' );
 		$this->assertStringContainsString(
-			"{$composeBin} -p 'legacy_qa' down --remove-orphans",
+			"{$env['SLIC_DOCKER_BIN']} rm -f \$({$env['SLIC_DOCKER_BIN']} ps -aq --filter label=com.docker.compose.project=<name>)",
 			$output,
-			'The retry command should stop the project 2.x used, with the executable it used.'
+			'The user should be told how to remove the 2.x containers.'
 		);
+		$this->assertStringContainsString( 'Migrated existing slic configuration', $output, 'The migration itself should still succeed.' );
 	}
 
-	public function test_migration_stops_the_2x_project_the_target_settings_selected(): void {
-		// 2.x loaded the selected target's .env.slic.local last, over the root's.
-		file_put_contents( self::slicRoot() . '/.env.slic.local', "SLIC_DOCKER_COMPOSE_BIN={$this->composeWrapper( 'from-root' )}\nCOMPOSE_PROJECT_NAME=root_qa\n" );
-		file_put_contents( $this->pluginsDir . '/test-plugin/.env.slic.local', "SLIC_DOCKER_COMPOSE_BIN={$this->composeWrapper( 'from-target' )}\nCOMPOSE_PROJECT_NAME=plugin_qa\n" );
-
-		$this->slicExec( 'using', $this->legacyComposeEnv() );
-
-		$this->assertDockerCalled(
-			'/^from-target ls --all --format json$/',
-			'The migration should ask Compose for the 2.x project with the executable 2.x used for the target.'
-		);
-		$this->assertDockerCalled(
-			'/^from-target -p legacy_project down --remove-orphans$/',
-			'The migration should stop the project 2.x ran for the target, with the executable it used.'
-		);
-	}
-
-	public function test_migration_finds_the_2x_target_in_the_global_plugins_directory(): void {
-		// 2.x restored the global plugins directory, overridden by the target, before it located the target.
+	public function test_the_2x_notice_reaches_the_docker_endpoint_2x_used(): void {
+		// 2.x restored the global plugins directory, overridden by the target, before it loaded the target's settings.
 		$otherDir = $this->createTempDir();
 		file_put_contents(
 			self::slicRoot() . '/.env.slic.run',
 			"SLIC_BASE_PLUGINS_DIR={$this->pluginsDir}\nSLIC_PLUGINS_DIR={$otherDir}\nSLIC_CURRENT_PROJECT=test-plugin\n"
 		);
-		file_put_contents( self::slicRoot() . '/.env.slic.local', "SLIC_DOCKER_COMPOSE_BIN={$this->composeWrapper( 'from-root' )}\nCOMPOSE_PROJECT_NAME=root_qa\nDOCKER_CONTEXT=root-endpoint\n" );
-		file_put_contents( $this->pluginsDir . '/test-plugin/.env.slic.local', "SLIC_DOCKER_COMPOSE_BIN={$this->composeWrapper( 'from-target' )}\nCOMPOSE_PROJECT_NAME=plugin_qa\nDOCKER_CONTEXT=plugin-endpoint\n" );
+		file_put_contents( self::slicRoot() . '/.env.slic.local', "DOCKER_CONTEXT=root-endpoint\n" );
+		file_put_contents( $this->pluginsDir . '/test-plugin/.env.slic.local', "DOCKER_CONTEXT=plugin-endpoint\n" );
 
-		$this->slicExec( 'using', $this->legacyComposeEnv( [ 'DOCKER_CONTEXT' ] ) );
-
-		$this->assertDockerCalled(
-			'/^from-target ls --all --format json \[DOCKER_CONTEXT=plugin-endpoint\]$/',
-			'The migration should ask Compose on the endpoint 2.x used for the target it found in the global plugins directory.'
-		);
-		$this->assertDockerCalled(
-			'/^from-target -p legacy_project down --remove-orphans \[DOCKER_CONTEXT=plugin-endpoint\]$/',
-			'The migration should stop the project 2.x ran for the target it found in the global plugins directory.'
-		);
-	}
-
-	public function test_a_missing_2x_target_skips_the_teardown_and_prints_how_to_stop_it(): void {
-		file_put_contents(
-			self::slicRoot() . '/.env.slic.run',
-			"SLIC_PLUGINS_DIR={$this->pluginsDir}\nSLIC_CURRENT_PROJECT=missing-plugin\n"
-		);
-
-		file_put_contents( self::slicRoot() . '/.env.slic.local', "DOCKER_CONTEXT=legacy-remote\n" );
-
-		$env    = $this->legacyComposeEnv();
+		$env    = $this->dockerMockLogEnv();
 		$output = $this->slicExec( 'using', $env );
 
-		$this->assertDockerCalled( '/ down /', 'Without the target 2.x used, the migration cannot tell which project to stop.', false );
-		// Listing and stopping must reach the same Docker endpoint, so both use the configured executable and context.
-		$prefix = "cd '{$this->pluginsDir}' && DOCKER_CONTEXT='legacy-remote' {$env['SLIC_DOCKER_COMPOSE_BIN']}";
-		$this->assertStringContainsString( "{$prefix} ls --all", $output, 'The user should be told how to find the 2.x containers.' );
-		$this->assertStringContainsString( "{$prefix} -p <name> down --remove-orphans", $output, 'The user should be told how to stop the 2.x containers.' );
+		$this->assertStringContainsString( "DOCKER_CONTEXT='plugin-endpoint' {$env['SLIC_DOCKER_BIN']} ps -a ", $output, 'The listing should reach the Docker endpoint 2.x used for the target.' );
+		$this->assertStringContainsString( "DOCKER_CONTEXT='plugin-endpoint' {$env['SLIC_DOCKER_BIN']} rm -f ", $output, 'The removal should reach the Docker endpoint 2.x used for the target.' );
+	}
+
+	public function test_the_2x_notice_uses_the_docker_command_of_the_compose_bin(): void {
+		// A Compose executable such as `docker --context remote compose` names its endpoint itself.
+		$env = $this->dockerMockLogEnv();
+		file_put_contents( self::slicRoot() . '/.env.slic.local', "SLIC_DOCKER_COMPOSE_BIN={$env['SLIC_DOCKER_BIN']} --context remote-qa compose\n" );
+		unset( $env['SLIC_DOCKER_COMPOSE_BIN'] );
+
+		$output = $this->slicExec( 'using', $env );
+
+		$this->assertStringContainsString( "{$env['SLIC_DOCKER_BIN']} --context remote-qa ps -a ", $output, 'The listing should reach the endpoint the Compose executable names.' );
+		$this->assertStringContainsString( "{$env['SLIC_DOCKER_BIN']} --context remote-qa rm -f ", $output, 'The removal should reach the endpoint the Compose executable names.' );
+	}
+
+	public function test_a_missing_2x_target_still_says_how_to_stop_the_containers(): void {
+		file_put_contents( self::slicRoot() . '/.env.slic.run', "SLIC_PLUGINS_DIR={$this->pluginsDir}\nSLIC_CURRENT_PROJECT=missing-plugin\n" );
+
+		$output = $this->slicExec( 'using', $this->dockerMockLogEnv() );
+
+		$this->assertDockerCalled( '/ (down|rm) /', 'The migration should not stop or remove any container.', false );
+		$this->assertStringContainsString( 'ps -a --filter label=com.docker.compose.project ', $output, 'The user should be told how to find the 2.x containers.' );
 		$this->assertStringContainsString( 'Migrated existing slic configuration', $output, 'The migration itself should still succeed.' );
 	}
 
-	public function test_migration_stops_the_2x_project_on_its_docker_context(): void {
-		file_put_contents( self::slicRoot() . '/.env.slic.local', "DOCKER_CONTEXT=legacy-remote\n" );
-
-		$this->slicExec( 'using', $this->legacyComposeEnv( [ 'DOCKER_CONTEXT' ] ) );
-
-		$this->assertDockerCalled(
-			'/ down --remove-orphans \[DOCKER_CONTEXT=legacy-remote\]$/',
-			'The migration should stop the 2.x project on the Docker endpoint 2.x used.'
-		);
-	}
-
-	public function test_a_failed_2x_teardown_prints_the_docker_context(): void {
-		file_put_contents( self::slicRoot() . '/.env.slic.local', "DOCKER_CONTEXT=legacy-remote\n" );
-
-		$output = $this->slicExec( 'using', [ 'SLIC_DOCKER_MOCK_FAIL' => ' down --remove-orphans$' ] + $this->legacyComposeEnv() );
-
-		$this->assertMatchesRegularExpression(
-			"/^cd '[^']+' && DOCKER_CONTEXT='legacy-remote' .* down --remove-orphans$/m",
-			$output,
-			'The retry command should target the Docker endpoint 2.x used.'
-		);
-	}
-
-	public function test_the_2x_target_settings_do_not_outlive_the_teardown(): void {
+	public function test_the_2x_target_settings_do_not_outlive_the_migration(): void {
 		// A staged PHP version wins over the target's unless the target's leaks in looking like a command-line one.
 		file_put_contents( self::slicRoot() . '/.env.slic.run', "SLIC_PHP_VERSION=8.1\nSLIC_PHP_VERSION_STAGED=1\n", FILE_APPEND );
 		file_put_contents( $this->pluginsDir . '/test-plugin/.env.slic.local', "SLIC_PHP_VERSION=8.0\n" );
@@ -322,7 +205,7 @@ class MigrationTest extends BaseTestCase {
 		$this->assertStringContainsString(
 			'PHP version is staged to switch to 8.1',
 			$this->slicExec( 'php-version', $this->dockerMockEnv() ),
-			'The environment the 2.x teardown ran with should be restored afterwards.'
+			'The 2.x environment the migration reads should be restored afterwards.'
 		);
 	}
 
@@ -349,20 +232,6 @@ class MigrationTest extends BaseTestCase {
 		);
 	}
 
-	public function test_a_failed_2x_teardown_prints_the_command_to_stop_it(): void {
-		$env = [ 'SLIC_DOCKER_MOCK_FAIL' => ' down --remove-orphans$' ] + $this->legacyComposeEnv();
-
-		$output = $this->slicExec( 'using', $env );
-
-		// The retry runs from the caller's directory, where 2.x resolved a relative Compose executable.
-		$this->assertStringContainsString(
-			"cd '{$this->pluginsDir}' && {$env['SLIC_DOCKER_COMPOSE_BIN']} -p 'legacy_project' down --remove-orphans",
-			$output,
-			'A failed teardown should tell the user how to stop the 2.x containers by hand.'
-		);
-		$this->assertStringContainsString( 'Migrated existing slic configuration', $output, 'The migration itself should still succeed.' );
-	}
-
 	public function test_a_new_stack_does_not_mark_the_images_as_built(): void {
 		$this->slicExec( 'using', $this->dockerMockEnv() );
 		$this->setUpPluginsDir();
@@ -372,47 +241,5 @@ class MigrationTest extends BaseTestCase {
 			file_get_contents( self::slicRoot() . '/.build-version' ),
 			'Creating a stack state file should not record a build that did not happen.'
 		);
-	}
-
-	/**
-	 * Returns the logging Docker mock env, with Compose listing the 2.x project `legacy_project`.
-	 *
-	 * @param string[] $envNames Environment variables to record with each call.
-	 *
-	 * @return array<string,string>
-	 */
-	private function legacyComposeEnv( array $envNames = [] ): array {
-		return [ 'SLIC_DOCKER_MOCK_LS' => $this->composeProjects( [ 'legacy_project' ] ) ] + $this->dockerMockLogEnv( $envNames );
-	}
-
-	/**
-	 * Returns `compose ls --format json` output listing projects that ran the slic root's stack file, as 2.x ran them,
-	 * beside a 3.0 stack and an unrelated project.
-	 *
-	 * @param string[] $legacyNames The names of the projects that ran the slic stack file as 2.x did.
-	 */
-	private function composeProjects( array $legacyNames ): string {
-		$stackFile = realpath( self::slicRoot() ) . '/slic-stack.yml';
-		$projects  = [
-			[ 'Name' => 'other_project', 'Status' => 'running(1)', 'ConfigFiles' => '/elsewhere/compose.yml' ],
-			[ 'Name' => 'slic_0123abcd', 'Status' => 'running(3)', 'ConfigFiles' => $stackFile ],
-		];
-		foreach ( $legacyNames as $name ) {
-			// On Linux 2.x put its override file first.
-			$projects[] = [ 'Name' => $name, 'Status' => 'exited(3)', 'ConfigFiles' => dirname( $stackFile ) . '/slic-stack-linux-override.yml,' . $stackFile ];
-		}
-
-		return (string) json_encode( $projects );
-	}
-
-	/**
-	 * Creates a Compose executable that records its calls through the Docker mock, prefixed with a tag.
-	 */
-	private function composeWrapper( string $tag ): string {
-		$composeBin = $this->createTempDir() . '/' . $tag;
-		file_put_contents( $composeBin, "#!/bin/bash\nexec " . escapeshellarg( $this->dockerMockEnv()['SLIC_DOCKER_BIN'] ) . ' ' . $tag . ' "$@"' . "\n" );
-		chmod( $composeBin, 0755 );
-
-		return $composeBin;
 	}
 }
