@@ -45,7 +45,7 @@ function args( array $map = [], ?array $source = null, $offset = 1 ) {
 	}
 
 	return static function ( $key, $default = null ) use ( $full_map ) {
-		return null !== $full_map[ $key ] ? $full_map[ $key ] : $default;
+		return $full_map[ $key ] ?? $default;
 	};
 }
 
@@ -294,7 +294,13 @@ function is_ci() {
 	return false;
 }
 
-// Whether the current run context is a `slic` binary one or not.
+/**
+ * Returns whether the current run context is a slic binary one or not.
+ *
+ * Checks environment variables to determine if the code is running in a slic context.
+ *
+ * @return bool Whether the current run context is a slic binary one or not.
+ */
 function is_slic() {
 	$env_vars = [
 		'STELLAR_SLIC',
@@ -360,7 +366,7 @@ function write_env_file( $file, array $lines = [], $update = false ) {
 	}, array_keys( $new_lines ), $new_lines ) );
 
 	// If this is the first time creating the .env.slic.run file, assume this is the first run and place the CLI version in `.build-version`.
-	if ( false !== strpos( $file, '.env.slic.run' ) && ! is_file( $file ) ) {
+	if ( '.env.slic.run' === basename( $file ) && ! is_file( $file ) ) {
 		write_build_version();
 	}
 
@@ -605,8 +611,9 @@ function download_file( $source_url, $dest_file, $verify_host = true ) {
 		return false;
 	}
 
-	// This will fclose as well.
-	curl_close( $curl_handle );
+	// Releasing the handle flushes and closes the destination file.
+	unset( $curl_handle );
+	fclose( $file_handle );
 
 	debug( "File $source_url downloaded." . PHP_EOL );
 
@@ -716,4 +723,24 @@ function normalize_php_version( $version ) {
 	}
 
 	return $version;
+}
+
+/**
+ * Gets the state file path for a specific stack.
+ *
+ * @param string|null $stack_id The stack identifier. If null, returns the default .env.slic.run path.
+ *
+ * @return string The absolute path to the stack's state file.
+ */
+function get_stack_env_file( $stack_id = null ) {
+	if ( null === $stack_id ) {
+		return root( '.env.slic.run' );
+	}
+
+	// Load stacks.php functions if not already loaded
+	if ( ! function_exists( 'slic_stacks_get_state_file' ) ) {
+		require_once __DIR__ . '/stacks.php';
+	}
+
+	return slic_stacks_get_state_file( $stack_id );
 }

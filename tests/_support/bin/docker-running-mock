@@ -1,0 +1,13 @@
+#!/bin/bash
+# A mock docker binary that keeps argument boundaries in its log and can report running services.
+# When SLIC_DOCKER_MOCK_LOG is set, each call's arguments are appended to that file, joined by `|`.
+# SLIC_DOCKER_MOCK_RUNNING lists the services `ps --services` reports as running, e.g. "wordpress".
+if [ -n "${SLIC_DOCKER_MOCK_LOG:-}" ]; then
+	(IFS='|'; echo "$*") >> "$SLIC_DOCKER_MOCK_LOG"
+fi
+for arg in "$@"; do
+	if [ "$arg" = "--services" ]; then
+		printf '%s\n' ${SLIC_DOCKER_MOCK_RUNNING//,/ }
+	fi
+done
+exit 0

@@ -42,7 +42,7 @@ $service = $service_args( 'service', 'slic' );
 
 ensure_service_running( $service );
 
-$command = sprintf( 'docker exec -it --user "%d:%d" --workdir %s %s bash',
+$command = sprintf( docker_bin() . ' exec -it --user "%d:%d" --workdir %s %s bash',
 	getenv( 'SLIC_UID' ),
 	getenv( 'SLIC_GID' ),
 	escapeshellarg( get_project_container_path() ),

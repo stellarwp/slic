@@ -1,0 +1,9 @@
+#!/bin/bash
+# A mock docker binary that returns a fake IP for host-ip commands.
+for arg in "$@"; do
+	if [[ "$arg" == *"host-ip"* ]]; then
+		echo "172.17.0.1"
+		exit 0
+	fi
+done
+exit 0

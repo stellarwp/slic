@@ -39,6 +39,12 @@ $branch = $sub_args( 'branch' );
 // If a plugin isn't passed as an argument, the target is the current plugin being used.
 if ( empty( $plugin ) ) {
 	$plugin = slic_target();
+
+	if ( empty( $plugin ) ) {
+		echo magenta( "No target to initialize: run `{$cli_name} init <plugin>`, or select one with `{$cli_name} use <target>`." . PHP_EOL );
+		exit( 1 );
+	}
+
 	echo light_cyan( "Using {$plugin}" . PHP_EOL );
 }
 

@@ -150,7 +150,7 @@ slic loads environment files in this order (later files override earlier ones):
 | `SLIC_PHP_VERSION` | `7.4` | PHP version for containers |
 | `SLIC_CURRENT_PROJECT` | (none) | Currently selected target |
 | `MYSQL_ROOT_PASSWORD` | `password` | Database root password |
-| `WORDPRESS_HTTP_PORT` | `8888` | WordPress HTTP port on localhost |
+| `WORDPRESS_HTTP_PORT` | (Docker-assigned) | WordPress HTTP port on localhost; set it to pin one |
 | `SLIC_GIT_HANDLE` | (none) | GitHub handle for cloning plugins |
 | `XDEBUG_DISABLE` | `0` | Set to `1` to disable Xdebug extension |
 | `PCOV_ENABLED` | `0` | Set to `1` to enable PCOV for coverage collection |

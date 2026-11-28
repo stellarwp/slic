@@ -17,6 +17,7 @@ if ( $is_help ) {
 	return;
 }
 
-$status = command_stop();
+// Keep the stack and its settings registered; `slic stack stop` is the command that unregisters a stack.
+$status = command_stop( null, false );
 
 exit( $status );

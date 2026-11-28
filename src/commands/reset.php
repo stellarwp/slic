@@ -45,6 +45,25 @@ echo ( ! file_exists( $run_settings_file ) || unlink( $run_settings_file ) ) ?
 	: magenta( 'fail, remove it manually' );
 echo PHP_EOL;
 
+$stack_id = slic_current_stack();
+if ( null !== $stack_id ) {
+	$stack_state_file = slic_stacks_get_state_file( $stack_id );
+	$stack            = slic_stacks_get( $stack_id );
+
+	if ( slic_stacks_is_worktree( $stack_id ) && isset( $stack['base_stack_id'], $stack['worktree_target'] ) ) {
+		// A worktree's settings hold its base stack directories and target: put them back as `worktree add` wrote them.
+		echo "Resetting {$stack_state_file} ... ";
+		slic_stacks_write_worktree_state_file( $stack_id, $stack['base_stack_id'], $stack['worktree_target'] );
+		echo light_cyan( 'done' ) . PHP_EOL;
+	} else {
+		echo "Removing {$stack_state_file} ... ";
+		echo ( ! file_exists( $stack_state_file ) || unlink( $stack_state_file ) ) ?
+			light_cyan( 'done' )
+			: magenta( 'fail, remove it manually' );
+		echo PHP_EOL;
+	}
+}
+
 $cache_dir = cache( '/', false );
 echo "Removing cache directory $cache_dir ... ";
 echo ( ! is_dir( $cache_dir ) || rrmdir( $cache_dir ) ) ?

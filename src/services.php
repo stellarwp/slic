@@ -121,12 +121,13 @@ function service_running( string $service ) {
 /**
  * Quietly tears down the stack, silencing any error messages.
  *
+ * @param string|null $stack_id The stack to tear down. If null, uses current stack.
  * @return int The process exit status.
  */
-function quietly_tear_down_stack() {
+function quietly_tear_down_stack( $stack_id = null ) {
 	ob_start();
-	setup_slic_env( root() );
-	$status = teardown_stack( true );
+	setup_slic_env( root(), false, $stack_id );
+	$status = teardown_stack( true, $stack_id );
 	ob_end_clean();
 
 	return $status;
@@ -136,13 +137,36 @@ function quietly_tear_down_stack() {
  * Returns the service container ID, if any.
  *
  * @param string $service The name of the service to return the container ID for, e.g. `wordpress`.
+ * @param string|null $stack_id The stack to get the service from. If null, uses current stack.
  *
  * @return string|null The service container ID if found, `null` otherwise.
  */
-function get_service_id( string $service ) {
-	$root = root();
-	$command = "docker ps -f label=com.docker.compose.project.working_dir='$root' " .
-	           "-f label=com.docker.compose.service=$service --format '{{.ID}}'";
+function get_service_id( string $service, $stack_id = null ) {
+	// Load stacks.php functions if not already loaded
+	if ( ! function_exists( 'slic_stacks_get_project_name' ) ) {
+		require_once __DIR__ . '/stacks.php';
+	}
+
+	// Get the project name for filtering
+	if ( null === $stack_id ) {
+		if ( ! function_exists( 'slic_current_stack' ) ) {
+			require_once __DIR__ . '/slic.php';
+		}
+		$stack_id = slic_current_stack();
+	}
+
+	if ( null === $stack_id ) {
+		// No stack found, fall back to old behavior (working_dir)
+		$root = root();
+		$command = docker_bin() . " ps -f label=com.docker.compose.project.working_dir='$root' " .
+		           "-f label=com.docker.compose.service=$service --format '{{.ID}}'";
+	} else {
+		// Use project name for filtering
+		$project_name = slic_stacks_get_project_name( $stack_id );
+		$command = docker_bin() . " ps -f label=com.docker.compose.project='$project_name' " .
+		           "-f label=com.docker.compose.service=$service --format '{{.ID}}'";
+	}
+
 	debug( "Executing command: $command" . PHP_EOL );
 	exec( $command, $output, $status );
 
@@ -164,5 +188,28 @@ function ensure_service_running( string $service ): int {
 		return 0;
 	}
 	// Wait for the service to be up|healthy, detached mode is implied.
-	return slic_realtime()( [ 'up', '--wait', $service ] );
+	$status = slic_realtime()( [ 'up', '--wait', $service ] );
+
+	if ( $status === 0 ) {
+		restore_content_dirs_owner();
+	}
+
+	return $status;
+}
+
+/**
+ * Gives the mounted plugins and themes directories back to the stack's user when WordPress runs as container root.
+ *
+ * Running as root, WordPress's entrypoint copies core into an empty `_wordpress` with `tar --owner www-data` and
+ * without `--no-overwrite-dir`, so the mount points end up owned by `www-data`. Under rootless Docker, container root
+ * is the user running slic. Any service can start `wordpress` as a dependency; the exec fails harmlessly when it
+ * isn't running.
+ */
+function restore_content_dirs_owner(): void {
+	if ( getenv( 'SLIC_UID' ) !== '0' ) {
+		return;
+	}
+
+	$content_dir = getenv( 'SLIC_WP_CONTENT_CONTAINER_DIR' ) ?: '/var/www/html/wp-content';
+	slic_process()( [ 'exec', '-T', 'wordpress', 'chown', '0:0', escapeshellarg( "$content_dir/plugins" ), escapeshellarg( "$content_dir/themes" ) ] );
 }

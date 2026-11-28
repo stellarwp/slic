@@ -4,6 +4,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [3.0.0] - 2026-11-25
+
+### Changed
+- Breaking Change - The `slic here` command will now create a new stack for the current path instead of changing the context of the previously only stack to the path.
+- Breaking Change - The `XDK` configuration variable (`slic` by default) is now used as **root** for each stack IDE key. An `XDK` of `slic` will create stack IDE keys like `slic_<stack_hash>` and not just `slic` as it was before.
+- Breaking Change - Each stack publishes WordPress, the database and Redis on ports Docker assigns, not on `8888` and `9906`; `slic info` and `slic stack info` show them. Set `WORDPRESS_HTTP_PORT`, `SLIC_DB_LOCALHOST_PORT` or `SLIC_REDIS_LOCALHOST_PORT` in `.env.slic.local` to pin a port; only one running stack can use a pinned port.
+- Breaking Change - Each stack's XDebug port is its own, in the 49000-59000 range, not `9001`; `slic xdebug status` shows it. Set `XDP` in `.env.slic.local` to use one port for every stack, or `slic xdebug port <port>` for the current stack.
+- `slic worktree remove`, `merge` and `sync --clean` never stop or unregister a worktree stack that git has locked, or whose repository slic cannot confirm, such as a worktree on an unmounted disk or one whose plugin directory now leads to another repository. Unlock it with `git worktree unlock`, or reconnect the repository, and run the command again. They also refuse a worktree git has no record of, as after `git worktree prune` or in a new clone at the plugin path: if the worktree is really gone, unregister its stack with `slic stack stop <stack>`.
+- Upgrading from 2.x leaves any containers slic 2.x started as they are, since Docker cannot tell which Compose project was slic's. The upgrade prints the commands to list the Compose projects on the Docker endpoint 2.x used and to remove the 2.x containers, keeping their volumes.
+- Extend `-y, --yes` flag support for all commands that might require confirmation
+- Compatible with PHP 8.5: replaced the deprecated backtick operator, a `case` label ending in a semicolon and the deprecated `curl_close()` call; fixed `slic_stacks_resolve_from_path()` losing its argument for paths that do not exist; CI now runs the test suite on PHP 8.2 through 8.5 and a PHPCompatibility check via `composer compat`.
+
+### Added
+- Multiple, isolated Docker Compose projects per path 
+- Git worktree multi-stack support for concurrent development workflows
+- New `slic worktree` command, with `add`, `list`, `merge`, `remove` and `sync` subcommands, leveraging dedicated stacks for each worktree
+- New `slic stack` command to `list` the registered stacks, show a stack's `info`, and `stop` one stack or `stop all` of them
+- Support for the `NO_COLOR` environment variable: when it is set, slic prints its output without colors
+- Interactive Terminal User Interface (TUI) for the `slic use` command. Running `slic use` without arguments now opens an interactive selection menu with fuzzy search and current selection indicator.
+- New `slic completion` command with subcommands to install bash/zsh/fish completions
+- Shell completion support for bash, zsh, and fish shells with dynamic completions for commands, targets, git branches, stack paths, and options
+- CLI PHPUnit test suite in the `tests/Cli` directory
+
+### Fixed
+- The `interactive`, `build-prompt`, `build-subdir` and `composer-cache` commands now change the current stack's settings. Before, they wrote a global file that the stack's own settings overrode, or that leaked into every other stack.
+- Running a Composer or npm command on a plugin and its sub-directories at once, such as `common`, no longer hangs forever. Each command now runs in the `slic` service.
+- `slic restart` no longer unregisters the stack it restarts.
+- `slic reset` resets the current stack's settings again, such as an XDebug port set with `slic xdebug port`. A worktree stack keeps its base stack directories and target.
+- `slic init` with no target given or selected stops with an error. Before, it wrote `codeception.slic.yml` and `.env.testing.slic` into the plugins directory, then failed with "Ambiguous target ''".
+- `slic stop` and `slic update` keep the stack registered with its settings; `slic stack stop` is the command that unregisters a stack. Before, both deleted the stack's settings, so `slic upgrade` from 2.x lost the configuration it had just migrated.
+- `slic here reset` works on a fresh install, before the default `_plugins` directory exists.
+- `slic update-dump` without a file argument stops with an error instead of a PHP warning.
+- `slic stack stop` and `slic stack stop all` stop a worktree stack with its own settings from any directory. Before, outside that worktree they gave Docker Compose an empty worktree mount.
+- `slic info` reads the current stack's settings file as well as `.env.slic.run`, and lists it among the files it read. Before, a stale value in `.env.slic.run` showed as the runtime value over the stack's own. It also shows a setting turned off with `0`, and its override, instead of only the override.
+- A worktree stack uses the Composer cache directory set on its base stack with `slic composer-cache set`.
+
 # [2.5.1] - 2026-10-02
 
 - Fixed - `slic composer-cache set` and `unset` save their settings without starting a stopped stack. When confirmed, only running PHP services are recreated to apply the cache mount, leaving stopped services and dependencies alone. CI can configure the cache before selecting a project's PHP version without starting containers prematurely.

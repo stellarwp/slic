@@ -59,6 +59,12 @@ function run_docker_compose_argv( array $arguments, array $options, bool $realti
 	$environment = [];
 	$is_ci       = is_ci();
 
+	// Add project name for stack isolation, as docker_compose() does.
+	$project_name = get_stack_project_name();
+	if ( null !== $project_name ) {
+		$options = array_merge( [ '-p', $project_name ], $options );
+	}
+
 	// Match the legacy Compose helpers' local Linux networking and Xdebug settings.
 	if ( ! $is_ci && os() === 'Linux' ) {
 		$override = stack( '-linux-override' );

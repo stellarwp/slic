@@ -72,11 +72,12 @@ function get_target_content_type( $target = null ) {
 /**
  * Returns the local filesystem path for a target.
  *
- * @param string|null $target The target to resolve. Defaults to the current slic target.
+ * @param string|null $target   The target to resolve. Defaults to the current slic target.
+ * @param string|null $stack_id The stack whose files to resolve the target in. Defaults to the current stack.
  *
  * @return string The local target path.
  */
-function get_project_local_path( $target = null ) {
+function get_project_local_path( $target = null, $stack_id = null ) {
 	$target = $target ?: slic_target();
 
 	if ( empty( $target ) ) {
@@ -87,6 +88,17 @@ function get_project_local_path( $target = null ) {
 				return slic_themes_dir();
 			default:
 				return realpath( getenv( 'SLIC_HERE_DIR' ) );
+		}
+	}
+
+	// A worktree stack mounts its worktree over the target, so the target's files are the worktree's.
+	$stack_id = $stack_id ?: slic_current_stack();
+	if ( $stack_id && slic_stacks_is_worktree( $stack_id ) ) {
+		$stack = slic_stacks_get( $stack_id );
+		$parts = explode( '/', $target, 2 );
+
+		if ( isset( $stack['worktree_full_path'], $stack['worktree_target'] ) && $parts[0] === $stack['worktree_target'] ) {
+			return $stack['worktree_full_path'] . ( isset( $parts[1] ) ? '/' . $parts[1] : '' );
 		}
 	}
 
@@ -350,5 +362,24 @@ function project_apply_php_version( $slic_env_local, $slic_json, $composer_json 
 	if ( $project_version && $project_version !== $effective ) {
 		project_show_php_version_message( $project_version, 'auto-detected from project', 'success' );
 		slic_set_php_version( $project_version );
+
+		return;
+	}
+
+	// Switch to the PHP version detected from the stack's env file, if any.
+	$stack_id = slic_current_stack();
+	if ( $stack_id !== null ) {
+		$stack_env_file       = slic_stacks_get_state_file( $stack_id );
+		$stack_env_file_lines = read_env_file( $stack_env_file );
+
+		if ( isset( $stack_env_file_lines['SLIC_PHP_VERSION'] ) ) {
+			$local = normalize_php_version( $stack_env_file_lines['SLIC_PHP_VERSION'] );
+
+			if ( $local && $local !== $effective ) {
+				project_show_php_version_message( $local, 'from stack\'s file', 'switch' );
+				project_maybe_show_version_mismatch_message( $local, $project_version );
+				slic_set_php_version( $local );
+			}
+		}
 	}
 }
