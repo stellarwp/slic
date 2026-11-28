@@ -107,7 +107,7 @@ class MigrationTest extends BaseTestCase {
 		$this->assertStringNotContainsString( 'Unable to resolve target', $output, 'A removed 2.x target should not stop the command.' );
 		$this->assertStringContainsString( 'Using test-plugin', $output, 'The command should run after the migration.' );
 		$this->assertStringContainsString( 'Migrated existing slic configuration', $output, 'The migration itself should still succeed.' );
-		$this->assertStringContainsString( 'ps -a --filter label=com.docker.compose.project ', $output, 'The user should be told how to find the 2.x containers.' );
+		$this->assertStringContainsString( "ps -a --filter label=com.docker.compose.project\n", $output, 'The user should be told how to find the 2.x containers.' );
 		$this->assertDockerCalled( '/ (down|rm) /', 'The migration should not stop or remove any container.', false );
 	}
 
@@ -149,12 +149,11 @@ class MigrationTest extends BaseTestCase {
 
 		// Docker cannot tell which project is the 2.x one, so stopping one automatically could stop someone else's.
 		$this->assertDockerCalled( '/ (down|rm|stop|kill) /', 'The migration should not stop or remove any container.', false );
-		$this->assertStringContainsString( "{$env['SLIC_DOCKER_BIN']} ps -a --filter label=com.docker.compose.project ", $output, 'The user should be told how to list the Compose projects.' );
-		$this->assertStringContainsString(
-			"{$env['SLIC_DOCKER_BIN']} rm -f \$({$env['SLIC_DOCKER_BIN']} ps -aq --filter label=com.docker.compose.project=<name>)",
-			$output,
-			'The user should be told how to remove the 2.x containers.'
-		);
+		$this->assertStringContainsString( "  {$env['SLIC_DOCKER_BIN']} ps -a --filter label=com.docker.compose.project\n", $output, 'The user should be told how to list the Compose containers.' );
+		$this->assertStringContainsString( "  {$env['SLIC_DOCKER_BIN']} rm -f <container ID>", $output, 'The user should be told how to remove the 2.x containers.' );
+		// Command Prompt has no command substitution, no `VAR=value command` prefix and no single quotes.
+		$this->assertStringNotContainsString( '$(', $output, 'The commands should not need a POSIX shell.' );
+		$this->assertStringNotContainsString( "'", $output, 'The commands should not need a POSIX shell.' );
 		$this->assertStringContainsString( 'Migrated existing slic configuration', $output, 'The migration itself should still succeed.' );
 	}
 
@@ -166,25 +165,28 @@ class MigrationTest extends BaseTestCase {
 			"SLIC_BASE_PLUGINS_DIR={$this->pluginsDir}\nSLIC_PLUGINS_DIR={$otherDir}\nSLIC_CURRENT_PROJECT=test-plugin\n"
 		);
 		file_put_contents( self::slicRoot() . '/.env.slic.local', "DOCKER_CONTEXT=root-endpoint\n" );
-		file_put_contents( $this->pluginsDir . '/test-plugin/.env.slic.local', "DOCKER_CONTEXT=plugin-endpoint\n" );
+		file_put_contents( $this->pluginsDir . '/test-plugin/.env.slic.local', "DOCKER_CONTEXT=plugin-endpoint\nDOCKER_CONFIG=/plugin/docker-config\n" );
 
 		$env    = $this->dockerMockLogEnv();
 		$output = $this->slicExec( 'using', $env );
 
-		$this->assertStringContainsString( "DOCKER_CONTEXT='plugin-endpoint' {$env['SLIC_DOCKER_BIN']} ps -a ", $output, 'The listing should reach the Docker endpoint 2.x used for the target.' );
-		$this->assertStringContainsString( "DOCKER_CONTEXT='plugin-endpoint' {$env['SLIC_DOCKER_BIN']} rm -f ", $output, 'The removal should reach the Docker endpoint 2.x used for the target.' );
+		// The endpoint goes in docker's own flags, which every shell passes as they are.
+		$docker = $env['SLIC_DOCKER_BIN'] . ' --context ' . escapeshellarg( 'plugin-endpoint' ) . ' --config ' . escapeshellarg( '/plugin/docker-config' );
+		$this->assertStringContainsString( "{$docker} ps -a ", $output, 'The listing should reach the Docker endpoint 2.x used for the target.' );
+		$this->assertStringContainsString( "{$docker} rm -f ", $output, 'The removal should reach the Docker endpoint 2.x used for the target.' );
 	}
 
 	public function test_the_2x_notice_uses_the_docker_command_of_the_compose_bin(): void {
 		// A Compose executable such as `docker --context remote compose` names its endpoint itself.
 		$env = $this->dockerMockLogEnv();
-		file_put_contents( self::slicRoot() . '/.env.slic.local', "SLIC_DOCKER_COMPOSE_BIN={$env['SLIC_DOCKER_BIN']} --context remote-qa compose\n" );
+		file_put_contents( self::slicRoot() . '/.env.slic.local', "SLIC_DOCKER_COMPOSE_BIN={$env['SLIC_DOCKER_BIN']} --context remote-qa compose --ansi never\nDOCKER_CONTEXT=other\n" );
 		unset( $env['SLIC_DOCKER_COMPOSE_BIN'] );
 
 		$output = $this->slicExec( 'using', $env );
 
-		$this->assertStringContainsString( "{$env['SLIC_DOCKER_BIN']} --context remote-qa ps -a ", $output, 'The listing should reach the endpoint the Compose executable names.' );
-		$this->assertStringContainsString( "{$env['SLIC_DOCKER_BIN']} --context remote-qa rm -f ", $output, 'The removal should reach the endpoint the Compose executable names.' );
+		// Docker refuses a second endpoint flag, and the executable's own one is the one 2.x reached.
+		$this->assertStringContainsString( "  {$env['SLIC_DOCKER_BIN']} --context remote-qa ps -a ", $output, 'The listing should reach the endpoint the Compose executable names.' );
+		$this->assertStringContainsString( "  {$env['SLIC_DOCKER_BIN']} --context remote-qa rm -f ", $output, 'The removal should reach the endpoint the Compose executable names.' );
 	}
 
 	public function test_a_missing_2x_target_still_says_how_to_stop_the_containers(): void {
@@ -193,7 +195,7 @@ class MigrationTest extends BaseTestCase {
 		$output = $this->slicExec( 'using', $this->dockerMockLogEnv() );
 
 		$this->assertDockerCalled( '/ (down|rm) /', 'The migration should not stop or remove any container.', false );
-		$this->assertStringContainsString( 'ps -a --filter label=com.docker.compose.project ', $output, 'The user should be told how to find the 2.x containers.' );
+		$this->assertStringContainsString( "ps -a --filter label=com.docker.compose.project\n", $output, 'The user should be told how to find the 2.x containers.' );
 		$this->assertStringContainsString( 'Migrated existing slic configuration', $output, 'The migration itself should still succeed.' );
 	}
 

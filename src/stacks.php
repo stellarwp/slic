@@ -1007,20 +1007,25 @@ function slic_stacks_migrate_legacy() {
 	if ( $target_found && is_file( $target_path . '/.env.slic.local' ) ) {
 		load_env_file( $target_path . '/.env.slic.local' );
 	}
-	$env_prefix = '';
-	foreach ( [ 'DOCKER_HOST', 'DOCKER_CONTEXT' ] as $key ) {
-		if ( getenv( $key ) ) {
-			$env_prefix = $key . '=' . escapeshellarg( getenv( $key ) ) . ' ' . $env_prefix;
+	// The docker command of a Compose executable such as `docker --context remote compose --ansi never` keeps its flags.
+	$docker = preg_match( '/^(.*?\S)\s+compose(\s.*)?$/', trim( docker_compose_bin() ), $matches ) ? $matches[1] : docker_bin();
+	// The endpoint 2.x used goes in docker's own flags, which every shell passes as they are; docker refuses a second one.
+	if ( ! preg_match( '/\s(--context|-c|--host|-H)(\s|=)/', $docker . ' ' ) ) {
+		if ( getenv( 'DOCKER_HOST' ) ) {
+			$docker .= ' --host ' . escapeshellarg( getenv( 'DOCKER_HOST' ) );
+		} elseif ( getenv( 'DOCKER_CONTEXT' ) ) {
+			$docker .= ' --context ' . escapeshellarg( getenv( 'DOCKER_CONTEXT' ) );
 		}
 	}
-	// A Compose executable such as `docker --context remote compose` names its Docker endpoint: list and remove there.
-	$docker = $env_prefix . ( preg_match( '/^(.*\S)\s+compose$/', trim( docker_compose_bin() ), $matches ) ? $matches[1] : docker_bin() );
+	if ( getenv( 'DOCKER_CONFIG' ) && ! preg_match( '/\s--config(\s|=)/', $docker . ' ' ) ) {
+		$docker .= ' --config ' . escapeshellarg( getenv( 'DOCKER_CONFIG' ) );
+	}
 	// Docker has no record of which Compose project is the 2.x one, so slic does not guess: it says how to find and remove it.
 	$notice = "<yellow>slic 3.0 runs each stack as its own Compose project, so it leaves any slic 2.x containers as they are.</yellow>" . PHP_EOL
-		. 'List the Compose projects on the Docker endpoint slic 2.x used with:' . PHP_EOL
-		. "  {$docker} ps -a --filter label=com.docker.compose.project --format 'table {{.Label \"com.docker.compose.project\"}}\\t{{.Status}}\\t{{.Label \"com.docker.compose.project.config_files\"}}'" . PHP_EOL
-		. 'and remove the containers of the slic 2.x one, keeping its volumes, with:' . PHP_EOL
-		. "  {$docker} rm -f \$({$docker} ps -aq --filter label=com.docker.compose.project=<name>)" . PHP_EOL . PHP_EOL;
+		. 'List the Compose containers on the Docker endpoint slic 2.x used, named after their project, with:' . PHP_EOL
+		. "  {$docker} ps -a --filter label=com.docker.compose.project" . PHP_EOL
+		. 'and remove the slic 2.x ones, keeping their volumes, with:' . PHP_EOL
+		. "  {$docker} rm -f <container ID> [<container ID> ...]" . PHP_EOL . PHP_EOL;
 	foreach ( array_diff_key( getenv(), $saved_env ) as $key => $value ) {
 		putenv( $key );
 	}
